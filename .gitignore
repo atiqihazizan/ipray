@@ -30,6 +30,10 @@
 obj/
 **/obj/
 
+# Backup folders
+backup/
+**/backup/
+
 # Visual Studio files
 .vs/
 *.user
