@@ -26,6 +26,9 @@
 *.exe
 *.out
 *.app
+*/*.exe
+obj/
+**/obj/
 
 # Visual Studio files
 .vs/
