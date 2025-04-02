@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -I./include -I./components -DSFML_STATIC -std=c++11
-LDFLAGS = -L./lib -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -static-libgcc -static-libstdc++
+LDFLAGS = -L./lib -lsfml-graphics-s -lsfml-window-s -lsfml-system-s -lopengl32 -lfreetype -lwinmm -lgdi32 -static-libgcc -static-libstdc++ 
 
 TARGET = ipray.exe
 SRCDIR = .

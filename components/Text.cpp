@@ -10,49 +10,61 @@ Text::Text(const sf::Vector2f &position)
   text.setFillColor(sf::Color::White);
 }
 
-Text Text::createNormal(const sf::Vector2f &position)
+Text Text::customText(const sf::Vector2f &position, unsigned int characterSize, const sf::Color &fillColor, sf::Uint32 style, const std::string &fontName)
 {
   Text text(position);
-  text.getText().setCharacterSize(NORMAL_SIZE);
-  text.getText().setFillColor(sf::Color::Green);
-  text.getText().setStyle(sf::Text::Bold);
+  text.getText().setCharacterSize(characterSize);
+  text.getText().setFillColor(fillColor);
+  text.getText().setStyle(style);
 
-  if (fonts.find("normal") != fonts.end())
+  if (fonts.find(fontName) != fonts.end())
   {
-    text.getText().setFont(fonts["normal"]);
+    text.getText().setFont(fonts[fontName]);
   }
 
   return text;
 }
 
-Text Text::createTime(const sf::Vector2f &position)
+Text Text::yearMonth(const std::string &str)
 {
-  Text text(position);
-  text.getText().setCharacterSize(TIME_SIZE);
-  text.getText().setFillColor(sf::Color::Yellow);
-  text.getText().setStyle(sf::Text::Bold);
-
-  if (fonts.find("time") != fonts.end())
-  {
-    text.getText().setFont(fonts["time"]);
-  }
-
-  return text;
+  Text temp = temp.customText(sf::Vector2f(0, 0), 70, sf::Color::Cyan, sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
 }
 
-Text Text::createPrayer(const sf::Vector2f &position)
+Text Text::dayNumber(const std::string &str)
 {
-  Text text(position);
-  text.getText().setCharacterSize(PRAYER_SIZE);
-  text.getText().setFillColor(sf::Color::White);
-  text.getText().setStyle(sf::Text::Bold);
+  Text temp = temp.customText(sf::Vector2f(0, 0), 160, sf::Color(255, 0, 255), sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
+}
 
-  if (fonts.find("prayer") != fonts.end())
-  {
-    text.getText().setFont(fonts["prayer"]);
-  }
+Text Text::dayName(const std::string &str)
+{
+  Text temp = temp.customText(sf::Vector2f(0, 0), 70, sf::Color::White, sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
+}
 
-  return text;
+Text Text::prayerName(const std::string &str)
+{
+  Text temp = temp.customText(sf::Vector2f(0, 0), 50, sf::Color::White, sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
+}
+
+Text Text::prayerTime(const std::string &str)
+{
+  Text temp = temp.customText(sf::Vector2f(0, 0), 80, sf::Color::Red, sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
+}
+
+Text Text::currentTime(const std::string &str)
+{
+  Text temp = temp.customText(sf::Vector2f(0, 0), 150, sf::Color::Yellow, sf::Text::Bold, "bebas");
+  temp.setString(str);
+  return temp;
 }
 
 void Text::setString(const std::string &str)
@@ -73,6 +85,16 @@ void Text::draw(sf::RenderWindow &window)
 sf::Text &Text::getText()
 {
   return text;
+}
+
+float Text::getWidth() const
+{
+  return text.getGlobalBounds().width;
+}
+
+float Text::getHeight() const
+{
+  return text.getGlobalBounds().height;
 }
 
 bool Text::loadDefaultFont()
@@ -109,17 +131,29 @@ bool Text::loadFonts()
   if (font.loadFromFile("fonts/bebas.ttf"))
   {
     fonts["normal"] = font;
+    fonts["bebas"] = font;
+    fonts["prayer"] = font;
   }
 
   if (font.loadFromFile("fonts/digital-7.ttf"))
   {
     fonts["time"] = font;
+    fonts["digital"] = font;
   }
 
-  if (font.loadFromFile("fonts/bebas.ttf"))
+  if (font.loadFromFile("fonts/din_black.ttf"))
   {
-    fonts["prayer"] = font;
+    fonts["din_black"] = font;
   }
+
+  if (font.loadFromFile("fonts/din_light.ttf"))
+  {
+    fonts["din_light"] = font;
+  }
+  // if (font.loadFromFile("fonts/Consalas.ttf"))
+  // {
+  //   fonts["consalas"] = font;
+  // }
 
   return true;
 }

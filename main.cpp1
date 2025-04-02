@@ -1,0 +1,140 @@
+#include <SFML/Graphics.hpp>
+#include <ctime>
+#include <string>
+#include <iomanip>
+#include <sstream>
+#include <cmath>
+#include "components/Text.hpp"
+#include "components/utils.hpp"
+#include "components/TarikhHijrah.hpp"
+
+// Add a global variable to track colon visibility
+bool showColon = true;
+sf::Clock blinkClock;
+
+int main()
+{
+  sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "iPray Solat", sf::Style::Fullscreen | sf::Style::None);
+  window.setVerticalSyncEnabled(true); // Enable VSync
+  window.setFramerateLimit(60);        // Limit framerate as backup
+
+  // Initialize Hijri calendar data once at startup
+  TarikhHijrah::initializeCalendarData();
+
+  // Load all fonts instead of just the default
+  if (!Text::loadFonts())
+  {
+    return -1;
+  }
+
+  int wid = window.getSize().x;
+  int hgt = window.getSize().y;
+  int top = 30;
+  int textSize = 70;
+  int dayNumberSize = 160;
+  int spacing = 20;
+
+  // Create text for current time
+  Text CurrentMinute = Text::currentTime("00"); 
+  Text CurrentHour = Text::currentTime("00");
+  Text CurrentColon = Text::currentTime(":");
+
+  const float topTime = hgt - CurrentMinute.getHeight() - 30;
+  float offset = wid - CurrentMinute.getWidth() - 30;
+  CurrentMinute.setPosition(sf::Vector2f(offset, topTime));
+  offset -= 40;
+  CurrentColon.setPosition(sf::Vector2f(offset, topTime - 30));
+  offset -= CurrentHour.getWidth();
+  CurrentHour.setPosition(sf::Vector2f(offset, topTime));
+  
+  // Setup prayer times
+  std::vector<Text> prayerNames;
+  std::vector<Text> prayerTimes;
+  std::vector<std::string> prayers = {"Subuh", "Zohor", "Asar", "Maghrib", "Isyak"};
+  std::vector<std::string> times = {"5:48", "13:17", "16:37", "19:21", "20:35"};
+
+  // Perbaiki posisi waktu solat
+  Text timeStr = Text::prayerTime("00:00");
+  Text nameStr = Text::prayerName("ZOHOR");
+  float prayerTimeHgt = hgt - timeStr.getHeight() - 30;
+  float prevWid = 30;
+
+  for (int i = 0; i < 5; i++)
+  {
+    float x = prevWid;
+
+    Text prayerTime = Text::prayerTime(times[i]);
+    prevWid = x + prayerTime.getWidth() + 50;
+    prayerTime.setPosition(sf::Vector2f(x, prayerTimeHgt));
+    prayerTimes.push_back(prayerTime);
+
+    Text prayerText = Text::prayerName(toUpper(prayers[i]));
+    x += (prayerTime.getWidth() - prayerText.getWidth()) / 2;
+    prayerText.setPosition(sf::Vector2f(x, topTime));
+    prayerNames.push_back(prayerText);
+  }
+
+  while (window.isOpen())
+  {
+    sf::Event event;
+    while (window.pollEvent(event))
+    {
+      if (event.type == sf::Event::Closed)
+        window.close();
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
+        window.close();
+    }
+
+    // Update texts
+    auto timeComponents = getCurrentTime();
+    CurrentHour.setString(timeComponents[0]);
+    CurrentMinute.setString(timeComponents[1]);
+    CurrentColon.setString(timeComponents[2]);
+
+    auto dateHComponents = TarikhHijrah::getHijriDate();
+    Text dayHNumber = Text::dayNumber(dateHComponents[0]);
+    Text dayHName = Text::dayName(dateHComponents[1]);
+    Text monthHYear = Text::yearMonth(dateHComponents[2]);
+    
+    float right = wid - dayHNumber.getWidth() - 30;
+    dayHNumber.setPosition(sf::Vector2f(right, top));
+    dayHName.setPosition(sf::Vector2f(right - dayHName.getWidth() -25, top + 10));
+    monthHYear.setPosition(sf::Vector2f(right - monthHYear.getWidth() -25, top * 4));
+
+    auto dateComponents = getDateComponents();
+    Text dayNumber = Text::dayNumber(dateComponents[0]);
+    Text dayName = Text::dayName(dateComponents[1]);
+    Text monthYear = Text::yearMonth(dateComponents[2]);
+
+    float left = 30;
+    dayNumber.setPosition(sf::Vector2f(left, top));
+    dayName.setPosition(sf::Vector2f(left + dayNumber.getWidth() + 25, top + 10));
+    monthYear.setPosition(sf::Vector2f(left + dayNumber.getWidth() + 25, top * 4));
+
+
+    window.clear(sf::Color::Black);
+
+    // Draw all elements
+    dayHNumber.draw(window);
+    dayHName.draw(window);
+    monthHYear.draw(window);
+    CurrentHour.draw(window);
+    CurrentColon.draw(window);
+    CurrentMinute.draw(window);
+    dayNumber.draw(window);
+    dayName.draw(window);
+    monthYear.draw(window);
+    for (auto &prayer : prayerNames)
+    {
+      prayer.draw(window);
+    }
+    for (auto &prayer : prayerTimes)
+    {
+      prayer.draw(window);
+    }
+
+    // Draw the current time text
+    window.display();
+  }
+  return 0;
+}

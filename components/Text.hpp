@@ -17,17 +17,26 @@ private:
 
   sf::Text text;
 
+  Text customText(const sf::Vector2f &position, unsigned int characterSize, 
+                  const sf::Color &fillColor, sf::Uint32 style, 
+                  const std::string &fontName);
+
 public:
   Text(const sf::Vector2f &position);
 
-  static Text createNormal(const sf::Vector2f &position);
-  static Text createTime(const sf::Vector2f &position);
-  static Text createPrayer(const sf::Vector2f &position);
+  static Text yearMonth(const std::string &str);
+  static Text dayNumber(const std::string &str);
+  static Text dayName(const std::string &str);
+  static Text prayerTime(const std::string &str);
+  static Text prayerName(const std::string &str);
+  static Text currentTime(const std::string &str);
 
   void setString(const std::string &str);
   void setPosition(const sf::Vector2f &position);
   void draw(sf::RenderWindow &window);
   sf::Text &getText();
+  float getWidth() const;
+  float getHeight() const;
 
   static bool loadDefaultFont();
   static const sf::Font &getDefaultFont();
