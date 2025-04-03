@@ -52,5 +52,8 @@ x86/
 [Bb]in/
 [Oo]bj/
 
+media/
+**/media/
+
 # Visual Studio Code
 #.vscode/

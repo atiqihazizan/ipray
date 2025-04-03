@@ -34,4 +34,6 @@ void setupHijriDate(Text &dayHNumber, Text &dayHName, Text &monthHYear,
                     const std::vector<std::string> &hijriComponents,
                     const AppState &state, Shape &backgroundShape);
 
+void handleEvents(sf::RenderWindow &window);
+
 #endif // SETUP_HPP

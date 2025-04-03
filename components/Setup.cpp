@@ -101,3 +101,16 @@ void setupHijriDate(Text &dayHNumber, Text &dayHName, Text &monthHYear,
                                       state.topMargin + dayHNumber.getHeight() -
                                           monthHYear.getHeight() + 15));
 }
+
+void handleEvents(sf::RenderWindow &window) {
+  sf::Event event;
+  while (window.pollEvent(event)) {
+    if (event.type == sf::Event::Closed) {
+      window.close();
+    }
+    if (event.type == sf::Event::KeyPressed &&
+        event.key.code == sf::Keyboard::Escape) {
+      window.close();
+    }
+  }
+}
