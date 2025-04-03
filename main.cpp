@@ -1,6 +1,7 @@
 #include "components/Setup.hpp"
 #include "components/Text.hpp"
 #include "components/TimeSolat.hpp"
+#include "components/Media.hpp"
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <ctime>
@@ -21,6 +22,17 @@ int main() {
     return -1;
   }
 
+  // Show loading text
+  Text loadingText = Text::loading(state.windowWidth, state.windowHeight);
+  window.clear(sf::Color::Black);
+  loadingText.draw(window);
+  window.display();
+
+  // Setup background and wait for loading
+  Media media;
+  media.setBackground(state.windowWidth, state.windowHeight);
+  sf::sleep(sf::milliseconds(1000)); // Add small delay for loading
+
   TimeSolat timeSolat(state);
   sf::Clock clock;
   
@@ -40,6 +52,7 @@ int main() {
     timeSolat.update();
     
     window.clear(sf::Color::Blue);
+    media.draw(window);
     timeSolat.draw(window);
     window.display();
   }

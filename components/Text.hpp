@@ -30,6 +30,7 @@ public:
   static Text prayerTime(const std::string &str);
   static Text prayerName(const std::string &str);
   static Text currentTime(const std::string &str);
+  static Text loading(float windowWidth, float windowHeight);
 
   void setString(const std::string &str);
   void setPosition(const sf::Vector2f &position);

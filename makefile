@@ -9,7 +9,7 @@ COMPONENTS_DIR = components
 
 # Source files
 MAIN_SRCS = main.cpp
-COMP_SRCS = Text.cpp Setup.cpp TimeSolat.cpp Shape.cpp TarikhHijrah.cpp utils.cpp
+COMP_SRCS = Text.cpp Setup.cpp TimeSolat.cpp Shape.cpp TarikhHijrah.cpp utils.cpp Media.cpp
 
 # Generate object file paths
 MAIN_OBJS = $(MAIN_SRCS:%.cpp=$(OBJDIR)/%.o)

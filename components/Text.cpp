@@ -67,6 +67,20 @@ Text Text::currentTime(const std::string &str)
   return temp;
 }
 
+Text Text::loading(float windowWidth, float windowHeight) {
+    Text text({windowWidth/2.0f, windowHeight/2.0f});
+    text.text.setString("Loading...");
+    text.text.setCharacterSize(48);
+    text.text.setFillColor(sf::Color::White);
+    
+    // Center the text
+    sf::FloatRect textRect = text.text.getLocalBounds();
+    text.text.setOrigin(textRect.left + textRect.width/2.0f,
+                       textRect.top + textRect.height/2.0f);
+    
+    return text;
+}
+
 void Text::setString(const std::string &str)
 {
   text.setString(str);
