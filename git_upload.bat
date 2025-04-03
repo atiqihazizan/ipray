@@ -14,9 +14,17 @@ echo.
 echo Adding files to git...
 git add .
 
+REM Get current date and time
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
+set CURRENT_DATE=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%
+set CURRENT_TIME=%datetime:~8,2%:%datetime:~10,2%
+
 REM Get commit message
 echo.
-set /p commit_msg="Enter your commit message: "
+set /p commit_desc="Enter description for your changes: "
+set commit_msg=[%CURRENT_DATE% %CURRENT_TIME%] %commit_desc%
+echo.
+echo Committing with message: "%commit_msg%"
 git commit -m "%commit_msg%"
 
 REM Check if remote exists
