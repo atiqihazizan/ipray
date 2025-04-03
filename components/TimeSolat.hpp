@@ -7,20 +7,19 @@
 
 class TimeSolat {
 public:
-  TimeSolat(Text &currentHour, Text &currentMinute, Text &currentColon,
-            std::vector<Text> &prayerNames, std::vector<Text> &prayerTimes,
-            const AppState &state);
+  TimeSolat(const AppState &state);
 
   void update();
   void draw(sf::RenderWindow &window);
 
 private:
-  Text &m_currentHour;
-  Text &m_currentMinute;
-  Text &m_currentColon;
-  std::vector<Text> &m_prayerNames;
-  std::vector<Text> &m_prayerTimes;
+  std::vector<Text> m_prayerNames;
+  std::vector<Text> m_prayerTimes;
   const AppState &m_state;
+
+  Text m_currentHour;
+  Text m_currentMinute;
+  Text m_currentColon;
 
   Text m_dayNumber;
   Text m_dayName;

@@ -1,23 +1,30 @@
 #include "TimeSolat.hpp"
 #include "TarikhHijrah.hpp"
 #include "utils.hpp"
+#include "Setup.hpp"
 
-TimeSolat::TimeSolat(Text &currentHour, Text &currentMinute, Text &currentColon,
-                     std::vector<Text> &prayerNames,
-                     std::vector<Text> &prayerTimes, const AppState &state)
-    : m_currentHour(currentHour), m_currentMinute(currentMinute),
-      m_currentColon(currentColon), m_prayerNames(prayerNames),
-      m_prayerTimes(prayerTimes), m_state(state),
+TimeSolat::TimeSolat(const AppState &state)
+    : m_currentHour(Text::currentTime("00")), m_currentMinute(Text::currentTime("00")),
+      m_currentColon(Text::currentTime(":")), m_state(state),
       m_dayNumber(Text::dayNumber("")), m_dayName(Text::dayName("")),
       m_monthYear(Text::yearMonth("")), m_dayHNumber(Text::dayNumber("")),
-      m_dayHName(Text::dayName("")), m_monthHYear(Text::yearMonth("")) {}
+      m_dayHName(Text::dayName("")), m_monthHYear(Text::yearMonth("")) {
+
+        std::vector<Text> prayerNames;
+        std::vector<Text> prayerTimes;
+      
+        setupPrayerTimes(prayerNames, prayerTimes, state);
+        m_prayerNames = prayerNames;
+        m_prayerTimes = prayerTimes;
+
+      }
 
 void TimeSolat::update() {
   // Update time
   auto timeComponents = getCurrentTime();
-  m_currentHour.setString(timeComponents[0]);
-  m_currentMinute.setString(timeComponents[1]);
-  m_currentColon.setString(timeComponents[2]);
+  m_currentHour = Text::currentTime(timeComponents[0]);
+  m_currentMinute = Text::currentTime(timeComponents[1]);
+  m_currentColon = Text::currentTime(timeComponents[2]);
   setupClock(m_currentHour, m_currentMinute, m_currentColon, m_state);
 
   // Update Hijri date

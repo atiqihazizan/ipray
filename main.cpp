@@ -1,4 +1,4 @@
-#include "components/Setup.hpp"
+// #include "components/Setup.hpp"
 #include "components/Text.hpp"
 #include "components/TimeSolat.hpp"
 #include <SFML/Graphics.hpp>
@@ -23,19 +23,8 @@ int main() {
     return -1;
   }
 
-  // Setup komponen UI
-  Text CurrentMinute = Text::currentTime("00");
-  Text CurrentHour = Text::currentTime("00");
-  Text CurrentColon = Text::currentTime(":");
-
-  std::vector<Text> prayerNames;
-  std::vector<Text> prayerTimes;
-
-  setupPrayerTimes(prayerNames, prayerTimes, state);
-
-  // Create TimeSolat display
-  TimeSolat timeSolat(CurrentHour, CurrentMinute, CurrentColon, prayerNames,
-                      prayerTimes, state);
+  // initialize TimeSolat
+  TimeSolat timeSolat(state);
 
   while (window.isOpen()) {
     sf::Event event;
