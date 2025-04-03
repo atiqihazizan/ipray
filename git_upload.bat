@@ -19,10 +19,8 @@ for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set da
 set CURRENT_DATE=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%
 set CURRENT_TIME=%datetime:~8,2%:%datetime:~10,2%
 
-REM Get commit message
-echo.
-set /p commit_desc="Enter description for your changes: "
-set commit_msg=[%CURRENT_DATE% %CURRENT_TIME%] %commit_desc%
+REM Set default commit message
+set commit_msg=[%CURRENT_DATE% %CURRENT_TIME%] Update
 echo.
 echo Committing with message: "%commit_msg%"
 git commit -m "%commit_msg%"
