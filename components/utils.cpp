@@ -70,3 +70,21 @@ std::vector<std::string> getDateComponents()
 
   return components;
 }
+
+std::vector<std::string> getHijriDateComponents()
+{
+  std::vector<std::string> components;
+  HijriDateConverter dateHijrah;
+  HijriDateResult hijriDate = dateHijrah.getHijriDate();
+
+  // Add day number
+  components.push_back(hijriDate.day);
+
+  // Add month name
+  components.push_back(toUpper(hijriDate.monthName));
+
+  // Add year
+  components.push_back(hijriDate.year);
+
+  return components;
+}

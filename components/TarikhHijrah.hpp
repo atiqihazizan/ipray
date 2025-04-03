@@ -6,9 +6,9 @@
 
 // Struktur untuk menyimpan hasil tarikh Hijrah
 struct HijriDateResult {
-    int day;
-    int month;
-    int year;
+    std::string day;
+    std::string month;
+    std::string year;
     std::string monthName;
     std::string formattedDate;
 };
@@ -52,7 +52,7 @@ public:
     bool isHijriLeapYear(int year);
 
     // Fungsi untuk menukar tarikh semasa kepada tarikh Hijrah
-    HijriDateResult convertCurrentDateToHijri(bool afterMaghrib = false);
+    HijriDateResult getHijriDate(bool afterMaghrib = false);
 };
 
 #endif // HIJRI_DATE_CONVERTER_H

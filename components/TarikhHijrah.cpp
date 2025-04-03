@@ -133,10 +133,20 @@ HijriDateResult HijriDateConverter::convertToHijri(int day, int month, int year,
     
     // Buat hasil
     HijriDateResult result;
-    result.day = hijriDay;
-    result.month = hijriMonth;
-    result.year = hijriYear;
-    result.monthName = hname[hijriMonth];
+		
+		std::ostringstream dayNum;
+		dayNum << std::setw(2) << std::setfill('0') << hijriDay;
+		result.day = dayNum.str();
+		
+		std::ostringstream monthNum;
+		monthNum << std::setw(2) << std::setfill('0') << hijriMonth;
+		result.month = monthNum.str();
+		
+		std::ostringstream yearNum;
+		yearNum << hijriYear;
+		result.year = yearNum.str();
+		
+		result.monthName = hname[hijriMonth];
     
     // Format tarikh: DD BULAN YYYY
     result.formattedDate = digit2(hijriDay) + " " + hname[hijriMonth] + " " + std::to_string(hijriYear);
@@ -152,7 +162,7 @@ bool HijriDateConverter::isHijriLeapYear(int year) {
             cycleYear == 24 || cycleYear == 26 || cycleYear == 29);
 }
 
-HijriDateResult HijriDateConverter::convertCurrentDateToHijri(bool afterMaghrib) {
+HijriDateResult HijriDateConverter::getHijriDate(bool afterMaghrib) {
     // Dapatkan tarikh semasa
     time_t now = time(nullptr);
     struct tm* currentTime = localtime(&now);

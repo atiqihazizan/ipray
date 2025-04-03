@@ -48,7 +48,7 @@ Text Text::dayName(const std::string &str)
 
 Text Text::prayerName(const std::string &str)
 {
-  Text temp = temp.customText(sf::Vector2f(0, 0), 50, sf::Color::White, sf::Text::Bold, "bebas");
+  Text temp = temp.customText(sf::Vector2f(0, 0), 40, sf::Color::White, sf::Text::Bold, "bebas");
   temp.setString(str);
   return temp;
 }
