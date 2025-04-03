@@ -2,7 +2,13 @@
 #include "Shape.hpp"
 #include "Text.hpp"
 
-void setupWindow(sf::RenderWindow &window) {
+void setupWindow(sf::RenderWindow &window, AppState &state) {
+  // Show loading text
+  Text loadingText = Text::loading(state.windowWidth, state.windowHeight);
+  window.clear(sf::Color::Black);
+  loadingText.draw(window);
+  window.display();
+
   window.setVerticalSyncEnabled(true);
   window.setFramerateLimit(60);
 }

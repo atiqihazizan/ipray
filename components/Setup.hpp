@@ -19,7 +19,7 @@ struct AppState {
 };
 
 // Deklarasi fungsi-fungsi setup
-void setupWindow(sf::RenderWindow &window);
+void setupWindow(sf::RenderWindow &window, AppState &state);
 
 void setupPrayerTimes(std::vector<Text> &prayerNames,
                       std::vector<Text> &prayerTimes, const AppState &state);
