@@ -133,22 +133,10 @@ HijriDateResult HijriDateConverter::convertToHijri(int day, int month, int year,
     
     // Buat hasil
     HijriDateResult result;
-		
-		std::ostringstream dayNum;
-		dayNum << std::setw(2) << std::setfill('0') << hijriDay;
-		result.day = dayNum.str();
-		
-		std::ostringstream monthNum;
-		monthNum << std::setw(2) << std::setfill('0') << hijriMonth;
-		result.month = monthNum.str();
-		
-		std::ostringstream yearNum;
-		yearNum << hijriYear;
-		result.year = yearNum.str();
-		
-		result.monthName = hname[hijriMonth];
-    
-    // Format tarikh: DD BULAN YYYY
+    result.day = digit2(hijriDay);
+    result.month = digit2(hijriMonth);
+    result.year = std::to_string(hijriYear);
+    result.monthName = hname[hijriMonth];
     result.formattedDate = digit2(hijriDay) + " " + hname[hijriMonth] + " " + std::to_string(hijriYear);
     
     return result;
