@@ -1,0 +1,10 @@
+untuk run
+1. cd windows
+2. mingw32-make
+3. ./ipray.exe
+
+untuk build
+1. cd windows
+2. mingw32-make clean
+3. mingw32-make
+4. copy ipray.exe ke folder assets
