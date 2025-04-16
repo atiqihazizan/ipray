@@ -1,0 +1,8 @@
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/WaktuSolat.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/generate_layout_files.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/edit_cache.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/rebuild_cache.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/list_install_components.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/install.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/install/local.dir
+/Users/atiqihazizan/works/ipray/ipray-vscode/build/CMakeFiles/install/strip.dir
