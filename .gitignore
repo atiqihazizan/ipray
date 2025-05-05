@@ -61,3 +61,12 @@ media/
 # macOS files
 .DS_Store
 **/.DS_Store
+
+# Build files
+macos_raspi/build/
+**/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/compiler_depend.internal
