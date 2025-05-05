@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+      {
+          "type": "process",
+          "label": "clang++ build active file",
+          "command": "clang++",
+          "args": [
+              "-std=c++17",
+              "-g",
+              "${workspaceFolder}/src/*.cpp",
+              "-o",
+              "${workspaceFolder}/build/waktu-solat",
+              "-I/opt/homebrew/Cellar/sfml@2/include",
+              "-L/opt/homebrew/Cellar/sfml@2/lib",
+              "-lsfml-graphics",
+              "-lsfml-window",
+              "-lsfml-system",
+              "-framework", "CoreFoundation",
+              "-framework", "OpenGL"
+          ],
+          "options": {
+              "cwd": "${workspaceFolder}"
+          },
+          "problemMatcher": [
+              "$gcc"
+          ],
+          "group": {
+              "kind": "build",
+              "isDefault": true
+          }
+      }
+  ]
+}
