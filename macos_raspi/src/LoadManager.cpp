@@ -144,11 +144,17 @@ LoadStatus LoadManager::loadImage(const std::string& filePath, MediaType type, c
   // Create new texture
   auto texture = std::make_unique<sf::Texture>();
   
-  // Try to load the texture with resource path
+  // Buat tekstur kosong jika fail tidak wujud
   if (!texture->loadFromFile(resPath)) {
       // Try direct path as fallback
       if (!texture->loadFromFile(filePath)) {
-          return LoadStatus(false, "Failed to load image \"" + filePath + "\". Reason: Unable to open file");
+          // Buat tekstur kosong dengan saiz 100x100 pixel
+          texture->create(100, 100);
+          // Isi dengan warna hitam
+          sf::Image img;
+          img.create(100, 100, sf::Color(0, 0, 0));
+          texture->update(img);
+          std::cout << "Created empty texture for missing image: " << filePath << std::endl;
       }
   }
   
@@ -272,11 +278,14 @@ LoadStatus LoadManager::loadAudio(const std::string& filePath, const std::string
   // Create new sound buffer
   auto buffer = std::make_unique<sf::SoundBuffer>();
   
-  // Try to load the sound buffer with resource path
+  // Jika fail audio tidak wujud, kita akan skip sahaja
   if (!buffer->loadFromFile(resPath)) {
       // Try direct path as fallback
       if (!buffer->loadFromFile(filePath)) {
-          return LoadStatus(false, "Failed to load audio \"" + filePath + "\". Reason: Unable to open file");
+          // Buat buffer kosong
+          std::cout << "Skipping missing audio file: " << filePath << std::endl;
+          // Kembalikan status berjaya walaupun fail tidak wujud
+          return LoadStatus(true, "Audio file not found, but continuing: " + filePath);
       }
   }
   
