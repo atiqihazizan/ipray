@@ -37,7 +37,7 @@ rsync_with_password() {
 # Fungsi utama
 main() {
     # Tetapkan maklumat Raspberry Pi
-    pi_address="192.168.60.107"  # Alamat IP tetap untuk Raspberry Pi
+    pi_address="192.168.68.107"  # Alamat IP tetap untuk Raspberry Pi
     pi_username="atiqi"            # Nama pengguna tetap
     install_dir="/home/atiqi/ipray"  # Direktori pemasangan tetap
     
@@ -93,32 +93,11 @@ main() {
     # Tanya jika pengguna ingin menjalankan aplikasi
     read -p "Adakah anda ingin menjalankan aplikasi di Raspberry Pi? (y/n) " run_app
     if [[ $run_app == "y" || $run_app == "Y" ]]; then
-        # Dapatkan senarai executable dari Raspberry Pi
-        executables=$(sshpass -p "$pi_password" ssh -o StrictHostKeyChecking=no ${pi_username}@${pi_address} "find ${install_dir}/build -type f -executable -not -path '*/\.*'" | sed "s|${install_dir}/build/||")
+        # Jalankan aplikasi WaktuSolat secara terus
+        print_status "Menjalankan aplikasi WaktuSolat di Raspberry Pi..."
+        sshpass -p "$pi_password" ssh -t -o StrictHostKeyChecking=no ${pi_username}@${pi_address} "cd ${install_dir}/build && ./WaktuSolat"
         
-        if [ -z "$executables" ]; then
-            print_warning "Tiada fail executable ditemui dalam folder build di Raspberry Pi"
-        else
-            echo "Fail executable yang ditemui:"
-            count=1
-            declare -a exec_array
-            
-            while IFS= read -r line; do
-                echo "$count) $line"
-                exec_array[$count]="$line"
-                ((count++))
-            done <<< "$executables"
-            
-            read -p "Pilih nombor executable untuk dijalankan: " exec_choice
-            
-            if [[ $exec_choice -ge 1 && $exec_choice -lt $count ]]; then
-                selected_exec="${exec_array[$exec_choice]}"
-                print_status "Menjalankan ${selected_exec} di Raspberry Pi..."
-                sshpass -p "$pi_password" ssh -t -o StrictHostKeyChecking=no ${pi_username}@${pi_address} "cd ${install_dir}/build && ./${selected_exec}"
-            else
-                print_error "Pilihan tidak sah"
-            fi
-        fi
+        # Tiada kod tambahan diperlukan kerana aplikasi WaktuSolat dijalankan secara terus
     fi
 }
 
