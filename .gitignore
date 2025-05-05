@@ -57,3 +57,7 @@ media/
 
 # Visual Studio Code
 #.vscode/
+
+# macOS files
+.DS_Store
+**/.DS_Store
