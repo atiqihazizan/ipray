@@ -119,9 +119,6 @@ int main() {
   ));
 
 
-  // Main beep menggunakan fungsi baru
-  // playFullSound(loader, "audio_beep_loop_solat.wav", 1);
-
   // Main loop
   while (window.isOpen()) {
     // Handle events and reload media if needed
@@ -164,11 +161,27 @@ int main() {
     // Clear the window
     window.clear();
     
+    // Draw the layout (termasuk waktu solat)
     layoutManager.draw();
+    
+    // Kira berapa frame yang telah dipaparkan
+    static int frameCount = 0;
+    frameCount++;
+    
+    // Main beep selepas beberapa frame dipaparkan (untuk memastikan layout telah dipaparkan sepenuhnya)
+    static bool firstDisplay = true;
+    if (firstDisplay && frameCount > 10) {  // Tunggu 10 frame untuk memastikan layout telah dipaparkan dengan sempurna
+      std::cout << "Layout telah dipaparkan. Memainkan bunyi beep..." << std::endl;
+      playSimpleBeep(loader, "beep_loop_solat.wav");
+      firstDisplay = false;
+    }
     
     // Display
     window.display();
   }
+  
+  // Aplikasi ditutup
+  std::cout << "Aplikasi ditutup." << std::endl;
   
   return EXIT_SUCCESS;
 }
