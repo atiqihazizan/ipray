@@ -93,9 +93,13 @@ main() {
     # Tanya jika pengguna ingin menjalankan aplikasi
     read -p "Adakah anda ingin menjalankan aplikasi di Raspberry Pi? (y/n) " run_app
     if [[ $run_app == "y" || $run_app == "Y" ]]; then
-        # Jalankan aplikasi WaktuSolat secara terus
+        # Jalankan aplikasi WaktuSolat secara terus dengan persekitaran grafik yang betul
         print_status "Menjalankan aplikasi WaktuSolat di Raspberry Pi..."
-        sshpass -p "$pi_password" ssh -t -o StrictHostKeyChecking=no ${pi_username}@${pi_address} "cd ${install_dir}/build && ./WaktuSolat"
+        print_warning "Pastikan Raspberry Pi mempunyai persekitaran grafik (X11) yang berjalan."
+        print_warning "Jika anda menggunakan Raspberry Pi secara headless (tanpa skrin), anda perlu menjalankan aplikasi ini melalui VNC atau persekitaran grafik lain."
+        
+        # Semak sama ada DISPLAY telah ditetapkan
+        sshpass -p "$pi_password" ssh -t -o StrictHostKeyChecking=no ${pi_username}@${pi_address} "if [ -z \"$DISPLAY\" ]; then export DISPLAY=:0; fi && cd ${install_dir}/build && ./WaktuSolat"
         
         # Tiada kod tambahan diperlukan kerana aplikasi WaktuSolat dijalankan secara terus
     fi
