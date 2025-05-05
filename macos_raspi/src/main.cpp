@@ -48,7 +48,7 @@ int main() {
   layoutManager.enableLayout(LayoutType::DEFAULT, true);
   layoutManager.enableLayout(LayoutType::PRAYER_ALERT, false);
   layoutManager.enableLayout(LayoutType::IQAMAH, false);
-  layoutManager.enableLayout(LayoutType::LECTURE, false);
+  layoutManager.enableLayout(LayoutType::LECTURE, true);
   layoutManager.enableLayout(LayoutType::UPCOMING, false);
   layoutManager.enableLayout(LayoutType::SLIDESHOW, false);  // Enable slideshow layout
   layoutManager.enableLayout(LayoutType::EVENT, false);
