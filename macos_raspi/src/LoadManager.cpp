@@ -6,9 +6,9 @@
 #include <filesystem>
 
 // Define static const variables
-const std::string LoadManager::REGULAR_FONT_ID = "regular_bebas";
-const std::string LoadManager::BOLD_FONT_ID = "bold_din";
-const std::string LoadManager::LIGHT_FONT_ID = "light_din";
+const std::string LoadManager::REGULAR_FONT_ID = "bebas";
+const std::string LoadManager::BOLD_FONT_ID = "din_bold";
+const std::string LoadManager::LIGHT_FONT_ID = "din_light";
 
 LoadManager::LoadManager() {
   // Load default media files
@@ -205,7 +205,6 @@ LoadStatus LoadManager::loadSlideshows(const std::vector<std::string>& filePaths
 
 // ===== FONT LOADING =====
 LoadStatus LoadManager::loadFont(const std::string& filePath, const std::string& id) {
-  std::string resPath = resourcePath() + filePath;
   std::string fontId = id.empty() ? generateId(filePath, MediaType::FONT) : id;
   
   // Check if font with this ID already exists
@@ -215,18 +214,49 @@ LoadStatus LoadManager::loadFont(const std::string& filePath, const std::string&
   
   // Create new font
   auto font = std::make_unique<sf::Font>();
+  bool fontLoaded = false;
+  std::string errorMsg;
   
-  // Try to load the font with resource path
-  if (!font->loadFromFile(resPath)) {
-      // Try direct path as fallback
-      if (!font->loadFromFile(filePath)) {
-          return LoadStatus(false, "Failed to load font \"" + filePath + "\". Reason: Unable to open file");
-      }
+  // Senarai laluan yang mungkin untuk font
+  std::vector<std::string> possiblePaths = {
+      resourcePath() + filePath,                                  // Laluan standard dengan resourcePath()
+      filePath,                                                  // Laluan langsung
+      resourcePath() + "resources/" + filePath,                 // Laluan dengan resources/ tambahan
+      "resources/" + filePath,                                 // Laluan resources/ tanpa resourcePath()
+      "../resources/" + filePath,                              // Laluan relatif ke resources/
+      resourcePath() + "../resources/" + filePath,              // Laluan relatif dengan resourcePath()
+      "../" + filePath                                         // Laluan relatif ke direktori induk
+  };
+  
+  // Cari nama fail tanpa laluan
+  std::string filename = filePath;
+  size_t lastSlash = filePath.find_last_of("/\\");
+  if (lastSlash != std::string::npos) {
+      filename = filePath.substr(lastSlash + 1);
   }
   
-  // Add to map only if loading was successful
-  m_fontMap[fontId] = std::move(font);
-  return LoadStatus(true, "Font loaded successfully: " + filePath);
+  // Tambah laluan berdasarkan nama fail sahaja
+  possiblePaths.push_back(resourcePath() + "fonts/" + filename);
+  possiblePaths.push_back("fonts/" + filename);
+  possiblePaths.push_back(resourcePath() + "resources/fonts/" + filename);
+  possiblePaths.push_back("resources/fonts/" + filename);
+  
+  // Cuba semua laluan yang mungkin
+  for (const auto& path : possiblePaths) {
+      if (font->loadFromFile(path)) {
+          fontLoaded = true;
+          break;
+      }
+      errorMsg += "Failed to load font from " + path + "\n";
+  }
+  
+  // Jika font berjaya dimuatkan, tambah ke map
+  if (fontLoaded) {
+      m_fontMap[fontId] = std::move(font);
+      return LoadStatus(true, "Font loaded successfully");
+  }
+  
+  return LoadStatus(false, "Failed to load font \"" + filePath + "\". Reason: Unable to open file. Tried paths:\n" + errorMsg);
 }
 
 LoadStatus LoadManager::loadFonts(const std::vector<std::string>& fontFiles, const std::vector<std::string>& ids) {

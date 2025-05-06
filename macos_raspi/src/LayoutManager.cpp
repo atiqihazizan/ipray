@@ -106,7 +106,7 @@ void LayoutManager::initialize(const LoadManager& loader) {
   }
   
   // Create layout instances and initialize them
-  m_defaultLayout = std::make_unique<DefaultLayout>(m_state, m_timeSolat, const_cast<LoadManager&>(*m_loadManager));
+  m_defaultLayout = std::make_unique<DefaultLayout>(m_state);
   m_prayerAlertLayout = std::make_unique<PrayerAlertLayout>(m_state, m_timeSolat);
   m_lectureLayout = std::make_unique<LectureLayout>(m_state);
   m_upcomingLayout = std::make_unique<UpcomingLayout>(m_state);
