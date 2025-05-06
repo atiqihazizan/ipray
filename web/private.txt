@@ -1,0 +1,12 @@
+//ZONE
+PNG01
+
+//PEMBERITAHUAN
+
+//PENGUMUMAN
+
+//SLIDESHOW 0:img,1:vid,2:iframe
+
+//COUNTDOWN
+
+//PROGRAM

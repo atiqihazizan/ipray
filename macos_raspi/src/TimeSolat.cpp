@@ -321,6 +321,22 @@ bool TimeSolat::isInPrayerAlertWindow(int prayerIndex) const {
   return (diff <= 10 && diff >= -3);
 }
 
+// Implementasi untuk mendapatkan nama waktu solat berdasarkan indeks
+std::string TimeSolat::getPrayerNameString(int index) const {
+  if (index >= 0 && index < static_cast<int>(m_prayerNames.size())) {
+    return m_prayerNames[index];
+  }
+  return "";
+}
+
+// Implementasi untuk mendapatkan waktu solat berdasarkan indeks
+std::string TimeSolat::getPrayerTimeString(int index) const {
+  if (index >= 0 && index < static_cast<int>(m_prayerTimes.size())) {
+    return m_prayerTimes[index];
+  }
+  return "";
+}
+
 // Add this implementation in TimeSolat.cpp:
 void TimeSolat::loadPrayerTimesFromTakwim(const std::string& takwimData) {
   // Reset prayer times

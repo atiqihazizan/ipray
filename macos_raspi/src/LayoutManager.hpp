@@ -67,6 +67,9 @@ public:
   bool isLayoutEnabled(LayoutType layout) const;
   void setTransitionTime(float seconds);
   
+  // Dapatkan layout semasa
+  LayoutType getCurrentLayout() const { return m_currentLayout; }
+  
   // Content management
   void addLecture(const Lecture& lecture);
   void addActivity(const Activity& activity);

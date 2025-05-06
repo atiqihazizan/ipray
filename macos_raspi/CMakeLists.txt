@@ -71,6 +71,7 @@ set(MAIN_SOURCES
   src/LoadManager.cpp
   src/LayoutManager.cpp
   src/BeepUtil.cpp
+  src/ClockDateDisplay.cpp
 )
 
 # Tambah ResourcePath.mm untuk macOS atau ResourcePath.cpp untuk Linux/Raspberry Pi

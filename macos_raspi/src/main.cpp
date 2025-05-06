@@ -12,7 +12,8 @@
 #include "LayoutManager.hpp"
 #include "AppState.hpp"
 #include "Event.hpp"
-#include "BeepUtil.h" 
+#include "BeepUtil.h"
+#include "ClockDateDisplay.hpp" 
 
 int main() {
   // Initialize AppState
@@ -119,6 +120,10 @@ int main() {
   ));
 
 
+  // Cipta komponen ClockDateDisplay
+  ClockDateDisplay clockDisplay(window, state, timeSolat);
+  clockDisplay.initialize(loader.getFont(LoadManager::REGULAR_FONT_ID), loader.getFont(LoadManager::BOLD_FONT_ID), loader.getFont(LoadManager::LIGHT_FONT_ID));
+
   // Main loop
   while (window.isOpen()) {
     // Handle events and reload media if needed
@@ -155,6 +160,9 @@ int main() {
     // Update state and clock
     updateState(state, clocks);
     
+    // Update komponen ClockDateDisplay
+    clockDisplay.update();
+    
     // Update the layout manager
     layoutManager.update();
     
@@ -164,6 +172,9 @@ int main() {
     // Draw the layout (termasuk waktu solat)
     layoutManager.draw();
     
+    // Draw komponen ClockDateDisplay untuk semua layout
+    clockDisplay.draw();
+    
     // Kira berapa frame yang telah dipaparkan
     static int frameCount = 0;
     frameCount++;
@@ -171,8 +182,8 @@ int main() {
     // Main beep selepas beberapa frame dipaparkan (untuk memastikan layout telah dipaparkan sepenuhnya)
     static bool firstDisplay = true;
     if (firstDisplay && frameCount > 10) {  // Tunggu 10 frame untuk memastikan layout telah dipaparkan dengan sempurna
-      std::cout << "Layout telah dipaparkan. Memainkan bunyi beep..." << std::endl;
-      playSimpleBeep(loader, "beep_loop_solat.wav");
+      // std::cout << "Layout telah dipaparkan. Memainkan bunyi beep..." << std::endl;
+      playSimpleBeep();  // Gunakan versi tanpa LoadManager
       firstDisplay = false;
     }
     

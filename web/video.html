@@ -1,0 +1,37 @@
+<!DOCTYPE html> 
+<html> 
+<body> 
+
+<button onclick="playVid()" type="button">Play Video</button>
+<button onclick="pauseVid()" type="button">Pause Video</button><br> 
+<div id="status">*</div>
+
+<!--<video id="myVideo" width="320" height="176">-->
+<!--  <source src="video/video01.mp4" type="video/mp4">-->
+<!--  <source src="video/video01.ogg" type="video/ogg">-->
+<!--  Your browser does not support HTML5 video.-->
+<!--</video>-->
+
+<!--<video id="myVideo" width="320" height="176" src="https://media.geeksforgeeks.org/wp-content/uploads/20210314115545/sample-video.mp4"></video>-->
+<video id="myVideo" width="320" height="176" src="video/video01.mp4"></video>
+
+<script>
+// https://www.w3schools.com/tags/ref_av_dom.asp
+// https://www.w3schools.com/tags/tryit.asp?filename=tryhtml5_av_met_play_pause
+var vid = document.getElementById("myVideo"); 
+var sts = document.getElementById("status");
+function playVid() { 
+  sts.innerHTML = "Playing...";
+  vid.play(); 
+} 
+
+function pauseVid() { 
+  vid.pause(); 
+}
+vid.addEventListener('ended', (event) => {
+  sts.innerHTML = "Ended.";
+});
+</script> 
+
+</body> 
+</html>
