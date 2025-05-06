@@ -69,25 +69,25 @@ bool Text::initializeFonts(const LoadManager& loadManager) {
 // Static Factory Methods
 //------------------------------------------------------------------------------
 Text Text::currentTime(const std::string& text) {
-    Text timeText("", s_regularFont, 200, sf::Color::Yellow, false);
+    Text timeText("", s_regularFont, 300, sf::Color::Yellow, false);
     timeText.setText(text);
     return timeText;
 }
 
 Text Text::dayNumber(const std::string& text) {
-    Text dayNum("", s_regularFont, 130, sf::Color(255, 0, 255), false);
+    Text dayNum("", s_regularFont, 170, sf::Color(255, 0, 255), false);
     dayNum.setText(text);
     return dayNum;
 }
 
 Text Text::dayName(const std::string& text) {
-    Text dayName("", s_regularFont, 60, sf::Color::White, false);
+    Text dayName("", s_regularFont, 80, sf::Color::White, false);
     dayName.setText(text);
     return dayName;
 }
 
 Text Text::yearMonth(const std::string& text) {
-    Text yearMonth("", s_regularFont, 55, sf::Color::Cyan, false);
+    Text yearMonth("", s_regularFont, 70, sf::Color::Cyan, false);
     yearMonth.setText(text);
     return yearMonth;
 }
@@ -99,14 +99,14 @@ Text Text::yearNumber(const std::string& text) {
 }
 
 Text Text::prayerName(const std::string& text) {
-    Text prayerName("", s_regularFont, 50, sf::Color::White, false);
+    Text prayerName("", s_regularFont, 80, sf::Color::White, false);
     prayerName.setText(text);
     prayerName.enableShadow(3.0f, sf::Color(0, 0, 0, 180));
     return prayerName;
 }
 
 Text Text::prayerTime(const std::string& text) {
-    Text prayerTime("", s_regularFont, 120, sf::Color::Red, false);
+    Text prayerTime("", s_regularFont, 170, sf::Color::Red, false);
     prayerTime.setText(text);
     prayerTime.enableShadow(3.0f, sf::Color(0, 0, 0, 180));
     return prayerTime;

@@ -7,6 +7,9 @@
 #include <string>
 #include "LoadManager.hpp"
 
+// Fungsi untuk main satu beep dengan durasi tetap (tanpa LoadManager)
+void playSimpleBeep();
+
 // Fungsi untuk main satu beep dengan durasi tetap
 void playSimpleBeep(LoadManager& loader, const std::string& audioId = "audio_beep.wav");
 
@@ -20,4 +23,4 @@ void playFullSound(LoadManager& loader, const std::string& audioId = "audio_beep
 // Fungsi untuk main audio secara async (tidak block paparan)
 void playSoundAsync(LoadManager& loader, const std::string& audioId, int repeat = 1);
 
-#endif // BEEP_UTIL_H
+#endif // BEEP_UTIL_H // BEEP_UTIL_H

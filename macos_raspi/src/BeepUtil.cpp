@@ -1,8 +1,48 @@
 #include "BeepUtil.h"
 #include <thread>
+#include <cmath>
 #ifdef _WIN32
   #include <windows.h>
 #endif
+
+// Fungsi untuk main satu beep dengan durasi tetap (tanpa LoadManager)
+void playSimpleBeep() {
+#ifdef _WIN32
+  // Windows implementation
+  Beep(2750, 300);
+#else
+  // UNIX/Linux/Mac implementation
+  // Gunakan SFML untuk memainkan bunyi beep
+  static sf::SoundBuffer beepBuffer;
+  static bool bufferLoaded = false;
+  
+  if (!bufferLoaded) {
+    // Cipta bunyi beep secara programatik
+    const int sampleRate = 44100;
+    const float frequency = 2750.0f;  // 750 Hz
+    const float duration = 0.3f;     // 300 ms
+    const int sampleCount = static_cast<int>(sampleRate * duration);
+    
+    std::vector<sf::Int16> samples(sampleCount);
+    for (int i = 0; i < sampleCount; ++i) {
+      float t = static_cast<float>(i) / sampleRate;
+      float amplitude = 30000.0f;
+      samples[i] = static_cast<sf::Int16>(amplitude * sin(2.0f * 3.14159f * frequency * t));
+    }
+    
+    beepBuffer.loadFromSamples(samples.data(), sampleCount, 1, sampleRate);
+    bufferLoaded = true;
+  }
+  
+  static sf::Sound beepSound;
+  beepSound.setBuffer(beepBuffer);
+  beepSound.play();
+  
+  // Tunggu bunyi beep tamat
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+#endif
+  std::cout << "Simple beep played" << std::endl;
+}
 
 // Fungsi untuk main satu beep dengan durasi tetap
 void playSimpleBeep(LoadManager& loader, const std::string& audioId) {
