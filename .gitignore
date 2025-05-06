@@ -70,3 +70,4 @@ macos_raspi/build/
 **/cmake_install.cmake
 **/Makefile
 **/compiler_depend.internal
+backup/
