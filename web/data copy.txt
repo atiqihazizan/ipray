@@ -1,18 +1,17 @@
 //ZONE
-PNG01
+SGR01
 
 //PEMBERITAHUAN
-SELAMAT DATANG ....
+نَوَيْتُ أَنْ أَعْتَكِفَ فِي هَذَا الْمَسْجِدِ للهِ تَعَالَى
 
 //PENGUMUMAN
 2022-07-17 15:30|MAJLIS KORBAN 1437H|HARI RAYA AIDIL ADHA|AHAD, 11 SEPTEMBER 2016|10AM-3PM|SURAU AL-IRSYAD, TAMAN KELANA|SEMUA AHLI KARIAH
 2023-07-18 13:00|MESYUARAT PERDANA|PERESTASI PEKERJA|AHAD, 11 SEPTEMBER 2016|10AM-3PM|BILIK MESYUARAT UTAMA|JABATAN HR
 
 //SLIDESHOW 0:img,1:vid,2:iframe
-./slides/slide10.jpg|0
-./slides/slide11.jpg|0
-./slides/slide12.jpg|0
-./video/video01.mp4|1|./slides/slide10.jpg
+./slides/slide01.jpg|0
+./slides/slide02.jpg|0
+./video/video00.mp4|1|./slides/slide03.jpg
 
 //COUNTDOWN
 03-04-2023|03-APRIL|1-RAMADHAN|AWAL RAMADHAN

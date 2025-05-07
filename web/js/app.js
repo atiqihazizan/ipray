@@ -182,7 +182,7 @@ const present = (function(){
     HijriDate();
     $("#day2").html(NUM2(DateTime.dayh));
     $("#bulan").html(hname[DateTime.monh])
-    $("#date2").html(DateTime.yearh);
+    $("#date2").html(`${DateTime.yearh}H`);
   }
   function ParseWaktu(text){
     var atext = text.split("\r\n");
@@ -316,7 +316,7 @@ const present = (function(){
     var rand = random()
     var page = iPray.page + 1;
     var attr = 0;
-
+console.log(page)
     if(page > maxPage) page = 0;
     if($('.page').hasClass('disabled')) page ++;
     if(animeRan === rand) animeRan = random()
@@ -338,10 +338,10 @@ const present = (function(){
 
     switch(iPray.page){
     case 0: // home
-      $('body').css('backgroundImage', 'url(images/picture1.jpg)');
+      $('body').css('backgroundImage', 'url(images/mta.JPG)');
       break;
     case 1: // announcement
-      if(umumActive.length === 0) {await PageShow(); return;}
+      if(umumData.length === 0) {await PageShow(); return;}
       iPray.umum = 0;
       $('body').css('backgroundImage', 'url(images/picture2.jpg)');
       showAnnouncement().init()
@@ -408,8 +408,8 @@ const present = (function(){
       $('.waktu.solattime').addClass('blink')
     }
   }
-  async function ReadWaktu(code) {
-    let response = await fetch("./data/"+code+".txt");
+  async function ReadWaktu() {
+    let response = await fetch("./takwim.txt");
     if(response.status !== 200) { throw new Error("Server Error");  }
     let text = await response.text();
     ParseWaktu(text);
@@ -438,13 +438,12 @@ const present = (function(){
       }).join('')
     }()
 
-    return {'code':aGroup[0][0], 'news':news??'', 'announce':aGroup[2]??[], 'slider':slider, 'even':aGroup[4]||[], 'program':aGroup[5]??[]}
+    return {'zone':aGroup[0][0], 'news':news??'', 'announce':aGroup[2]??[], 'slider':slider, 'even':aGroup[4]||[], 'program':aGroup[5]??[]}
   }
   async function GetConfig(){
-    const aFile = ['config.txt','public.txt','private.txt'];
-    const loadFile = await readFile(dirPath + aFile[0])
-    const rawData = await loadFile.split("\n")??[]
-    const aConf = await rawData.reduce(function(result,item,index,array){let atext = item.split('=');if(item !== '' && item.indexOf('//',0)) {result[atext[0]] = atext[1]}return result},{})
+    const loadFile = await readFile(dirPath + 'config.txt')
+    const rawData = loadFile.split("\n")??[]
+    const aConf = rawData.reduce(function(result,item,index,array){let atext = item.split('=');if(item !== '' && item.indexOf('//',0)) {result[atext[0]] = atext[1]}return result},{})
     const dlyView = rawData.filter((m,n)=>m.indexOf('TMR_VW') !== -1).map(m=>parseInt(m.split('=')[1]))
     const attrView = rawData.filter((m,n)=>m.indexOf('ATT_VW') !== -1).map(m=>parseInt(m.split('=')[1]))
 
@@ -458,32 +457,24 @@ const present = (function(){
     countdownData = [];
     let imgs = ''
     let info = ''
-    let zone = ''
 
-    for(let i = 1; i < aFile.length; i++){
-      let name = aFile[i]
-      let {code,even,news,slider,announce,program} = await GetData(dirPath + name);
-      zone = code
-      countdownData.push(...even)
-      umumData.push(...announce)
-      if(slider.length > 0)imgs += slider
-      info += news
-
-      codezone = zone || 'PNG01';
-      $('#slider').html(imgs)
-      $("#msgbar").html(`<ul class="marquee">${info}</ul>`)
-    }
+    let res = await GetData(dirPath + 'data.txt')
+    countdownData.push(...res.even)
+    umumData.push(...res.announce)
+    if(res.slider.length > 0)imgs += res.slider
+    info += res.news
+    $('#slider').html(imgs)
+    $("#msgbar").html(`<ul class="marquee">${info}</ul>`)
   }
 
   async function init(){
     maxPage = $('.pages').length -1;
     iPray.page = maxPage;
-
     GetDateTime();
     await GetConfig();
-    await ReadWaktu(await codezone);
-    setInterval(ShowTime,1000);
-    // iPray.page = 1;
+    await ReadWaktu();
+    setInterval(ShowTime,500);
+    // iPray.page = 0;
     // await PageShow()
   }
   return {init: init}

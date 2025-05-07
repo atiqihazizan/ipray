@@ -1,8 +1,4 @@
 'use strict'
-const fs = require('fs');
-const fsp = require('fs/promises');
-// const path = require("path");
-// const {rootPath} = require("electron-root-path");
 const present = (function(){
   const animated = [
     '',
@@ -40,11 +36,8 @@ const present = (function(){
     'zoomInRight',
     'zoomInUp',
   ];
-  const db = new Dexie('thpTakwim');
-  const rootPath = require('electron-root-path').rootPath;
+  
   const machineId = crypto.randomUUID()
-  const platform = process.platform;
-  const env = process.env.NODE_ENV;
 
   const random = () => Math.floor(Math.random() * animated.length)
   const sysData = {agency:{},program:[]};
@@ -56,48 +49,7 @@ const present = (function(){
   const hname = ["HIJRAH","MUHARRAM","SAFAR","RAB.AWAL","RAB.AKHIR","JAM.AWAL","JAM.AKHIR","REJAB","SYA`BAN","RAMADHAN","SYAWAL","ZULKAEDAH","ZULHIJJAH"];
   const wname = ["MASA","SUBUH","SYURUK","ZOHOR","ASAR","MAGHRIB","ISYAK"];
   const cname = ["K.LUMPUR","MEKAH","MADINAH","AL-AQSA"];
-  const defFile = [`// DELAY VIEW
-TMR_VW0=3
-TMR_VW1=6
-TMR_VW2=5
-TMR_VW3=6
-TMR_VW4=5
-
-// ATTR VIEW
-ATT_VW0=11
-ATT_VW1=11
-ATT_VW2=12
-ATT_VW3=4
-ATT_VW4=11
-
-// MESSAGE ON/OFF
-MSGSTS=1
-`,`//ZONE
-SGR01
-
-//PEMBERITAHUAN
-SELAMAT DATANG KE TH PLANTATION 2023
-
-//PENGUMUMAN
-
-//SLIDESHOW 0:img,1:vid,2:iframe
-
-//COUNTDOWN
-
-//PROGRAM
-`,`//ZONE
-SGR01
-
-//PEMBERITAHUAN
-
-//PENGUMUMAN
-
-//SLIDESHOW 0:img,1:vid,2:iframe
-
-//COUNTDOWN
-
-//PROGRAM
-`]
+  const dirPath = './';
 
   var slides = [];
   var countdownData = [];
@@ -105,9 +57,6 @@ SGR01
   var umumData = [];
   var umumActive = [];
 
-  var dirPath = '';
-  var rootFiles = [];
-  var srcFile = ''
   var codezone = '';
   var firstFlag = true;
   var azanPlay = false;
@@ -168,6 +117,7 @@ SGR01
     let hour = currentDate.getHours();
     let min = currentDate.getMinutes();
     let sec = currentDate.getSeconds();
+
     let time = hour * 100 + min;
     if(DateTime.time == time) return false;
     DateTime.dow = dow; DateTime.time = time;
@@ -224,7 +174,7 @@ SGR01
     $(".waktu").removeClass('next')
     $("#masa" + wnxt).closest('.waktu').addClass('next')
 
-    console.log(wnxt,wname[wnxt],DateTime.days,sysData.wdata[DateTime.days],DateTime)
+    // console.log(wnxt,wname[wnxt],DateTime.days,sysData.wdata[DateTime.days],DateTime)
     if(sysData.wdata[DateTime.days][wnxt] === DateTime.time && document.querySelector('.waktu.solattime') === null) $("#masa" + wnxt).closest('.waktu').addClass('solattime')
     if(sysData.wdata[DateTime.days][wnxt] !== DateTime.time && document.querySelector('.waktu.solattime') !== null) $(".waktu.solattime").removeClass('solattime').removeClass('blink')
 
@@ -232,7 +182,7 @@ SGR01
     HijriDate();
     $("#day2").html(NUM2(DateTime.dayh));
     $("#bulan").html(hname[DateTime.monh])
-    $("#date2").html(DateTime.yearh);
+    $("#date2").html(`${DateTime.yearh}H`);
   }
   function ParseWaktu(text){
     var atext = text.split("\r\n");
@@ -308,7 +258,7 @@ SGR01
   }
   function showVid(){
     const _slider = slides[iPray.slide];
-    let objVid = `<div class="animated slideInLeft videoPlay" id="elPopUp"><video id="${_slider.id}" muted="true" class="cover">
+    let objVid = `<div class="animated slideInLeft videoPlay" id="elPopUp"><video id="${_slider.id}" muted="true" class="wfull">
         <source src="${_slider.filename}" type="video/mp4">
         <source src="${_slider.filename}" type="video/ogg">
         Your browser does not support the audio element.
@@ -388,7 +338,7 @@ SGR01
 
     switch(iPray.page){
     case 0: // home
-      $('body').css('backgroundImage', 'url(images/bg1.png)');
+      $('body').css('backgroundImage', 'url(images/mta.JPG)');
       break;
     case 1: // announcement
       if(umumActive.length === 0) {await PageShow(); return;}
@@ -458,8 +408,8 @@ SGR01
       $('.waktu.solattime').addClass('blink')
     }
   }
-  async function ReadWaktu(code) {
-    let response = await fetch("./data/"+code+".txt");
+  async function ReadWaktu() {
+    let response = await fetch("./takwim.txt");
     if(response.status !== 200) { throw new Error("Server Error");  }
     let text = await response.text();
     ParseWaktu(text);
@@ -468,23 +418,9 @@ SGR01
     //PageShow();
   }
 
-  async function dirList(){
-    dirPath = rootPath + '/';
-    if(env === 'production' && platform === 'darwin') dirPath += '../../../../'
-    else if(env === 'production' && platform !== 'darwin') {
-      //dirPath += '../../'; // package without asar
-      dirPath += '../../../'; // app.asar
-    }
-    // console.log(rootPath,"\n",dirPath)
-    return new Promise((resolve, reject) => {fs.readdir(dirPath, function (err, files) {if (err) reject(err); else resolve(files)});});
-  }
-
-  async function readFile(filename,def){
-    if(!fs.existsSync(filename)) await fsp.writeFile(filename, def, {flag: "wx"});
-    return await fs.readFileSync(filename,"utf8");
-  }
-  async function GetData(filePath,def){
-    const loadFile = await readFile(filePath,def)
+  async function readFile(filename){let con = await fetch(filename);let txt = await con.text();return txt;}
+  async function GetData(filePath){
+    const loadFile = await readFile(filePath)
     const aBlock = loadFile.split("\n\n")
     const aGroup = aBlock.map(b => b.split("\n").slice(1))
     const news = function (){return aGroup[1].filter((m,n)=>m.toString().length>0).map((m,n) => `<li class="textmsg">${m}</li>`).join('')}()
@@ -493,7 +429,6 @@ SGR01
       return aRow.map((s,n) => {
         const aCol = s.toString().split("|");
         let filePath = aCol[0];
-        // if(!fs.existsSync(filePath)) return '';
         slides.push({id:'slidvid'+n,isVid:0,filename:filePath});
         switch (parseInt(aCol[1])){
           case 1:slides[n].isVid = 1;filePath = aCol[2];break; // video
@@ -503,20 +438,12 @@ SGR01
       }).join('')
     }()
 
-    return {
-      'code':aGroup[0][0],
-      'news':news??'',
-      'announce':aGroup[2]??[],//.filter(r=> (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0),GetDiff2(r)]),
-      'slider':slider,
-      'even':aGroup[4]||[],
-      'program':aGroup[5]??[],
-    }
+    return {'zone':aGroup[0][0], 'news':news??'', 'announce':aGroup[2]??[], 'slider':slider, 'even':aGroup[4]||[], 'program':aGroup[5]??[]}
   }
   async function GetConfig(){
-    const aFile = ['config.txt','public.txt','private.txt'];
-    const loadFile = await readFile(dirPath + aFile[0],defFile[0])
-    const rawData = await loadFile.split("\n")??[]
-    const aConf = await rawData.reduce(function(result,item,index,array){let atext = item.split('=');if(item !== '' && item.indexOf('//',0)) {result[atext[0]] = atext[1]}return result},{})
+    const loadFile = await readFile(dirPath + 'config.txt')
+    const rawData = loadFile.split("\n")??[]
+    const aConf = rawData.reduce(function(result,item,index,array){let atext = item.split('=');if(item !== '' && item.indexOf('//',0)) {result[atext[0]] = atext[1]}return result},{})
     const dlyView = rawData.filter((m,n)=>m.indexOf('TMR_VW') !== -1).map(m=>parseInt(m.split('=')[1]))
     const attrView = rawData.filter((m,n)=>m.indexOf('ATT_VW') !== -1).map(m=>parseInt(m.split('=')[1]))
 
@@ -530,32 +457,23 @@ SGR01
     countdownData = [];
     let imgs = ''
     let info = ''
-    let zone = ''
 
-    for(let i = 1; i < aFile.length; i++){
-      let name = aFile[i]
-      let {code,even,news,slider,announce,program} = await GetData(dirPath + name,defFile[i]);
-      zone = code
-      countdownData.push(...even)
-      umumData.push(...announce)
-      if(slider.length > 0)imgs += slider
-      info += news
-
-      codezone = zone || 'PNG01';
-      $('#slider').html(imgs)
-      // $("#msgbar").html(`<ul class="marquee__content">${news}</ul><ul class="marquee__content" aria-hidden="true">${news}</ul>`)
-      $("#msgbar").html(`<ul class="marquee">${info}</ul>`)
-    }
+    let res = await GetData(dirPath + 'data.txt')
+    countdownData.push(...res.even)
+    umumData.push(...res.announce)
+    if(res.slider.length > 0)imgs += res.slider
+    info += res.news
+    $('#slider').html(imgs)
+    $("#msgbar").html(`<ul class="marquee">${info}</ul>`)
   }
 
   async function init(){
     maxPage = $('.pages').length -1;
     iPray.page = maxPage;
 
-    rootFiles = await dirList()
     GetDateTime();
     await GetConfig();
-    await ReadWaktu(await codezone);
+    await ReadWaktu();
     setInterval(ShowTime,500);
     // iPray.page = 1;
     // await PageShow()
