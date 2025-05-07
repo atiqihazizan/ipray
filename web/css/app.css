@@ -47,7 +47,7 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 #masabar .masa { background: black;border-radius: 1rem 0 0 1rem;padding: 0 2rem; padding-bottom: 1rem; color: white; }
 #masabar .masa > div > span { font-size: 150px; line-height: 177px; }
 #masabar .waktu { font-size: 40px; line-height: 77px; }
-#masabar .waktu .tmasa { font-size: 90px; }
+#masabar .waktu .tmasa { font-size: 83px; }
 #masabar .waktu.next { color: #feff00; }
 #masabar .waktu.warning { color: darkorange; }
 #masabar .waktu-solat { margin-left: 3rem; }
@@ -57,8 +57,8 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 .marquee {display: flex;--gap: 100vw;gap: var(--gap); padding: 0.6rem 0;}
 .marquee li {color: white; white-space: nowrap;}
 
-.maintitle { font-family: FONT3; font-size: 90px; line-height: 80px; margin: 5rem auto 0; text-align: center; color: white;}
-.remain {margin-top: 0; font-size: 10rem;}
+.maintitle { font-family: FONT3; font-size: 90px; line-height: 80px; margin: 3rem auto 0; text-align: center; color: white;}
+.remain {margin-top: 30px; line-height: .7 !important; font-size: 10rem;}
 .tablefram { padding: .7rem; background: #80808080}
 .table-disp {width: 100%; border: 0; border-spacing: 0; background: #ffffffad; padding: 1rem;}
 .table-disp td {padding: 1rem 3rem; min-height: 100px}

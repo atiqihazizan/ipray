@@ -418,95 +418,93 @@ const present = (function(){
   }
 
   async function readFile(filename){let con = await fetch(filename);let txt = await con.text();return txt;}
+  async function GetData(filePath){
+    const loadFile = await readFile(filePath)
+    const aBlock = loadFile.split("\n\n")
+    const aGroup = aBlock.map(b => b.split("\n").slice(1))
+    const news = function (){return aGroup[1].filter((m,n)=>m.toString().length>0).map((m,n) => `<li class="textmsg">${m}</li>`).join('')}()
+    const slider = function(){
+      const aRow = aGroup[3].map(m=> {const item = m.split('=');let txt = item[0];if(item.length > 2) txt = item.join('');return txt;})
+      return aRow.map((s,n) => {
+        const aCol = s.toString().split("|");
+        let filePath = aCol[0];
+        slides.push({id:'slidvid'+n,isVid:0,filename:filePath});
+        switch (parseInt(aCol[1])){
+          case 1:slides[n].isVid = 1;filePath = aCol[2];break; // video
+          case 2:slides[n].isVid = 2;filePath = aCol[2];break; // iframe
+        }
+        return `<img src="${filePath}" alt="" />`
+      }).join('')
+    }()
+
+    return {'zone':aGroup[0][0], 'news':news??'', 'announce':aGroup[2]??[], 'slider':slider, 'even':aGroup[4]||[], 'program':aGroup[5]??[]}
+  }
   async function GetData(filePath) {
     try {
       const loadFile = await readFile(filePath);
-      function parseBlocks(text) {
-        const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        
-        const blocks = [];
-        const lines = normalizedText.split('\n');
-        
-        let currentBlock = null;
-        let currentContent = [];
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].replace(/\r/g, '').trim();
-          if (line.startsWith('//')) {
-            if (currentBlock !== null) {blocks.push({name: currentBlock,content: currentContent});}
-            currentBlock = line.substring(2).trim();
-            currentContent = [];
-          }
-          else if (line === '' && currentBlock !== null) {continue;}
-          else if (line !== '' && currentBlock !== null) {currentContent.push(line);}
-        }
-        
-        if (currentBlock !== null) {blocks.push({name: currentBlock,content: currentContent});}
-        
-        return blocks;
-      }
+      const aBlock = loadFile.split("\n\n");
+      const aGroup = aBlock.map(b => b.split("\n").slice(1));
       
-      const blocks = parseBlocks(loadFile);
-      function findBlock(name) {return blocks.find(block => block.name.toUpperCase().includes(name.toUpperCase()));}
-      
+      // Define slides array
       const slides = [];
       
-      const zoneBlock = findBlock('ZONE');
-      const zone = zoneBlock && zoneBlock.content.length > 0 ? zoneBlock.content[0].trim() : '';
+      // Process news
+      const news = aGroup[1]
+        .filter(m => m.toString().length > 0)
+        .map(m => `<li class="textmsg">${m}</li>`)
+        .join('');
       
-      const noticeBlock = findBlock('PEMBERITAHUAN');
-      const news = noticeBlock && noticeBlock.content.length > 0 
-        ? noticeBlock.content
-          .filter(m => m && m.toString().trim().length > 0)
-          .map(m => `<li class="textmsg">${m.trim()}</li>`)
-          .join('')
-        : '';
-      
-      const announceBlock = findBlock('PENGUMUMAN');
-      const announce = announceBlock ? announceBlock.content : [];
-      
-      const slideBlock = findBlock('SLIDESHOW');
-      const slider = slideBlock && slideBlock.content.length > 0 
-        ? slideBlock.content
-          .filter(s => s && s.trim() !== '' && !s.includes('0:img,1:vid,2:iframe')) // Buang baris yang hanya berisi nota
-          .map((s, n) => {
-            const aCol = s.toString().trim().split("|");
-            let filePath = aCol[0] ? aCol[0].trim() : '';
-            slides.push({id: 'slidvid' + n, isVid: 0, filename: filePath});
-            
-            if (aCol.length > 1) {
-              const slideType = parseInt(aCol[1] ? aCol[1].trim() : '0');
-              switch (slideType) {
-                case 1: 
-                  slides[n].isVid = 1;
-                  if (aCol.length > 2) filePath = aCol[2] ? aCol[2].trim() : '';
-                  break; // video
-                case 2: 
-                  slides[n].isVid = 2;
-                  if (aCol.length > 2) filePath = aCol[2] ? aCol[2].trim() : '';
-                  break; // iframe
-              }
-            }
-            
-            return `<img src="${filePath}" alt="" />`;
-          }).join('')
-        : '';
-      
-      const countdownBlock = findBlock('COUNTDOWN');
-      const even = countdownBlock ? countdownBlock.content.map(item => item.trim()) : [];
-      
-      const programBlock = findBlock('PROGRAM');
-      const program = programBlock ? programBlock.content.map(item => item.trim()) : [];
-      
-      const result = {'zone': zone,'news': news,'announce': announce,'slider': slider,'slides': slides,'even': even,'program': program};
-      
-      return result;
-      
+      // Process slider/slideshow
+      const slider = (() => {
+        if (!aGroup[3] || aGroup[3].length === 0) return '';
+        
+        const aRow = aGroup[3].map(m => {
+          const item = m.split('=');
+          let txt = item[0];
+          if (item.length > 2) txt = item.join('');
+          return txt;
+        });
+        
+        return aRow.map((s, n) => {
+          const aCol = s.toString().split("|");
+          let filePath = aCol[0];
+          slides.push({id: 'slidvid' + n, isVid: 0, filename: filePath});
+          
+          switch (parseInt(aCol[1] || '0')) {
+            case 1: 
+              slides[n].isVid = 1;
+              filePath = aCol[2] || '';
+              break; // video
+            case 2: 
+              slides[n].isVid = 2;
+              filePath = aCol[2] || '';
+              break; // iframe
+          }
+          
+          return `<img src="${filePath}" alt="" />`;
+        }).join('');
+      })();
+  
+      return {
+        'zone': aGroup[0] && aGroup[0][0] ? aGroup[0][0] : '',
+        'news': news || '',
+        'announce': aGroup[2] || [],
+        'slider': slider,
+        'slides': slides, // Return the slides array
+        'even': aGroup[4] || [],
+        'program': aGroup[5] || []
+      };
     } catch (error) {
       console.error("Error processing file:", error);
-      console.error("Error details:", error.stack);
-      
-      return {'zone': '','news': '',announce: [],slider: '',slides: [],even: [],program: []};
+      return {
+        'zone': '',
+        'news': '',
+        'announce': [],
+        'slider': '',
+        'slides': [],
+        'even': [],
+        'program': []
+      };
     }
   }
 
@@ -529,6 +527,7 @@ const present = (function(){
     let info = ''
 
     let res = await GetData(dirPath + 'data.txt')
+    console.log(res); return;
     countdownData.push(...res.even)
     umumData.push(...res.announce)
     if(res.slider.length > 0)imgs += res.slider
