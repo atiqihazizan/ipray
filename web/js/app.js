@@ -304,26 +304,17 @@ const present = (function(){
   function showAnnouncement(){
     function get(){
       // Hapus animasi lama sebelum menambah animasi baru
-      document.querySelectorAll('.txtum').forEach((i) => {
-        i.classList.remove('fadeInRight');
-        i.classList.remove('fadeOutLeft');
-      });
+      document.querySelectorAll('.txtum').forEach((i) => {i.classList.remove('fadeInRight');i.classList.remove('fadeOutLeft');});
       // Tambah animasi fadeInRight untuk data baru
       document.querySelectorAll('.txtum').forEach((i,n)=>{
         i.textContent = umumActive[iPray.umum][n];
-        if(iPray.umum === 0){
-          i.classList.add(`delay-1s`,'fadeInRight');
-        } else {
-          i.classList.add('fadeInRight');
-        }
+        if(iPray.umum === 0){i.classList.add(`delay-1s`,'fadeInRight');} 
+        else {i.classList.add('fadeInRight');}
       });
       // Setelah beberapa saat, ganti menjadi fadeOutLeft
       if(iPray.umum < (umumActive.length-1)){
         setTimeout(() => {
-          document.querySelectorAll('.txtum').forEach((i,n) => {
-            i.classList.remove(`delay-1s`,'fadeInRight');
-            i.classList.add('fadeOutLeft');
-          });
+          document.querySelectorAll('.txtum').forEach((i,n) => {i.classList.remove(`delay-1s`,'fadeInRight');i.classList.add('fadeOutLeft');});
         }, 5000); // Ganti setelah 5 detik
       }
     }
