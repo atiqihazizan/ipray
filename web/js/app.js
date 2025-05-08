@@ -59,13 +59,17 @@ const present = (function(){
 
   var codezone = '';
   var firstFlag = true;
-  var azanPlay = false;
+  var masukWaktu = false;
   var player;
   var playing = false;
   var elPopUp;
   var animeRan=0;
   var dot = false;
   var maxPage = 0;
+  var beepSound = null;
+  var audioReady = false;
+  var audioCtx;
+  var countBeep = -1;
 
   function NUM2(dd){if(parseInt(dd)<10) return "0"+dd;return ""+dd;}
   function MinToTime(dd){dd = parseInt(dd);return (dd / 60) * 100 + (dd % 60);}
@@ -139,8 +143,8 @@ const present = (function(){
     return false;
   }
   function GetDiff(dt){
-    let now = moment(new Date()).zone('Asia/Kuala_Lumpur') //todays date
-    let end = moment(dt).zone('Asia/Kuala_Lumpur') // another date
+    let now = moment(new Date()).utcOffset(8) //todays date
+    let end = moment(dt).utcOffset(8) // another date
     let asDay = now.diff(end,'days');// Math.round(diff.asDays());
     let asHour = now.diff(end,'hours');// Math.round(diff.asHours());
     let asMin = now.diff(end,'minutes');// Math.round(diff.asMinutes());
@@ -175,8 +179,16 @@ const present = (function(){
     $("#masa" + wnxt).closest('.waktu').addClass('next')
 
     // console.log(wnxt,wname[wnxt],DateTime.days,sysData.wdata[DateTime.days],DateTime)
-    if(sysData.wdata[DateTime.days][wnxt] === DateTime.time && document.querySelector('.waktu.solattime') === null) $("#masa" + wnxt).closest('.waktu').addClass('solattime')
-    if(sysData.wdata[DateTime.days][wnxt] !== DateTime.time && document.querySelector('.waktu.solattime') !== null) $(".waktu.solattime").removeClass('solattime').removeClass('blink')
+    if(sysData.wdata[DateTime.days][wnxt] === DateTime.time && document.querySelector('.waktu.solattime') === null) {
+      $("#masa" + wnxt).closest('.waktu').addClass('solattime')
+      masukWaktu = true;
+      countBeep = 0;
+    }
+    if(sysData.wdata[DateTime.days][wnxt] !== DateTime.time && document.querySelector('.waktu.solattime') !== null) {
+      $(".waktu.solattime").removeClass('solattime').removeClass('blink')
+      masukWaktu = false;
+      countBeep = -1;
+    }
 
     DateTime.maghrib = maghrib;
     HijriDate();
@@ -186,20 +198,16 @@ const present = (function(){
   }
   function ParseWaktu(text){
     var atext = text.split("\r\n");
-    // console.log(atext.length);
     var btext = atext[1].split("=");
     var ctext = btext[1];
     var hdata = [24];
-    // console.log(ctext.length);
     for(var i=0,j=ctext.length;i<j;i+=2){
       var dd = parseInt(ctext.substr(i,2),16);
-      // console.log(dd,ctext.substr(i,2),i,j)
       hdata.push(dd);
     }
     var wdata = [0];
     for(var i=2,j=atext.length;i<j;i++){
       var dtext = atext[i].split("\t");
-      // console.log(dtext)
       if(dtext.length == 8){
         var data = [];
         for(var k=1;k<8;k++){data.push(TimeToVal(dtext[k]));}
@@ -277,20 +285,14 @@ const present = (function(){
     elPopUp = document.getElementById('elPopUp');
   }
   function showAzan(){
-    const id = 'azanpopup'
-    let objVid = `<div class="animated slideInLeft videoPlay bg-black" id="elPopUp"><video id="${id}" muted="true" class="wfull">
-        <source src="${iPray.azanvid}" type="video/mp4">
-        <source src="${iPray.azanvid}" type="video/ogg">
-        Your browser does not support the audio element.
-    </video></div>`;
-    $('body').append(objVid)
-    player = document.getElementById(id);
-    elPopUp = document.getElementById('elPopUp');
-    // player.load()
-    azanPlay = true;
-    player.addEventListener('ended', (event) => { playing = false; azanPlay = false;  $('#msgbar').addClass('need-play'); });
-    playVid();
+    try {
+      playDoubleBeep();
+      countBeep++;
+    } catch (error) {
+      console.log('Error playing beep:', error);
+    }
 
+    // Tampilkan pesan
     $('#datebar').removeClass('dnone')
     $('#masabar').removeClass('dnone')
     $('#timebar').addClass('dnone');
@@ -298,18 +300,38 @@ const present = (function(){
 
     return false;
   }
+
   function showAnnouncement(){
     function get(){
-      document.querySelectorAll('.txtum').forEach((i,n)=>{i.textContent = umumActive[iPray.umum][n];i.classList.add('fadeInRight')})
+      // Hapus animasi lama sebelum menambah animasi baru
+      document.querySelectorAll('.txtum').forEach((i) => {
+        i.classList.remove('fadeInRight');
+        i.classList.remove('fadeOutLeft');
+      });
+      // Tambah animasi fadeInRight untuk data baru
+      document.querySelectorAll('.txtum').forEach((i,n)=>{
+        i.textContent = umumActive[iPray.umum][n];
+        if(iPray.umum === 0){
+          i.classList.add(`delay-1s`,'fadeInRight');
+        } else {
+          i.classList.add('fadeInRight');
+        }
+      });
+      // Setelah beberapa saat, ganti menjadi fadeOutLeft
+      if(iPray.umum < (umumActive.length-1)){
+        setTimeout(() => {
+          document.querySelectorAll('.txtum').forEach((i,n) => {
+            i.classList.remove(`delay-1s`,'fadeInRight');
+            i.classList.add('fadeOutLeft');
+          });
+        }, 5000); // Ganti setelah 5 detik
+      }
     }
     function init(){
       umumActive = umumData.filter(r=> (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0),GetDiff2(r)]);
       get();
     }
-    return {
-      init:init,
-      get:get,
-    }
+    return {init:init,get:get}
   }
 
   async function PageShow(){
@@ -325,7 +347,8 @@ const present = (function(){
 
     if(page == 0) rand = 0
     $('.pages.show').removeClass(animated[animeRan]).removeClass('show')
-    $('.page'+page).addClass(animated[rand]).addClass('show')
+    // $('.page'+page).addClass(animated[rand]).addClass('show')
+    $('.page'+page).addClass('fadeInLeft').addClass('show')
     animeRan = rand;
 
     (attr & 1) ? $('#datebar').removeClass('dnone') : $('#datebar').addClass('dnone');
@@ -381,12 +404,20 @@ const present = (function(){
       if(iPray.time === 0){
         //
         if(document.querySelector('#msgbar.need-play') !== null ){$('#msgbar').removeClass('need-play'); document.getElementById('msgbar').start();}
-        if(document.querySelector('.waktu.solattime') !== null && azanPlay === false ) return showAzan();
-        if($(elPopUp).length && azanPlay === true) return;
-        if($(elPopUp).length && playing === false) $(elPopUp).remove();
+        if(masukWaktu) {
+          if(countBeep > -1 && countBeep < 5) showAzan();
+          return;
+        }
+        // if($(elPopUp).length && countBeep !== -1 ) return;
+        // if($(elPopUp).length && playing === false) $(elPopUp).remove();
         if($(elPopUp).length && iPray.page !== 2) $(elPopUp).remove()
         //
-        if(iPray.page === 1 && iPray.umum < (umumActive.length-1)){ iPray.umum++; iPray.time=iPray.timer[1];showAnnouncement().get();return;}
+        if(iPray.page === 1 && iPray.umum < (umumActive.length-1)){ 
+          iPray.umum++; 
+          iPray.time=iPray.timer[1];
+          showAnnouncement().get();
+          return;
+        }
         if(iPray.page === 2 && playing){return;}
         if(iPray.page === 2 && iPray.slide < (slides.length-1)){
           iPray.time = iPray.timer[2];
@@ -537,16 +568,58 @@ const present = (function(){
     $("#msgbar").html(`<ul class="marquee">${info}</ul>`)
   }
 
-  async function init(){
-    maxPage = $('.pages').length -1;
-    iPray.page = maxPage;
-    GetDateTime();
-    await GetConfig();
-    await ReadWaktu();
-    setInterval(ShowTime,500);
-    // iPray.page = 0;
-    // await PageShow()
+  function playBeep() {
+    beepSound = new Audio("data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=");  
+    beepSound.muted = false;
+    beepSound.play();
   }
+
+  function playDoubleBeep1() {
+    playBeep();
+    
+    // Tunggu 700 milidetik, lalu mainkan beep lagi
+    setTimeout(function() {
+      playBeep();
+      countBeep++;
+    }, 700);
+  }
+
+  function playDoubleBeep() {
+    if (!audioCtx) return;
+  
+    function beep(delay = 0) {
+      const osc = audioCtx.createOscillator();
+      osc.type = "square";
+      osc.frequency.value = 800;
+      osc.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + 0.1);
+    }
+  
+    beep(0);
+    beep(0.3); // beep kedua setelah 300ms
+  }
+  async function init(){
+    
+    // document.addEventListener('click', async function() {
+      if (!audioReady) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioReady = true;
+        console.log("Audio context initialized.");
+        playDoubleBeep(); // contoh beep pertama setelah izin
+      }
+      maxPage = $('.pages').length -1;
+      iPray.page = maxPage;
+      GetDateTime();
+      await GetConfig();
+      await ReadWaktu();
+      setInterval(ShowTime,500);
+      // iPray.page = 0;
+      // await PageShow()
+    // }, { once: true });
+
+  }
+
   return {init: init}
 })()
 present.init()
