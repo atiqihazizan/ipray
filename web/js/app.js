@@ -642,8 +642,9 @@ const present = (function(){
       if (!audioReady) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         audioReady = true;
-        playBeep(); // contoh beep pertama setelah izin
+        playDoubleBeep(); // contoh beep pertama setelah izin
       }
+      
       maxPage = $('.pages').length -1;
       iPray.page = maxPage;
       GetDateTime();
