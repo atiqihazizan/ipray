@@ -7,7 +7,8 @@
 @font-face { font-family: "FONT4"; src: url(".././fonts/din_bold.ttf"); }
 @font-face { font-family: "FONT5"; src: url(".././fonts/din_medium.ttf"); }
 html,body { padding:0; margin:0; overflow: hidden; font-family: FONT2}
-body { background-color: #ffffff; background-repeat: no-repeat; background-size: 100% 100%;}
+body { background-image: url('../images/mta.JPG')}
+body,pages{ background-color: #000000; background-repeat: no-repeat; background-size: 100% 100%; }
 ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-family: FONT1;font-size: 3.5rem;line-height: 1.25;}
 
 .pages { width: 100vw; height: 100vh; overflow: hidden; display: none; background: transparent }
@@ -16,7 +17,7 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 
 .dtbar { position: fixed; width: 100vw; z-index: 1000}
 
-#datebar { display: flex; justify-content: space-between; margin: 0.3rem; width: calc(100vw - 0.6rem); }
+#datebar { display: flex; justify-content: space-between; }
 #datebar .datebar-top { position: relative; padding: 0.7rem; background: #070707; width: 26rem;}
 #datebar .datebar-top { font-family: FONT2; display: flex; column-gap: 1rem; }
 #datebar .datebar-top .date-row div {font-size: 40px;}
@@ -41,9 +42,9 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 #time2 > span { font-size: 100px; line-height: 130px;}
 #timebar, #masabar { display: flex; justify-content: space-between; text-align: center; }
 #timebar1, #masabar .waktu { display: flex; flex-direction: column; }
-#timebar1 { padding: 0 1rem; padding-top: .7rem; padding-left: .7rem; background: black; clip-path: polygon(0% 0%, 88.1% 1.5%, 100% 23.8%, 100% 100%, 100% 100%, 0% 100%, 0% 100%, 0% 0%);}
+#timebar1 { padding: 0 1rem; padding-top: .7rem; padding-left: .7rem; background: black; clip-path: polygon(0% 0%, 86.1% 0%, 100% 15.8%, 100% 100%, 100% 100%, 0% 100%, 0% 100%, 0% 0%);}
 #timebar2, #masabar .masa { display: flex; flex-direction: row; padding: 0 1rem; }
-#timebar2 { padding-left: 2rem; background: black; clip-path: polygon(19% 0%, 100% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 100%, 0% 31%); }
+#timebar2 { padding-left: 2rem; background: black; clip-path: polygon(13% 0%, 100% 0%, 100% 0%, 100% 100%, 100% 100%, 0% 100%, 0% 100%, 0% 25%) }
 #masabar .masa { background: black;border-radius: 1rem 0 0 1rem;padding: 0 2rem; padding-bottom: 1rem; color: white; }
 #masabar .masa > div > span { font-size: 150px; line-height: 177px; }
 #masabar .waktu { font-size: 40px; line-height: 77px; }

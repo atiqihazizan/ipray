@@ -22,29 +22,29 @@
 <body class="bg-blackdark">
 
 <div class="dtbar" id="datebar">
-  <div class="datebar-top" id="topl">
+  <div class="datebar-top animated" id="topl">
     <div class="pink" id="day1">00</div>
     <div class="date-row"><div class="white" id="hari">&nbsp;</div><div class="cyan" id="date1">&nbsp;</div></div>
   </div>
-  <div class="datebar-top" id="topr">
+  <div class="datebar-top animated" id="topr">
     <div class="date-row"><div class="white" id="bulan">&nbsp;</div><div class="cyan" id="date2">&nbsp;</div></div>
     <div class="pink" id="day2">00</div>
   </div>
 </div>
 <div class="dtbar" id="footbar">
   <div id="timebar" class="dnone">
-    <div id="timebar1"><div id="nama0">-</div><div id="masa0">00</div></div>
-    <div id="timebar2"><div id="time2"><span id="jam2">00</span><span class="dotdot" id="dot2">:</span><span id="min2">00</span></div></div>
+    <div id="timebar1" class="timeblock animated"><div id="nama0">-</div><div id="masa0">00</div></div>
+    <div id="timebar2" class="timeblock animated"><div id="time2"><span id="jam2">00</span><span class="dotdot" id="dot2">:</span><span id="min2">00</span></div></div>
   </div>
   <div id="masabar">
-    <div class="waktu waktu-solat" style="margin-left: 3rem;"><div class="label">SUBUH</div><div id="masa1" class="tmasa">00:00</div></div>
-    <div class="waktu waktu-solat"><div class="label">SYURUK</div><div id="masa2" class="tmasa">00:00</div></div>
-    <div class="waktu waktu-solat"><div class="label">ZOHOR</div><div id="masa3" class="tmasa">00:00</div></div>
-    <div class="waktu waktu-solat"><div class="label">ASAR</div><div id="masa4" class="tmasa">00:00</div></div>
-    <div class="waktu waktu-solat"><div class="label">MAGRIB</div><div id="masa5" class="tmasa">00:00</div></div>
-    <div class="waktu waktu-solat"><div class="label">ISYAK</div><div id="masa6" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat" style="margin-left: 3rem;"><div class="label">SUBUH</div><div id="masa1" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat"><div class="label">SYURUK</div><div id="masa2" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat"><div class="label">ZOHOR</div><div id="masa3" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat"><div class="label">ASAR</div><div id="masa4" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat"><div class="label">MAGRIB</div><div id="masa5" class="tmasa">00:00</div></div>
+    <div class="waktu masablock animated waktu-solat"><div class="label">ISYAK</div><div id="masa6" class="tmasa">00:00</div></div>
     <div class="waktu" style="flex-grow: 1; width: 100%">&nbsp;</div>
-    <div class="masa"><div id="time1"><span id="jam1">00</span><span class="dotdot" id="dot1">:</span><span id="min1">00</span></div></div>
+    <div class="masa masablock animated"><div id="time1"><span id="jam1">00</span><span class="dotdot" id="dot1">:</span><span id="min1">00</span></div></div>
   </div>
   <marquee id="msgbar" behavior="scroll"></marquee>
 </div>
@@ -56,6 +56,28 @@
     <div class="wfull" style="padding: 1rem 10rem">
       <div class="tablefram">
         <table id="tumum" class="table-disp striped-row">
+          <thead>
+          <tr><th colspan="2"><h3 class="txtum animated"></h3></th></tr>
+          </thead>
+          <tbod>
+            <tr><td class="icon"><img src="./images/event-icon.png"></td><td><div class="txtum animated" id="txtumm0">&nbsp;</div></td></tr>
+            <tr><td class="icon"><img src="./images/calendar-icon.png"></td><td><div class="txtum animated" id="txtumm1">&nbsp;</div></td></tr>
+            <tr><td class="icon"><img src="./images/clock-icon.png"></td><td><div class="txtum animated" id="txtumm2">&nbsp;</div></td></tr>
+            <tr><td class="icon"><img src="./images/location-icon.png"></td><td><div class="txtum animated" id="txtumm3">&nbsp;</div></td></tr>
+            <tr><td class="icon"><img src="./images/newsletter-icon.png"></td><td><div class="txtum animated" id="txtumm4">&nbsp;</div></td></tr>
+          </tbod>
+        </table>
+      </div>
+    </div>
+    <h2 class="maintitle remain white-shadow txtum animated" id="coutleft">&nbsp;</h2>
+  </div>
+</div>
+<div class="pages page2 animated" id="kuliah">
+  <div class="frames flxclm algc">
+    <h1 class="maintitle">KULIAH</h1>
+    <div class="wfull" style="padding: 1rem 10rem">
+      <div class="tablefram">
+        <table id="tkuliah" class="table-disp striped-row">
           <thead>
           <tr><th colspan="2"><h3 class="txtum"></h3></th></tr>
           </thead>
@@ -72,8 +94,8 @@
     <h2 class="maintitle remain white-shadow txtum animated" id="coutleft">&nbsp;</h2>
   </div>
 </div>
-<div class="pages page2 animated" id="slider"></div>
-<div class="pages page3 animated" id="countdown">
+<div class="pages page3 animated" id="slider"></div>
+<div class="pages page4 animated" id="countdown">
   <div class="frames flxclm algc">
     <h1 class="maintitle">COUNTDOWN</h1>
     <div class="wfull" style="padding: 5rem 10rem">
@@ -100,7 +122,7 @@
     </div>
   </div>
 </div>
-<!--<div class="pages page4 animated" id="iframe"></div>-->
+<!--<div class="pages page5 animated" id="iframe"></div>-->
 
 <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
 <script src="./js/app.js"></script>

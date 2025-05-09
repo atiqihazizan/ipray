@@ -37,11 +37,9 @@ const present = (function(){
     'zoomInUp',
   ];
   
-  const machineId = crypto.randomUUID()
-
   const random = () => Math.floor(Math.random() * animated.length)
   const sysData = {agency:{},program:[]};
-  const iPray = {page:0,kuliah:0,slide:0,time:0,countdown:0,umum:0,attr:[11,11,12,4,5],timer:[5,5,5,3,5],stsmsg:1};
+  const iPray = {page:0,kuliah:0,slide:0,time:0,countdown:0,umum:0,attr:[11,11,12,4,5],timer:[5,5,5,5,3,5],stsmsg:1};
   const DateTime = {year:0,mon:0,day:0,dow:0,yearh:0,monh:0,dayh:0,hour:0,min:0,sec:0,mins:0,time:-1,days:0,daysm:0,maghrib:0,wnow:0};
   const mdays = [0,31,28,31,30,31,30,31,31,30,31,30,31];
   const wdays = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
@@ -55,6 +53,7 @@ const present = (function(){
   var countdownData = [];
   var countdownFilter = [];
   var umumData = [];
+  var kuliahData = [];
   var umumActive = [];
 
   var codezone = '';
@@ -63,7 +62,6 @@ const present = (function(){
   var player;
   var playing = false;
   var elPopUp;
-  var animeRan=0;
   var dot = false;
   var maxPage = 0;
   var beepSound = null;
@@ -303,18 +301,16 @@ const present = (function(){
 
   function showAnnouncement(){
     function get(){
-      // Hapus animasi lama sebelum menambah animasi baru
-      document.querySelectorAll('.txtum').forEach((i) => {i.classList.remove('fadeInRight');i.classList.remove('fadeOutLeft');});
-      // Tambah animasi fadeInRight untuk data baru
+      document.querySelectorAll('.txtum').forEach((i) => {i.classList.remove('fadeInRight');i.classList.remove('fadeOutRight');});
       document.querySelectorAll('.txtum').forEach((i,n)=>{
         i.textContent = umumActive[iPray.umum][n];
         if(iPray.umum === 0){i.classList.add(`delay-1s`,'fadeInRight');} 
         else {i.classList.add('fadeInRight');}
       });
-      // Setelah beberapa saat, ganti menjadi fadeOutLeft
+      // Setelah beberapa saat, ganti menjadi fadeOutRight
       if(iPray.umum < (umumActive.length-1)){
         setTimeout(() => {
-          document.querySelectorAll('.txtum').forEach((i,n) => {i.classList.remove(`delay-1s`,'fadeInRight');i.classList.add('fadeOutLeft');});
+          document.querySelectorAll('.txtum').forEach((i,n) => {i.classList.remove(`delay-1s`,'fadeInRight');i.classList.add('fadeOutRight');});
         }, 5000); // Ganti setelah 5 detik
       }
     }
@@ -324,24 +320,50 @@ const present = (function(){
     }
     return {init:init,get:get}
   }
+  function showKuliah(){
+    function get(){
+      document.querySelectorAll('.txtum').forEach((i) => {i.classList.remove('fadeInRight');i.classList.remove('fadeOutLeft');});
+      document.querySelectorAll('.txtum').forEach((i,n)=>{
+        i.textContent = umumActive[iPray.umum][n];
+        if(iPray.umum === 0){i.classList.add(`delay-1s`,'fadeInRight');} 
+        else {i.classList.add('fadeInRight');}
+      });
+      // Setelah beberapa saat, ganti menjadi fadeOutLeft
+      if(iPray.umum < (umumActive.length-1)){
+        setTimeout(() => {
+          document.querySelectorAll('.txtum').forEach((i,n) => {i.classList.remove(`delay-1s`,'fadeInRight');i.classList.add('fadeOutLeft');});
+        }, iPray.time * 1000); // Ganti setelah 5 detik
+      }
+    }
+    function init(){
+      kuliahActive = kuliahData.filter(r=> (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0),GetDiff2(r)]);
+      get();
+    }
+    return {init:init,get:get}
+  }
 
   async function PageShow(){
-    var rand = random()
-    var page = iPray.page + 1;
-    var attr = 0;
+    let page = iPray.page + 1;
+    let attr = 0;
+    let bgImage = '';
+    let countDelay = 0;
+
     if(page > maxPage) page = 0;
     if($('.page').hasClass('disabled')) page ++;
-    if(animeRan === rand) animeRan = random()
+
     iPray.page = page;
     iPray.time = iPray.timer[page];
     attr = iPray.attr[page];
 
-    if(page == 0) rand = 0
-    $('.pages.show').removeClass(animated[animeRan]).removeClass('show')
-    // $('.page'+page).addClass(animated[rand]).addClass('show')
-    $('.page'+page).addClass('fadeInLeft').addClass('show')
-    animeRan = rand;
+    const currentPage = document.querySelector('.pages.show');
+    if (currentPage) {currentPage.classList.remove('show', 'fadeInLeft','fadeOutRight');}
+    const nextPage = document.querySelector('.page' + page);
+    if (nextPage) {nextPage.classList.add('fadeInLeft', 'show');}
 
+    document.querySelectorAll('.datebar-top').forEach((i) => {i.classList.add('fadeInDown'); i.classList.remove('fadeOutUp');});
+    document.querySelectorAll('.masablock').forEach((i) => {i.classList.add('fadeInUp'); i.classList.remove('fadeOutDown');});
+    document.querySelectorAll('.timeblock').forEach((i) => {i.classList.add('fadeInUp'); i.classList.remove('fadeOutDown');});
+    
     (attr & 1) ? $('#datebar').removeClass('dnone') : $('#datebar').addClass('dnone');
     (attr & 2) ? $('#masabar').removeClass('dnone') : $('#masabar').addClass('dnone');
     (attr & 4) ? $('#timebar').removeClass('dnone') : $('#timebar').addClass('dnone');
@@ -351,15 +373,22 @@ const present = (function(){
 
     switch(iPray.page){
     case 0: // home
-      $('body').css('backgroundImage', 'url(images/mta.JPG)');
+      countDelay = iPray.time-1;
       break;
     case 1: // announcement
       if(umumData.length === 0) {await PageShow(); return;}
+      countDelay = iPray.time * umumData.length-1
       iPray.umum = 0;
-      $('body').css('backgroundImage', 'url(images/picture2.jpg)');
+      bgImage = 'url(images/picture2.jpg)';
       showAnnouncement().init()
       break;
-    case 2: // slider
+    case 2: // kuliah
+      if(kuliahData.length === 0) {await PageShow(); return;}
+      iPray.kuliah = 0;
+      bgImage = 'url(images/picture2.jpg)';
+      showKuliah().init()
+      break;
+    case 3: // slider
       iPray.slide = 0;
       playing = false;
       player = null;
@@ -368,16 +397,26 @@ const present = (function(){
       if(slides[0].isVid === 1) showVid()
       if(slides[0].isVid === 2) showIfra()
       break;
-    case 3: // countdown
+    case 4: // countdown
       if(countdownFilter.length === 0) {await PageShow(); return;}
-      $('body').css('backgroundImage', 'url(images/picture2.jpg)');
+      bgImage = 'url(images/picture2.jpg)';
       showCountdown().init()
       break;
-    case 4: // world prayer
+      case 5: // world prayer
       // WorldPrayer();
       break;
     }
+    nextPage.style.backgroundImage = bgImage;
+    setTimeout(() => {
+      nextPage.classList.remove('fadeInLeft');
+      nextPage.classList.add('fadeOutRight');
+
+      document.querySelectorAll('.datebar-top').forEach((i) => {i.classList.remove('fadeInDown'); i.classList.add('fadeOutUp');});
+      document.querySelectorAll('.masablock').forEach((i) => {i.classList.remove('fadeInUp'); i.classList.add('fadeOutDown');});
+      document.querySelectorAll('.timeblock').forEach((i) => {i.classList.remove('fadeInUp'); i.classList.add('fadeOutDown');});
+    }, countDelay * 1000);
   }
+
   async function ShowTime(){
     dot = !dot;
     if(GetDateTime()){ShowWaktu()}
@@ -401,7 +440,7 @@ const present = (function(){
         }
         // if($(elPopUp).length && countBeep !== -1 ) return;
         // if($(elPopUp).length && playing === false) $(elPopUp).remove();
-        if($(elPopUp).length && iPray.page !== 2) $(elPopUp).remove()
+        if($(elPopUp).length && iPray.page !== 3) $(elPopUp).remove()
         //
         if(iPray.page === 1 && iPray.umum < (umumActive.length-1)){ 
           iPray.umum++; 
@@ -409,9 +448,15 @@ const present = (function(){
           showAnnouncement().get();
           return;
         }
-        if(iPray.page === 2 && playing){return;}
-        if(iPray.page === 2 && iPray.slide < (slides.length-1)){
-          iPray.time = iPray.timer[2];
+        if(iPray.page === 2 && iPray.kuliah < (kuliahData.length-1)){ 
+          iPray.kuliah++; 
+          iPray.time=iPray.timer[2];
+          showKuliah().get();
+          return;
+        }
+        if(iPray.page === 3 && playing){return;}
+        if(iPray.page === 3 && iPray.slide < (slides.length-1)){
+          iPray.time = iPray.timer[3];
           iPray.slide++;
           const _slider = slides[iPray.slide];
           if(_slider.isVid === 1 && _slider.filename.toString().indexOf('.mp4') !== -1) showVid()
@@ -420,7 +465,7 @@ const present = (function(){
           imageSlider.next();
           return;
         }
-        if(iPray.page === 3 && iPray.countdown < (countdownFilter.length -1)){iPray.countdown++;iPray.time = iPray.timer[3];showCountdown().get();return;}
+        if(iPray.page === 4 && iPray.countdown < (countdownFilter.length -1)){iPray.countdown++;iPray.time = iPray.timer[4];showCountdown().get();return;}
 
         await PageShow();
       }
@@ -486,6 +531,7 @@ const present = (function(){
       
       const announceBlock = findBlock('PENGUMUMAN');
       const announce = announceBlock ? announceBlock.content : [];
+      // umumData.filter(r=> (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0),GetDiff2(r)]);
       
       const slideBlock = findBlock('SLIDESHOW');
       const slider = slideBlock && slideBlock.content.length > 0 
@@ -596,8 +642,7 @@ const present = (function(){
       if (!audioReady) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         audioReady = true;
-        console.log("Audio context initialized.");
-        playDoubleBeep(); // contoh beep pertama setelah izin
+        playBeep(); // contoh beep pertama setelah izin
       }
       maxPage = $('.pages').length -1;
       iPray.page = maxPage;
