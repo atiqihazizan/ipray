@@ -11,7 +11,12 @@ body { background-image: url('../images/mta.JPG')}
 body,pages{ background-color: #000000; background-repeat: no-repeat; background-size: 100% 100%; }
 ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-family: FONT1;font-size: 3.5rem;line-height: 1.25;}
 
-.pages { width: 100vw; height: 100vh; overflow: hidden; display: none; background: transparent }
+#umum {background-image: url('../images/picture2.jpg');}
+#kuliah {background-image: url('../images/picture2.jpg');}
+#slider {background-image: url('../images/picture2.jpg');}
+#countdown {background-image: url('../images/picture2.jpg');}
+
+.pages { width: 100vw; height: 100vh; overflow: hidden; display: none; background: transparent; background-repeat: no-repeat; background-size: cover; }
 .pages.show { display: block }
 .pages .frames { height: 100%; display: flex; }
 
@@ -88,3 +93,43 @@ video { width: 100%; }
 .bg-blackdark { background-color: #000000 }
 .cyan-shadow {color: #00ffff; text-shadow: 4px 4px 0px rgba(0,0,0,1);}
 .white-shadow { color: #ffffff; text-shadow: -1px 0 20px black, 0 1px 13px black, 1px 0 13px black, 0 -1px 13px black; }
+
+.prayer-stages {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 9999;
+}
+
+.prayer-stages.azan{
+  background-color: transparent;
+  background-image: url(/images/azan1.png);
+}
+.prayer-stages.iqamah{
+  background-color: rgb(0, 0, 0); /* Latar belakang lebih gelap */
+  background-image: url(/images/iqamah1.png);
+}
+.prayer-stages.solat{
+  background-color: rgb(0, 0, 0); /* Latar belakang lebih gelap */
+  background-image: url(/images/rapat.png);
+}
+
+.prayer-timer {
+  font-family: 'FONT0';
+  font-size: 7rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  padding: 1rem 2rem;
+  /* background-color: rgba(0, 0, 0, 0.5); */
+  /* border-radius: 1rem; */
+  color: #ff0000;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+  position: absolute;
+  right: 25%;
+  top: 47%;
+}
