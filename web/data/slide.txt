@@ -1,0 +1,10 @@
+2025-05-01 08:00|img|masjid_image1.jpg|Waktu Solat Subuh
+2025-05-01 10:00|img|kuliah_image2.jpg|Kuliah Ustaz Ahmad
+2025-05-02 19:30|vid|program_video.mp4|Majlis Iftar Bersama
+2025-05-05 20:00|img|korban_image3.jpg|Program Korban Aidil-Adha
+2025-05-10 19:30|img|surah_image4.jpg|Tafsir Ayat Al-Quran
+2025-06-01 08:00|vid|talk_video.mp4|Kuliah Subuh Ustaz Zainal
+2025-06-05 19:00|img|tazkirah_image5.jpg|Tazkirah Malam
+2025-06-10 08:30|img|solat_image6.jpg|Solat Berjemaah
+2025-06-15 10:00|vid|festival_video.mp4|Festival Islam 2025
+2025-06-20 19:30|img|lecture_image7.jpg|Kuliah Maghrib

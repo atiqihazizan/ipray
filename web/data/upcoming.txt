@@ -1,0 +1,10 @@
+2025-05-25 10:00|Gotong-Royong Perdana|Bersihkan Taman Kita|Padang Utama Taman Bahagia|Semua Penduduk
+2025-06-05 08:00|Kursus Kewangan Usia Emas|Perancangan Kewangan|Dewan Serbaguna|Pesara & Bakal Pesara
+2025-06-10 10:30|Majlis Tahlil|Doa Arwah|Masjid Al-Hidayah|Kariah
+2025-06-15 10:00|Kursus Asas Solat|Solat Untuk Remaja|Masjid Al-Nur|Remaja
+2025-06-20 08:00|Program Iftar|Buka Puasa Bersama|Masjid Al-Hidayah|Semua Kariah
+2025-07-01 08:30|Program Iftar|Buka Puasa|Masjid Al-Nur|Semua Kariah
+2025-07-10 15:00|Mesyuarat Agung|Pemilihan AJK Baru|Dewan Utama|Ahli Persatuan Penduduk
+2025-07-17 15:30|Majlis Korban 1437H|Hari Raya Aidil-Adha|Surau Al-Irsyad|Ahli Kariah
+2025-08-01 19:30|Kuliah Maghrib|Ustaz Ahmad|Tafsir Ayat Al-Quran|Masjid Al-Hidayah
+2025-08-10 08:00|Kursus Keusahawanan|Membangunkan Usahawan|Dewan Komuniti|Usahawan Muda

@@ -1,8 +1,5 @@
 'use strict'
 const present = (function(){
-  const animated = ['','backInDown','backInLeft','backInRight','backInUp','bounceIn','bounceInDown','bounceInLeft','bounceInRight','bounceInUp','fadeIn','fadeInDown','fadeInDownBig','fadeInLeft','fadeInLeftBig','fadeInRight','fadeInRightBig','fadeInUp','fadeInUpBig','fadeInTopLeft','fadeInTopRight','fadeInBottomLeft','lightSpeedInRight','lightSpeedInLeft','rotateIn','rotateInDownLeft','rotateInDownRight','rotateInUpLeft','rotateInUpRight','zoomIn','zoomInDown','zoomInLeft','zoomInRight','zoomInUp'];
-  
-  const random = () => Math.floor(Math.random() * animated.length);
   const sysData = {agency:{},program:[]};
   const iPray = {page:0,maxPage:0,kuliah:0,slide:0,time:0,countdown:0,umum:0,attr:[11,11,12,4,5],timer:[5,5,5,5,3,5],stsmsg:1,pendingSlideTransition:false,pendingPageTransition: false,pendingPrayerTransition: false};
   const DateTime = {year:0,mon:0,day:0,dow:0,yearh:0,monh:0,dayh:0,hour:0,min:0,sec:0,mins:0,time:-1,days:0,daysm:0,maghrib:0,wnow:0};
@@ -12,12 +9,11 @@ const present = (function(){
   const hname = ["HIJRAH","MUHARRAM","SAFAR","RAB.AWAL","RAB.AKHIR","JAM.AWAL","JAM.AKHIR","REJAB","SYA`BAN","RAMADHAN","SYAWAL","ZULKAEDAH","ZULHIJJAH"];
   const wname = ["MASA","SUBUH","SYURUK","ZOHOR","ASAR","MAGHRIB","ISYAK"];
   const cname = ["K.LUMPUR","MEKAH","MADINAH","AL-AQSA"];
-  const dirPath = './';
+  let appData = {};
 
-  let slides = [], countdownData = [], countdownFilter = [], umumData = [], kuliahData = [], umumActive = [], kuliahActive = [];
+  let slides = [], eventData = [], countdownFilter = [];
   let masukWaktu = false, player, playing = false, popupEl, dot = false;
   let beepAudio = null;
-  let isBeepPlaying = false;
   
   // Bahagian untuk menguruskan peringkat solat
   const prayerStages = {AZAN: 0, IQAMAH: 1, SOLAT: 2, COMPLETED: 3};
@@ -229,7 +225,7 @@ const present = (function(){
     
     function init(){
       let rw = -1;
-      const rows = countdownData.filter(r => {
+      const rows = eventData.filter(r => {
         const aRow = r.split("|");
         const btxt = aRow[0].split('-');
         const year = parseInt(btxt[2]);
@@ -381,7 +377,6 @@ const present = (function(){
   }
   
   function showAnnouncement(){
-
     async function out (){
       document.querySelectorAll('.txtum').forEach(i => {
         i.classList.replace('fadeInRight', 'fadeOut');
@@ -392,66 +387,38 @@ const present = (function(){
     }
     
     function get(){
+      document.querySelectorAll('.txtum').forEach(i => i.classList.remove('fadeInRight', 'fadeOut', 'delay-1s'));
       iPray.pendingSlideTransition = false;
-      document.querySelectorAll('.txtum').forEach(i => i.classList.remove('fadeInRight', 'fadeOut','delay-1s'));
-      
-      const dateTime = umumActive[iPray.umum][0].split(" ");
-      const dateParts = dateTime[0].split("-");
-      const timeParts = dateTime[1].split(":");
-      const day = wdays[new Date(Date.UTC(+dateParts[0], +dateParts[1]-1, +dateParts[2])).getDay()];
-      const date = `${day}, ${dateParts[2]} ${mname[dateParts[1] * 1]} ${dateParts[0]}`;
-      const time = `${timeParts[0]}:${timeParts[1]}${timeParts[2] === "00" ? "" : timeParts[2] === "30" ? "30" : ""}${timeParts[2] === "00" ? "" : timeParts[2] < 12 ? "AM" : "PM"}`;
-      
-      document.getElementById('txtumm1').textContent = date
-      document.getElementById('txtumm2').textContent = time;
-      ['txtumtitle','txtumm0','txtumm3','txtumm4','coutleft'].forEach((i,n) => document.getElementById(i).textContent = umumActive[iPray.umum][n+1]);
-      
       document.querySelectorAll('.txtum').forEach((i,n) => {
-        if(iPray.umum === 0)i.classList.add('delay-1s', 'fadeInRight');
-        else i.classList.add('fadeInRight');
-      }); 
+        i.textContent = appData.upcomingNotice[iPray.umum][n];
+        if(iPray.umum === 0) i.classList.add('delay-1s');
+        i.classList.add('fadeInRight');
+      });
     }
     
-    function init(){
-      umumActive = umumData.filter(r => (r.length > 0 && GetDiff2(r) !== false && GetDiff2(r).duration < 15)).map(r => [...r.split("|"), GetDiff2(r).duraStr]);
-      console.log(umumActive);
-      if(umumActive.length > 0) get();
-    }
-    
-    return {init, get, out};
+    return {get, out};
   }
   
   function showKuliah(){
+    async function out (){
+      document.querySelectorAll('.txtkuliah').forEach(i => {
+        i.classList.replace('fadeInRight', 'fadeOut');
+        i.classList.remove('delay-1s');
+      });
+      iPray.pendingSlideTransition = true;
+      iPray.time = 1;
+    }
     function get(){
-      document.querySelectorAll('.txtum').forEach(i => {
-        i.classList.remove('fadeInRight', 'fadeOutLeft');
+      document.querySelectorAll('.txtkuliah').forEach(i => i.classList.remove('fadeInRight', 'fadeOut','delay-1s'));
+      iPray.pendingSlideTransition = false;
+      document.querySelectorAll('.txtkuliah').forEach((i,n) => {
+        i.innerHTML = appData.kuliahUpcoming[iPray.kuliah][n] || '&nbsp;';
+        if(iPray.kuliah === 0) i.classList.add('delay-1s');
+        i.classList.add('fadeInRight');
       });
-      
-      document.querySelectorAll('.txtum').forEach((i,n) => {
-        i.textContent = kuliahActive[iPray.umum][n];
-        if(iPray.umum === 0){
-          i.classList.add('delay-1s', 'fadeInRight');
-        } else {
-          i.classList.add('fadeInRight');
-        }
-      });
-      
-      if(iPray.umum < (kuliahActive.length-1)){
-        setTimeout(() => {
-          document.querySelectorAll('.txtum').forEach(i => {
-            i.classList.remove('delay-1s', 'fadeInRight');
-            i.classList.add('fadeOutLeft');
-          });
-        }, iPray.time * 1000);
-      }
     }
     
-    function init(){
-      kuliahActive = kuliahData.filter(r => (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0), GetDiff2(r)]);
-      get();
-    }
-    
-    return {init, get};
+    return {get, out};
   }
 
   async function PageShow(){
@@ -484,16 +451,15 @@ const present = (function(){
     switch(iPray.page){
       case 0: // home
         break;
-      case 1: // announcement
-        if(umumData.length === 0) {await PageShow(); return;}
+      case 1: // upcomming
+        if(appData.upcomingNotice.length === 0) {await PageShow(); return;}
         iPray.umum = 0;
-        showAnnouncement().init();
-        if(umumActive.length === 0) {await PageShow(); return;}
+        showAnnouncement().get();
         break;
       case 2: // kuliah
-        if(kuliahData.length === 0) {await PageShow(); return;}
+        if(appData.kuliahUpcoming.length === 0) {await PageShow(); return;}
         iPray.kuliah = 0;
-        showKuliah().init();
+        showKuliah().get();
         break;
       case 3: // slider
         iPray.slide = 0;
@@ -504,9 +470,9 @@ const present = (function(){
         if(slides[0].isVid === 1) showVid();
         if(slides[0].isVid === 2) showIfra();
         break;
-      case 4: // countdown
-        if(countdownFilter.length === 0) {await PageShow(); return;}
-        showCountdown().init();
+      case 4: // upcoming
+        // if(appData.upcomingList.length === 0) {await PageShow(); return;}
+        // showCountdown().init();
         break;
       case 5: // world prayer
         break;
@@ -554,7 +520,7 @@ const present = (function(){
           if(iPray.pendingPrayerTransition) manageStagePrayer().complete();
         }
         
-        if(iPray.page === 1 && iPray.umum < umumActive.length-1){ 
+        if(iPray.page === 1 && iPray.umum < appData.upcomingNotice.length-1){ 
           if(iPray.pendingSlideTransition === false) return showAnnouncement().out();
           iPray.umum++; 
           iPray.time = iPray.timer[1];
@@ -562,7 +528,8 @@ const present = (function(){
           return;
         }
         
-        if(iPray.page === 2 && iPray.kuliah < kuliahActive.length-1){ 
+        if(iPray.page === 2 && iPray.kuliah < appData.kuliahUpcoming.length-1){
+          if(iPray.pendingSlideTransition === false) return showKuliah().out();
           iPray.kuliah++; 
           iPray.time = iPray.timer[2];
           showKuliah().get();
@@ -663,8 +630,8 @@ const present = (function(){
           .join('')
         : '';
       
-      const announceBlock = findBlock('PENGUMUMAN');
-      const announce = announceBlock ? announceBlock.content : [];
+      const countdownBlock = findBlock('COUNTDOWN');
+      const countdown = countdownBlock ? countdownBlock.content : [];
       
       const slideBlock = findBlock('SLIDESHOW');
       const slider = slideBlock && slideBlock.content.length > 0 
@@ -687,17 +654,17 @@ const present = (function(){
           }).join('')
         : '';
       
-      const countdownBlock = findBlock('COUNTDOWN');
-      const even = countdownBlock ? countdownBlock.content.map(item => item.trim()) : [];
+      const eventBlock = findBlock('EVENTS');
+      const even = eventBlock ? eventBlock.content.map(item => item.trim()) : [];
       
-      const programBlock = findBlock('PROGRAM');
+      const programBlock = findBlock('HEBAHAN');
       const program = programBlock ? programBlock.content.map(item => item.trim()) : [];
       
-      return {zone, news, announce, slider, slides, even, program};
+      return {zone, news, countdown, slider, slides, even, program};
       
     } catch (error) {
       console.error("Error processing file:", error);
-      return {zone: '', news: '', announce: [], slider: '', slides: [], even: [], program: []};
+      return {zone: '', news: '', countdown: [], slider: '', slides: [], even: [], program: []};
     }
   }
 
@@ -715,13 +682,11 @@ const present = (function(){
     beepAudio = new Audio('/audio/beep_loop_solat.wav');
 
     slides = [];
-    umumData = [];
-    countdownData = [];
+    eventData = [];
     let imgs = '', info = '';
 
     const res = await GetData(fileData);
-    countdownData.push(...res.even);
-    umumData.push(...res.announce);
+    eventData.push(...res.even);
     if(res.slider.length > 0) imgs += res.slider;
     info += res.news;
     
@@ -746,6 +711,9 @@ const present = (function(){
       
       beep(0);
     });
+
+    appData = await dataExtractor.formatForPresent();
+    console.log(appData)
 
     iPray.maxPage = document.querySelectorAll('.pages').length - 1;
     iPray.page = iPray.maxPage;
