@@ -4,7 +4,7 @@ const present = (function(){
   
   const random = () => Math.floor(Math.random() * animated.length);
   const sysData = {agency:{},program:[]};
-  const iPray = {page:0,maxPage:0,kuliah:0,slide:0,time:0,countdown:0,umum:0,attr:[11,11,12,4,5],timer:[5,5,5,5,3,5],stsmsg:1};
+  const iPray = {page:0,maxPage:0,kuliah:0,slide:0,time:0,countdown:0,umum:0,attr:[11,11,12,4,5],timer:[5,5,5,5,3,5],stsmsg:1,pendingSlideTransition:false,pendingPageTransition: false,pendingPrayerTransition: false};
   const DateTime = {year:0,mon:0,day:0,dow:0,yearh:0,monh:0,dayh:0,hour:0,min:0,sec:0,mins:0,time:-1,days:0,daysm:0,maghrib:0,wnow:0};
   const mdays = [0,31,28,31,30,31,30,31,31,30,31,30,31];
   const wdays = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
@@ -22,13 +22,12 @@ const present = (function(){
   // Bahagian untuk menguruskan peringkat solat
   const prayerStages = {AZAN: 0, IQAMAH: 1, SOLAT: 2, COMPLETED: 3};
   let currentPrayerStage = prayerStages.AZAN;
-  let prayerStageTimer = 0;
 
   // Tempoh untuk setiap peringkat dalam minit
   const stageDurations = {
-    AZAN: 0.5,      // 1 minit untuk azan tanpa timer
+    AZAN: 0.5,      // 2 minit untuk azan
     IQAMAH: 1,    // 2 minit untuk iqamah
-    SOLAT: 1      // 2 minit untuk solat fardhu
+    SOLAT: 0.5      // 5 minit untuk solat fardhu
   };
 
   function NUM2(dd){return parseInt(dd)<10 ? "0"+dd : ""+dd;}
@@ -101,10 +100,10 @@ const present = (function(){
     const dt = new Date(year, month-1, day, hour, minute);
     const [asDay, asHour, asMin] = GetDiff(dt);
     
-    if(asDay < 0) return (asDay * -1) + ' Hari Lagi';
-    if(asHour < 0) return (asHour * -1) + ' Jam Lagi';
-    if(asMin < 0) return (asMin * -1) + ' Minit Lagi';
-    if(asMin === 0) return 'Sedang berlangsung';
+    if(asDay < 0) return {duration:(asDay * -1) , duraStr:(asDay * -1) + ' Hari Lagi', type: 'day'};
+    if(asHour < 0) return {duration:(asDay * -1) , duraStr:(asHour * -1) + ' Jam Lagi', type: 'hour'};
+    if(asMin < 0) return {duration:(asDay * -1) , duraStr:(asMin * -1) + ' Minit Lagi', type: 'min'};
+    if(asMin === 0) return {duration:(asDay * -1) , duraStr:'Sedang berlangsung', type: 'now'};
     return false;
   }
   
@@ -172,7 +171,6 @@ const present = (function(){
     }
   
     // Ketika masuk waktu baru
-    // if(sysData.wdata[DateTime.days][wnxt] === DateTime.time && !document.querySelector('.waktu.solattime')) {
     if(masukWaktu === false && sysData.wdata[DateTime.days][wnxt] === DateTime.time) {
       const masaWnxtEl = document.getElementById("masa" + wnxt);
       if(masaWnxtEl) {
@@ -181,17 +179,14 @@ const present = (function(){
       }
       
       masukWaktu = true;
-      isBeepPlaying = true;
       currentPrayerStage = prayerStages.AZAN;
       beepAudio.currentTime = 0;
-      beepAudio.play().catch(err => {isBeepPlaying = false;});
-
+      beepAudio.play()
+      beepAudio.onended = () => {iPray.time = stageDurations.AZAN * 60}
       iPray.page = iPray.maxPage-1;
-      iPray.time = stageDurations.AZAN + stageDurations.IQAMAH + stageDurations.SOLAT;
       PageShow();
     }
     
-    // Apabila keluar dari waktu solat (waktu sudah berlalu)
     if(sysData.wdata[DateTime.days][wnxt] !== DateTime.time && document.querySelector('.waktu.solattime')) {
       document.querySelectorAll(".waktu.solattime").forEach(el => el.classList.remove('solattime', 'blink'));
     }
@@ -318,6 +313,7 @@ const present = (function(){
           break;
         case prayerStages.SOLAT:
           prayerStagesContainer.classList.add('solat');
+          // timerEl.classList.remove('dnone');
           break;
       }
     }
@@ -325,46 +321,35 @@ const present = (function(){
   }
 
   function manageStagePrayer(){
-    prayerStageTimer--;
-    
-    // Kemaskini timer jika ditunjukkan
-    const timerEl = document.getElementById('prayer-timer');
-    if (timerEl && currentPrayerStage !== prayerStages.AZAN) {
-      let maxTime = 0;
-      switch(currentPrayerStage) {
-        case prayerStages.IQAMAH: maxTime = stageDurations.IQAMAH * 60; break;
-        case prayerStages.SOLAT: maxTime = stageDurations.SOLAT * 60; break;
-      }
-      updatePrayerTimer(timerEl, prayerStageTimer, maxTime);
-    }
-      
-    // Perubahan peringkat jika timer sudah habis
-    if (prayerStageTimer <= 0) {
-      switch(currentPrayerStage) {
-        case prayerStages.AZAN:
+    return {
+      stage: ()=>{
+        // Peralihan peringkat berdasarkan peringkat semasa
+        if(currentPrayerStage === prayerStages.AZAN) { 
           currentPrayerStage = prayerStages.IQAMAH;
-          prayerStageTimer = Math.round(stageDurations.IQAMAH * 60);
+          iPray.time = stageDurations.IQAMAH * 60;
           showPrayerStageDisplay();
-          break;
-            
-        case prayerStages.IQAMAH:
+          return;
+        }
+        
+        if(currentPrayerStage === prayerStages.IQAMAH) { 
           currentPrayerStage = prayerStages.SOLAT;
-          prayerStageTimer = Math.round(stageDurations.SOLAT * 60);
+          iPray.time = stageDurations.SOLAT * 60;
           showPrayerStageDisplay();
-          break;
-          
-        case prayerStages.SOLAT:
+          return;
+        }
+        
+        if(currentPrayerStage === prayerStages.SOLAT) { 
           currentPrayerStage = prayerStages.COMPLETED;
-          
-          // Tutup prayer stages dan kembali ke home page
-          setTimeout(() => {
-            const prayerStagesEl = document.getElementById('prayer-stages');
-            if (prayerStagesEl) prayerStagesEl.classList.add('dnone');
-            masukWaktu = false;
-            iPray.page = iPray.maxPage;
-            PageShow();
-          }, 1000);
-          break;
+          iPray.time = 0;
+          iPray.pendingPrayerTransition = true;
+          return;
+        }
+      },
+      complete: ()=>{
+        iPray.pendingPrayerTransition = false; // Reset flag
+        const prayerStagesEl = document.getElementById('prayer-stages');
+        if (prayerStagesEl) prayerStagesEl.classList.add('dnone');
+        masukWaktu = false;
       }
     }
   }
@@ -396,38 +381,44 @@ const present = (function(){
   }
   
   function showAnnouncement(){
-    function get(){
+
+    async function out (){
       document.querySelectorAll('.txtum').forEach(i => {
-        i.classList.remove('fadeInRight', 'fadeOutRight');
+        i.classList.replace('fadeInRight', 'fadeOut');
+        i.classList.remove('delay-1s');
       });
+      iPray.pendingSlideTransition = true;
+      iPray.time = 1;
+    }
+    
+    function get(){
+      iPray.pendingSlideTransition = false;
+      document.querySelectorAll('.txtum').forEach(i => i.classList.remove('fadeInRight', 'fadeOut','delay-1s'));
+      
+      const dateTime = umumActive[iPray.umum][0].split(" ");
+      const dateParts = dateTime[0].split("-");
+      const timeParts = dateTime[1].split(":");
+      const day = wdays[new Date(Date.UTC(+dateParts[0], +dateParts[1]-1, +dateParts[2])).getDay()];
+      const date = `${day}, ${dateParts[2]} ${mname[dateParts[1] * 1]} ${dateParts[0]}`;
+      const time = `${timeParts[0]}:${timeParts[1]}${timeParts[2] === "00" ? "" : timeParts[2] === "30" ? "30" : ""}${timeParts[2] === "00" ? "" : timeParts[2] < 12 ? "AM" : "PM"}`;
+      
+      document.getElementById('txtumm1').textContent = date
+      document.getElementById('txtumm2').textContent = time;
+      ['txtumtitle','txtumm0','txtumm3','txtumm4','coutleft'].forEach((i,n) => document.getElementById(i).textContent = umumActive[iPray.umum][n+1]);
       
       document.querySelectorAll('.txtum').forEach((i,n) => {
-        i.textContent = umumActive[iPray.umum][n];
-        if(iPray.umum === 0){
-          i.classList.add('delay-1s', 'fadeInRight');
-        } else {
-          i.classList.add('fadeInRight');
-        }
-      });
-      
-      if(iPray.umum < (umumActive.length-1)){
-        setTimeout(() => {
-          document.querySelectorAll('.txtum').forEach(i => {
-            i.classList.remove('delay-1s', 'fadeInRight');
-            i.classList.add('fadeOutRight');
-          });
-        }, 5000);
-      }
+        if(iPray.umum === 0)i.classList.add('delay-1s', 'fadeInRight');
+        else i.classList.add('fadeInRight');
+      }); 
     }
     
     function init(){
-      umumActive = umumData
-        .filter(r => (r.length > 0 && GetDiff2(r) !== false))
-        .map(r => [...r.split("|").filter((f,n)=>n>0), GetDiff2(r)]);
-      get();
+      umumActive = umumData.filter(r => (r.length > 0 && GetDiff2(r) !== false && GetDiff2(r).duration < 15)).map(r => [...r.split("|"), GetDiff2(r).duraStr]);
+      console.log(umumActive);
+      if(umumActive.length > 0) get();
     }
     
-    return {init, get};
+    return {init, get, out};
   }
   
   function showKuliah(){
@@ -456,9 +447,7 @@ const present = (function(){
     }
     
     function init(){
-      kuliahActive = kuliahData
-        .filter(r => (r.length > 0 && GetDiff2(r) !== false))
-        .map(r => [...r.split("|").filter((f,n)=>n>0), GetDiff2(r)]);
+      kuliahActive = kuliahData.filter(r => (r.length > 0 && GetDiff2(r) !== false)).map(r => [...r.split("|").filter((f,n)=>n>0), GetDiff2(r)]);
       get();
     }
     
@@ -468,7 +457,6 @@ const present = (function(){
   async function PageShow(){
     let page = iPray.page + 1;
     let attr = 0;
-    let countDelay = 0;
 
     if(page > iPray.maxPage) page = 0;
     if(document.querySelector('.page.disabled')) page++;
@@ -485,7 +473,6 @@ const present = (function(){
     document.querySelectorAll('.datebar-top').forEach(i => {i.classList.add('fadeInDown'); i.classList.remove('fadeOutUp');});
     document.querySelectorAll('.masablock, .timeblock').forEach(i => {i.classList.add('fadeInUp'); i.classList.remove('fadeOutDown');});
     
-    // Toggle visibility based on attributes
     ['datebar', 'masabar', 'timebar', 'msgbar'].forEach((id, idx) => {
       const el = document.getElementById(id);
       if(el) {
@@ -494,17 +481,14 @@ const present = (function(){
       }
     });
 
-    document.body.className = '';
-
     switch(iPray.page){
       case 0: // home
-        if(!masukWaktu) countDelay = iPray.time-1;
         break;
       case 1: // announcement
         if(umumData.length === 0) {await PageShow(); return;}
-        countDelay = iPray.time * umumData.length-1;
         iPray.umum = 0;
         showAnnouncement().init();
+        if(umumActive.length === 0) {await PageShow(); return;}
         break;
       case 2: // kuliah
         if(kuliahData.length === 0) {await PageShow(); return;}
@@ -528,13 +512,7 @@ const present = (function(){
         break;
     }
     
-    setTimeout(() => {
-      // if(masukWaktu) return;
-      if (nextPage) {nextPage.classList.remove('fadeInLeft'); nextPage.classList.add('fadeOutRight');}
-      document.querySelectorAll('.datebar-top').forEach(i => {i.classList.remove('fadeInDown'); i.classList.add('fadeOutUp');});
-      document.querySelectorAll('.masablock, .timeblock').forEach(i => {i.classList.remove('fadeInUp'); i.classList.add('fadeOutDown');});
-    }, countDelay * 1000);
-    
+    iPray.pendingPageTransition = true;
   }
 
   async function ShowTime(){
@@ -547,6 +525,19 @@ const present = (function(){
     
     const msgbarEl = document.getElementById('msgbar');
     if(msgbarEl && iPray.stsmsg === 0) msgbarEl.classList.add('dnone');
+
+    if(masukWaktu && (currentPrayerStage === prayerStages.AZAN || currentPrayerStage === prayerStages.IQAMAH || currentPrayerStage === prayerStages.SOLAT)) {
+      const timerEl = document.getElementById('prayer-timer');
+      if(timerEl) {
+        let maxTime = 0;
+        switch(currentPrayerStage) {
+          case prayerStages.AZAN: maxTime = stageDurations.AZAN * 60; break;
+          case prayerStages.IQAMAH: maxTime = stageDurations.IQAMAH * 60; break;
+          case prayerStages.SOLAT: maxTime = stageDurations.SOLAT * 60; break;
+        }
+        updatePrayerTimer(timerEl, iPray.time, maxTime);
+      }
+    }
     
     document.querySelectorAll("#jam1, #jam2").forEach(el => el.innerHTML = jam);
     document.querySelectorAll("#min1, #min2").forEach(el => el.innerHTML = NUM2(min));
@@ -554,62 +545,30 @@ const present = (function(){
     if(dot){
       document.querySelectorAll('.waktu.solattime.blink').forEach(el => el.classList.remove('blink'));
       document.querySelectorAll("#dot1, #dot2").forEach(el => el.classList.remove('blink'));
-      
-      // if(masukWaktu){ 
-      //   if(currentPrayerStage === prayerStages.AZAN && !isBeepPlaying && prayerStageTimer === 0){
-      //     try {
-      //       beepAudio.onended = () => {
-      //         isBeepPlaying = false;
-      //         const prayerStagesContainer = document.getElementById('prayer-stages');
-      //         if (prayerStagesContainer) prayerStagesContainer.classList.remove('dnone');
-      //         prayerStageTimer = Math.round(stageDurations.AZAN * 60);
-      //         showPrayerStageDisplay();
-      //         manageStagePrayer();
-      //       };
-      //     } catch (error) {console.log('Error playing beep:', error);}
-  
-      //     document.querySelectorAll('.show').forEach(currentPage => currentPage.classList.remove('show'));
-      //     document.querySelectorAll('.fadeInLeft').forEach(currentPage => currentPage.classList.remove('fadeInLeft'));
-      //     document.querySelectorAll('.fadeOutRight').forEach(currentPage => currentPage.classList.remove('fadeOutRight'));
-      //     document.getElementById('datebar').classList.remove('dnone');
-      //     document.getElementById('masabar').classList.remove('dnone');
-      //     document.getElementById('timebar').classList.add('dnone');
-      //     document.getElementById('msgbar').classList.add('dnone');
-      //     document.getElementById('home').classList.add('fadeInLeft', 'show');  
-      //   } 
-        
-      //   else if(currentPrayerStage !== prayerStages.AZAN || prayerStageTimer > 0) manageStagePrayer();
-        
-      //   return;
-      // }
-      
+
       if(iPray.time > 0) iPray.time--;
       if(iPray.time === 0){
 
-        if(iPray.page === 0){
-          
+        if(masukWaktu) {
+          if(currentPrayerStage !== prayerStages.COMPLETED) return manageStagePrayer().stage();
+          if(iPray.pendingPrayerTransition) manageStagePrayer().complete();
         }
         
-        if(popupEl && iPray.page !== 3) {
-          popupEl.remove();
-          popupEl = null;
-        }
-        
-        if(iPray.page === 1 && iPray.umum < (umumActive.length-1)){ 
+        if(iPray.page === 1 && iPray.umum < umumActive.length-1){ 
+          if(iPray.pendingSlideTransition === false) return showAnnouncement().out();
           iPray.umum++; 
           iPray.time = iPray.timer[1];
           showAnnouncement().get();
           return;
         }
         
-        if(iPray.page === 2 && iPray.kuliah < (kuliahActive.length-1)){ 
+        if(iPray.page === 2 && iPray.kuliah < kuliahActive.length-1){ 
           iPray.kuliah++; 
           iPray.time = iPray.timer[2];
           showKuliah().get();
           return;
         }
         
-        if(iPray.page === 3 && playing) return;
         if(iPray.page === 3 && iPray.slide < (slides.length-1)){
           iPray.time = iPray.timer[3];
           iPray.slide++;
@@ -631,6 +590,16 @@ const present = (function(){
           return;
         }
 
+        if(iPray.pendingPageTransition && !masukWaktu) {
+          iPray.pendingPageTransition = false; // Reset flag
+          iPray.time = 0; // masa transistion
+          const nextPage = document.querySelector('.page' + iPray.page);
+          if (nextPage) {nextPage.classList.remove('fadeInLeft'); nextPage.classList.add('fadeOutRight');}
+          document.querySelectorAll('.datebar-top').forEach(i => {i.classList.remove('fadeInDown'); i.classList.add('fadeOutUp');});
+          document.querySelectorAll('.masablock, .timeblock').forEach(i => {i.classList.remove('fadeInUp'); i.classList.add('fadeOutDown');});
+          return;
+        }
+        
         await PageShow();
       } 
     } else {
@@ -784,6 +753,8 @@ const present = (function(){
     await GetConfig('./config.txt','./data.txt');
     await ReadWaktu('./takwim.txt');
     setInterval(ShowTime, 500);
+    // iPray.page = 0;
+    // PageShow();
   }
 
   return {init}

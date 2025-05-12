@@ -121,7 +121,7 @@ video { width: 100%; }
 
 .prayer-timer {
   font-family: 'FONT0';
-  font-size: 7rem;
+  font-size: 8rem;
   font-weight: bold;
   margin: 1rem 0;
   padding: 1rem 2rem;
@@ -130,6 +130,7 @@ video { width: 100%; }
   color: #ff0000;
   text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
   position: absolute;
-  right: 25%;
+  right: 24%;
   top: 47%;
+  text-align: center;
 }
