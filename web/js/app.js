@@ -11,7 +11,7 @@ const present = (function(){
   const cname = ["K.LUMPUR","MEKAH","MADINAH","AL-AQSA"];
   let appData = {};
 
-  let slides = [], eventData = [], countdownFilter = [];
+  let slides = [];
   let masukWaktu = false, player, playing = false, popupEl, dot = false;
   let beepAudio = null;
   
@@ -618,91 +618,12 @@ const present = (function(){
     return await con.text();
   }
   
-  async function GetData(filePath) {
-    try {
-      const loadFile = await readFile(filePath);
-      
-      function parseBlocks(text) {
-        const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        const blocks = [];
-        const lines = normalizedText.split('\n');
-        
-        let currentBlock = null;
-        let currentContent = [];
-        
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].replace(/\r/g, '').trim();
-          if (line.startsWith('//')) {
-            if (currentBlock !== null) blocks.push({name: currentBlock, content: currentContent});
-            currentBlock = line.substring(2).trim();
-            currentContent = [];
-          }
-          else if (line === '' && currentBlock !== null) continue;
-          else if (line !== '' && currentBlock !== null) currentContent.push(line);
-        }
-        
-        if (currentBlock !== null) blocks.push({name: currentBlock, content: currentContent});
-        return blocks;
-      }
-      
-      const blocks = parseBlocks(loadFile);
-      const findBlock = name => blocks.find(block => block.name.toUpperCase().includes(name.toUpperCase()));
-      
-      const zoneBlock = findBlock('ZONE');
-      const zone = zoneBlock && zoneBlock.content.length > 0 ? zoneBlock.content[0].trim() : '';
-      
-      const noticeBlock = findBlock('PEMBERITAHUAN');
-      const news = noticeBlock && noticeBlock.content.length > 0 
-        ? noticeBlock.content
-          .filter(m => m && m.toString().trim().length > 0)
-          .map(m => `<li class="textmsg">${m.trim()}</li>`)
-          .join('')
-        : '';
-      
-      const countdownBlock = findBlock('COUNTDOWN');
-      const countdown = countdownBlock ? countdownBlock.content : [];
-      
-      const slideBlock = findBlock('SLIDESHOW');
-      const slider = slideBlock && slideBlock.content.length > 0 
-        ? slideBlock.content
-          .filter(s => s && s.trim() !== '' && !s.includes('0:img,1:vid,2:iframe'))
-          .map((s, n) => {
-            const aCol = s.toString().trim().split("|");
-            let filePath = aCol[0] ? aCol[0].trim() : '';
-            slides.push({id: 'slidvid' + n, isVid: 0, filename: filePath});
-            
-            if (aCol.length > 1) {
-              const slideType = parseInt(aCol[1] ? aCol[1].trim() : '0');
-              if (slideType === 1 || slideType === 2) {
-                slides[n].isVid = slideType;
-                if (aCol.length > 2) filePath = aCol[2] ? aCol[2].trim() : '';
-              }
-            }
-            
-            return `<img src="${filePath}" alt="" />`;
-          }).join('')
-        : '';
-      
-      const eventBlock = findBlock('EVENTS');
-      const even = eventBlock ? eventBlock.content.map(item => item.trim()) : [];
-      
-      const programBlock = findBlock('HEBAHAN');
-      const program = programBlock ? programBlock.content.map(item => item.trim()) : [];
-      
-      return {zone, news, countdown, slider, slides, even, program};
-      
-    } catch (error) {
-      console.error("Error processing file:", error);
-      return {zone: '', news: '', countdown: [], slider: '', slides: [], even: [], program: []};
-    }
-  }
-
-  async function GetConfig(fileConfig,fileData){
+  async function GetConfig(fileConfig){
     const loadFile = await readFile(fileConfig);
-    const rawData = loadFile.split("\n") || [];
-    const aConf = rawData.reduce((r, i) => (i !== '' && !i.startsWith('//') ? { ...r, [i.split('=')[0]]: i.split('=')[1] } : r), {});
-    const dlyView = rawData.filter(m => m.indexOf('TMR_VW') !== -1).map(m => parseInt(m.split('=')[1]));
-    const attrView = rawData.filter(m => m.indexOf('ATT_VW') !== -1).map(m => parseInt(m.split('=')[1]));
+    const confData = loadFile.split("\n") || [];
+    const aConf = confData.reduce((r, i) => (i !== '' && !i.startsWith('//') ? { ...r, [i.split('=')[0]]: i.split('=')[1] } : r), {});
+    const dlyView = confData.filter(m => m.indexOf('TMR_VW') !== -1).map(m => parseInt(m.split('=')[1]));
+    const attrView = confData.filter(m => m.indexOf('ATT_VW') !== -1).map(m => parseInt(m.split('=')[1]));
 
     iPray.timer = dlyView;
     iPray.attr = attrView;
@@ -710,20 +631,11 @@ const present = (function(){
     iPray.azanvid = './azan.mp4';
     beepAudio = new Audio('/audio/beep_loop_solat.wav');
 
-    slides = [];
-    eventData = [];
-    let imgs = '', info = '';
-
-    const res = await GetData(fileData);
-    eventData.push(...res.even);
-    if(res.slider.length > 0) imgs += res.slider;
-    info += res.news;
-    
-    const sliderEl = document.getElementById('slider');
-    if(sliderEl) sliderEl.innerHTML = imgs;
-    
+    appData = await dataExtractor.formatForPresent();
+    const {rawData} = await dataExtractor.getAppData();
+    const {scrolls} = rawData;
     const msgbarEl = document.getElementById("msgbar");
-    if(msgbarEl) msgbarEl.innerHTML = `<ul class="marquee">${info}</ul>`;
+    if(msgbarEl) msgbarEl.innerHTML = `<ul class="marquee">${scrolls.map(s => `<li>${s}</li>`).join('')}</ul>`;
   }
 
   async function init(){
@@ -741,13 +653,10 @@ const present = (function(){
       beep(0);
     });
 
-    appData = await dataExtractor.formatForPresent();
-    console.log(appData)
-
     iPray.maxPage = document.querySelectorAll('.pages').length - 1;
     iPray.page = iPray.maxPage;
     GetDateTime();
-    await GetConfig('./config.txt','./data.txt');
+    await GetConfig('./config.txt');
     await ReadWaktu('./takwim.txt');
     setInterval(ShowTime, 500);
     // iPray.page = 3;
