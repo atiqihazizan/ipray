@@ -60,6 +60,70 @@ const present = (function(){
     DateTime.monh = MonH;
     DateTime.dayh = DayH;
   }
+  // Fungsi untuk mengkonversi tanggal Masehi ke Hijriyah
+  function convertToHijri(masiDateStr) {
+    // Parse tanggal Masehi (format: YYYY-MM-DD)
+    const [year, month, day] = masiDateStr.split('-').map(Number);
+    
+    // Menggunakan fungsi GetYearDays yang sudah ada di app.js
+    const [days, daysm] = GetYearDays(year, month, day);
+    
+    // Variabel sementara untuk menyimpan data yang diperlukan
+    const tempData = {
+      days: days,
+      daysm: daysm,
+      mins: 0, // Asumsikan waktu pagi
+      maghrib: 0 // Akan diisi jika data tersedia
+    };
+    
+    // Cek jika data waktu solat tersedia
+    if (sysData.wdata && sysData.wdata[days] && sysData.wdata[days][5]) {
+      tempData.maghrib = TimeToMin(sysData.wdata[days][5]);
+    }
+    
+    // Algoritma konversi (sama dengan fungsi HijriDate)
+    let DayH = 24, MonH = 9, YearH = 1420;
+    let DaysH = tempData.daysm;
+    
+    // Algoritma dalam HijriDate yang mengubah hari jika setelah maghrib
+    // Diabaikan karena kita asumsikan waktu pagi
+    
+    let SetF = 31 - DayH, DatP = 1, BitP = 0;
+    let SetS = sysData.hdata[DatP];
+    
+    while(DaysH > 0) {
+      if(SetS & 0x01) SetF++;
+      if(DaysH > SetF) {
+        DayH = 0;
+        DaysH -= SetF;
+        MonH++;
+        if(MonH === 13) {
+          MonH = 1; 
+          YearH++;
+        }
+        SetS = (SetS >> 1);
+        SetF = 29;
+        BitP++;
+        if(BitP == 8) {
+          DatP++; 
+          BitP = 0; 
+          SetS = sysData.hdata[DatP];
+        }
+      } else {
+        DayH += DaysH; 
+        DaysH = 0;
+      }
+    }
+    
+    // Format hasil
+    return {
+      day: DayH,
+      month: MonH,
+      monthName: hname[MonH],
+      year: YearH,
+      formatted: `${DayH}-${hname[MonH]}`
+    };
+  }
 
   function GetYearDays(year,mon,day){
     let days = day;
@@ -221,52 +285,24 @@ const present = (function(){
   }
   
   function showCountdown(){
-    const tbody = document.querySelectorAll('#rowcountdown tr');
-    
-    function init(){
-      let rw = -1;
-      const rows = eventData.filter(r => {
-        const aRow = r.split("|");
-        const btxt = aRow[0].split('-');
-        const year = parseInt(btxt[2]);
-        const month = parseInt(btxt[1]);
-        const day = parseInt(btxt[0]);
-        const dateObj = new Date(year, month-1, day);
-        const [asDays] = GetDiff(dateObj);
-        return (!isNaN(asDays) && asDays < 0);
-      }).reduce((rws, i, n) => {
-        const aRow = i.split("|");
-        const btxt = aRow[0].split('-');
-        const year = parseInt(btxt[2]);
-        const month = parseInt(btxt[1]);
-        const day = parseInt(btxt[0]);
-        const dateObj = new Date(year, month-1, day);
-        const [asDays] = GetDiff(dateObj);
-        aRow.splice(0,1);
-        aRow.push(asDays*-1);
-        if((n % 6)===0){rw++; rws[rw] = [];}
-        rws[rw].push(aRow);
-        return rws;
-      },[]);
-
-      countdownFilter = rows;
-      get();
-    }
-    
-    function get(){
-      for(let i=0; i<6; i++) tbody[i].innerHTML = `<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>`;
-      
-      countdownFilter[iPray.countdown].forEach((r,pos) => {
-        tbody[pos].innerHTML = `<tr>
-          <td><div class="txtcntdwn animated fadeInRight delay-1s">${r[2]}</div></td>
-          <td><div class="txtcntdwn animated fadeInRight delay-1s">${r[0]}</div></td>
-          <td><div class="txtcntdwn animated fadeInRight delay-1s">${r[1]}</div></td>
-          <td><div class="txtcntdwn animated fadeInRight delay-1s tc">${r[3]}</div></td>
-        </tr>`;
-      });
-    }
-    
-    return {init, get};
+    const tbody = document.querySelectorAll('#rows_event tr');
+    tbody.forEach((tr,i)=>{
+      if(i >= appData.eventUpcoming.length) return;
+      const [name, date, days] = appData.eventUpcoming[i];
+      const hijr = convertToHijri(date).formatted;
+      const dateFormat = new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const tds = tr.querySelectorAll('td');
+        if (tds.length >= 4) {
+          tds[0].querySelector('div').textContent = name;
+          tds[0].querySelector('div').className = 'animated fadeInRight delay-1s';
+          tds[1].querySelector('div').textContent = dateFormat;
+          tds[1].querySelector('div').className = 'animated fadeInRight delay-1s';
+          tds[2].querySelector('div').textContent = hijr;
+          tds[2].querySelector('div').className = 'animated fadeInRight delay-1s';
+          tds[3].querySelector('div').textContent = days;
+          tds[3].querySelector('div').className = 'animated fadeInRight delay-1s tc';
+        }
+    })
   }
   
   function showVid(){
@@ -471,8 +507,8 @@ const present = (function(){
         if(slides[0].isVid === 2) showIfra();
         break;
       case 4: // upcoming
-        // if(appData.upcomingList.length === 0) {await PageShow(); return;}
-        // showCountdown().init();
+        if(appData.eventUpcoming.length === 0) {await PageShow(); return;}
+        showCountdown();
         break;
       case 5: // world prayer
         break;
@@ -550,13 +586,6 @@ const present = (function(){
           return;
         }
         
-        if(iPray.page === 4 && iPray.countdown < (countdownFilter.length-1)){
-          iPray.countdown++;
-          iPray.time = iPray.timer[4];
-          showCountdown().get();
-          return;
-        }
-
         if(iPray.pendingPageTransition && !masukWaktu) {
           iPray.pendingPageTransition = false; // Reset flag
           iPray.time = 0; // masa transistion
@@ -721,7 +750,7 @@ const present = (function(){
     await GetConfig('./config.txt','./data.txt');
     await ReadWaktu('./takwim.txt');
     setInterval(ShowTime, 500);
-    // iPray.page = 0;
+    // iPray.page = 3;
     // PageShow();
   }
 

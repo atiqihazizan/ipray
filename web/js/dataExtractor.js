@@ -141,11 +141,10 @@ const dataExtractor = (function() {
       sysData.highlights = highlightData.split('\n')
         .filter(line => line.trim() !== '')
         .map(line => {
-          const [date, name, hijriDate, description] = line.split('|');
+          const [date, name, description] = line.split('|');
           return {
             date,
             name,
-            hijriDate,
             description,
             raw: line // Simpan raw data untuk format original
           };
@@ -305,7 +304,8 @@ const dataExtractor = (function() {
         const [year, month, day] = item.date.split('-').map(Number);
         const dateObj = new Date(year, month-1, day);
         const [asDays] = GetDiff(dateObj);
-        return (!isNaN(asDays) && asDays < 0);
+        // Filter for items less than 0 days AND greater than -200 days
+        return (!isNaN(asDays) && asDays < 0 && asDays > -200);
       })
       .map(item => {
         const [year, month, day] = item.date.split('-').map(Number);
@@ -313,8 +313,9 @@ const dataExtractor = (function() {
         const [asDays] = GetDiff(dateObj);
         return [
           item.name,
-          item.hijriDate,
-          item.description,
+          item.date,
+          // item.hijriDate,
+          // item.description,
           asDays * -1
         ];
       });

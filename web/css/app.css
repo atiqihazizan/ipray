@@ -75,6 +75,7 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 .table-disp thead tr  { background: black }
 .table-disp img { height: 60px }
 .table-disp thead h3,.table-disp td,.table-disp th { font-family: 'FONT1';font-size: 38pt;font-weight: bold; }
+.table-disp.disp-sm th,.table-disp.disp-sm td { font-size: 32pt!important; }
 
 .iframeShow {background-color: transparent;}
 video { width: 100%; }
