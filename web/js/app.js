@@ -419,7 +419,7 @@ const present = (function(){
         i.classList.remove('delay-1s');
       });
       iPray.pendingSlideTransition = true;
-      iPray.time = 1;
+      iPray.time = 0;
     }
     
     function get(){
@@ -427,6 +427,7 @@ const present = (function(){
       iPray.pendingSlideTransition = false;
       document.querySelectorAll('.txtum').forEach((i,n) => {
         i.textContent = appData.upcomingNotice[iPray.umum][n];
+        if(n === 0) i.textContent = i.textContent.toUpperCase();
         if(iPray.umum === 0) i.classList.add('delay-1s');
         i.classList.add('fadeInRight');
       });
@@ -442,13 +443,14 @@ const present = (function(){
         i.classList.remove('delay-1s');
       });
       iPray.pendingSlideTransition = true;
-      iPray.time = 1;
+      iPray.time = 0;
     }
     function get(){
       document.querySelectorAll('.txtkuliah').forEach(i => i.classList.remove('fadeInRight', 'fadeOut','delay-1s'));
       iPray.pendingSlideTransition = false;
       document.querySelectorAll('.txtkuliah').forEach((i,n) => {
         i.innerHTML = appData.kuliahUpcoming[iPray.kuliah][n] || '&nbsp;';
+        if(n === 0) i.innerHTML = i.innerHTML.toUpperCase();
         if(iPray.kuliah === 0) i.classList.add('delay-1s');
         i.classList.add('fadeInRight');
       });
