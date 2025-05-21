@@ -292,11 +292,11 @@ const dataExtractor = (function() {
    */
   async function getUpcomingEvents() {
     // Gunakan cache jika sudah ada
-    if (cache.upcomingEvents) {
-      return cache.upcomingEvents;
-    }
+    // if (cache.upcomingEvents) {
+    //   return cache.upcomingEvents;
+    // }
     
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     
     // Sama seperti logika present.js
     const rows = sysData.highlights
@@ -332,7 +332,7 @@ const dataExtractor = (function() {
    * @returns {Promise<Object>} - Acara yang terjadi dalam rentang tanggal
    */
   async function getEventsByDateRange(startDate, endDate) {
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     
     // Fungsi untuk memeriksa apakah tanggal berada dalam rentang
     const isInDateRange = (eventDate) => {
@@ -361,11 +361,11 @@ const dataExtractor = (function() {
    */
   async function getUpcomingNotice() { // Diganti dari getAnnouncements
     // Gunakan cache jika sudah ada
-    if (cache.upcomingNotice) { // Diganti dari announcements
-      return cache.upcomingNotice; // Diganti dari announcements
-    }
+    // if (cache.upcomingNotice) { // Diganti dari announcements
+    //   return cache.upcomingNotice; // Diganti dari announcements
+    // }
     
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     
     // Logika pengumuman sesuai dengan showAnnouncement() di present.js
     const upcomingNotice = sysData.upcoming // Diganti dari announcements
@@ -402,11 +402,11 @@ const dataExtractor = (function() {
    */
   async function getKuliahUpcoming() { // Diganti dari getActiveKuliah
     // Gunakan cache jika sudah ada
-    if (cache.kuliahUpcoming) { // Diganti dari activeKuliah
-      return cache.kuliahUpcoming; // Diganti dari activeKuliah
-    }
+    // if (cache.kuliahUpcoming) { // Diganti dari activeKuliah
+    //   return cache.kuliahUpcoming; // Diganti dari activeKuliah
+    // }
     
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     
     // Logika kuliah aktif sesuai dengan showKuliah() di present.js
     const kuliahUpcoming = sysData.kuliah
@@ -465,7 +465,7 @@ const dataExtractor = (function() {
    * @returns {Promise<Object>} - Acara yang mengandung kata kunci
    */
   async function searchEvents(keyword) {
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     const searchTermLower = keyword.toLowerCase();
     
     // Fungsi untuk memeriksa apakah acara mengandung kata kunci
@@ -502,11 +502,11 @@ const dataExtractor = (function() {
    */
   async function formatForPresent() {
     // Gunakan cache jika sudah ada
-    if (cache.presentFormat) {
-      return cache.presentFormat;
-    }
+    // if (cache.presentFormat) {
+    //   return cache.presentFormat;
+    // }
     
-    await extractData();
+    if(!cache.dataLoaded) await extractData();
     
     // Persiapkan semua data yang dibutuhkan secara paralel
     const [upcomingEvents, upcomingNotice, kuliahUpcoming] = await Promise.all([

@@ -492,11 +492,13 @@ const present = (function(){
       case 1: // upcomming
         if(appData.upcomingNotice.length === 0) {await PageShow(); return;}
         iPray.umum = 0;
+        // await appData.getUpcomingNotice();
         showAnnouncement().get();
         break;
       case 2: // kuliah
         if(appData.kuliahUpcoming.length === 0) {await PageShow(); return;}
         iPray.kuliah = 0;
+        await appData.getKuliahUpcoming();
         showKuliah().get();
         break;
       case 3: // slider
@@ -510,6 +512,7 @@ const present = (function(){
         break;
       case 4: // upcoming
         if(appData.eventUpcoming.length === 0) {await PageShow(); return;}
+        await appData.getUpcomingEvents();
         showCountdown();
         break;
       case 5: // world prayer
@@ -634,6 +637,7 @@ const present = (function(){
     beepAudio = new Audio('/audio/beep_loop_solat.wav');
 
     appData = await dataExtractor.formatForPresent();
+    
     const {rawData} = await dataExtractor.getAppData();
     const {scrolls} = rawData;
     const msgbarEl = document.getElementById("msgbar");
