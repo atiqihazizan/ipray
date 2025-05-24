@@ -664,9 +664,13 @@ const present = (function(){
     GetDateTime();
     await GetConfig('./config.txt');
     await ReadWaktu('./takwim.txt');
-    setInterval(ShowTime, 500);
-    // iPray.page = 3;
-    // PageShow();
+    const debug = false;
+    if(!debug){
+      setInterval(ShowTime, 500);
+    } else {
+      iPray.page = 1;
+      PageShow();
+    }
   }
 
   return {init}
