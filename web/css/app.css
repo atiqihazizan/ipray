@@ -65,10 +65,15 @@ ol,ul {list-style: none;margin: 0;padding: 0;vertical-align: baseline;font-famil
 
 .maintitle { font-family: FONT3; font-size: 90px; line-height: 80px; margin: 3rem auto 0; text-align: center; color: white;}
 .remain {margin-top: 10px; line-height: .7 !important; font-size: 6rem;}
+.remain.notice {margin-top: 0px; font-size: 10rem; line-height: 1.2 !important;}
 .tablefram { padding: .7rem; background: #80808080}
 .table-disp {width: 100%; border: 0; border-spacing: 0; background: #ffffffad; padding: 1rem;}
 .table-disp td {padding: 1rem 3rem; min-height: 100px}
-.table-disp td.icon { width: 5%; text-align: center}
+/* .table-disp td.icon { width: 5%; text-align: center} */
+.table-disp td.icon { width: 32px; text-align: center; display: flex; align-items: center; padding-right: 0;}
+.table-disp td.icon.mic img {height: auto;width: 95px;margin-left: -13px;}
+.table-disp td.icon.kitab img {height: auto;width: 89px; margin-left: -10px;}
+.table-disp td.timer {width: 331px;padding-right: 7px;}
 .table-disp thead h3, .table-disp thead th {color: #ffe72f;padding: 6px;margin: 0; text-align: center}
 .table-disp.striped-row tbody tr:nth-child(odd) {background-color: #8080807a;}
 .table-disp.striped-col tbody td:nth-child(even) {background-color: #ffffffb8;}
@@ -91,7 +96,7 @@ video { width: 100%; }
 .dhide { transition: all .5s ease-in-out; height: 0;}
 .tc { text-align: center}
 
-.img-pengajar {position: absolute;top: 112px;right: 28px;height: calc(100% - 151px);background: #ffffffad;}
+.img-pengajar {position: absolute;top: 112px;right: 28px;height: calc(100% - 140px);background: #ffffffad;}
 
 .bg-graysoft { background-color: #999999 }
 .bg-blackdark { background-color: #000000 }
@@ -137,4 +142,41 @@ video { width: 100%; }
   right: 24%;
   top: 47%;
   text-align: center;
+}
+
+/* Blinking Animation */
+@keyframes blink {
+  0% { opacity: 0; visibility: hidden; }
+  50% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes blink-show {
+  0% { opacity: 0; visibility: hidden; }
+  100% { opacity: 1; visibility: visible; }
+}
+
+.blinking {
+  animation: blink 1.5s linear infinite;
+  color: #fff; /* Warna default putih */
+}
+
+/* Efek blink dari hide ke show */
+.blinking.show-hide {
+  animation: blink-show 1s steps(2, jump-none) infinite;
+}
+
+/* Warna tambahan untuk blinking */
+.blinking.red { color: #ff0000; }
+.blinking.yellow { color: #ffff00; }
+.blinking.green { color: #00ff00; }
+.blinking.blue { color: #00aaff; }
+
+/* Kecepatan animasi yang berbeda */
+.blinking.fast { animation-duration: 0.5s; }
+.blinking.slow { animation-duration: 2s; }
+
+/* Efek tambahan */
+.blinking.with-shadow {
+  text-shadow: 0 0 10px currentColor;
 }

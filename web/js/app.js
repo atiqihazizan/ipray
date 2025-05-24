@@ -296,7 +296,7 @@ const present = (function(){
           tds[0].querySelector('div').textContent = name;
           tds[0].querySelector('div').className = 'animated fadeInRight delay-1s';
           tds[1].querySelector('div').textContent = dateFormat;
-          tds[1].querySelector('div').className = 'animated fadeInRight delay-1s';
+          tds[1].querySelector('div').className = 'animated fadeInRight delay-1s tc';
           tds[2].querySelector('div').textContent = hijr;
           tds[2].querySelector('div').className = 'animated fadeInRight delay-1s';
           tds[3].querySelector('div').textContent = days;
@@ -416,6 +416,7 @@ const present = (function(){
     async function out (){
       document.querySelectorAll('.txtum').forEach(i => {
         i.classList.replace('fadeInRight', 'fadeOut');
+        i.classList.replace('fadeIn','fadeOut');
         i.classList.remove('delay-1s');
       });
       iPray.pendingSlideTransition = true;
@@ -423,11 +424,15 @@ const present = (function(){
     }
     
     function get(){
-      document.querySelectorAll('.txtum').forEach(i => i.classList.remove('fadeInRight', 'fadeOut', 'delay-1s'));
+      document.querySelectorAll('.txtum').forEach(i => i.classList.remove('fadeInRight', 'fadeOut', 'delay-1s','fadeIn','delay-2s'));
       iPray.pendingSlideTransition = false;
       document.querySelectorAll('.txtum').forEach((i,n) => {
         i.textContent = appData.upcomingNotice[iPray.umum][n];
         if(n === 0) i.textContent = i.textContent.toUpperCase();
+        if(n === document.querySelectorAll('.txtum').length-1) {
+          i.classList.add('fadeIn','delay-1s');
+          return;
+        }
         if(iPray.umum === 0) i.classList.add('delay-1s');
         i.classList.add('fadeInRight');
       });
@@ -552,6 +557,9 @@ const present = (function(){
     if(dot){
       document.querySelectorAll('.waktu.solattime.blink').forEach(el => el.classList.remove('blink'));
       document.querySelectorAll("#dot1, #dot2").forEach(el => el.classList.remove('blink'));
+      const page1Show = document.querySelector('.page1');
+      if (page1Show) page1Show.querySelector('.notice').classList.remove('blink');
+
 
       if(iPray.time > 0) iPray.time--;
       if(iPray.time === 0){
@@ -606,6 +614,8 @@ const present = (function(){
     } else {
       document.querySelectorAll("#dot1, #dot2").forEach(el => el.classList.add('blink'));
       document.querySelectorAll('.waktu.solattime').forEach(el => el.classList.add('blink'));
+      const page1Show = document.querySelector('.page1.show');
+      if (page1Show) page1Show.querySelector('.notice').classList.add('blink');
     }
   }
   
@@ -668,7 +678,7 @@ const present = (function(){
     if(!debug){
       setInterval(ShowTime, 500);
     } else {
-      iPray.page = 1;
+      iPray.page = 0;
       PageShow();
     }
   }

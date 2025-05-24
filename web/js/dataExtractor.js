@@ -6,7 +6,7 @@
  */
 const dataExtractor = (function() {
   const wdays = ["AHAD","ISNIN","SELASA","RABU","KHAMIS","JUMAAT","SABTU"];
-  const mname = ["MASIHI","JAN","FEB","MAC","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const mname = ["MASIHI","JAN","FEB","MAC","APR","MEI","JUN","JUL","OGS","SEP","OKT","NOV","DIS"];
 
   // Struktur data yang akan menyimpan semua data yang diekstrak
   const sysData = {
@@ -376,7 +376,7 @@ const dataExtractor = (function() {
         const dateParts = item.date.split("-");
         const timeParts = item.time.split(":");
         const day = wdays[new Date(Date.UTC(+dateParts[0], +dateParts[1]-1, +dateParts[2])).getDay()];
-        const date = `${day}, ${dateParts[2]} ${mname[dateParts[1] * 1].toLowerCase()} ${dateParts[0]}`;
+        const date = `${day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()}, ${dateParts[2]} ${mname[dateParts[1] * 1].charAt(0).toUpperCase() + mname[dateParts[1] * 1].slice(1).toLowerCase()} ${dateParts[0]}`;
         const time = `${timeParts[0]}:${timeParts[1]}${timeParts[2] === "00" ? "" : timeParts[2] === "30" ? "30" : ""}${timeParts[2] === "00" ? "" : timeParts[2] < 12 ? " AM" : " PM"}`;
       
         return [
@@ -435,8 +435,9 @@ const dataExtractor = (function() {
         const dateParts = item.date.split("-");
         const timeParts = item.time.split(":");
         const day = wdays[new Date(Date.UTC(+dateParts[0], +dateParts[1]-1, +dateParts[2])).getDay()];
-        const date = `${day}, ${dateParts[2]} ${mname[dateParts[1] * 1].toLowerCase()} ${dateParts[0]}`;
+        const date = `${day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()}, ${dateParts[2]} ${mname[dateParts[1] * 1].charAt(0).toUpperCase() + mname[dateParts[1] * 1].slice(1).toLowerCase()} ${dateParts[0]}`;
         const time = `${timeParts[0]}:${timeParts[1]}${timeParts[2] === "00" ? "" : timeParts[2] === "30" ? "30" : ""}${timeParts[2] === "00" ? "" : timeParts[2] < 12 ? " AM" : " PM"}`;
+        
         return [
           item.title,
           item.speaker,

@@ -1,10 +1,14 @@
-2025-05-10 19:30|Kuliah Maghrib|Ustaz Ahmad|Tafsir Ayat Al-Quran|Semua jemaah dijemput hadir
-2025-05-12 08:30|Kuliah Subuh|Ustaz Zainal|Keutamaan Solat Berjemaah|Jemaah lelaki & wanita dijemput hadir
-2025-05-15 19:30|Kuliah Maghrib|Ustaz Khairul|Sunnah Rasul dalam Kehidupan|Terbuka kepada umum
-2025-05-20 08:30|Tazkirah Subuh|Ustaz Amar|Menghadapi Ujian dalam Kehidupan|Semua jemaah dijemput hadir
-2025-05-25 19:30|Kuliah Maghrib|Ustaz Fauzi|Mengurus Emosi dengan Iman|Semua jemaah dijemput hadir
-2025-05-30 08:00|Tazkirah Subuh|Ustaz Haris|Adab dalam Solat|Khas untuk jemaah lelaki
-2025-06-05 19:30|Kuliah Maghrib|Ustaz Ahmad|Sunnah Nabi dalam Kehidupan|Terbuka kepada umum
-2025-06-10 08:30|Tazkirah Subuh|Ustaz Zainal|Keutamaan Doa dalam Islam|Semua jemaah dijemput hadir
-2025-06-15 19:30|Kuliah Maghrib|Ustaz Farid|Menghadapi Dosa Besar|Semua jemaah dijemput hadir
-2025-06-20 08:30|Kuliah Subuh|Ustaz Khairul|Adab Menuntut Ilmu|Terbuka kepada umum
+2025-05-01 19:30|Kuliah Maghrib|Ustaz Ahmad|Tafsir Surah Yasin|Kitab Tafsir Al-Jalalayn
+2025-05-05 08:30|Kuliah Subuh|Ustaz Zainal|Keutamaan Berdoa di Waktu Pagi|Kitab Riyadhus Salihin
+2025-05-10 10:00|Kuliah Dhuha|Ustaz Khairul|Sunnah Nabi dalam Berinteraksi|Kitab Sahih Al-Bukhari
+2025-05-15 08:30|Kuliah Subuh|Ustaz Amar|Adab Menjaga Lidah|Kitab Al-Arba’in An-Nawawiyyah
+2025-05-20 19:30|Kuliah Maghrib|Ustaz Fauzi|Hikmah Kisah Nabi Yusuf|Kitab Tafsir Ibn Kathir
+2025-05-25 10:00|Kuliah Dhuha|Ustaz Haris|Adab dalam Solat Jemaah|Kitab Minhaj Al-Muslim
+2025-05-30 19:30|Kuliah Maghrib|Ustaz Ahmad|Keutamaan Zikir Selepas Solat|Kitab Bulugh Al-Maram
+2025-06-01 08:30|Kuliah Subuh|Ustaz Zainal|Keutamaan Membaca Surah Al-Kahfi|Kitab Al-Lu’lu’ wal Marjan
+2025-06-05 19:30|Kuliah Maghrib|Ustaz Farid|Menghindari Sifat Hasad|Kitab Sahih Muslim
+2025-06-10 10:00|Kuliah Dhuha|Ustaz Khairul|Adab Berbuat Baik kepada Ibu Bapa|Kitab Al-Adab Al-Mufrad
+2025-06-15 19:30|Kuliah Maghrib|Ustaz Ahmad|Tafsir Surah Al-Mulk|Kitab Tafsir Al-Jalalayn
+2025-06-20 08:30|Kuliah Subuh|Ustaz Zainal|Keutamaan Silaturahim|Kitab Riyadhus Salihin
+2025-06-25 19:30|Kuliah Maghrib|Ustaz Fauzi|Sunnah dalam Berwuduk|Kitab Bulugh Al-Maram
+2025-06-30 08:30|Kuliah Subuh|Ustaz Amar|Keutamaan Menjaga Hati|Kitab Al-Arba’in An-Nawawiyyah
