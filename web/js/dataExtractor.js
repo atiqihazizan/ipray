@@ -71,10 +71,19 @@ const dataExtractor = (function() {
     const utcEnd = new Date(end.getTime() + (end.getTimezoneOffset() * 60000) + (8 * 3600000));
     const diffMs = utcNow - utcEnd;
     
+    // Hitung perbezaan dalam minit, jam, dan hari
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    
+    // Hitung perbezaan hari dengan membandingkan tarikh (tanpa kira masa)
+    const startOfDayNow = new Date(utcNow.getFullYear(), utcNow.getMonth(), utcNow.getDate());
+    const startOfDayEnd = new Date(utcEnd.getFullYear(), utcEnd.getMonth(), utcEnd.getDate());
+    const diffDays = Math.floor((startOfDayNow - startOfDayEnd) / (1000 * 60 * 60 * 24));
+    
     return [
-      Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-      Math.floor(diffMs / (1000 * 60 * 60)),
-      Math.floor(diffMs / (1000 * 60))
+      diffDays,          // Jumlah hari penuh
+      diffHours,         // Jumlah jam penuh
+      diffMinutes        // Jumlah minit penuh
     ];
   }
   
@@ -90,9 +99,9 @@ const dataExtractor = (function() {
     const [asDay, asHour, asMin] = GetDiff(dt);
     
     if(asDay < 0) return {duration:(asDay * -1), duraStr:(asDay * -1) + ' Hari Lagi', type: 'day'};
-    if(asHour < 0) return {duration:(asHour * -1), duraStr:(asHour * -1) + ' Jam Lagi', type: 'hour'};
-    if(asMin < 0) return {duration:(asMin * -1), duraStr:(asMin * -1) + ' Minit Lagi', type: 'min'};
     if(asMin === 0) return {duration:0, duraStr:'Sedang berlangsung', type: 'now'};
+    if(asMin < 0) return {duration:(asMin * -1), duraStr:(asMin * -1) + ' Minit Lagi', type: 'min'};
+    if(asHour < 0) return {duration:(asHour * -1), duraStr:(asHour * -1) + ' Jam Lagi', type: 'hour'};
     return false;
   }
   
@@ -290,12 +299,7 @@ const dataExtractor = (function() {
    * Mendapatkan acara yang akan datang untuk countdown
    * @returns {Promise<Array>} - Acara untuk countdown
    */
-  async function getUpcomingEvents() {
-    // Gunakan cache jika sudah ada
-    // if (cache.upcomingEvents) {
-    //   return cache.upcomingEvents;
-    // }
-    
+  async function getUpcomingEvents() {    
     if(!cache.dataLoaded) await extractData();
     
     // Sama seperti logika present.js
@@ -360,11 +364,6 @@ const dataExtractor = (function() {
    * @returns {Promise<Array>} - Data pengumuman
    */
   async function getUpcomingNotice() { // Diganti dari getAnnouncements
-    // Gunakan cache jika sudah ada
-    // if (cache.upcomingNotice) { // Diganti dari announcements
-    //   return cache.upcomingNotice; // Diganti dari announcements
-    // }
-    
     if(!cache.dataLoaded) await extractData();
     
     // Logika pengumuman sesuai dengan showAnnouncement() di present.js
@@ -401,11 +400,6 @@ const dataExtractor = (function() {
    * @returns {Promise<Array>} - Data kuliah yang akan ditampilkan
    */
   async function getKuliahUpcoming() { // Diganti dari getActiveKuliah
-    // Gunakan cache jika sudah ada
-    // if (cache.kuliahUpcoming) { // Diganti dari activeKuliah
-    //   return cache.kuliahUpcoming; // Diganti dari activeKuliah
-    // }
-    
     if(!cache.dataLoaded) await extractData();
     
     // Logika kuliah aktif sesuai dengan showKuliah() di present.js

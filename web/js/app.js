@@ -490,15 +490,15 @@ const present = (function(){
       case 0: // home
         break;
       case 1: // upcomming
+        appData.upcomingNotice = await dataExtractor.getUpcomingNotice();
         if(appData.upcomingNotice.length === 0) {await PageShow(); return;}
         iPray.umum = 0;
-        // await appData.getUpcomingNotice();
         showAnnouncement().get();
         break;
       case 2: // kuliah
+        appData.kuliahUpcoming = await dataExtractor.getKuliahUpcoming();
         if(appData.kuliahUpcoming.length === 0) {await PageShow(); return;}
         iPray.kuliah = 0;
-        await appData.getKuliahUpcoming();
         showKuliah().get();
         break;
       case 3: // slider
@@ -511,8 +511,8 @@ const present = (function(){
         if(slides[0].isVid === 2) showIfra();
         break;
       case 4: // upcoming
+        appData.eventUpcoming = await dataExtractor.getUpcomingEvents();
         if(appData.eventUpcoming.length === 0) {await PageShow(); return;}
-        await appData.getUpcomingEvents();
         showCountdown();
         break;
       case 5: // world prayer
@@ -602,7 +602,7 @@ const present = (function(){
         }
         
         await PageShow();
-      } 
+      }
     } else {
       document.querySelectorAll("#dot1, #dot2").forEach(el => el.classList.add('blink'));
       document.querySelectorAll('.waktu.solattime').forEach(el => el.classList.add('blink'));

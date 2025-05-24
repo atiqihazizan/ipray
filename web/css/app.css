@@ -111,15 +111,15 @@ video { width: 100%; }
 
 .prayer-stages.azan{
   background-color: transparent;
-  background-image: url(/images/azan1.png);
+  background-image: url(../images/azan1.png);
 }
 .prayer-stages.iqamah{
   background-color: rgb(0, 0, 0); /* Latar belakang lebih gelap */
-  background-image: url(/images/iqamah1.png);
+  background-image: url(../images/iqamah1.png);
 }
 .prayer-stages.solat{
   background-color: rgb(0, 0, 0); /* Latar belakang lebih gelap */
-  background-image: url(/images/rapat.png);
+  background-image: url(../images/rapat.png);
 }
 
 .prayer-timer {
