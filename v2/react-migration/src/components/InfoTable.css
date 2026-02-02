@@ -1,0 +1,69 @@
+/* Fixed Width Columns untuk InfoTable */
+.fixed-width-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+/* Column width presets */
+.col-date-small { width: 120px; }
+.col-date-medium { width: 180px; }
+.col-date-large { width: 250px; }
+
+.col-time-small { width: 80px; }
+.col-time-medium { width: 120px; }
+.col-time-large { width: 150px; }
+.col-time-xlarge { width: 250px; }
+
+.col-speaker-small { width: 100px; }
+.col-speaker-medium { width: 150px; }
+.col-speaker-large { width: 200px; }
+
+.col-topic-small { width: 150px; }
+.col-topic-medium { width: 200px; }
+.col-topic-large { width: 300px; }
+
+.col-location-small { width: 120px; }
+.col-location-medium { width: 180px; }
+.col-location-large { width: 250px; }
+
+.col-audience-small { width: 80px; }
+.col-audience-medium { width: 120px; }
+.col-audience-large { width: 150px; }
+
+/* Custom width columns */
+.col-custom-small { width: 100px; }
+.col-custom-medium { width: 150px; }
+.col-custom-large { width: 250px; }
+.col-custom-xlarge { width: 350px; }
+
+/* Text overflow handling */
+.fixed-width-col {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fixed-width-col.allow-wrap {
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Icon column fixed width */
+.fixed-width-table .icon {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .col-date-large { width: 200px; }
+  .col-topic-large { width: 250px; }
+  .col-custom-xlarge { width: 300px; }
+}
+
+@media (max-width: 480px) {
+  .col-date-medium { width: 150px; }
+  .col-topic-medium { width: 180px; }
+  .col-custom-large { width: 200px; }
+}

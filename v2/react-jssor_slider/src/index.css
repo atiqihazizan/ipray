@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Bebas';
+  src: url('/fonts/bebas.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/Anton,Roboto/Anton/Anton-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  font-family: Arial, Verdana, Sans-Serif;
+}
+
+* {
+  cursor: none !important;
+}
+
+/* Blinking effect untuk 30 saat sebelum waktu solat */
+.blink-container.blinking {
+  animation: blink 1s ease-in-out infinite;
+  color: red;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}

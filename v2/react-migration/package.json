@@ -1,0 +1,91 @@
+{
+  "name": "ipray",
+  "version": "1.0.0",
+  "description": "IPRAY",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electronmon .",
+    "build": "electron-builder",
+    "build:all": "electron-builder --mac --win --linux",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "react:dev": "vite",
+    "react:build": "vite build",
+    "react:preview": "vite preview"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "chokidar": "^4.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "multer": "^1.4.5-lts.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.18"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "autoprefixer": "^10.4.21",
+    "electron": "^31.3.0",
+    "electron-builder": "^26.0.12",
+    "electronmon": "^2.0.3",
+    "postcss": "^8.5.6",
+    "vite": "^4.4.0"
+  },
+  "build": {
+    "appId": "com.ipray",
+    "productName": "IPRAY",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "ipray/**/*",
+      "electron-main.js",
+      "preload.js",
+      "window/**/*",
+      "util/**/*",
+      "api/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "!**/*.bak",
+      "!**/*.backup",
+      "!**/*.tmp",
+      "!**/*.log",
+      "!**/.DS_Store",
+      "!**/Thumbs.db"
+    ],
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
+    "extraResources": [
+      { "from": "data", "to": "../data", "filter": ["**/*", "!**/*.bak", "!**/*.backup", "!**/*.tmp"] },
+      { "from": "public/sliders", "to": "../sliders","filter": ["!image-slider-*"] },
+      { "from": "videos", "to": "../videos", "filter": ["**/*", "!**/*.bak", "!**/*.backup", "!**/*.tmp"] },
+      { "from": "iframes", "to": "../iframes", "filter": ["**/*", "!**/*.bak", "!**/*.backup", "!**/*.tmp"] }
+    ],
+    "asarUnpack": [
+      "node_modules/chokidar/**/*",
+      "node_modules/express/**/*",
+      "node_modules/body-parser/**/*",
+      "node_modules/cors/**/*",
+      "node_modules/multer/**/*"
+    ],
+    "compression": "maximum",
+    "removePackageScripts": true,
+    "removePackageKeywords": true,
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "portable",
+      "compression": "maximum",
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

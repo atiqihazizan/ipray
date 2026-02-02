@@ -1,0 +1,10 @@
+// Format: date time|title|location|description|audience
+// Date: YYYY-MM-DD
+// Time: HH:MM (24-hour format)
+// Title: Nama program/aktiviti
+// Location: Tempat diadakan
+// Description: Keterangan program
+// Audience: Sasaran peserta (Kariah, Remaja, Penduduk, Semua, Keluarga, dll)
+//
+
+

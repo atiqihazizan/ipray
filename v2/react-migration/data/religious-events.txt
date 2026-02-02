@@ -1,0 +1,14 @@
+// Format: date|event_name
+// Date: YYYY-MM-DD
+// Event Name: Nama peristiwa agama
+//
+2025-01-15|Maulidur Rasul
+2025-02-08|Isra' Mikraj
+2025-03-10|Awal Ramadan
+2025-04-08|Nuzul Quran
+2025-04-09|Lailatul Qadar
+2025-04-10|Hari Raya Aidilfitri
+2025-06-16|Hari Raya Aidiladha
+2025-07-07|Awal Muharram
+2025-07-16|Hari Asyura
+2025-08-15|Maal Hijrah

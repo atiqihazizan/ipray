@@ -1,0 +1,11 @@
+// Format: type|filename|description|duration(seconds)
+// Type: img (image), vid (video), iframe (iframe)
+// Duration: in seconds (e.g., 5 = 5 seconds)
+// Image path: /sliders/filename
+// Video path: direct path to video file
+// Iframe path: URL for iframe src
+//
+// Example:
+// img|slider1.jpg|Masjid|5
+// vid|promo.mp4|Video Promo|15
+// iframe|https://example.com|External Content|10

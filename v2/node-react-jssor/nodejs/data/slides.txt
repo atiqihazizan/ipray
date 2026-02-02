@@ -1,0 +1,6 @@
+home|bg-mta|1000|date,solat,time
+announce|picture4|3000|next-solat,small-time
+kuliahHari|picture4d|3000|next-solat,small-time
+kuliahWeekly|picture4d|3000|next-solat,small-time
+kuliahBulanan|picture4e|10000|next-solat,small-time
+slideshow|images/slideshow/mountant0.jpeg|1500|

@@ -1,0 +1,8 @@
+// Format: date time|title|speaker|topic|audience
+// Date: YYYY-MM-DD
+// Time: HH:MM (24-hour format)
+// Title: Tajuk kuliah
+// Speaker: Nama ustaz/ustazah
+// Topic: Topik kuliah
+// Audience: Sasaran peserta
+//

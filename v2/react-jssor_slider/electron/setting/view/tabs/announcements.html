@@ -1,0 +1,22 @@
+<!-- Announcements Tab -->
+<div id="announcements-tab" class="tab-content">
+    <div class="content-card">
+        <div class="info-box">
+            <p><strong>Format:</strong> type|title|speaker|category|datetime|location|audience</p>
+        </div>
+        <div class="table-container">
+            <table id="announcements-table" class="data-table">
+                <thead id="announcements-thead"></thead>
+                <tbody id="announcements-tbody"></tbody>
+            </table>
+        </div>
+        <div class="flex gap-3">
+            <button class="btn-add flex-1" onclick="openAddDialog()">
+                <span>➕</span> Tambah Pengumuman
+            </button>
+            <button class="btn-reload flex-1" onclick="loadTable('announcements')">
+                <span>🔄</span> Reload Data
+            </button>
+        </div>
+    </div>
+</div>

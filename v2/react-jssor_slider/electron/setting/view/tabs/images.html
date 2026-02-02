@@ -1,0 +1,23 @@
+<!-- Images Tab -->
+<div id="images-tab" class="tab-content">
+    <div class="content-card">
+        <div class="info-box">
+            <p><strong>Format:</strong> imageCode|imagePath</p>
+            <p style="font-size: 12px; margin-top: 8px;">Mapping kod image ke path (untuk penceramah dan slides)</p>
+        </div>
+        <div class="table-container">
+            <table id="images-table" class="data-table">
+                <thead id="images-thead"></thead>
+                <tbody id="images-tbody"></tbody>
+            </table>
+        </div>
+        <div class="flex gap-3">
+            <button class="btn-add flex-1" onclick="openAddDialog()">
+                <span>➕</span> Tambah Image
+            </button>
+            <button class="btn-reload flex-1" onclick="loadTable('images')">
+                <span>🔄</span> Reload Data
+            </button>
+        </div>
+    </div>
+</div>

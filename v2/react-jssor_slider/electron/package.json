@@ -1,0 +1,57 @@
+{
+  "name": "ipray-electron-app",
+  "version": "1.0.0",
+  "description": "iPray Electron Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:prod": "PROD_MODE=true electron .",
+    "build": "PROD_MODE=true electron-builder --linux",
+    "build:linux": "PROD_MODE=true electron-builder --linux --x64",
+    "build:linux:appimage": "PROD_MODE=true electron-builder --linux AppImage",
+    "build:linux:deb": "PROD_MODE=true electron-builder --linux deb",
+    "build:all": "PROD_MODE=true electron-builder --linux --win --mac",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "build": {
+    "appId": "com.ipray.app",
+    "productName": "iPray",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "maintainer": "iPray Team <support@ipray.app>",
+      "desktop": {
+        "entry": {
+          "Name": "iPray",
+          "Comment": "iPray Application",
+          "Categories": "Utility;",
+          "Terminal": false
+        }
+      }
+    }
+  },
+  "keywords": [],
+  "author": {
+    "name": "iPray Team",
+    "email": "support@ipray.app"
+  },
+  "homepage": "https://ipray.app",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^26.4.0",
+    "cross-env": "^7.0.3"
+  }
+}
