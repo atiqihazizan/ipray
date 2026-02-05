@@ -1413,6 +1413,66 @@ class ApiServerService {
   }
 
   /**
+   * System Time Management - Get current system time
+   */
+  async getSystemTime() {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+    
+    try {
+      // Get ISO 8601 format with timezone
+      const { stdout } = await execAsync('date -Iseconds');
+      return { iso: stdout.trim() };
+    } catch (error) {
+      throw new Error(`Failed to get system time: ${error.message}`);
+    }
+  }
+
+  /**
+   * System Time Management - Set system time
+   */
+  async setSystemTime(isoLocal) {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+    
+    // Validate format: YYYY-MM-DDTHH:MM
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(isoLocal)) {
+      throw new Error('Invalid datetime format. Expected: YYYY-MM-DDTHH:MM');
+    }
+    
+    // Convert to timedatectl format: "YYYY-MM-DD HH:MM:00"
+    const formatted = isoLocal.replace('T', ' ') + ':00';
+    
+    try {
+      // Use timedatectl to set time (requires sudo privileges)
+      await execAsync(`sudo timedatectl set-time "${formatted}"`);
+      
+      // Get updated time
+      const result = await this.getSystemTime();
+      return result;
+    } catch (error) {
+      // If timedatectl fails, try alternative method with date command
+      try {
+        // Format for date command: MMDDhhmmYYYY.ss
+        const parts = isoLocal.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+        if (parts) {
+          const [, year, month, day, hour, minute] = parts;
+          const dateFormat = `${month}${day}${hour}${minute}${year}.00`;
+          await execAsync(`sudo date ${dateFormat}`);
+          
+          const result = await this.getSystemTime();
+          return result;
+        }
+        throw new Error('Invalid date format');
+      } catch (altError) {
+        throw new Error(`Failed to set system time: ${error.message}. Alternative method also failed: ${altError.message}`);
+      }
+    }
+  }
+
+  /**
    * Stop server
    */
   stop() {

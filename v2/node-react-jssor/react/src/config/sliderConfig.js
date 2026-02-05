@@ -63,16 +63,16 @@ export const sliderConfig = {
     playOrientation: 1,
     dragOrientation: 0
   },
-  masa: {
-    enabled: true,
-    position: { bottom: 0, right: 20 },
-    size: 72,
-    format: '12h',
-    showSeconds: false,
-    showAmPm: false,
-    isCurrentTime: true,
-    color: '#FFD700'
-  },
+  // masa: {
+  //   enabled: true,
+  //   position: { bottom: 0, right: 20 },
+  //   size: 72,
+  //   format: '12h',
+  //   showSeconds: false,
+  //   showAmPm: false,
+  //   isCurrentTime: true,
+  //   color: '#FFD700'
+  // },
   loading: {
     enabled: true,
     image: "/img/loading.gif"

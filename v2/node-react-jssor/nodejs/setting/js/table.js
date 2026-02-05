@@ -56,18 +56,18 @@ async function loadTodayTakwim() {
                 year: 'numeric' 
             }).replace(/\//g, '-');
             
-            container.innerHTML = `
+                    container.innerHTML = `
                 <div class="today-takwim-container">
                     <header class="today-takwim-header">
-                        <h2 class="today-takwim-title">Today's Prayer Schedule</h2>
+                        <h2 class="today-takwim-title">Jadual Solat Hari Ini</h2>
                         <div class="today-takwim-dates">
-                            <div>Gregorian Date: ${gregorianDate}</div>
-                            <div>Hijri Date: Not available</div>
+                            <div>Tarikh Masihi: ${gregorianDate}</div>
+                            <div>Tarikh Hijri: Tiada data</div>
                         </div>
                     </header>
                     <div class="today-takwim-empty">
-                        <p class="text-lg mb-2">No prayer schedule data found for today.</p>
-                        <p class="text-sm">Please ensure the takwim file contains data for today's date.</p>
+                        <p class="text-lg mb-2">Tiada data jadual solat untuk hari ini.</p>
+                        <p class="text-sm">Sila pastikan fail takwim mengandungi data untuk tarikh hari ini.</p>
                     </div>
                 </div>
             `;
@@ -137,12 +137,12 @@ async function loadTodayTakwim() {
                 data[fieldName] = newValue;
                 
                 if (window.NotificationUtils) {
-                    window.NotificationUtils.showNotification(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} saved successfully`, 'success');
+                    window.NotificationUtils.showNotification(`Waktu ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} berjaya disimpan`, 'success');
                 }
             } catch (err) {
                 console.error('Error saving:', err);
                 if (window.NotificationUtils) {
-                    window.NotificationUtils.showNotification('Failed to save ' + fieldName + ': ' + err.message, 'error');
+                    window.NotificationUtils.showNotification('Gagal menyimpan waktu ' + fieldName + ': ' + err.message, 'error');
                 }
                 // Revert input value on error
                 inputElement.value = formatTimeForInput(data[fieldName] || '');
@@ -166,10 +166,10 @@ async function loadTodayTakwim() {
             container.innerHTML = `
                 <div class="today-takwim-container">
                     <header class="today-takwim-header">
-                        <h2 class="today-takwim-title">Today's Prayer Schedule</h2>
+                        <h2 class="today-takwim-title">Jadual Solat Hari Ini</h2>
                         <div class="today-takwim-dates">
-                            <div>Gregorian Date: ${data.date}</div>
-                            <div>Hijri Date: ${data.hijri}</div>
+                            <div>Tarikh Masihi: ${data.date}</div>
+                            <div>Tarikh Hijri: ${data.hijri}</div>
                         </div>
                     </header>
                     <div class="today-takwim-fields">
@@ -178,7 +178,7 @@ async function loadTodayTakwim() {
                                 <label class="today-takwim-label">${prayer.label}</label>
                                 <input type="time" class="today-takwim-input" value="${formatTimeForInput(formData[prayer.key])}" 
                                     data-field="${prayer.key}" />
-                                <button class="today-takwim-btn-field-save" data-field="${prayer.key}">Save</button>
+                                <button class="today-takwim-btn-field-save" data-field="${prayer.key}">Simpan</button>
                             </div>
                         `).join('')}
                     </div>
@@ -260,9 +260,9 @@ export async function loadTable(fileName, scrollToRowId = null) {
     try {
         const API_URL = window.Config.API_URL;
         const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, '');
-        // Untuk slides, muat images sekali gus untuk resolve image code → path
+        // Untuk slides dan kuliah, muat images sekali gus untuk resolve image code → path
         let imagesList = [];
-        if (fileName === 'slides') {
+        if (fileName === 'slides' || fileName === 'kuliah') {
             try {
                 const imgRes = await fetch(`${API_URL}/data/images`);
                 if (imgRes.ok) {
@@ -270,7 +270,7 @@ export async function loadTable(fileName, scrollToRowId = null) {
                     imagesList = imgResult.data || [];
                 }
             } catch (e) {
-                console.warn('Could not load images for slides column:', e);
+                console.warn(`Could not load images for ${fileName} column:`, e);
             }
         }
 
@@ -281,6 +281,21 @@ export async function loadTable(fileName, scrollToRowId = null) {
         }
         
         const result = await response.json();
+
+        // Untuk slides: papar duration dalam saat (s) di UI, tetapi simpan dalam ms di fail
+        if (fileName === 'slides' && Array.isArray(result.data)) {
+            result.data = result.data.map(row => {
+                const newRow = { ...row };
+                if (newRow.duration != null && newRow.duration !== '') {
+                    const ms = parseFloat(newRow.duration);
+                    if (!isNaN(ms)) {
+                        newRow.duration = String(ms / 1000);
+                    }
+                }
+                return newRow;
+            });
+        }
+
         setCurrentData(result.data);
         setCurrentColumns(result.columns);
         
@@ -321,8 +336,73 @@ export async function loadTable(fileName, scrollToRowId = null) {
                     const td = document.createElement('td');
                     const value = row[col] || '';
                     
-                    // Special handling untuk column image dalam slides table: papar <img src="...">
-                    if (fileName === 'slides' && col === 'image') {
+                    // Special handling untuk speakerId dalam kuliah table: papar image thumbnail
+                    if (fileName === 'kuliah' && col === 'speakerId') {
+                        td.style.padding = '8px';
+                        td.style.verticalAlign = 'middle';
+                        
+                        const imgContainer = document.createElement('div');
+                        imgContainer.style.display = 'flex';
+                        imgContainer.style.alignItems = 'center';
+                        imgContainer.style.gap = '12px';
+                        
+                        const img = document.createElement('img');
+                        img.style.width = '60px';
+                        img.style.height = '60px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '6px';
+                        img.style.border = '1px solid #e5e7eb';
+                        img.style.backgroundColor = '#f9fafb';
+                        img.style.flexShrink = '0';
+                        img.loading = 'lazy';
+                        
+                        // Resolve image code ke image path
+                        const resolvePath = (code) => {
+                            if (!code || !code.trim()) return null;
+                            const found = imagesList.find(r => (r.imageCode || '').trim() === code.trim());
+                            return found ? (found.imagePath || '') : null;
+                        };
+                        const path = resolvePath(value);
+                        let imageUrl;
+                        if (path) {
+                            imageUrl = path.startsWith('/') ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`;
+                        } else {
+                            // Default image jika tiada code atau code tidak dijumpai
+                            imageUrl = `${BASE_URL}/images/penceramah/Random_user.svg`;
+                        }
+                        img.src = imageUrl;
+                        
+                        // Default placeholder jika image gagal load
+                        const defaultImage = `${BASE_URL}/images/penceramah/Random_user.svg`;
+                        let errorCount = 0;
+                        img.onerror = function() {
+                            errorCount++;
+                            if (errorCount === 1) {
+                                // Try default image
+                                this.src = defaultImage;
+                            } else {
+                                // Jika default image pun gagal, paparkan placeholder SVG
+                                this.onerror = null; // Prevent infinite loop
+                                this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMCAyMEMyNS41ODIyIDIwIDIyIDIzLjU4MjIgMjIgMjhDMjIgMzIuNDE3OCAyNS41ODIyIDM2IDMwIDM2QzM0LjQxNzggMzYgMzggMzIuNDE3OCAzOCAyOEMzOCAyMy41ODIyIDM0LjQxNzggMjAgMzAgMjBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xNiA0NEMxNiA0MC42ODYzIDE4LjY4NjMgMzggMjIgMzhIMzguMDAwMUM0MS4zMTM3IDM4IDQ0IDQwLjY4NjMgNDQgNDRWMjZIMTZWMjRaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';
+                                this.style.opacity = '0.4';
+                            }
+                        };
+                        
+                        imgContainer.appendChild(img);
+                        
+                        // Text image code di sebelah image
+                        const codeText = document.createElement('span');
+                        codeText.textContent = value || '—';
+                        codeText.title = value || '';
+                        codeText.style.fontSize = '13px';
+                        codeText.style.color = '#374151';
+                        codeText.style.flex = '1';
+                        codeText.style.wordBreak = 'break-all';
+                        codeText.style.lineHeight = '1.4';
+                        
+                        imgContainer.appendChild(codeText);
+                        td.appendChild(imgContainer);
+                    } else if (fileName === 'slides' && col === 'image') {
                         td.style.padding = '8px';
                         td.style.verticalAlign = 'middle';
                         const imgContainer = document.createElement('div');
@@ -465,6 +545,16 @@ export async function loadTable(fileName, scrollToRowId = null) {
                         
                         imgContainer.appendChild(pathText);
                         td.appendChild(imgContainer);
+                    } else if (fileName === 'slides' && col === 'duration') {
+                        // Papar duration dalam saat dengan unit (UI: s, storage: ms)
+                        const displayVal = value !== null && value !== undefined ? String(value).trim() : '';
+                        if (displayVal) {
+                            td.textContent = `${displayVal} s`;
+                            td.title = `${displayVal} saat`;
+                        } else {
+                            td.textContent = '';
+                            td.title = '';
+                        }
                     } else {
                         // Normal text display untuk column lain
                         td.textContent = value.length > 50 ? value.substring(0, 50) + '...' : value;
@@ -657,7 +747,7 @@ export function showTab(tabName) {
         'slideshow': { icon: '🎬', name: 'Slideshow' },
         'kuliah': { icon: '📚', name: 'Kuliah' },
         'kuliah-batal': { icon: '❌', name: 'Kuliah Batal' },
-        'images': { icon: '🖼️', name: 'Images' },
+        'images': { icon: '🖼️', name: 'Galery' },
         'announcements': { icon: '📢', name: 'Pengumuman' },
         'takwim': { icon: '📅', name: 'Takwim' }
     };

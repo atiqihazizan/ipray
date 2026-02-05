@@ -54,7 +54,7 @@ export function buildKuliahWeeklyCategoryChildren(numCards) {
           topPos = baseTop + (topOffset * ratio);
         } else if (elementIndex === 1) {
           leftPos = COL1_START_LEFT + IMAGE_WIDTH + IMAGE_GAP;
-          topPos = baseTop + (topOffset * ratio) + (PENCERAMAH_TOP * ratio);
+          topPos = baseTop + (topOffset * ratio);// + (PENCERAMAH_TOP * ratio);
           style.width = TEXT_WIDTH;
         }
       } else {

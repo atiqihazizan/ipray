@@ -4,8 +4,9 @@
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     background: white;
-    margin-bottom: 24px;
-    max-height: 500px;
+    /* margin-bottom: 24px; <- Buang dalam flexbox context */
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 }
 

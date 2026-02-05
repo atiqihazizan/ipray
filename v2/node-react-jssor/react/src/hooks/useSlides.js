@@ -295,6 +295,7 @@ const processKuliahMingguan = (kuliahData, kuliahBatalData, imagesData, slidesCo
   const categoryKeys = CATEGORY_ORDER.filter(cat => groupedData[cat]); // Hanya kategori yang ada data
 
   categoryKeys.forEach((categoryTitle, categoryIndex) => {
+    if(categoryIndex>0) return;
     const categoryData = groupedData[categoryTitle];
     const numCards = Math.min(categoryData.length, KULIAH_NUM_CARDS);
 
@@ -362,21 +363,28 @@ const processKuliahMingguan = (kuliahData, kuliahBatalData, imagesData, slidesCo
         }
 
         const textAlign = isCol1 ? 'left' : 'right';
+        const isBatal = (batalInfo.isBatal && day === currentDay)
+        // batalInfo.isBatal = true;
+        // const isBatal = (day === 'h5') // hari jumaat
+        const isActive = (day === currentDay && !isBatal);
+        // const isActive = (day === 'h5' && !isBatal); // hari jumaat
+        const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+        const activeStyle = isActive ? 'color:red;' : '';
 
         // Element 1: Penceramah + Kitab + Date + Status (jika batal)
         if (parent.children[base + 1]) {
-          const penceramahHtml = `<span style="display:block;font-size:46px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(penceramah)}</span>`;
-          const kitabHtml = kitab ? `<div style="font-size:25px;word-wrap:break-word;white-space:normal;line-height:1.4;font-family:'Anton',sans-serif;text-align:${textAlign};">${esc(kitab)}</div>` : '';
-          const dateHtml = hariTarikh ? `<span style="display:block;font-size:34px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};">${esc(hariTarikh)}</span>` : '';
+          const penceramahHtml = `<span style="display:block;font-size:46px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${batalStyle}${activeStyle}">${esc(penceramah)}</span>`;
+          const kitabHtml = kitab ? `<div style="font-size:25px;word-wrap:break-word;white-space:normal;line-height:1.4;font-family:'Anton',sans-serif;text-align:${textAlign};${batalStyle}${activeStyle}">${esc(kitab)}</div>` : '';
+          const dateHtml = hariTarikh ? `<span style="display:block;font-size:34px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};${activeStyle}">${esc(hariTarikh)}</span>` : '';
           
           // Status label jika batal DAN hari kuliah = hari semasa
           let statusHtml = '';
-          if (batalInfo.isBatal && day === currentDay) {
+          if (isBatal) {
             const notes = (batalInfo.notes || '').trim();
             if (notes) {
-              statusHtml = `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;font-family:'Anton',sans-serif;">KULIAH DIBATALKAN DAN DIGANTIKAN DENGAN ${esc(notes).toUpperCase()}</div>`;
+              statusHtml = `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;">${esc(notes).toUpperCase()}</div>`;
             } else {
-              statusHtml = `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;font-family:'Anton',sans-serif;">KULIAH DIBATALKAN</div>`;
+              statusHtml = `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;">KULIAH DIBATALKAN</div>`;
             }
           }
 
@@ -516,155 +524,37 @@ const DEFAULT_SLIDESHOW_IMAGES = [
   '/img/slideshow/mountant6.jpg'
 ];
 
-// Default duration untuk setiap slideshow slide (akan override dari slides.txt jika ada)
-const SLIDESHOW_SLIDE_DURATION_DEFAULT = 5000;
-// Duration pendek untuk slides tanpa caption (auto transition cepat)
-const SLIDESHOW_NO_CAPTION_DURATION = 500;
-
 /**
- * Process slideshow data ke multiple slides: satu slide per image (seperti slider lain)
- * Setiap slide = satu image dengan optional caption
- * Jika ada caption, tunjuk caption dengan duration normal
- * Jika tiada caption, slide akan auto transition cepat ke slide seterusnya
+ * Process slideshow data ke multiple slides: satu slide per image
  * Duration diambil dari slidesConfigData.slideshow.duration (dari slides.txt) atau guna default
- * Transition boleh dikonfigurasi melalui slidesConfigData.slideshow.transition (jika 'FIXED' atau nama transition spesifik)
- * Jika tiada config atau config = 'RANDOM', setiap slide akan dapat random transition
  */
 const processSlideshow = (slideshowData, slidesConfigData, applyConfig) => {
-  // Process slideshowData: format { caption, image } atau fallback ke default images
+  // Process slideshowData: format { image } atau fallback ke default images
   let list = [];
   if (slideshowData && Array.isArray(slideshowData) && slideshowData.length > 0) {
     list = slideshowData.map(item => {
-      const caption = (item && item.caption) ? item.caption.trim() : '';
       const imagePath = (item && item.image) ? item.image : (typeof item === 'string' ? item : '');
       const path = imagePath && imagePath.startsWith('/') ? imagePath : `/${imagePath || ''}`;
-      return { caption, image: path };
+      return { image: path };
     }).filter(item => item.image);
   } else {
     // Fallback ke default images jika tiada data
-    list = DEFAULT_SLIDESHOW_IMAGES.map(image => ({ caption: '', image }));
+    list = DEFAULT_SLIDESHOW_IMAGES.map(image => ({ image }));
   }
 
   if (list.length === 0) return [];
 
   const template = applyConfig(slidesTemplate.slideshow, 'slideshow');
-  const { width: w, height: h } = getContainerSize();
-
-  // Dapatkan duration dari slides.txt (slidesConfigData.slideshow.duration) atau guna default
-  const slideDuration = (slidesConfigData && slidesConfigData.slideshow && slidesConfigData.slideshow.duration)
-    ? slidesConfigData.slideshow.duration
-    : SLIDESHOW_SLIDE_DURATION_DEFAULT;
-
-  // Array transition yang menarik untuk slideshow slides
-  // Termasuk transitions yang menyerupai slideshow transitions (boleh pecah image dengan Cols, Rows, Clip, Formation)
-  const availableTransitions = [
-    // Transitions biasa (simple)
-    'FADE',           // Fade in/out (classic)
-    'CLIP|LR',        // Clip dari kiri ke kanan
-    'CLIP|TB',        // Clip dari atas ke bawah
-    'CLIP|L',         // Clip dari kiri
-    'CLIP|R',         // Clip dari kanan
-    'CLIP|CIRCLE',    // Clip dalam bentuk bulat
-    'L',              // Slide dari kiri
-    'R',              // Slide dari kanan
-    'T',              // Slide dari atas
-    'B',              // Slide dari bawah
-    'TR',             // Slide dari top-right
-    'ZMF|10',         // Zoom dengan fade
-    'ZOOM|IN',        // Zoom in
-    'ZOOM|OUT',       // Zoom out
-    'ZOOM|FADE',      // Zoom dengan fade smooth
-    'SLIDE|QUAD',     // Slide dengan easing quad
-    'SLIDE|QUINT',    // Slide dengan easing quint
-    'WAVE|IN',        // Wave effect masuk
-    'BOUNCE|IN',      // Bounce effect masuk
-    'ELASTIC|IN',     // Elastic effect masuk
-    'ROTATE|ZOOM',    // Rotate dengan zoom
-    'RTT|360',        // Rotate 360 darjah
-    'SWIRL|IN',       // Swirl effect masuk
-    'COLLAPSE|IN',    // Collapse effect masuk
-    'EXPAND|OUT',     // Expand effect keluar
-    'MCLIP|R',        // Move clip dari kanan
-    'MCLIP|T',        // Move clip dari atas
-    'DDGDANCE|RB',    // Dance effect
-    'FLTTRWN|LT',     // Float dengan wave
-    'ATTACK|BR',      // Attack effect dari bottom-right
-    // Transitions yang menyerupai slideshow transitions (boleh pecah image)
-    'COLLAPSE|RANDOM', // Collapse dengan random grid (pecah image)
-    'CLIP|CHESS',      // Clip dengan chess pattern (pecah image)
-    'WAVE|STAIRS',     // Wave dengan stairs formation (pecah image)
-    'EXPAND|STAIRS',   // Expand dengan stairs formation (pecah image)
-    'SLIDE|SWIRL',     // Slide dengan swirl formation (pecah image)
-    'SLIDE|SQUARE',    // Slide dengan square formation (pecah image)
-    'SLIDE|CIRCLE',    // Slide dengan circle formation (pecah image)
-    'BOUNCE|STRAIGHT', // Bounce dengan straight formation (pecah image)
-    'JUMP|CIRCLE',     // Jump dengan circle formation (pecah image)
-    'JUMP|SWIRL',      // Jump dengan swirl formation (pecah image)
-    'CLIP|IN',         // Clip in dengan grid (pecah image)
-    'CLIP|LARGE',      // Clip dengan grid besar (pecah image)
-    'SLIDE|ZIGZAG',    // Slide dengan zigzag formation (pecah image)
-    'WAVE|RECT',       // Wave dengan rectangle cross formation (pecah image)
-    'DANCE|INSIDE'     // Dance dengan grid (pecah image)
-  ];
-
-  // Dapatkan transition mode dari config
-  const transitionConfig = slidesConfigData && slidesConfigData.slideshow && slidesConfigData.slideshow.transition
-    ? slidesConfigData.slideshow.transition
-    : 'RANDOM'; // Default: RANDOM untuk setiap slide dapat transition berbeza
-
-  // Jika config adalah nama transition spesifik (bukan 'RANDOM'), guna transition tersebut untuk semua
-  const useFixedTransition = transitionConfig !== 'RANDOM' && availableTransitions.includes(transitionConfig);
-
-  const esc = escapeHtml;
-
+console.log(template)
   // Generate slides: satu slide per image
   const slideshowSlides = list.map((item, index) => {
     const slide = JSON.parse(JSON.stringify(template));
-    const hasCaption = item.caption && item.caption.trim().length > 0;
 
     // Set image untuk slide
     slide.image = { src: item.image, alt: `Slideshow ${index + 1}` };
 
-    // Set duration: normal jika ada caption, pendek jika tiada caption (auto transition cepat)
-    slide.duration = hasCaption ? slideDuration : SLIDESHOW_NO_CAPTION_DURATION;
-
-    // Set transitionType: 'auto' untuk slides dengan caption, 'static' untuk slides tanpa caption (auto transition)
-    slide.transitionType = hasCaption ? 'auto' : 'static';
-
-    // Pilih transition: fixed jika ada config spesifik, atau random untuk setiap slide
-    const slideTransition = useFixedTransition
-      ? transitionConfig
-      : availableTransitions[Math.floor(Math.random() * availableTransitions.length)];
-
-    // Jika ada caption, tambah caption ke slide
-    // if (hasCaption) {
-    //   slide.captions = [
-    //     {
-    //       type: 'div',
-    //       transition: slideTransition,
-    //       duration: slideDuration,
-    //       content: esc(item.caption),
-    //       style: {
-    //         position: 'absolute',
-    //         left: 0,
-    //         right: 0,
-    //         bottom: 50,
-    //         width: w,
-    //         textAlign: 'center',
-    //         fontSize: 48,
-    //         color: '#FFFFFF',
-    //         fontFamily: "'SairaCondensed', sans-serif",
-    //         fontWeight: 'bold',
-    //         textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-    //         padding: '10px 20px',
-    //         backgroundColor: 'rgba(0,0,0,0.5)'
-    //       }
-    //     }
-    //   ];
-    // } else {
-    //   // Tiada caption, captions kosong
-    //   slide.captions = [];
-    // }
+    slide.duration = template.duration != null ? template.duration : 1500;
+    slide.transitionType = 'auto';
     slide.captions = [];
 
     return slide;
@@ -901,7 +791,7 @@ export const useSlides = () => {
 
     // Return slideData: home + announce + slideshow + kuliah hari + kuliah mingguan + kuliah bulanan
     return [homeSlide, ...announceSlides, ...kuliahHariSlides, ...kuliahMigguanSlides, ...kuliahBulananSlides, ...slideshowSlides];
-    // return [...kuliahMigguanSlides];
+    // return [...slideshowSlides];
   }, [announcementsData, kuliahData, kuliahBatalData, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]); // PENTING: Mesti include semua data sources + reloadCounter
 
   // Update slideData hanya bila stableSlideData structure berubah

@@ -43,6 +43,21 @@ export async function loadTable(fileName, scrollToRowId = null) {
     
     try {
         const API_URL = window.Config.API_URL;
+        const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, '') || 'http://localhost:3000';
+        // Untuk kuliah, muat images sekali gus untuk resolve image code → path
+        let imagesList = [];
+        if (fileName === 'kuliah') {
+            try {
+                const imgRes = await fetch(`${API_URL}/data/images`);
+                if (imgRes.ok) {
+                    const imgResult = await imgRes.json();
+                    imagesList = imgResult.data || [];
+                }
+            } catch (e) {
+                console.warn('Could not load images for kuliah speakerId column:', e);
+            }
+        }
+        
         const response = await fetch(`${API_URL}/data/${fileName}`);
         
         if (!response.ok) {
@@ -90,8 +105,73 @@ export async function loadTable(fileName, scrollToRowId = null) {
                     const td = document.createElement('td');
                     const value = row[col] || '';
                     
-                    // Special handling untuk imagePath dalam images table
-                    if (fileName === 'images' && col === 'imagePath') {
+                    // Special handling untuk speakerId dalam kuliah table: papar image thumbnail
+                    if (fileName === 'kuliah' && col === 'speakerId') {
+                        td.style.padding = '8px';
+                        td.style.verticalAlign = 'middle';
+                        
+                        const imgContainer = document.createElement('div');
+                        imgContainer.style.display = 'flex';
+                        imgContainer.style.alignItems = 'center';
+                        imgContainer.style.gap = '12px';
+                        
+                        const img = document.createElement('img');
+                        img.style.width = '60px';
+                        img.style.height = '60px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '6px';
+                        img.style.border = '1px solid #e5e7eb';
+                        img.style.backgroundColor = '#f9fafb';
+                        img.style.flexShrink = '0';
+                        img.loading = 'lazy';
+                        
+                        // Resolve image code ke image path
+                        const resolvePath = (code) => {
+                            if (!code || !code.trim()) return null;
+                            const found = imagesList.find(r => (r.imageCode || '').trim() === code.trim());
+                            return found ? (found.imagePath || '') : null;
+                        };
+                        const path = resolvePath(value);
+                        let imageUrl;
+                        if (path) {
+                            imageUrl = path.startsWith('/') ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`;
+                        } else {
+                            // Default image jika tiada code atau code tidak dijumpai
+                            imageUrl = `${BASE_URL}/img/Random_user.svg`;
+                        }
+                        img.src = imageUrl;
+                        
+                        // Default placeholder jika image gagal load
+                        const defaultImage = `${BASE_URL}/img/Random_user.svg`;
+                        let errorCount = 0;
+                        img.onerror = function() {
+                            errorCount++;
+                            if (errorCount === 1) {
+                                // Try default image
+                                this.src = defaultImage;
+                            } else {
+                                // Jika default image pun gagal, paparkan placeholder SVG
+                                this.onerror = null; // Prevent infinite loop
+                                this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMCAyMEMyNS41ODIyIDIwIDIyIDIzLjU4MjIgMjIgMjhDMjIgMzIuNDE3OCAyNS41ODIyIDM2IDMwIDM2QzM0LjQxNzggMzYgMzggMzIuNDE3OCAzOCAyOEMzOCAyMy41ODIyIDM0LjQxNzggMjAgMzAgMjBaIiBmaWxsPSIjOUNBM0FGIi8+CjxwYXRoIGQ9Ik0xNiA0NEMxNiA0MC42ODYzIDE4LjY4NjMgMzggMjIgMzhIMzguMDAwMUM0MS4zMTM3IDM4IDQ0IDQwLjY4NjMgNDQgNDRWMjZIMTZWMjRaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPg==';
+                                this.style.opacity = '0.4';
+                            }
+                        };
+                        
+                        imgContainer.appendChild(img);
+                        
+                        // Text image code di sebelah image
+                        const codeText = document.createElement('span');
+                        codeText.textContent = value || '—';
+                        codeText.title = value || '';
+                        codeText.style.fontSize = '13px';
+                        codeText.style.color = '#374151';
+                        codeText.style.flex = '1';
+                        codeText.style.wordBreak = 'break-all';
+                        codeText.style.lineHeight = '1.4';
+                        
+                        imgContainer.appendChild(codeText);
+                        td.appendChild(imgContainer);
+                    } else if (fileName === 'images' && col === 'imagePath') {
                         td.style.padding = '8px';
                         td.style.verticalAlign = 'middle';
                         

@@ -94,6 +94,25 @@ export async function saveRow() {
         }
     }
     
+    // Convert duration dalam saat (UI) kepada ms untuk disimpan dalam slides.txt
+    if (currentFileName === 'slides' && rowData.duration) {
+        const seconds = parseFloat(rowData.duration);
+        if (!isNaN(seconds)) {
+            rowData.duration = String(Math.round(seconds * 1000));
+        }
+    }
+
+    // Config: untuk key HOLD_DURATION & BLINK_DURATION, UI guna saat (s) tetapi simpan dalam ms
+    if (currentFileName === 'config' && rowData.value && rowData.key) {
+        const key = String(rowData.key).trim();
+        if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
+            const seconds = parseFloat(rowData.value);
+            if (!isNaN(seconds)) {
+                rowData.value = String(Math.round(seconds * 1000));
+            }
+        }
+    }
+    
     // Convert semua text field kepada uppercase untuk announcements (kecuali datetime)
     if (currentFileName === 'announcements') {
         Object.keys(rowData).forEach(key => {

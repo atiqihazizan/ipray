@@ -99,10 +99,14 @@ export async function downloadImageFromUrl(imageUrl, category = 'penceramah', fi
  * @param {HTMLElement} form - Form element
  * @param {object} row - Data row (null untuk add mode)
  * @param {boolean} isAdd - Mode add atau edit
+ * @param {{ imagesList?: Array<{imageCode:string, imagePath:string}> }} options - Optional; imagesList untuk dropdown
  */
-function createFormFields(form, row, isAdd) {
+function createFormFields(form, row, isAdd, options = {}) {
     const currentFileName = getCurrentFileName();
     const currentColumns = getCurrentColumns();
+    const imagesList = options.imagesList || [];
+    const API_URL = typeof window !== 'undefined' && window.Config ? window.Config.API_URL : '';
+    const BASE_URL = typeof window !== 'undefined' && window.Config ? window.Config.BASE_URL : (API_URL ? API_URL.replace(/\/api\/?$/, '') : 'http://localhost:3000');
     
     currentColumns.forEach(col => {
         const group = document.createElement('div');
@@ -111,6 +115,75 @@ function createFormFields(form, row, isAdd) {
         const label = document.createElement('label');
         label.textContent = col.charAt(0).toUpperCase() + col.slice(1);
         label.setAttribute('for', `field-${col}`);
+        
+        // Special handling untuk speakerId dalam kuliah table: dropdown pilih image code + preview
+        if (currentFileName === 'kuliah' && col === 'speakerId') {
+            const wrap = document.createElement('div');
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'image-preview-container';
+            previewContainer.style.marginBottom = '12px';
+            const previewImg = document.createElement('img');
+            previewImg.id = `speakerId-image-preview-${col}`;
+            previewImg.className = 'image-preview';
+            previewImg.style.maxWidth = '200px';
+            previewImg.style.maxHeight = '200px';
+            previewImg.style.borderRadius = '8px';
+            previewImg.style.border = '1px solid #e5e7eb';
+            previewImg.style.objectFit = 'cover';
+            previewImg.style.display = 'none';
+            previewImg.alt = 'Preview';
+            previewContainer.appendChild(previewImg);
+
+            const select = document.createElement('select');
+            select.id = `field-${col}`;
+            select.name = col;
+            select.className = 'form-control';
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = '-- Pilih image code --';
+            select.appendChild(emptyOpt);
+            const currentVal = !isAdd && row[col] ? (row[col] || '').trim() : '';
+            const codesAdded = new Set(['']);
+            imagesList.forEach(im => {
+                const code = (im.imageCode || '').trim();
+                if (codesAdded.has(code)) return;
+                codesAdded.add(code);
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.textContent = code;
+                if (currentVal === code) opt.selected = true;
+                select.appendChild(opt);
+            });
+            if (currentVal && !codesAdded.has(currentVal)) {
+                const opt = document.createElement('option');
+                opt.value = currentVal;
+                opt.textContent = currentVal + ' (tiada dalam Images)';
+                opt.selected = true;
+                select.appendChild(opt);
+            }
+            const updatePreview = () => {
+                const code = select.value.trim();
+                const found = imagesList.find(r => (r.imageCode || '').trim() === code);
+                if (found && found.imagePath) {
+                    const path = found.imagePath;
+                    const url = path.startsWith('/') ? `${BASE_URL}${path}` : `${BASE_URL}${path}`;
+                    previewImg.src = url;
+                    previewImg.style.display = 'block';
+                } else {
+                    previewImg.removeAttribute('src');
+                    previewImg.style.display = 'none';
+                }
+            };
+            select.addEventListener('change', updatePreview);
+            updatePreview();
+
+            wrap.appendChild(previewContainer);
+            wrap.appendChild(select);
+            group.appendChild(label);
+            group.appendChild(wrap);
+            form.appendChild(group);
+            return;
+        }
         
         // Special handling untuk imagePath dalam images table
         if (currentFileName === 'images' && col === 'imagePath') {
@@ -135,7 +208,7 @@ function createFormFields(form, row, isAdd) {
             
             // Set preview image jika ada value
             if (!isAdd && row[col]) {
-                const imageUrl = row[col].startsWith('/') ? `http://localhost:3000${row[col]}` : `http://localhost:3000/images/${row[col]}`;
+                const imageUrl = row[col].startsWith('/') ? `${BASE_URL}${row[col]}` : `${BASE_URL}/images/${row[col]}`;
                 previewImg.src = imageUrl;
                 previewImg.style.display = 'block';
             }
@@ -294,7 +367,7 @@ function createFormFields(form, row, isAdd) {
                     hiddenInput.value = result.path;
                     
                     // Update preview
-                    previewImg.src = `http://localhost:3000${result.path}`;
+                    previewImg.src = `${BASE_URL}${result.path}`;
                     previewImg.style.display = 'block';
                     removeBtn.style.display = 'inline-block';
                     
@@ -333,7 +406,7 @@ function createFormFields(form, row, isAdd) {
                     hiddenInput.value = result.path;
                     
                     // Update preview
-                    previewImg.src = `http://localhost:3000${result.path}`;
+                    previewImg.src = `${BASE_URL}${result.path}`;
                     previewImg.style.display = 'block';
                     removeBtn.style.display = 'inline-block';
                     
@@ -555,7 +628,7 @@ export function openAddDialog() {
  * Open edit dialog
  * @param {number} rowId - ID row untuk diedit
  */
-export function openEditDialog(rowId) {
+export async function openEditDialog(rowId) {
     setAddMode(false);
     setEditingRowId(rowId);
     
@@ -565,6 +638,21 @@ export function openEditDialog(rowId) {
         showNotification('✗ Baris tidak dijumpai', 'error');
         return;
     }
+
+    const currentFileName = getCurrentFileName();
+    let imagesList = [];
+    if (currentFileName === 'kuliah') {
+        try {
+            const API_URL = window.Config.API_URL;
+            const res = await fetch(`${API_URL}/data/images`);
+            if (res.ok) {
+                const data = await res.json();
+                imagesList = data.data || [];
+            }
+        } catch (e) {
+            console.warn('Could not load images for kuliah speakerId dropdown:', e);
+        }
+    }
     
     const dialog = document.getElementById('edit-dialog');
     const form = document.getElementById('edit-form');
@@ -573,7 +661,7 @@ export function openEditDialog(rowId) {
     title.textContent = `Edit Baris #${rowId}`;
     form.innerHTML = '';
     
-    createFormFields(form, row, false);
+    createFormFields(form, row, false, { imagesList });
     
     dialog.style.display = 'flex';
     dialog.classList.remove('hidden');

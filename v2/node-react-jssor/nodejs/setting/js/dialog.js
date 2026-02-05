@@ -115,6 +115,22 @@ function createFormFields(form, row, isAdd, options = {}) {
         const label = document.createElement('label');
         label.textContent = col.charAt(0).toUpperCase() + col.slice(1);
         label.setAttribute('for', `field-${col}`);
+
+        // Slides: tunjuk unit saat untuk duration supaya jelas (UI dalam saat, storage dalam ms)
+        if (currentFileName === 'slides' && col === 'duration') {
+            label.textContent = 'Duration (s)';
+        }
+
+        // Kuliah: label mesra pengguna
+        if (currentFileName === 'kuliah' && col === 'speaker') {
+            label.textContent = 'Penceramah';
+        }
+        if (currentFileName === 'kuliah' && col === 'speakerId') {
+            label.textContent = 'Gambar Penceramah';
+        }
+        if (currentFileName === 'kuliah' && col === 'title') {
+            label.textContent = 'Nama Kitab / Tajuk Kuliah';
+        }
         
         // Slides: type adalah key, tidak boleh diubah (disabled)
         if (currentFileName === 'slides' && col === 'type') {
@@ -130,6 +146,243 @@ function createFormFields(form, row, isAdd, options = {}) {
             input.title = 'Type adalah key dan tidak boleh diubah';
             group.appendChild(label);
             group.appendChild(input);
+            form.appendChild(group);
+            return;
+        }
+        
+        // Special handling untuk speakerId dalam kuliah table: dropdown pilih image code + preview
+        if (currentFileName === 'kuliah' && col === 'speakerId') {
+            const wrap = document.createElement('div');
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'image-preview-container';
+            previewContainer.style.marginBottom = '12px';
+            const previewImg = document.createElement('img');
+            previewImg.id = `speakerId-image-preview-${col}`;
+            previewImg.className = 'image-preview';
+            previewImg.style.maxWidth = '200px';
+            previewImg.style.maxHeight = '200px';
+            previewImg.style.borderRadius = '8px';
+            previewImg.style.border = '1px solid #e5e7eb';
+            previewImg.style.objectFit = 'cover';
+            previewImg.style.display = 'none';
+            previewImg.alt = 'Preview';
+            previewContainer.appendChild(previewImg);
+
+            const select = document.createElement('select');
+            select.id = `field-${col}`;
+            select.name = col;
+            select.className = 'form-control';
+            const emptyOpt = document.createElement('option');
+            emptyOpt.value = '';
+            emptyOpt.textContent = '-- Pilih image code --';
+            select.appendChild(emptyOpt);
+            const currentVal = !isAdd && row[col] ? (row[col] || '').trim() : '';
+            const codesAdded = new Set(['']);
+            imagesList.forEach(im => {
+                const code = (im.imageCode || '').trim();
+                if (codesAdded.has(code)) return;
+                codesAdded.add(code);
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.textContent = code;
+                if (currentVal === code) opt.selected = true;
+                select.appendChild(opt);
+            });
+            if (currentVal && !codesAdded.has(currentVal)) {
+                const opt = document.createElement('option');
+                opt.value = currentVal;
+                opt.textContent = currentVal + ' (tiada dalam Images)';
+                opt.selected = true;
+                select.appendChild(opt);
+            }
+            const updatePreview = () => {
+                const code = select.value.trim();
+                const found = imagesList.find(r => (r.imageCode || '').trim() === code);
+                if (found && found.imagePath) {
+                    const path = found.imagePath;
+                    const url = path.startsWith('/') ? `${BASE_URL}${path}` : `${BASE_URL}${path}`;
+                    previewImg.src = url;
+                    previewImg.style.display = 'block';
+                } else {
+                    previewImg.removeAttribute('src');
+                    previewImg.style.display = 'none';
+                }
+            };
+            select.addEventListener('change', updatePreview);
+            updatePreview();
+
+            wrap.appendChild(previewContainer);
+            wrap.appendChild(select);
+            group.appendChild(label);
+            group.appendChild(wrap);
+            form.appendChild(group);
+            return;
+        }
+
+        // Special handling untuk week dalam kuliah table: radio button (w1-w4)
+        if (currentFileName === 'kuliah' && col === 'week') {
+            label.textContent = 'Minggu';
+
+            const WEEK_OPTIONS = [
+                { value: 'w1', label: 'Minggu 1' },
+                { value: 'w2', label: 'Minggu 2' },
+                { value: 'w3', label: 'Minggu 3' },
+                { value: 'w4', label: 'Minggu 4' }
+            ];
+
+            const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : '';
+
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.flexWrap = 'wrap';
+            container.style.gap = '8px 16px';
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = `field-${col}`;
+            hiddenInput.name = col;
+            hiddenInput.value = currentVal || 'w1';
+
+            WEEK_OPTIONS.forEach(opt => {
+                const wrap = document.createElement('label');
+                wrap.style.display = 'inline-flex';
+                wrap.style.alignItems = 'center';
+                wrap.style.gap = '6px';
+                wrap.style.cursor = 'pointer';
+
+                const rb = document.createElement('input');
+                rb.type = 'radio';
+                rb.name = 'kuliah-week';
+                rb.value = opt.value;
+                rb.checked = (currentVal || 'w1') === opt.value;
+                rb.addEventListener('change', () => {
+                    if (rb.checked) hiddenInput.value = opt.value;
+                });
+
+                const span = document.createElement('span');
+                span.textContent = opt.label;
+
+                wrap.appendChild(rb);
+                wrap.appendChild(span);
+                container.appendChild(wrap);
+            });
+
+            group.appendChild(label);
+            group.appendChild(container);
+            group.appendChild(hiddenInput);
+            form.appendChild(group);
+            return;
+        }
+
+        // Special handling untuk type dalam kuliah table: radio button (ks/km/kd/kk)
+        if (currentFileName === 'kuliah' && col === 'type') {
+            label.textContent = 'Jenis Kuliah';
+
+            const TYPE_OPTIONS = [
+                { value: 'ks', label: 'KS - Kuliah Subuh' },
+                { value: 'km', label: 'KM - Kuliah Maghrib' },
+                { value: 'kd', label: 'KD - Kuliah Dhuha' },
+                { value: 'kk', label: 'KK - Kuliah Khas' }
+            ];
+
+            const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : '';
+
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.flexWrap = 'wrap';
+            container.style.gap = '8px 16px';
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = `field-${col}`;
+            hiddenInput.name = col;
+            hiddenInput.value = currentVal || 'km';
+
+            TYPE_OPTIONS.forEach(opt => {
+                const wrap = document.createElement('label');
+                wrap.style.display = 'inline-flex';
+                wrap.style.alignItems = 'center';
+                wrap.style.gap = '6px';
+                wrap.style.cursor = 'pointer';
+
+                const rb = document.createElement('input');
+                rb.type = 'radio';
+                rb.name = 'kuliah-type';
+                rb.value = opt.value;
+                rb.checked = (currentVal || 'km') === opt.value;
+                rb.addEventListener('change', () => {
+                    if (rb.checked) hiddenInput.value = opt.value;
+                });
+
+                const span = document.createElement('span');
+                span.textContent = opt.label;
+
+                wrap.appendChild(rb);
+                wrap.appendChild(span);
+                container.appendChild(wrap);
+            });
+
+            group.appendChild(label);
+            group.appendChild(container);
+            group.appendChild(hiddenInput);
+            form.appendChild(group);
+            return;
+        }
+
+        // Special handling untuk day dalam kuliah table: radio button (h0-h6)
+        if (currentFileName === 'kuliah' && col === 'day') {
+            label.textContent = 'Hari';
+
+            const DAY_OPTIONS = [
+                { value: 'h0', label: 'Ahad' },
+                { value: 'h1', label: 'Isnin' },
+                { value: 'h2', label: 'Selasa' },
+                { value: 'h3', label: 'Rabu' },
+                { value: 'h4', label: 'Khamis' },
+                { value: 'h5', label: 'Jumaat' },
+                { value: 'h6', label: 'Sabtu' }
+            ];
+
+            const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : '';
+
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.flexWrap = 'wrap';
+            container.style.gap = '8px 16px';
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = `field-${col}`;
+            hiddenInput.name = col;
+            hiddenInput.value = currentVal || 'h0';
+
+            DAY_OPTIONS.forEach(opt => {
+                const wrap = document.createElement('label');
+                wrap.style.display = 'inline-flex';
+                wrap.style.alignItems = 'center';
+                wrap.style.gap = '6px';
+                wrap.style.cursor = 'pointer';
+
+                const rb = document.createElement('input');
+                rb.type = 'radio';
+                rb.name = 'kuliah-day';
+                rb.value = opt.value;
+                rb.checked = (currentVal || 'h0') === opt.value;
+                rb.addEventListener('change', () => {
+                    if (rb.checked) hiddenInput.value = opt.value;
+                });
+
+                const span = document.createElement('span');
+                span.textContent = opt.label;
+
+                wrap.appendChild(rb);
+                wrap.appendChild(span);
+                container.appendChild(wrap);
+            });
+
+            group.appendChild(label);
+            group.appendChild(container);
+            group.appendChild(hiddenInput);
             form.appendChild(group);
             return;
         }
@@ -846,7 +1099,7 @@ export async function openEditDialog(rowId) {
 
     const currentFileName = getCurrentFileName();
     let imagesList = [];
-    if (currentFileName === 'slides') {
+    if (currentFileName === 'slides' || currentFileName === 'kuliah') {
         try {
             const API_URL = window.Config.API_URL;
             const res = await fetch(`${API_URL}/data/images`);
@@ -855,7 +1108,7 @@ export async function openEditDialog(rowId) {
                 imagesList = data.data || [];
             }
         } catch (e) {
-            console.warn('Could not load images for slides dropdown:', e);
+            console.warn(`Could not load images for ${currentFileName} dropdown:`, e);
         }
     }
     
