@@ -109,13 +109,14 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
-   * Load takwim sahaja (tanpa ganggu slide / loading penuh)
+   * Load takwim sahaja (tanpa ganggu slide / loading penuh) - guna API full supaya wdata lengkap, elak waktu 00
    */
   const loadTakwimOnly = useCallback(async () => {
     try {
       const isDev = import.meta.env.DEV;
       const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
-      const res = await fetch(`${API_BASE}/data/app/takwim?t=${Date.now()}`);
+      const res = await fetch(`${API_BASE}/data/app/takwim/full?t=${Date.now()}`);
+      
       if (!res.ok) return;
       const data = await res.json();
       setTakwimArray(data.takwimArray ?? []);

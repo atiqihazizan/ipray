@@ -693,6 +693,71 @@ class DataService {
   }
 
   /**
+   * Build takwim for app: ALL days dari file (tiada filter tarikh).
+   * Format output sama seperti getTakwimForApp: { takwimArray, takwimParsed }.
+   * Digunakan bila app perlukan data penuh supaya getCurrentIslamicTime/wdata sentiasa ada untuk hari ini.
+   */
+  getTakwimForAppFull(content) {
+    if (!content || typeof content !== 'string') {
+      return { takwimArray: [], takwimParsed: { zone: '', hdata: [24], wdata: [null] } };
+    }
+    const lines = content.split(/\r?\n/);
+    const zone = lines[0] || '';
+    const hijriLine = lines[1] || '';
+    const hijriData = (hijriLine.split('=')[1] || '').trim();
+    const hdata = [24];
+    for (let i = 0; i < hijriData.length; i += 2) {
+      const byte = parseInt(hijriData.substr(i, 2), 16);
+      if (!isNaN(byte)) hdata.push(byte);
+    }
+    // wdata: index 0 unused, index 1..366 = hari dalam tahun
+    const wdata = new Array(367).fill(null);
+    wdata[0] = null;
+    const takwimArray = [];
+    for (let i = 2; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const tabParts = line.split('\t');
+      if (tabParts.length < 8) continue;
+      const dateHijri = tabParts[0].trim();
+      const dateHijriParts = dateHijri.split(/\s+/);
+      const date = dateHijriParts[0] || '';
+      if (!date || !date.includes('-')) continue;
+      const dateParts = date.split('-');
+      if (dateParts.length !== 3) continue;
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10);
+      const year = parseInt(dateParts[2], 10);
+      if (isNaN(day) || isNaN(month) || isNaN(year)) continue;
+      const [days] = this.getYearDays(year, month, day);
+      if (days < 1 || days > 366) continue;
+      const todayTimes = [
+        this.timeToValue(tabParts[1] || ''),
+        this.timeToValue(tabParts[2] || ''),
+        this.timeToValue(tabParts[3] || ''),
+        this.timeToValue(tabParts[4] || ''),
+        this.timeToValue(tabParts[5] || ''),
+        this.timeToValue(tabParts[6] || ''),
+        this.timeToValue(tabParts[7] || ''),
+        date
+      ];
+      wdata[days] = todayTimes;
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      takwimArray.push({
+        date: dateStr,
+        Subuh: (tabParts[2] || '').trim(),
+        Syuruk: (tabParts[3] || '').trim(),
+        Zohor: (tabParts[4] || '').trim(),
+        Asar: (tabParts[5] || '').trim(),
+        Maghrib: (tabParts[6] || '').trim(),
+        Isyak: (tabParts[7] || '').trim()
+      });
+    }
+    const takwimParsed = { zone, hdata, wdata };
+    return { takwimArray, takwimParsed };
+  }
+
+  /**
    * Get today's takwim data only
    * Returns single row for today's date (filter by day and month only, ignore year)
    */

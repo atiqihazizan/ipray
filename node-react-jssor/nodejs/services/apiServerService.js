@@ -161,7 +161,7 @@ class ApiServerService {
       }
     });
 
-    // Get takwim data only (untuk refresh takwim tanpa ganggu slide)
+    // Get takwim data only (untuk refresh takwim tanpa ganggu slide) - filter hari ini sahaja
     this.app.get('/api/data/app/takwim', async (req, res) => {
       try {
         const takwimContent = await this.dataService.readFile('takwim').catch(() => '');
@@ -169,6 +169,18 @@ class ApiServerService {
         res.json(takwim);
       } catch (error) {
         console.error('Error loading takwim for app:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Get SEMUA data takwim (tiada filter tarikh) - elak waktu solat jadi 00 bila tarikh tak match
+    this.app.get('/api/data/app/takwim/full', async (req, res) => {
+      try {
+        const takwimContent = await this.dataService.readFile('takwim').catch(() => '');
+        const takwim = this.dataService.getTakwimForAppFull(takwimContent);
+        res.json(takwim);
+      } catch (error) {
+        console.error('Error loading full takwim for app:', error);
         res.status(500).json({ error: error.message });
       }
     });
@@ -186,7 +198,7 @@ class ApiServerService {
           this.dataService.readFile('config').catch(() => ''),
           this.dataService.readFile('slideshow').catch(() => '')
         ]);
-        const takwim = this.dataService.getTakwimForApp(takwimContent);
+        const takwim = this.dataService.getTakwimForAppFull(takwimContent);
         const announcements = this.dataService.parseAnnouncements(announcementsContent);
         const kuliah = this.dataService.parseKuliah(kuliahContent);
         const kuliahBatal = this.dataService.parseFileContent('kuliah-batal', kuliahBatalContent);

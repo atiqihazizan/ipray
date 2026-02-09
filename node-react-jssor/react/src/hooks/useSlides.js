@@ -545,7 +545,7 @@ const processSlideshow = (slideshowData, slidesConfigData, applyConfig) => {
   if (list.length === 0) return [];
 
   const template = applyConfig(slidesTemplate.slideshow, 'slideshow');
-console.log(template)
+
   // Generate slides: satu slide per image
   const slideshowSlides = list.map((item, index) => {
     const slide = JSON.parse(JSON.stringify(template));
