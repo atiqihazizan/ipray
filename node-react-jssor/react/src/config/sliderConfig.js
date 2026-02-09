@@ -205,12 +205,12 @@ export const slidesTemplate = {
         children: [
           // Kategori global - "JADUAL KULIAH MINGGUAN" (di-set dalam useSlides)
           {
-            type: "div", transition: "CLIP|LR", duration: 1000, content: "KULIAH MINGGU INI",
+            type: "div", transition: "CLIP|LR", duration: 0, content: "KULIAH MINGGU INI",
             style: { position: 'absolute', left: 0, right: 0, top: top(33), width: sz().width, height: 70, textAlign: 'center', fontSize: 80, color: '#FFFFFF', fontFamily: "'SairaCondensed', sans-serif", fontWeight: 'bold', lineHeight: 70, margin: 0 }
           },
           // Header kategori - "KULIAH SUBUH", "KULIAH DHUHA", etc (di-set dalam useSlides)
           {
-            type: "div", transition: "CLIP|LR", duration: 1000, content: "",
+            type: "div", transition: "CLIP|LR", transition2:"NO_CLIP_OUT", duration: 0, content: "",
             style: { position: 'absolute', left: 0, right: 0, top: top(160), width: sz().width, height: 50, textAlign: 'center', fontSize: 47, color: 'rgb(245 206 28)', fontWeight: 'bold', fontFamily: "system-ui", letterSpacing: '3px', transform: 'scaleX(0.85)', transformOrigin: 'center center', lineHeight: 50, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
           },
           // Cards akan di-build dynamically dalam useSlides berdasarkan bilangan items dalam kategori

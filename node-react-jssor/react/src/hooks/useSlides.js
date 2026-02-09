@@ -791,7 +791,7 @@ export const useSlides = () => {
 
     // Return slideData: home + announce + slideshow + kuliah hari + kuliah mingguan + kuliah bulanan
     return [homeSlide, ...announceSlides, ...kuliahHariSlides, ...kuliahMigguanSlides, ...kuliahBulananSlides, ...slideshowSlides];
-    // return [...slideshowSlides];
+    // return [...kuliahMigguanSlides,...kuliahBulananSlides];
   }, [announcementsData, kuliahData, kuliahBatalData, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]); // PENTING: Mesti include semua data sources + reloadCounter
 
   // Update slideData hanya bila stableSlideData structure berubah

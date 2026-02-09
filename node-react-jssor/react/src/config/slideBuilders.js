@@ -33,7 +33,7 @@ export function buildKuliahWeeklyCategoryChildren(numCards) {
   const baseTop = top(240); // Scale mengikut ratio screen size
 
   const tempKuliahWeekly = [
-    { type: "img", transition: "FADE", duration: 1000, delay: 0, content: "", style: { position: 'absolute', left: 0, top: 0, width: 193, height: 193, objectFit: 'fill', borderRadius: 10, boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px' } },
+    { type: "img", transition: "FADE", transition2:"NO_CLIP_OUT", delay: 0, content: "", style: { position: 'absolute', left: 0, top: 0, width: 193, height: 193, objectFit: 'fill', borderRadius: 10, boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px' } },
     { type: "div", transition: "CLIP|L", transition2:"NO_CLIP_OUT", delay: 0, content: "", style: { position: 'absolute', left: 20, top: 0, width: 646,display:'flex',flexDirection:'column',gap:5 } }
   ];
 
