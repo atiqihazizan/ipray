@@ -1,73 +1,212 @@
-# Prerequisites
-*.d
+# =============================================================================
+# ipray – root .gitignore (v1 C/C++ + v2 Node/React/Electron)
+# =============================================================================
 
-# Compiled Object files
+# -----------------------------------------------------------------------------
+# OS & metadata
+# -----------------------------------------------------------------------------
+.DS_Store
+**/.DS_Store
+.DS_Store?
+**/.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon?
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# -----------------------------------------------------------------------------
+# Backup & temporary files (semua folder/fail backup jangan di-track)
+# -----------------------------------------------------------------------------
+backup/
+**/backup/
+* copy
+* copy/
+* copy.*
+**/* copy
+**/* copy/
+**/* copy.*
+**/data copy/
+**/data copy/**
+*.bak
+*.backup
+*.asal
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# -----------------------------------------------------------------------------
+# C/C++ – compiled & build (v1 macos, macos_raspi, windows)
+# -----------------------------------------------------------------------------
+*.d
 *.slo
 *.lo
 *.o
 *.obj
-
-# Precompiled Headers
 *.gch
 *.pch
-
-# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
-
-# Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
-
-# Executables
 *.exe
 *.out
 *.app
-*/*.exe
 obj/
 **/obj/
-
-# Backup folders
-backup/
-**/backup/
-
-# Visual Studio files
-.vs/
-*.user
-*.userosscache
-*.sln.docstates
-*.vcxproj
-*.vcxproj.filters
-Debug/
-Release/
-x64/
-x86/
-
-# Build results
 [Dd]ebug/
 [Rr]elease/
 [Bb]in/
 [Oo]bj/
-
-media/
-**/media/
-
-# Visual Studio Code
-#.vscode/
-
-# macOS files
-.DS_Store
-**/.DS_Store
-
-# Build files
-macos_raspi/build/
+x64/
+x86/
 **/build/
 **/CMakeFiles/
 **/CMakeCache.txt
 **/cmake_install.cmake
 **/Makefile
 **/compiler_depend.internal
-backup/
+
+# -----------------------------------------------------------------------------
+# Xcode (v1 macos, macos_raspi)
+# -----------------------------------------------------------------------------
+*.xcodeproj
+**/*.xcodeproj
+*.xcworkspace
+**/*.xcworkspace
+xcuserdata/
+**/xcuserdata/
+DerivedData/
+**/DerivedData/
+
+# -----------------------------------------------------------------------------
+# Visual Studio (v1 windows)
+# -----------------------------------------------------------------------------
+.vs/
+**/.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# -----------------------------------------------------------------------------
+# Node / npm / yarn / pnpm (v2)
+# -----------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+logs/
+**/logs/
+
+# -----------------------------------------------------------------------------
+# Build outputs – JS/React/Vite/Electron (v2)
+# -----------------------------------------------------------------------------
+dist/
+**/dist/
+dist-ssr/
+**/dist-ssr/
+build/
+**/build/
+*.local
+.vite/
+**/.vite/
+vite.config.js.timestamp-*
+*.map
+out/
+**/out/
+release/
+**/release/
+mac/
+win/
+linux/
+*.dmg
+*.blockmap
+*.AppImage
+*.deb
+*.rpm
+*.snap
+
+# -----------------------------------------------------------------------------
+# Environment & secrets (v2)
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+**/.env
+**/.env.local
+**/.env*.local
+
+# -----------------------------------------------------------------------------
+# Media / generated (optional – uncomment if repo terlalu besar)
+# -----------------------------------------------------------------------------
+# media/
+# **/media/
+
+# -----------------------------------------------------------------------------
+# Editor & IDE
+# -----------------------------------------------------------------------------
+.idea/
+**/.idea/
+.vscode/*
+!**/.vscode/extensions.json
+!**/.vscode/settings.json
+.cursorignore
+**/.cursorignore
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# -----------------------------------------------------------------------------
+# Testing & coverage (v2)
+# -----------------------------------------------------------------------------
+coverage/
+**/coverage/
+.nyc_output/
+**/.nyc_output/
+*.lcov
+.jest/
+**/.jest/
+
+# -----------------------------------------------------------------------------
+# Cache & tooling
+# -----------------------------------------------------------------------------
+.cache/
+**/.cache/
+.parcel-cache/
+**/.parcel-cache/
+.eslintcache
+**/.eslintcache
+.stylelintcache
+**/.stylelintcache
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# Project-specific
+# -----------------------------------------------------------------------------
+history-development/
+**/history-development/
+*.pdn

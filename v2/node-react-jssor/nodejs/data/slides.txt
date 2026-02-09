@@ -1,6 +1,0 @@
-home|bg-mta|1000|date,solat,time
-announce|picture4|3000|date
-kuliahHari|picture4d|3000|date,next-solat,small-time
-kuliahWeekly|picture4d|3000|date,next-solat,small-time
-kuliahBulanan|picture4e|10000|date,next-solat,small-time
-slideshow|bg-mta|3000|next-solat,small-time
