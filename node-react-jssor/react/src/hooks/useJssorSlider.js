@@ -267,7 +267,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
           $CaptionSliderOptions: {
             $Class: $JssorCaptionSlider$,
             $CaptionTransitions: _CaptionTransitions,
-            $PlayInMode: 1,
+            $PlayInMode: 2, // 2 = parallel (semua caption masuk serentak); 1 = chain (satu demi satu)
             // Bila 1 slide sahaja (home): skip transition hide/fadeOut pada captions
             $PlayOutMode: (slideDataRef.current || []).length === 1 ? 0 : 3
           },

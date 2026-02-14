@@ -14,7 +14,7 @@ const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 export function usePrayerTimeNavigation() {
   const [currentView, setCurrentView] = useState('slide');
   const { takwimParsed } = useTakwimData();
-  const { PRAYER_TIME_CONFIG } = useData();
+  const { PRAYER_TIME_CONFIG, timeService } = useData();
   const prayerTriggeredRef = useRef({});
   const timerAzanRef = useRef(null);
   const timerIqamahRef = useRef(null);
@@ -35,7 +35,8 @@ export function usePrayerTimeNavigation() {
       try {
         const islamicTime = getCurrentIslamicTime({
           hdata: takwimParsed.hdata,
-          wdata: takwimParsed.wdata
+          wdata: takwimParsed.wdata,
+          timeService
         });
         if (!islamicTime?.prayer?.times) return;
 
@@ -102,7 +103,7 @@ export function usePrayerTimeNavigation() {
       if (timerIqamahRef.current) clearTimeout(timerIqamahRef.current);
       if (timerSolatRef.current) clearTimeout(timerSolatRef.current);
     };
-  }, [takwimParsed, PRAYER_TIME_CONFIG]);
+  }, [takwimParsed, PRAYER_TIME_CONFIG, timeService]);
 
   return currentView;
 }

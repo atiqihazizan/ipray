@@ -33,6 +33,10 @@ backup/
 **/data copy/
 **/data copy/**
 *.bak
+*_bak
+*_bak/
+**/*_bak
+**/*_bak/
 *.backup
 *.asal
 *.tmp

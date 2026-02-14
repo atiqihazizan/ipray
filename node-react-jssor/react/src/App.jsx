@@ -5,6 +5,7 @@ import PageAzan from './components/PageAzan'
 import PageIqamah from './components/PageIqamah'
 import PageSolat from './components/PageSolat'
 import { DataProvider, useData } from './contexts/DataContext'
+import { TimeSyncProvider } from './contexts/TimeSyncContext'
 import { usePrayerTimeProcess } from './hooks/usePrayerTimeProcess.js'
 import { usePrayerTimeNavigation } from './hooks/usePrayerTimeNavigation.js'
 import audioService from './services/audioService.js'
@@ -30,6 +31,7 @@ const AppContent = () => {
   }
 
   // Tunggu socket connected baru proceed
+  // return <LoadingPage />
   if (!socketConnected) {
     return <LoadingPage />
   }
@@ -73,9 +75,9 @@ function App() {
           })
         }
         // Main beep sekali
-        await audioService.play({ playCount: 1, volume: 1 }).catch(() => {
-          // Jika gagal, akan main pada interaksi pertama
-        })
+        // await audioService.play({ playCount: 1, volume: 1 }).catch(() => {
+        //   // Jika gagal, akan main pada interaksi pertama
+        // })
       } catch (err) {
         // Abaikan jika gagal
       }
@@ -116,7 +118,9 @@ function App() {
   
   return (
     <DataProvider>
-      <AppContent />
+      <TimeSyncProvider>
+        <AppContent />
+      </TimeSyncProvider>
     </DataProvider>
   )
 }

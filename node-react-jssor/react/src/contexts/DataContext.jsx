@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import socketService from '../services/socketService';
+import timeService from '../services/timeService';
 
 /**
  * Default constants untuk timing configuration (fallback jika file config.txt tidak wujud)
@@ -127,6 +128,19 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
+   * Initialize time service
+   */
+  useEffect(() => {
+    timeService.init().catch((error) => {
+      console.warn('Time service init failed:', error);
+    });
+    
+    return () => {
+      timeService.cleanup();
+    };
+  }, []);
+
+  /**
    * Load data hanya bila Socket.IO connected
    */
   useEffect(() => {
@@ -231,6 +245,9 @@ export const DataProvider = ({ children }) => {
       if (isMounted) window.location.reload();
     });
 
+    // Nota: Event kalibrasi masa (time-offset-updated, time-test-mode-enabled, time-test-mode-disabled)
+    // diurus oleh TimeSyncProvider supaya hanya paparan masa re-render, elak seluruh app reload
+
     // Cleanup on unmount
     return () => {
       isMounted = false;
@@ -269,9 +286,9 @@ export const DataProvider = ({ children }) => {
     isReloading, // Expose reload status
     reloadCounter, // Expose reload counter untuk force refresh di hooks
     refresh: loadAllData,
-    // Expose prayer time config constants (dari file config.txt atau default)
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
-    COLOR_CONFIG: configData.COLOR_CONFIG
+    COLOR_CONFIG: configData.COLOR_CONFIG,
+    timeService
   };
 
   return (

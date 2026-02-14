@@ -1,10 +1,25 @@
+import { slidesTemplate } from '../config/sliderConfig';
+
 const LoadingPage = () => {
+  const bgSrc = slidesTemplate.home?.image?.src || '/images/slides/bg-mta.jpg';
+  const containerStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: 50,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    backgroundImage: `url(${bgSrc})`,
+    backgroundSize: '100% 100%',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  };
   return (
-    <div 
-      u="loading" 
-      className="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center"
-      style={{ backgroundColor: '#FFFFFF' }}
-    >
+    <div u="loading" style={containerStyle}>
       <div className="relative">
         {/* Spinner */}
         <div 

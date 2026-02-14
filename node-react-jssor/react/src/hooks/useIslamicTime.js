@@ -1,43 +1,46 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getCurrentIslamicTime } from '../utils/islamicTimeUtils';
 import { useTakwimData } from './useTakwimData';
+import { useTimeSync } from '../contexts/TimeSyncContext';
 
 /**
  * Custom Hook untuk menguruskan waktu Islam (Hijri, Masehi, Waktu Solat)
- * Update setiap 0.5 saat
- * 
+ * Update setiap 1 saat. Guna timeService dari context = masa dari kalibrasi/server (termasuk test mode).
+ *
  * @param {Object} externalTakwimParsed - Optional: Parsed takwim data {zone, hdata, wdata}
  * @returns {Object} { islamicTime, loading, error }
  */
 export const useIslamicTime = (externalTakwimParsed = null) => {
   const [islamicTime, setIslamicTime] = useState(null);
   const [lastMinute, setLastMinute] = useState(null);
-  
+
+  const { timeService, timeSyncVersion } = useTimeSync();
+
   // Guna useTakwimData jika takwimDataParsed tidak diberikan
   const { takwimParsed: internalTakwimParsed, loading: takwimLoading } = useTakwimData();
-  
+
   // Guna external jika diberikan, jika tidak guna internal
   const takwimDataParsed = externalTakwimParsed || internalTakwimParsed;
-  
+
   // Loading bergantung kepada data takwim tersedia atau tidak
   const loading = externalTakwimParsed ? !externalTakwimParsed : takwimLoading;
   const error = null;
 
   /**
-   * Update waktu semasa
+   * Update waktu semasa (guna timeService = masa dari server/kalibrasi)
    */
   const updateTime = useCallback(() => {
     if (!takwimDataParsed) return;
-    
+
     try {
       const currentTime = getCurrentIslamicTime({
         hdata: takwimDataParsed.hdata,
-        wdata: takwimDataParsed.wdata
+        wdata: takwimDataParsed.wdata,
+        timeService
       });
-      
+
       setIslamicTime(currentTime);
-      
-      // Simpan minit semasa untuk perbandingan
+
       const currentMinute = currentTime.time.minutes;
       if (lastMinute !== currentMinute) {
         setLastMinute(currentMinute);
@@ -45,7 +48,7 @@ export const useIslamicTime = (externalTakwimParsed = null) => {
     } catch (err) {
       console.error('Error updating time:', err);
     }
-  }, [takwimDataParsed, lastMinute]);
+  }, [takwimDataParsed, lastMinute, timeService]);
 
   /**
    * Refresh - placeholder (data refresh handled at context level)
@@ -55,24 +58,26 @@ export const useIslamicTime = (externalTakwimParsed = null) => {
   }, []);
 
   /**
-   * Setup interval untuk update setiap 0.5 saat
+   * Setup interval untuk update setiap 1 saat
    */
   useEffect(() => {
     if (!takwimDataParsed) return;
 
-    // Update immediately
     updateTime();
 
-    // Setup interval - 1000ms = 1 saat
     const intervalId = setInterval(() => {
       updateTime();
     }, 1000);
 
-    // Cleanup
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [takwimDataParsed, updateTime]);
+
+  /**
+   * Bila kalibrasi masa berubah (test mode/offset dari admin), update paparan serta-merta
+   */
+  useEffect(() => {
+    if (takwimDataParsed) updateTime();
+  }, [timeSyncVersion]);
 
   return {
     islamicTime,

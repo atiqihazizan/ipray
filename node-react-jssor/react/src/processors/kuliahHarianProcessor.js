@@ -1,0 +1,222 @@
+/**
+ * Process data kuliah hari ini ke slides.
+ * Satu slide per kategori (Subuh, Dhuha, Maghrib, Khas) yang ada data hari ini.
+ * Layout: title "KULIAH HARI INI" atas tengah, box 2 column:
+ *   Col1: kuliah type + penceramah (font besar) + kitab — grouped, center middle
+ *   Col2: image middle
+ */
+import { slidesTemplate } from '../config/sliderConfig';
+import {
+  TYPE_LABELS,
+  getWeekCode,
+  getDayCode,
+  resolveImagePath,
+  getCenteredImageStyle
+} from '../utils/kuliahHelpers';
+import { top, getContainerSize, height } from '../utils/screenUtils';
+import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
+import { escapeHtml, isKuliahBatal } from './slideHelpers';
+
+const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH DHUHA', 'KULIAH SUBUH', 'KULIAH KHAS'];
+
+export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
+  const esc = escapeHtml;
+  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const currentDate = new Date();
+  const currentWeek = getWeekCode(currentDate);
+  const currentDay = getDayCode(currentDate);
+
+  const dataToDisplay = safeKuliahData.filter((item) => {
+    const arr = item.split('|');
+    return arr[0] === currentWeek && arr[1] === currentDay;
+  });
+
+  if (dataToDisplay.length === 0) {
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
+    const kuliahHariSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahHariSlide.captions[0];
+    if (parent && parent.children && parent.children.length >= 1) {
+      parent.children[0].content = 'KULIAH HARI INI';
+      const bodyMsg = {
+        type: 'div',
+        transition: 'auto',
+        duration: 1000,
+        content: 'Tiada kuliah hari ini...',
+        style: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: top(350),
+          width: getContainerSize().width,
+          height: 300,
+          textAlign: 'center',
+          fontSize: 200,
+          color: '#000000',
+          fontFamily: "'SairaCondensed', sans-serif",
+          fontWeight: 'bold',
+          lineHeight: 120,
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      };
+      parent.children = [parent.children[0], bodyMsg];
+    }
+    kuliahHariSlide.transitionType = 'auto';
+    return [kuliahHariSlide];
+  }
+
+  const groupedData = {};
+  dataToDisplay.forEach((item) => {
+    const arr = item.split('|');
+    const type = arr[2];
+    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push(item);
+  });
+
+  const kuliahHariSlides = [];
+  const categoryKeys = CATEGORY_ORDER.filter((cat) => groupedData[cat]);
+
+  categoryKeys.forEach((categoryTitle, categoryIndex) => {
+    const categoryData = groupedData[categoryTitle];
+    const item = categoryData[0];
+    const arr = item.split('|');
+    const penceramah = (arr[3] || '').trim();
+    const imageCode = (arr[4] || '').trim();
+    const kitab = (arr[5] || '').trim();
+    if (!penceramah) return;
+
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
+    const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahSlide.captions[0];
+
+    if (parent && parent.children && parent.children.length >= 2) {
+      const isLastCategory = categoryIndex === categoryKeys.length - 1;
+      if (categoryIndex > 0) parent.transition = null;
+      parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+
+      const BOX_BOTTOM = DEFAULT_BOX_BOTTOM;
+      const BOX_PADDING = 20;
+      const IMAGE_SIZE = 380;
+      const IMAGE_GAP = 40;
+      const IMAGE_PADDING_RIGHT = 20;
+      const INNER_LEFT = BOX_LEFT + BOX_PADDING;
+      const IMAGE_RIGHT_OFFSET = BOX_RIGHT + 10 + IMAGE_PADDING_RIGHT;
+      const COL1_RIGHT = IMAGE_RIGHT_OFFSET + IMAGE_SIZE + IMAGE_GAP;
+      const containerHeight = getContainerSize().height;
+      const boxHeight = containerHeight - BOX_TOP - BOX_BOTTOM;
+      const imageTop = BOX_TOP + (boxHeight - IMAGE_SIZE) / 2;
+      // const penceramahTop = BOX_TOP + (boxHeight - 204) / 2;
+      const penceramahTop = BOX_TOP + (boxHeight - 424) / 2;
+      const kitabTop = penceramahTop + 247;
+
+      const boxLayer = createBoxLayer();
+
+      boxLayer.transition = categoryIndex > 0 ? null : 'FADE'
+      boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT'
+
+      const batalInfo = isKuliahBatal(item, kuliahBatalData);
+      const imagePath = resolveImagePath(imageCode, imagesData);
+
+      parent.children[0].transition = categoryIndex > 0 ? null : 'CLIP|LR';
+      parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+      parent.children[0].duration = 2000;
+      parent.children[0].delay = 0;
+
+      const typeChild = {
+        type: 'div',
+        transition: 'CLIP|LR',
+        duration: 2000,
+        delay: 0,
+        content: categoryTitle,
+        style: {
+          position: 'absolute',
+          left: INNER_LEFT,
+          right: BOX_RIGHT + BOX_PADDING,
+          top: BOX_TOP + 28,
+          textAlign: 'center',
+          fontSize:72,
+          fontFamily:"'SairaCondensed',sans-serif",
+          color:'#fff',
+          lineHeight:78,
+          color:'#ffdb00',
+          fontWeight:'bold',
+          backgroundColor: 'black',
+          height: 79,
+        }
+      };
+      const penceramahChild = {
+        type: 'div',
+        transition: 'CLIP|LR',
+        duration: 2000,
+        delay: 0,
+        content: penceramah.toUpperCase(),
+        style: {
+          position: 'absolute',
+          left: INNER_LEFT,
+          right: COL1_RIGHT,
+          top: penceramahTop,
+          textAlign: 'center',
+          fontSize:136,
+          fontFamily:"'SairaCondensed',sans-serif",
+          color:'#000000',
+          fontWeight:'bold',
+          height: 200,
+          overflow: 'hidden',
+          margin:'8px 0'
+        }
+      };
+      const kitabChild = {
+        type: 'div',
+        transition: 'CLIP|LR',
+        duration: 2000,
+        delay: 0,
+        content: batalInfo.isBatal ? 'DITANGGUH SEMENTARA' : kitab,
+        style: {
+          position: 'absolute',
+          left: INNER_LEFT,
+          right: COL1_RIGHT,
+          top: kitabTop,
+          textAlign: 'center',
+          fontSize:98,
+          fontFamily:"'SairaCondensed',sans-serif",
+          color:'#000000',
+          fontWeight:'bold',
+          textWrapStyle: 'balance',
+          margin:'8px 0',
+        }
+      };
+
+      const imageChild = {
+        type: 'img',
+        transition: 'FADE',
+        duration: 1000,
+        delay: 0,
+        content: imagePath,
+        style: {
+          position: 'absolute',
+          right: IMAGE_RIGHT_OFFSET,
+          top: imageTop,
+          width: IMAGE_SIZE,
+          height: IMAGE_SIZE,
+          objectFit: 'fill',
+          borderRadius: 10,
+          boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px'
+        }
+      };
+      const imageStyle = getCenteredImageStyle(imagePath, imageChild.style);
+      imageChild.style = { ...imageStyle, top: imageTop };
+      imageChild.content = imagePath;
+
+      // parent.children = [boxLayer, parent.children[0], col1Group, imageChild];
+      parent.children = [boxLayer, parent.children[0], typeChild,penceramahChild,kitabChild, imageChild];
+    }
+
+    kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+    kuliahHariSlides.push(kuliahSlide);
+  });
+console.log(kuliahHariSlides)
+  return kuliahHariSlides;
+}

@@ -94,7 +94,7 @@ export const slidesTemplate = {
         content: "MASJID TUAN ABDULLAH"
       },
       {
-        type: "div", transition: "CLIP|LR", duration: 500, delay: -300,
+        type: "div", transition: "CLIP|LR", duration: 1500, delay: 700,
         style: { left: 0, right: 0, top: top(120 + 70 + 60), width: sz().width, height: 70, textAlign: 'center', fontSize: 88, color: '#00FFFF', textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' },
         content: "TANAH LIAT"
       },
@@ -176,14 +176,14 @@ export const slidesTemplate = {
             type: "div", transition: "CLIP|LR", duration: 1000, content: "",
             style: { position: 'absolute', left: 0, right: 0, top: top(166), width: sz().width, height: 50, textAlign: 'center', fontSize: 47, color: 'rgb(245 206 28)', fontWeight: 'bold', fontFamily: "system-ui", letterSpacing: '3px', transform: 'scaleX(0.85)', transformOrigin: 'center center', lineHeight: 50, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
           },
-          {
-            type: "div", transition: "CLIP|LR", delay: -500, content: "PENCERAMAH",
-            style: { position: 'absolute', left: 0, top: top(229), width: sz().width, height: 70, fontSize: 47, textAlign: 'center', fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 70, margin: 0, marginLeft: '-53px' },
-          },
-          {
-            type: "div", transition: "CLIP|L", delay: -500, content: "NAMA KITAB",
-            style: { position: 'absolute', left: 0, top: top(314), width: sz().width, height: 70, fontSize: 47, fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 70, margin: 0, marginLeft: '603px' },
-          },
+          // {
+          //   type: "div", transition: "CLIP|LR", delay: -500, content: "PENCERAMAH",
+          //   style: { position: 'absolute', left: 0, top: top(229), width: sz().width, height: 70, fontSize: 47, textAlign: 'center', fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 70, margin: 0, marginLeft: '-53px' },
+          // },
+          // {
+          //   type: "div", transition: "CLIP|L", delay: -500, content: "NAMA KITAB",
+          //   style: { position: 'absolute', left: 0, top: top(314), width: sz().width, height: 70, fontSize: 47, fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 70, margin: 0, marginLeft: '603px' },
+          // },
         ]
       }
     ]

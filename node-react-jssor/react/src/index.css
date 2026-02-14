@@ -116,7 +116,7 @@ body {
 }
 
 * {
-  cursor: none !important;
+  /* cursor: none !important; */
 }
 
 /* Blinking effect untuk 30 saat sebelum waktu solat */

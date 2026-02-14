@@ -467,6 +467,158 @@
 		.today-takwim-empty p {
 			margin: 0;
 		}
+
+		/* Time Calibration Tab Styles */
+		.time-info-card, .calibration-card, .test-prayer-card, .sync-card {
+			background: white;
+			border-radius: 8px;
+			padding: 24px;
+			margin-bottom: 20px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.time-info-card h3, .calibration-card h3, .test-prayer-card h3, .sync-card h3 {
+			margin: 0 0 16px 0;
+			font-size: 18px;
+			font-weight: 600;
+			color: #1f2937;
+		}
+
+		.time-info-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 16px;
+		}
+
+		.time-info-item {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.time-info-item label {
+			font-size: 14px;
+			color: #6b7280;
+			font-weight: 500;
+		}
+
+		.time-display {
+			font-size: 24px;
+			font-weight: 600;
+			color: #1f2937;
+			font-family: 'Courier New', monospace;
+		}
+
+		.time-source-badge {
+			display: inline-block;
+			padding: 6px 12px;
+			border-radius: 4px;
+			font-size: 14px;
+			font-weight: 600;
+		}
+
+		.time-source-badge.ntp {
+			background: #10b981;
+			color: white;
+		}
+
+		.time-source-badge.manual {
+			background: #f59e0b;
+			color: white;
+		}
+
+		.time-source-badge.system {
+			background: #6b7280;
+			color: white;
+		}
+
+		.time-source-badge.test {
+			background: #ddd6fe;
+			color: #7c3aed;
+			animation: pulse 2s ease-in-out infinite;
+		}
+
+		@keyframes pulse {
+			0%, 100% { opacity: 1; }
+			50% { opacity: 0.7; }
+		}
+
+		.time-status {
+			font-size: 14px;
+			color: #6b7280;
+		}
+
+		.calibration-form, .test-form, .sync-form {
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.form-group {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.form-group label {
+			font-size: 14px;
+			font-weight: 500;
+			color: #374151;
+		}
+
+		.datetime-input, .time-input {
+			padding: 10px 12px;
+			border: 1px solid #d1d5db;
+			border-radius: 6px;
+			font-size: 16px;
+			font-family: 'Courier New', monospace;
+		}
+
+		.datetime-input:focus, .time-input:focus {
+			outline: none;
+			border-color: #3b82f6;
+			box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+		}
+
+		.test-buttons {
+			display: flex;
+			gap: 12px;
+			flex-wrap: wrap;
+		}
+
+		.test-status, .sync-status {
+			padding: 12px;
+			border-radius: 6px;
+			font-size: 14px;
+		}
+
+		.test-status.success, .sync-status.success {
+			background: #d1fae5;
+			color: #065f46;
+			border: 1px solid #10b981;
+		}
+
+		.test-status.error, .sync-status.error {
+			background: #fee2e2;
+			color: #991b1b;
+			border: 1px solid #ef4444;
+		}
+
+		.test-status.info, .sync-status.info {
+			background: #dbeafe;
+			color: #1e40af;
+			border: 1px solid #3b82f6;
+		}
+
+		@media (max-width: 768px) {
+			.time-info-grid {
+				grid-template-columns: 1fr;
+			}
+			
+			.test-buttons {
+				flex-direction: column;
+			}
+		}
 	</style>
 </head>
 
@@ -512,6 +664,10 @@
 			<div class="menu-item" onclick="showTab('takwim')" data-tab="takwim">
 				<span class="menu-item-icon">📅</span>
 				<span class="menu-item-text">Takwim</span>
+			</div>
+			<div class="menu-item" onclick="showTab('time')" data-tab="time">
+				<span class="menu-item-icon">⏰</span>
+				<span class="menu-item-text">Kalibrasi Masa</span>
 			</div>
 		</nav>
 	</aside>
@@ -724,42 +880,6 @@
 					</div>
 				</div>
 
-				<!-- System Date & Time Configuration -->
-				<div class="config-group" style="margin-top: 32px;">
-					<h3 class="config-group-title">System Date &amp; Time</h3>
-					<div class="config-group-items">
-						<div class="config-item">
-							<label for="SYSTEM_DATETIME">Set Date/Time</label>
-							<div class="config-item-control">
-								<input type="datetime-local" id="SYSTEM_DATETIME" name="SYSTEM_DATETIME"
-									style="width: auto; text-align: left; padding: 8px 12px;" />
-								<button type="button" class="btn-icon btn-edit" onclick="setSystemDateTime()"
-									title="Set system time">
-									<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-											stroke-width="2" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round"
-												d="M4.5 12.75l6 6 9-13.5" />
-										</svg></span>
-								</button>
-							</div>
-						</div>
-						<div class="config-item">
-							<label>Current System Time</label>
-							<div class="config-item-control">
-								<span id="SYSTEM_DATETIME_CURRENT"
-									style="font-size: 14px; color: #6b7280; font-weight: 500;">-</span>
-								<button type="button" class="btn-icon btn-reload" onclick="refreshSystemTime()"
-									title="Refresh time" style="background: #6b7280; margin-left: 8px;">
-									<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-											stroke-width="2" stroke="currentColor">
-											<path stroke-linecap="round" stroke-linejoin="round"
-												d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-										</svg></span>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
 
 				<!-- Seksyen Konfigurasi WiFi -->
 				<div class="system-control-section" style="margin-top: 32px;">
@@ -1123,6 +1243,93 @@
 					<div id="takwim-table-container"></div>
 				</div>
 			</div>
+
+			<!-- Time Calibration Tab -->
+			<div id="time-tab" class="tab-content">
+				<div class="content-card">
+					<!-- Current Time Info -->
+					<div class="time-info-card">
+						<h3>Maklumat Masa Semasa</h3>
+						<div class="time-info-grid">
+							<div class="time-info-item">
+								<label>Masa Sistem:</label>
+								<div id="system-time" class="time-display">--:--:--</div>
+							</div>
+							<div class="time-info-item">
+								<label>Masa Sekarang:</label>
+								<div id="calibrated-time" class="time-display">--:--:--</div>
+							</div>
+							<div class="time-info-item">
+								<label>Sumber Masa:</label>
+								<div id="time-source" class="time-source-badge">--</div>
+							</div>
+							<div class="time-info-item">
+								<label>Status:</label>
+								<div id="time-status" class="time-status">--</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Calibration Section -->
+					<div class="calibration-card">
+						<h3>Tetapkan Masa Yang Betul</h3>
+						<p class="note">Gunakan jika masa sistem tidak tepat (CMOS battery rosak atau offline)</p>
+						
+						<div class="calibration-form">
+							<div class="form-group">
+								<label for="correct-datetime">Pilih Masa Yang Betul:</label>
+								<input 
+									type="datetime-local" 
+									id="correct-datetime" 
+									class="datetime-input"
+								/>
+							</div>
+							<button onclick="setCorrectTime()" class="btn btn-primary">
+								<span>✓</span> Tetapkan Masa
+							</button>
+						</div>
+					</div>
+
+					<!-- Test Prayer Time Section -->
+					<div class="test-prayer-card">
+						<h3>Test Waktu Solat</h3>
+						<p class="note">Set masa untuk test audio waktu solat. Masa akan berubah sementara.</p>
+						
+						<div class="test-form">
+							<div class="form-group">
+								<label for="test-time">Waktu Solat Untuk Test:</label>
+								<input 
+									type="time" 
+									id="test-time" 
+									class="time-input"
+								/>
+							</div>
+							<div class="test-buttons">
+								<button onclick="testPrayerTime()" class="btn btn-warning">
+									<span>🔊</span> Test Waktu Solat
+								</button>
+								<button onclick="resetTime()" class="btn btn-secondary" id="reset-btn" style="display: none;">
+									<span>↺</span> Reset Masa
+								</button>
+							</div>
+							<div id="test-status" class="test-status" style="display: none;"></div>
+						</div>
+					</div>
+
+					<!-- Auto Sync Section -->
+					<div class="sync-card">
+						<h3>Sync Automatik</h3>
+						<p class="note">Sync masa dengan internet (memerlukan sambungan internet)</p>
+						
+						<div class="sync-form">
+							<button onclick="syncWithInternet()" class="btn btn-success">
+								<span>🌐</span> Sync Dengan Internet
+							</button>
+							<div id="sync-status" class="sync-status" style="display: none;"></div>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</main>
 
@@ -1174,6 +1381,7 @@
 	<script type="module" src="js/dialog.js"></script>
 	<script type="module" src="js/table.js"></script>
 	<script type="module" src="js/wifi.js"></script>
+	<script type="module" src="js/time.js"></script>
 	<script type="module" src="js/main.js"></script>
 
 	<script>
@@ -1257,13 +1465,8 @@
 					window.NotificationUtils.showNotification('Konfigurasi berjaya dimuat', 'success');
 				}
 				
-				// Refresh system time display dan set default value
-				// Try server time first (if internet available), fallback to local PC time
-				refreshSystemTime().catch(err => {
-					console.error('Error refreshing system time:', err);
-					// Fallback ke local time jika server tidak accessible
-					setDefaultTimeFromLocal();
-				});
+				// Note: System Date & Time configuration removed - guna Time Calibration tab instead
+				// refreshSystemTime() tidak diperlukan lagi
 			}
 		} catch (error) {
 			console.error('Ralat memuat konfigurasi:', error);
@@ -1326,157 +1529,8 @@
 			}
 		}
 
-		// Check internet connection
-		async function checkInternetConnection() {
-			try {
-				// Try to fetch a small resource with cache-busting
-				const controller = new AbortController();
-				const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-				
-				const response = await fetch(`${getApiUrl()}/system/time`, {
-					method: 'HEAD',
-					signal: controller.signal,
-					cache: 'no-cache'
-				});
-				
-				clearTimeout(timeoutId);
-				return response.ok;
-			} catch (error) {
-				// Network error or timeout - no internet
-				return false;
-			}
-		}
-
-		// System Date/Time functions
-		async function refreshSystemTime() {
-			// Check internet connection first
-			const hasInternet = await checkInternetConnection();
-			
-			if (hasInternet) {
-				// Ada internet - ambil dari server (sync automatic)
-				try {
-					const response = await fetch(`${getApiUrl()}/system/time`);
-					const data = await response.json();
-					
-					if (response.ok && data.iso) {
-						// Format untuk display (local time)
-						const date = new Date(data.iso);
-						const displayTime = date.toLocaleString('ms-MY', {
-							year: 'numeric',
-							month: '2-digit',
-							day: '2-digit',
-							hour: '2-digit',
-							minute: '2-digit',
-							second: '2-digit',
-							hour12: false
-						});
-						document.getElementById('SYSTEM_DATETIME_CURRENT').textContent = displayTime + ' (Server)';
-						
-						// Set default value untuk input field (datetime-local format: YYYY-MM-DDTHH:MM)
-						const datetimeInput = document.getElementById('SYSTEM_DATETIME');
-						if (datetimeInput) {
-							const year = date.getFullYear();
-							const month = String(date.getMonth() + 1).padStart(2, '0');
-							const day = String(date.getDate()).padStart(2, '0');
-							const hours = String(date.getHours()).padStart(2, '0');
-							const minutes = String(date.getMinutes()).padStart(2, '0');
-							datetimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-						}
-						
-						return date; // Return date object untuk reuse
-					} else {
-						// Server error, fallback ke local
-						return setDefaultTimeFromLocal();
-					}
-				} catch (error) {
-					console.error('Error fetching server time:', error);
-					// Fallback ke local PC time jika server tidak accessible
-					return setDefaultTimeFromLocal();
-				}
-			} else {
-				// Tiada internet - ambil dari local PC time
-				console.log('No internet connection, using local PC time');
-				return setDefaultTimeFromLocal();
-			}
-		}
-
-		// Set default time dari local PC (fallback jika tiada internet/server)
-		function setDefaultTimeFromLocal() {
-			const now = new Date();
-			
-			// Format untuk display
-			const displayTime = now.toLocaleString('ms-MY', {
-				year: 'numeric',
-				month: '2-digit',
-				day: '2-digit',
-				hour: '2-digit',
-				minute: '2-digit',
-				second: '2-digit',
-				hour12: false
-			});
-			
-			// Update display
-			const currentTimeEl = document.getElementById('SYSTEM_DATETIME_CURRENT');
-			if (currentTimeEl) {
-				currentTimeEl.textContent = displayTime + ' (Local PC)';
-			}
-			
-			// Set default value untuk input field (datetime-local format: YYYY-MM-DDTHH:MM)
-			// Always set jika tiada value atau jika kita dalam fallback mode
-			const datetimeInput = document.getElementById('SYSTEM_DATETIME');
-			if (datetimeInput) {
-				const year = now.getFullYear();
-				const month = String(now.getMonth() + 1).padStart(2, '0');
-				const day = String(now.getDate()).padStart(2, '0');
-				const hours = String(now.getHours()).padStart(2, '0');
-				const minutes = String(now.getMinutes()).padStart(2, '0');
-				datetimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-			}
-			
-			return now;
-		}
-
-		async function setSystemDateTime() {
-			try {
-				const el = document.getElementById('SYSTEM_DATETIME');
-				if (!el || !el.value) {
-					if (window.NotificationUtils) {
-						window.NotificationUtils.showNotification('⚠️ Sila pilih tarikh dan masa', 'error');
-					}
-					return;
-				}
-
-				// datetime-local format: "YYYY-MM-DDTHH:MM"
-				const isoLocal = el.value;
-
-				const response = await fetch(`${getApiUrl()}/system/time`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ isoLocal })
-				});
-
-				const result = await response.json();
-
-				if (!response.ok) {
-					throw new Error(result.error || 'Failed to set time');
-				}
-
-				// Refresh display
-				await refreshSystemTime();
-				
-				if (window.NotificationUtils) {
-					window.NotificationUtils.showNotification('✓ System time updated successfully', 'success');
-				}
-
-				// Clear input
-				el.value = '';
-			} catch (error) {
-				console.error('Error setting system time:', error);
-				if (window.NotificationUtils) {
-					window.NotificationUtils.showNotification('✗ Error: ' + error.message, 'error');
-				}
-			}
-		}
+		// Note: System Date/Time functions removed
+		// Guna Time Calibration tab (Kalibrasi Masa) untuk set masa
 
 		// Handle Kiosk Reboot
 		function handleRebootKiosk() {

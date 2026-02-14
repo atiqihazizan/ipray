@@ -22,6 +22,7 @@ class ApiServerService {
     this.securityService = null;
     this.socketServerService = null; // Add socket server reference
     this.imagesPath = null; // Path untuk images folder
+    this.timeService = null; // Time service reference
   }
 
   /**
@@ -34,6 +35,7 @@ class ApiServerService {
     this.securityService = config.securityService;
     this.socketServerService = config.socketServerService; // Store socket server reference
     this.imagesPath = config.imagesPath; // Store images path
+    this.timeService = config.timeService; // Store time service reference
   }
 
   /**
@@ -149,6 +151,104 @@ class ApiServerService {
         token: this.securityService.getAccessToken(),
         note: 'Gunakan token ini dalam header X-Access-Token untuk akses port 3000 dari browser'
       });
+    });
+    
+    // Time Service Endpoints
+    
+    // Get calibrated time info
+    this.app.get('/api/time', (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const timeInfo = this.timeService.getTimeInfo();
+        res.json(timeInfo);
+      } catch (error) {
+        console.error('Error getting time info:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Force NTP sync
+    this.app.get('/api/time/sync', async (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const result = await this.timeService.syncNtp();
+        res.json(result);
+      } catch (error) {
+        console.error('Error syncing NTP:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Update manual offset
+    this.app.post('/api/time/offset', async (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const { offsetMs } = req.body;
+        if (offsetMs === undefined) {
+          return res.status(400).json({ error: 'offsetMs is required' });
+        }
+        const result = await this.timeService.updateManualOffset(offsetMs);
+        
+        // Notify clients via socket
+        if (this.socketServerService) {
+          this.socketServerService.broadcastEvent('time-offset-updated', result);
+        }
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Error updating manual offset:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Enable test mode
+    this.app.post('/api/time/test', async (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const { timestamp } = req.body;
+        if (timestamp === undefined) {
+          return res.status(400).json({ error: 'timestamp is required' });
+        }
+        const result = this.timeService.enableTestMode(timestamp);
+        
+        // Notify clients via socket
+        if (this.socketServerService) {
+          this.socketServerService.broadcastEvent('time-test-mode-enabled', result);
+        }
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Error enabling test mode:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+    
+    // Disable test mode (reset)
+    this.app.post('/api/time/reset', async (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const result = this.timeService.disableTestMode();
+        
+        // Notify clients via socket
+        if (this.socketServerService) {
+          this.socketServerService.broadcastEvent('time-test-mode-disabled', result);
+        }
+        
+        res.json(result);
+      } catch (error) {
+        console.error('Error disabling test mode:', error);
+        res.status(500).json({ error: error.message });
+      }
     });
     
     // List all data files

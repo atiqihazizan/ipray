@@ -749,7 +749,8 @@ export function showTab(tabName) {
         'kuliah-batal': { icon: '❌', name: 'Kuliah Batal' },
         'images': { icon: '🖼️', name: 'Galery' },
         'announcements': { icon: '📢', name: 'Pengumuman' },
-        'takwim': { icon: '📅', name: 'Takwim' }
+        'takwim': { icon: '📅', name: 'Takwim' },
+        'time': { icon: '⏰', name: 'Kalibrasi Masa' }
     };
     
     const pageInfo = pageTitles[tabName];
@@ -773,6 +774,11 @@ export function showTab(tabName) {
         // Config tab uses form-based layout
         if (typeof window.loadConfigData === 'function') {
             window.loadConfigData();
+        }
+    } else if (tabName === 'time') {
+        // Time tab uses custom layout
+        if (typeof window.TimeUtils?.initTimeTab === 'function') {
+            window.TimeUtils.initTimeTab();
         }
     } else {
         // Other tabs use table layout

@@ -609,12 +609,18 @@ class DataService {
   }
 
   /**
-   * Parse config content (key|value) -> { PRAYER_TIME_CONFIG, COLOR_CONFIG }
+   * Parse config content (key|value) -> { PRAYER_TIME_CONFIG, COLOR_CONFIG, DATETIME_CONFIG }
    */
   parseConfig(content) {
     const parsed = {
       PRAYER_TIME_CONFIG: { ...DEFAULT_PRAYER_TIME_CONFIG },
-      COLOR_CONFIG: { ...DEFAULT_COLOR_CONFIG }
+      COLOR_CONFIG: { ...DEFAULT_COLOR_CONFIG },
+      DATETIME_CONFIG: {
+        MANUAL_OFFSET_MS: 0,
+        NTP_ENABLED: true,
+        NTP_SERVER: 'pool.ntp.org',
+        NTP_SYNC_INTERVAL_MS: 3600000
+      }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
     content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0).forEach(line => {
@@ -633,6 +639,10 @@ class DataService {
       else if (key === 'COLOR_DEFAULT') parsed.COLOR_CONFIG.DEFAULT = value;
       else if (key === 'COLOR_NEXT_PRAYER') parsed.COLOR_CONFIG.NEXT_PRAYER = value;
       else if (key === 'COLOR_WARNING_PRAYER') parsed.COLOR_CONFIG.WARNING_PRAYER = value;
+      else if (key === 'DATETIME_MANUAL_OFFSET_MS') parsed.DATETIME_CONFIG.MANUAL_OFFSET_MS = parseInt(value, 10) || 0;
+      else if (key === 'DATETIME_NTP_ENABLED') parsed.DATETIME_CONFIG.NTP_ENABLED = value.toLowerCase() === 'true';
+      else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;
+      else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
     });
     return parsed;
   }

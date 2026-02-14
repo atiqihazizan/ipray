@@ -111,6 +111,20 @@ class SocketService {
       audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
       this.notifyListeners('reboot', data);
     });
+
+    // Listen for time calibration events (test mode / offset) - React mesti terima untuk update masa
+    this.socket.on('time-offset-updated', (data) => {
+      console.log('[Socket] time-offset-updated diterima', data);
+      this.notifyListeners('time-offset-updated', data);
+    });
+    this.socket.on('time-test-mode-enabled', (data) => {
+      console.log('[Socket] time-test-mode-enabled diterima', data);
+      this.notifyListeners('time-test-mode-enabled', data);
+    });
+    this.socket.on('time-test-mode-disabled', (data) => {
+      console.log('[Socket] time-test-mode-disabled diterima', data);
+      this.notifyListeners('time-test-mode-disabled', data);
+    });
   }
 
   /**

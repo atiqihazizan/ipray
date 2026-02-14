@@ -4,6 +4,7 @@ const path = require('path');
 // Import services
 const securityService = require('./services/securityService');
 const DataService = require('./services/dataService');
+const TimeService = require('./services/timeService');
 const publicServerService = require('./services/publicServerService');
 const apiServerService = require('./services/apiServerService');
 const socketServerService = require('./services/socketServerService');
@@ -43,6 +44,7 @@ if (DEV_MODE) {
 
 // Initialize data service (set on app ready)
 let dataService = null;
+let timeService = null;
 
 /**
  * Start all servers
@@ -151,6 +153,26 @@ async function startServers() {
     // Initialize data service with writable paths
     dataService = new DataService(dataPath);
 
+    // Load config untuk time service
+    let configContent = '';
+    try {
+      configContent = await dataService.readFile('config');
+    } catch (error) {
+      console.warn('Config file not found, using defaults');
+    }
+    const config = dataService.parseConfig(configContent);
+    const datetimeConfig = config.DATETIME_CONFIG || {};
+
+    // Initialize time service
+    timeService = new TimeService();
+    await timeService.init({
+      dataService,
+      manualOffset: datetimeConfig.MANUAL_OFFSET_MS || 0,
+      ntpEnabled: datetimeConfig.NTP_ENABLED !== undefined ? datetimeConfig.NTP_ENABLED : true,
+      ntpServer: datetimeConfig.NTP_SERVER || 'pool.ntp.org',
+      ntpSyncIntervalMs: datetimeConfig.NTP_SYNC_INTERVAL_MS || 3600000
+    });
+
     // Initialize Socket.IO service (will be attached to API server)
     socketServerService.init({
       port: SETTING_PORT // Socket.IO akan share port dengan API server
@@ -163,7 +185,8 @@ async function startServers() {
       dataService,
       securityService,
       socketServerService, // Pass socket server reference untuk broadcasting
-      imagesPath // Pass images path untuk upload/delete
+      imagesPath, // Pass images path untuk upload/delete
+      timeService // Pass time service reference
     });
     await apiServerService.start(); // Socket.IO akan auto-attach di sini
     
@@ -194,6 +217,9 @@ async function stopServers() {
     await publicServerService.stop();
     await apiServerService.stop();
     await socketServerService.stop();
+    if (timeService) {
+      timeService.cleanup();
+    }
     console.log('All servers stopped.');
   } catch (error) {
     console.error('Error stopping servers:', error);

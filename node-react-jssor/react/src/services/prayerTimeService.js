@@ -19,7 +19,14 @@ class PrayerTimeService {
   }
 
   // Dapatkan waktu solat untuk tarikh tertentu
-  getPrayerTime(date = new Date(), prayerName) {
+  // timeService: optional, untuk guna calibrated time
+  getPrayerTime(date, prayerName, timeService = null) {
+    // Jika date tidak diberikan, guna current time (calibrated jika timeService ada)
+    if (!date) {
+      const timestamp = timeService ? timeService.now() : Date.now();
+      date = new Date(timestamp);
+    }
+    
     const dateStr = this.formatDateKey(date);
     const dayData = this.takwim.find(item => item.date === dateStr);
     
@@ -49,8 +56,14 @@ class PrayerTimeService {
 
   // Bandingkan masa sekarang dengan waktu solat
   // Return: { isPrayerTime: boolean, prayerName: string, timeMatch: boolean }
-  checkPrayerTime(currentDate = new Date(), prayerName, toleranceSeconds = 0) {
-    const prayerTime = this.getPrayerTime(currentDate, prayerName);
+  // timeService: optional, untuk guna calibrated time
+  checkPrayerTime(currentDate, prayerName, toleranceSeconds = 0, timeService = null) {
+    // Jika currentDate tidak diberikan, guna current time (calibrated jika timeService ada)
+    if (!currentDate) {
+      const timestamp = timeService ? timeService.now() : Date.now();
+      currentDate = new Date(timestamp);
+    }
+    const prayerTime = this.getPrayerTime(currentDate, prayerName, timeService);
     
     if (!prayerTime) {
       return { isPrayerTime: false, prayerName: null, timeMatch: false };
@@ -78,12 +91,19 @@ class PrayerTimeService {
   }
 
   // Check semua waktu solat untuk tarikh tertentu
-  checkAllPrayerTimes(currentDate = new Date(), toleranceSeconds = 0) {
+  // timeService: optional, untuk guna calibrated time
+  checkAllPrayerTimes(currentDate, toleranceSeconds = 0, timeService = null) {
+    // Jika currentDate tidak diberikan, guna current time (calibrated jika timeService ada)
+    if (!currentDate) {
+      const timestamp = timeService ? timeService.now() : Date.now();
+      currentDate = new Date(timestamp);
+    }
+    
     const prayers = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
     const results = {};
 
     prayers.forEach(prayer => {
-      results[prayer] = this.checkPrayerTime(currentDate, prayer, toleranceSeconds);
+      results[prayer] = this.checkPrayerTime(currentDate, prayer, toleranceSeconds, timeService);
     });
 
     // Cari waktu solat yang sedang berlaku

@@ -27,3 +27,7 @@ bg-mta|/images/slides/bg-mta.jpg
 picture4|/images/slides/picture4.jpg
 picture4d|/images/slides/picture4d.png
 picture4e|/images/slides/picture4e.png
+
+picture4f|/images/slides/picture4f.png
+silverbackground|/images/penceramah/SilverBackground4.jpg
+picture1b|/images/penceramah/picture1b.jpg

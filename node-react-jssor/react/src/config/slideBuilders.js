@@ -229,7 +229,7 @@ export function buildKuliahBulananChildren(numCards, dayOfWeekArray = [], calend
   const scaledRowGap = height(ROW_GAP);
 
   const tempKuliahBulanan = [
-    { type: "div", transition: "CLIP|LR", duration: 1, content: "", style: { position: 'absolute', left: 0, top: START_TOP, width: scaledCardWidth, height: scaledCardHeight, padding: '0 5px' } }
+    { type: "div", transition: "CLIP|LR", transition2:"NO_CLIP_OUT", duration: 1000, content: "", style: { position: 'absolute', left: 0, top: START_TOP, width: scaledCardWidth, height: scaledCardHeight, padding: '0 5px' } }
   ];
 
   return Array.from({ length: numCards }, (_, cardIndex) => {

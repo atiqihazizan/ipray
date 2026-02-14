@@ -7,6 +7,7 @@ import { initSocket } from './socket.js';
 import { loadTable, showTab } from './table.js';
 import { closeDialog } from './dialog.js';
 import { saveRow } from './api.js';
+import { initTimeTab, cleanupTimeTab } from './time.js';
 
 /**
  * Setup event listeners
@@ -54,4 +55,8 @@ if (typeof window !== 'undefined') {
     window.openAddDialog = window.DialogUtils.openAddDialog;
     window.openEditDialog = window.DialogUtils.openEditDialog;
     window.deleteRow = window.ApiUtils.deleteRow;
+    window.TimeUtils = {
+        initTimeTab,
+        cleanupTimeTab
+    };
 }

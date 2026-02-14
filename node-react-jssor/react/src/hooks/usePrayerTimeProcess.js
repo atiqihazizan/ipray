@@ -17,7 +17,7 @@ const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
  */
 export function usePrayerTimeProcess() {
   const { takwimParsed } = useTakwimData();
-  const { PRAYER_TIME_CONFIG } = useData();
+  const { PRAYER_TIME_CONFIG, timeService } = useData();
 
   // Track solat yang sudah trigger beep untuk elak berulang
   const prayerBeepTriggeredRef = useRef({});
@@ -29,7 +29,8 @@ export function usePrayerTimeProcess() {
       try {
         const islamicTime = getCurrentIslamicTime({
           hdata: takwimParsed.hdata,
-          wdata: takwimParsed.wdata
+          wdata: takwimParsed.wdata,
+          timeService
         });
         if (!islamicTime?.prayer?.times) return;
 
@@ -92,5 +93,5 @@ export function usePrayerTimeProcess() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [takwimParsed, PRAYER_TIME_CONFIG]);
+  }, [takwimParsed, PRAYER_TIME_CONFIG, timeService]);
 }

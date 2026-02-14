@@ -181,6 +181,23 @@ class SocketServerService {
   }
 
   /**
+   * Broadcast custom event
+   */
+  broadcastEvent(eventName, data) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit(eventName, {
+      ...data,
+      timestamp: Date.now()
+    });
+
+    console.log(`📡 Broadcast event: ${eventName}`);
+  }
+
+  /**
    * Broadcast system reboot event
    * This will trigger React app to reload window before system reboots
    */
