@@ -37,6 +37,10 @@ backup/
 *_bak/
 **/*_bak
 **/*_bak/
+* bak
+* bak/
+**/* bak
+**/* bak/
 *.backup
 *.asal
 *.tmp
