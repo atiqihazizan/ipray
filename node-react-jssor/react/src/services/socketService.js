@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { getSocketUrl } from './apiBase';
 import audioService from './audioService.js';
 
 /**
@@ -20,10 +21,7 @@ class SocketService {
   connect(url = null) {
     // Auto-detect URL berdasarkan environment
     if (!url) {
-      const isDev = import.meta.env.DEV;
-      // Dalam development, guna relative URL untuk Vite proxy
-      // Dalam production, guna full URL
-      url = isDev ? window.location.origin : 'http://localhost:3001';
+      url = getSocketUrl();
     }
     if (this.socket && this.socket.connected) {
       return this.socket;

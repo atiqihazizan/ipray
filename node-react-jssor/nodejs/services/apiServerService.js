@@ -176,6 +176,12 @@ class ApiServerService {
           return res.status(503).json({ error: 'Time service not available' });
         }
         const result = await this.timeService.syncNtp();
+
+        // Notify clients via socket supaya frontend update masa serta-merta
+        if (this.socketServerService) {
+          this.socketServerService.broadcastEvent('time-offset-updated', result);
+        }
+
         res.json(result);
       } catch (error) {
         console.error('Error syncing NTP:', error);
@@ -470,6 +476,24 @@ class ApiServerService {
         res.json(result);
       } catch (error) {
         console.error('Error deleting row:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    // Toggle slide hide/show (slides only) - update terus tanpa buka dialog
+    this.app.post('/api/data/slides/:id/toggle-hide', async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+          return res.status(400).json({ error: 'Invalid row ID' });
+        }
+        const result = await this.dataService.toggleSlideHide('slides', id);
+        if (this.socketServerService) {
+          this.socketServerService.broadcastDataUpdate('slides', { action: 'row:update', rowId: id });
+        }
+        res.json(result);
+      } catch (error) {
+        console.error('Error toggling slide hide:', error);
         res.status(500).json({ error: error.message });
       }
     });

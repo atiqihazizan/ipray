@@ -62,29 +62,35 @@ const AppContent = () => {
 }
 
 function App() {
-  // Beep sekali bila app launch untuk pastikan audio ready
-  // Dalam kiosk mode dengan --autoplay-policy=no-user-gesture-required, audio boleh play tanpa user interaction
+  // Unlock audio untuk kiosk: Chromium dengan --autoplay-policy=no-user-gesture-required
+  // kadangkala perlukan masa sebelum play() dibenarkan. Retry beberapa kali.
   useEffect(() => {
-    const playLaunchBeep = async () => {
+    audioService.init();
+
+    const tryEnableAudio = async () => {
+      if (audioService.getIsEnabled()) return true;
       try {
-        audioService.init()
-        // Dalam kiosk mode, cuba enable dan play terus
-        if (!audioService.getIsEnabled()) {
-          await audioService.enableAudio().catch(() => {
-            // Jika gagal (bukan kiosk mode), akan enable pada interaksi pertama
-          })
-        }
-        // Main beep sekali
-        // await audioService.play({ playCount: 1, volume: 1 }).catch(() => {
-        //   // Jika gagal, akan main pada interaksi pertama
-        // })
-      } catch (err) {
-        // Abaikan jika gagal
+        await audioService.enableAudio();
+        return true;
+      } catch {
+        return false;
       }
-    }
-    
-    // Cubakan play beep selepas app mount (untuk kiosk mode dengan autoplay policy)
-    const timer = setTimeout(playLaunchBeep, 500)
+    };
+
+    // Percubaan pertama selepas 500ms
+    const t1 = setTimeout(() => { tryEnableAudio(); }, 500);
+
+    // Retry setiap 2s (max 15 kali = 30s) supaya kiosk sempat unlock audio sebelum waktu solat
+    let attempts = 0;
+    const maxAttempts = 15;
+    const retryInterval = setInterval(async () => {
+      if (audioService.getIsEnabled() || attempts >= maxAttempts) {
+        clearInterval(retryInterval);
+        return;
+      }
+      attempts += 1;
+      await tryEnableAudio();
+    }, 2000);
     
     // Fallback: Beep pada interaksi pertama (untuk browser biasa tanpa autoplay policy)
     const handleFirstInteraction = async (event) => {
@@ -108,13 +114,14 @@ function App() {
     document.addEventListener('pointerdown', handleFirstInteraction, { once: true })
     
     return () => {
-      clearTimeout(timer)
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('pointerdown', handleFirstInteraction)
-    }
-  }, [])
+      clearTimeout(t1);
+      clearInterval(retryInterval);
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('touchstart', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+      document.removeEventListener('pointerdown', handleFirstInteraction);
+    };
+  }, []);
   
   return (
     <DataProvider>

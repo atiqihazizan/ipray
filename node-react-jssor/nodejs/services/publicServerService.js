@@ -5,7 +5,8 @@ const { URL } = require('url');
 
 /**
  * Public Server Service
- * HTTP server untuk serve static files (localhost only, tanpa token)
+ * HTTP server untuk serve static files (paparan kiosk).
+ * Listen 0.0.0.0 supaya ipray.local:3000 boleh diakses dari rangkaian.
  */
 
 class PublicServerService {
@@ -107,6 +108,7 @@ class PublicServerService {
             '.gif': 'image/gif',
             '.svg': 'image/svg+xml',
             '.wav': 'audio/wav',
+            '.mp3': 'audio/mpeg',
             '.ttf': 'font/ttf',
             '.txt': 'text/plain',
           };
@@ -126,10 +128,10 @@ class PublicServerService {
         });
       });
       
-      // Listen pada localhost sahaja - tidak boleh diakses dari luar
-      this.server.listen(this.port, 'localhost', () => {
-        console.log(`Public Server running at http://localhost:${this.port}`);
-        console.log(`Note: Server hanya boleh diakses dari localhost (local machine)`);
+      // Listen pada 0.0.0.0 supaya ipray.local:3000 boleh diakses dari rangkaian
+      const host = '0.0.0.0';
+      this.server.listen(this.port, host, () => {
+        console.log(`Public Server running at http://localhost:${this.port} (juga http://ipray.local:${this.port})`);
         resolve();
       });
 

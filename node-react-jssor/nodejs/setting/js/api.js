@@ -16,7 +16,7 @@ import { closeDialog } from './dialog.js';
  */
 function reconstructRawLine(fileName, rowData) {
     if (fileName === 'slides') {
-        return `${rowData.type || ''}|${rowData.image || ''}|${rowData.duration || ''}|${rowData.checkbox || ''}`;
+        return `${rowData.type || ''}|${rowData.image || ''}|${rowData.duration || ''}|${rowData.checkbox || ''}|${rowData.hide || '0'}`;
     } else if (fileName === 'kuliah') {
         return `${rowData.week || ''}|${rowData.day || ''}|${rowData.type || ''}|${rowData.speaker || ''}|${rowData.speakerId || ''}|${rowData.title || ''}`;
     } else if (fileName === 'kuliah-batal') {
@@ -293,10 +293,31 @@ export async function deleteRow(rowId) {
     }
 }
 
+/**
+ * Toggle hide/show slide (tanpa buka dialog). Hanya untuk fail slides.
+ * @param {number} rowId - ID row slide
+ */
+export async function toggleSlideHide(rowId) {
+    const currentFileName = getCurrentFileName();
+    if (currentFileName !== 'slides') return;
+    try {
+        const API_URL = window.Config.API_URL;
+        const response = await fetch(`${API_URL}/data/slides/${rowId}/toggle-hide`, { method: 'POST' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        showNotification(result.hide ? '✓ Slide disembunyikan' : '✓ Slide dipaparkan', 'success');
+        loadTable(currentFileName);
+    } catch (error) {
+        console.error('Error toggling slide hide:', error);
+        showNotification('✗ Gagal kemaskini', 'error');
+    }
+}
+
 // Export untuk browser environment
 if (typeof window !== 'undefined') {
     window.ApiUtils = {
         saveRow,
-        deleteRow
+        deleteRow,
+        toggleSlideHide
     };
 }

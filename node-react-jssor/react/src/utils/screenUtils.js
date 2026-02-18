@@ -79,3 +79,12 @@ export const width = (widthValue) => {
 export const height = (heightValue) => {
   return heightValue * getRatio().heightRatio;
 };
+
+/**
+ * Kira saiz font (px) berdasarkan ratio skrin – teks scale mengikut height ratio (base 1920x1080).
+ * @param {number} fontSizePx - Font size asal dalam px (dari base 1920x1080)
+ * @returns {number} Font size yang sudah di-scale mengikut ratio
+ */
+export const textSize = (fontSizePx) => {
+  return fontSizePx * getRatio().heightRatio;
+};

@@ -1,6 +1,6 @@
-home|bg-mta|1000|date,solat,time
-announce|picture4|3000|date
-kuliahHari|picture1b|3000|date,next-solat,small-time
-kuliahWeekly|picture1b|3000|date,next-solat,small-time
+home|bg-mta|1000|date,solat,time|0
+announce|picture4|3000|date|0
+kuliahHari|picture1b|3000|date,next-solat,small-time|0
+kuliahWeekly|picture1b|3000|date,next-solat,small-time|0
 kuliahBulanan|picture4e|10000|date,next-solat,small-time
 slideshow|bg-mta|3000|next-solat,small-time

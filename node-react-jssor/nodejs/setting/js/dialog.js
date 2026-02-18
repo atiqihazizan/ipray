@@ -511,6 +511,37 @@ function createFormFields(form, row, isAdd, options = {}) {
             return;
         }
 
+        // Special handling untuk column hide dalam slides: checkbox Sembunyikan slide
+        if (currentFileName === 'slides' && col === 'hide') {
+            label.textContent = 'Sembunyikan slide';
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.id = `field-${col}`;
+            hiddenInput.name = col;
+            const isHidden = !isAdd && (row[col] === '1' || row[col] === true);
+            hiddenInput.value = isHidden ? '1' : '0';
+            const labelWrap = document.createElement('label');
+            labelWrap.style.display = 'inline-flex';
+            labelWrap.style.alignItems = 'center';
+            labelWrap.style.gap = '8px';
+            labelWrap.style.cursor = 'pointer';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = isHidden;
+            cb.addEventListener('change', () => {
+                hiddenInput.value = cb.checked ? '1' : '0';
+            });
+            const span = document.createElement('span');
+            span.textContent = 'Sembunyikan slide (tidak papar dalam slider)';
+            labelWrap.appendChild(cb);
+            labelWrap.appendChild(span);
+            group.appendChild(label);
+            group.appendChild(labelWrap);
+            group.appendChild(hiddenInput);
+            form.appendChild(group);
+            return;
+        }
+
         // Special handling untuk column image dalam slideshow table: upload sahaja, category slideshow, wajib upload
         if (currentFileName === 'slideshow' && col === 'image') {
             label.textContent = 'Image (wajib upload sebelum simpan)';

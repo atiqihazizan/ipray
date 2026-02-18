@@ -1,3 +1,5 @@
+import { getApiBase } from './apiBase';
+
 /**
  * Time Service (Client-side)
  * Fetch calibrated time dari server dan cache offset dalam memory
@@ -49,8 +51,7 @@ class TimeService {
    */
   async syncWithServer() {
     try {
-      const isDev = import.meta.env.DEV;
-      const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/time?t=${Date.now()}`);
       
       if (!res.ok) {
@@ -162,8 +163,7 @@ class TimeService {
    */
   async enableTestMode(timestamp) {
     try {
-      const isDev = import.meta.env.DEV;
-      const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/time/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -193,8 +193,7 @@ class TimeService {
    */
   async disableTestMode() {
     try {
-      const isDev = import.meta.env.DEV;
-      const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/time/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }

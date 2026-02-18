@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  envPrefix: 'VITE_', // .env: VITE_API_BASE, VITE_SOCKET_URL (optional override)
   build: {
     outDir: '../nodejs/public',
     emptyOutDir: true, // Clear folder sebelum build

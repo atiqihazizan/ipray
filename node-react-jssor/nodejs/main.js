@@ -209,14 +209,18 @@ async function startServers() {
   }
 }
 
+/** Masa tunggu shutdown (ms) - lepas ini force exit supaya systemctl restart tidak stuck */
+const SHUTDOWN_TIMEOUT_MS = 3000;
+
 /**
- * Stop all servers
+ * Stop all servers.
+ * Urutan: Socket.IO dulu (putus client), kemudian HTTP servers supaya server.close() tidak tunggu lama.
  */
 async function stopServers() {
   try {
+    await socketServerService.stop();
     await publicServerService.stop();
     await apiServerService.stop();
-    await socketServerService.stop();
     if (timeService) {
       timeService.cleanup();
     }
@@ -226,18 +230,35 @@ async function stopServers() {
   }
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\nReceived SIGINT, shutting down gracefully...');
-  await stopServers();
-  process.exit(0);
-});
+function doShutdown(signal) {
+  console.log(`\nReceived ${signal}, shutting down (max ${SHUTDOWN_TIMEOUT_MS}ms)...`);
+  let done = false;
+  const forceExit = () => {
+    if (done) return;
+    done = true;
+    console.warn('Shutdown timeout - forcing exit');
+    process.exit(0);
+  };
+  const timeoutId = setTimeout(forceExit, SHUTDOWN_TIMEOUT_MS);
+  stopServers()
+    .then(() => {
+      if (done) return;
+      done = true;
+      clearTimeout(timeoutId);
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Shutdown error:', err);
+      if (!done) {
+        done = true;
+        clearTimeout(timeoutId);
+        process.exit(1);
+      }
+    });
+}
 
-process.on('SIGTERM', async () => {
-  console.log('\nReceived SIGTERM, shutting down gracefully...');
-  await stopServers();
-  process.exit(0);
-});
+process.on('SIGINT', () => doShutdown('SIGINT'));
+process.on('SIGTERM', () => doShutdown('SIGTERM'));
 
 // Start servers
 startServers();

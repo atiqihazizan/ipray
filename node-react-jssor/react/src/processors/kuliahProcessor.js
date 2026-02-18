@@ -12,7 +12,7 @@ import {
   formatShortDate,
   calculateDateFromCodes
 } from '../utils/kuliahHelpers';
-import { top, getContainerSize } from '../utils/screenUtils';
+import { top, getContainerSize, textSize } from '../utils/screenUtils';
 import { escapeHtml, isKuliahBatal, isKuliahBatalByWeekDay } from './slideHelpers';
 
 export { processKuliahMingguan } from './kuliahWeeklyProcessor';
@@ -90,6 +90,10 @@ export function processKuliahBulanan(kuliahData, kuliahBatalData, slidesConfigDa
     const cards = buildKuliahBulananChildren(totalDays, dayOfWeekArray, calendarPositions);
     parent.children = [parent.children[0], ...cards];
 
+    const dayNumFontSize = Math.round(textSize(117));
+    const KULIAH_BULANAN_FONT_SIZE = Math.round(textSize(24));
+    const KITAB_ITEM_FONT_SIZE = Math.round(textSize(15));
+
     for (let i = 0; i < totalDays; i++) {
       const dayData = calendarGrid[i];
       const base = 1 + i;
@@ -98,12 +102,11 @@ export function processKuliahBulanan(kuliahData, kuliahBatalData, slidesConfigDa
         const dayNumberStr = String(dayData.dayNumber).padStart(2, '0');
         const isToday = dayData.dayNumber === currentDay;
         const dayNumberColor = isToday ? '#cc000040' : '#80808040';
-        const dayNumberStyle = `text-align:right; font-size:117px; font-family:'bebas',sans-serif; color:${dayNumberColor}; position:absolute; right:0; line-height:1.1; bottom:0;`;
+        const dayNumberStyle = `text-align:right; font-size:${dayNumFontSize}px; font-family:'bebas',sans-serif; color:${dayNumberColor}; position:absolute; right:0; line-height:1.1; bottom:0;`;
         const dayNumberHtml = `<div style="${dayNumberStyle}">${dayNumberStr}</div>`;
 
         let contentHtml = '';
         if (dayData.kuliah && dayData.kuliah.length > 0) {
-          const KULIAH_BULANAN_FONT_SIZE = 24; // type & penceramah - senang adjust
           const allKuliah = dayData.kuliah
             .map((k, rowIndex) => {
               const typeLabel = k.type.toUpperCase();
@@ -115,8 +118,8 @@ export function processKuliahBulanan(kuliahData, kuliahBatalData, slidesConfigDa
                   .map((item) => item.trim())
                   .filter(Boolean);
                 const itemStyle = batalInfo.isBatal
-                  ? 'font-size:15px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;'
-                  : 'font-size:15px;word-wrap:break-word;white-space:normal;line-height:1';
+                  ? `font-size:${KITAB_ITEM_FONT_SIZE}px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;`
+                  : `font-size:${KITAB_ITEM_FONT_SIZE}px;word-wrap:break-word;white-space:normal;line-height:1`;
                 const kitabItemsHtml = kitabItems.map((item) => `<li style="${itemStyle}">${esc(item)}</li>`).join('');
                 kitabHtml = `<ul style="margin-top:-3px;margin-left:19px;list-style-type:square">${kitabItemsHtml}</ul>`;
               }

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getApiBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeService from '../services/timeService';
 
@@ -69,8 +70,7 @@ export const DataProvider = ({ children }) => {
       setError(null);
       setReloadCounter(prev => prev + 1);
 
-      const isDev = import.meta.env.DEV;
-      const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/data/app?t=${Date.now()}`);
       if (!res.ok) {
         throw new Error('Gagal memuatkan data aplikasi');
@@ -114,8 +114,7 @@ export const DataProvider = ({ children }) => {
    */
   const loadTakwimOnly = useCallback(async () => {
     try {
-      const isDev = import.meta.env.DEV;
-      const API_BASE = isDev ? '/api' : 'http://localhost:3001/api';
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/data/app/takwim/full?t=${Date.now()}`);
       
       if (!res.ok) return;
@@ -235,9 +234,14 @@ export const DataProvider = ({ children }) => {
       if (isMounted && socketConnected) debouncedLoadTakwimOnly();
     });
 
-    // Data lain (announcements, kuliah, images, slides, config) - full reload
+    // Data lain (announcements, kuliah, images, slides, config) - reload page supaya tiada slider stuck
     const unsubscribeDataUpdated = socketService.on('data:updated', () => {
-      if (isMounted && socketConnected) debouncedReload();
+      if (isMounted && socketConnected) {
+        if (reloadDebounceTimer) clearTimeout(reloadDebounceTimer);
+        reloadDebounceTimer = setTimeout(() => {
+          if (isMounted) window.location.reload();
+        }, 500);
+      }
     });
 
     // Reboot - reload window

@@ -13,7 +13,7 @@ import {
   resolveImagePath,
   getCenteredImageStyle
 } from '../utils/kuliahHelpers';
-import { top, getContainerSize, height } from '../utils/screenUtils';
+import { top, left, right, bottom, getContainerSize, width, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
 import { escapeHtml, isKuliahBatal } from './slideHelpers';
 
@@ -48,13 +48,13 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
           right: 0,
           top: top(350),
           width: getContainerSize().width,
-          height: 300,
+          height: height(300),
           textAlign: 'center',
-          fontSize: 200,
+          fontSize: Math.round(textSize(200)),
           color: '#000000',
           fontFamily: "'SairaCondensed', sans-serif",
           fontWeight: 'bold',
-          lineHeight: 120,
+          lineHeight: Math.round(textSize(120)),
           margin: 0,
           display: 'flex',
           alignItems: 'center',
@@ -97,22 +97,21 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
       if (categoryIndex > 0) parent.transition = null;
       parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
 
-      const BOX_BOTTOM = DEFAULT_BOX_BOTTOM;
+      const BOX_BOTTOM = DEFAULT_BOX_BOTTOM - 80;
       const BOX_PADDING = 20;
       const IMAGE_SIZE = 380;
       const IMAGE_GAP = 40;
       const IMAGE_PADDING_RIGHT = 20;
-      const INNER_LEFT = BOX_LEFT + BOX_PADDING;
-      const IMAGE_RIGHT_OFFSET = BOX_RIGHT + 10 + IMAGE_PADDING_RIGHT;
-      const COL1_RIGHT = IMAGE_RIGHT_OFFSET + IMAGE_SIZE + IMAGE_GAP;
+      const INNER_LEFT_PX = BOX_LEFT + BOX_PADDING;
+      const IMAGE_RIGHT_OFFSET_PX = BOX_RIGHT + 10 + IMAGE_PADDING_RIGHT;
+      const COL1_RIGHT_PX = IMAGE_RIGHT_OFFSET_PX + IMAGE_SIZE + IMAGE_GAP;
       const containerHeight = getContainerSize().height;
-      const boxHeight = containerHeight - BOX_TOP - BOX_BOTTOM;
-      const imageTop = BOX_TOP + (boxHeight - IMAGE_SIZE) / 2;
-      // const penceramahTop = BOX_TOP + (boxHeight - 204) / 2;
-      const penceramahTop = BOX_TOP + (boxHeight - 424) / 2;
-      const kitabTop = penceramahTop + 247;
+      const boxHeight = containerHeight - top(BOX_TOP) - bottom(BOX_BOTTOM);
+      const imageTop = top(BOX_TOP) + height(50) + (boxHeight - height(IMAGE_SIZE)) / 2;
+      const penceramahTop = top(BOX_TOP) + height(50) + (boxHeight - height(424)) / 2;
+      const kitabTop = penceramahTop + height(247);
 
-      const boxLayer = createBoxLayer();
+      const boxLayer = createBoxLayer({ bottom: BOX_BOTTOM });
 
       boxLayer.transition = categoryIndex > 0 ? null : 'FADE'
       boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT'
@@ -133,18 +132,18 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
         content: categoryTitle,
         style: {
           position: 'absolute',
-          left: INNER_LEFT,
-          right: BOX_RIGHT + BOX_PADDING,
-          top: BOX_TOP + 28,
+          left: left(INNER_LEFT_PX),
+          right: right(BOX_RIGHT + BOX_PADDING),
+          top: top(BOX_TOP + 28),
           textAlign: 'center',
-          fontSize:72,
+          fontSize: Math.round(textSize(72)),
           fontFamily:"'SairaCondensed',sans-serif",
           color:'#fff',
-          lineHeight:78,
+          lineHeight: Math.round(textSize(78)),
           color:'#ffdb00',
           fontWeight:'bold',
           backgroundColor: 'black',
-          height: 79,
+          height: height(79),
         }
       };
       const penceramahChild = {
@@ -155,15 +154,15 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
         content: penceramah.toUpperCase(),
         style: {
           position: 'absolute',
-          left: INNER_LEFT,
-          right: COL1_RIGHT,
+          left: left(INNER_LEFT_PX),
+          right: right(COL1_RIGHT_PX),
           top: penceramahTop,
           textAlign: 'center',
-          fontSize:136,
+          fontSize: Math.round(textSize(116)),
           fontFamily:"'SairaCondensed',sans-serif",
           color:'#000000',
           fontWeight:'bold',
-          height: 200,
+          height: height(200),
           overflow: 'hidden',
           margin:'8px 0'
         }
@@ -176,11 +175,11 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
         content: batalInfo.isBatal ? 'DITANGGUH SEMENTARA' : kitab,
         style: {
           position: 'absolute',
-          left: INNER_LEFT,
-          right: COL1_RIGHT,
+          left: left(INNER_LEFT_PX),
+          right: right(COL1_RIGHT_PX),
           top: kitabTop,
           textAlign: 'center',
-          fontSize:98,
+          fontSize: Math.round(textSize(68)),
           fontFamily:"'SairaCondensed',sans-serif",
           color:'#000000',
           fontWeight:'bold',
@@ -197,10 +196,10 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
         content: imagePath,
         style: {
           position: 'absolute',
-          right: IMAGE_RIGHT_OFFSET,
+          right: right(IMAGE_RIGHT_OFFSET_PX),
           top: imageTop,
-          width: IMAGE_SIZE,
-          height: IMAGE_SIZE,
+          width: width(IMAGE_SIZE),
+          height: height(IMAGE_SIZE),
           objectFit: 'fill',
           borderRadius: 10,
           boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px'
@@ -217,6 +216,5 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
     kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
     kuliahHariSlides.push(kuliahSlide);
   });
-console.log(kuliahHariSlides)
   return kuliahHariSlides;
 }

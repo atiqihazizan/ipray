@@ -23,12 +23,15 @@ import {
   formatShortDate,
   calculateDateFromCodes
 } from '../utils/kuliahHelpers';
-import { top, getContainerSize } from '../utils/screenUtils';
+import { top, getContainerSize, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer } from '../utils/boxLayerUtils';
 import { escapeHtml, isKuliahBatal } from './slideHelpers';
 
 /** Bottom box untuk weekly (lebih kecil = height box lebih) */
 const WEEKLY_BOX_BOTTOM = 200;
+/** Kurangkan left/right supaya box extend lebih (lebih lebar) */
+const WEEKLY_BOX_LEFT = 80;
+const WEEKLY_BOX_RIGHT = 80;
 
 const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH SUBUH', 'KULIAH DHUHA', 'KULIAH KHAS'];
 
@@ -98,13 +101,13 @@ export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, s
         right: 0,
         top: top(350),
         width: getContainerSize().width,
-        height: 300,
+        height: height(300),
         textAlign: 'center',
-        fontSize: 200,
+        fontSize: Math.round(textSize(200)),
         color: '#000000',
         fontFamily: "'SairaCondensed', sans-serif",
         fontWeight: 'bold',
-        lineHeight: 120,
+        lineHeight: Math.round(textSize(120)),
         margin: 0,
         display: 'flex',
         alignItems: 'center',
@@ -159,9 +162,9 @@ export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, s
       parent.children.splice(1, 1);
     }
 
-    // Build layout 2 kolom (kandungan dalam box, height box lebih dengan bottom 200)
-    const boxLayer = createBoxLayer({ bottom: WEEKLY_BOX_BOTTOM });
-    const layoutChildren = buildKuliahWeeklyTwoColumnChildren(groupedData, { boxBottom: WEEKLY_BOX_BOTTOM });
+    // Build layout 2 kolom (kandungan dalam box, box extend dengan left/right lebih kecil)
+    const boxLayer = createBoxLayer({ bottom: WEEKLY_BOX_BOTTOM, left: WEEKLY_BOX_LEFT, right: WEEKLY_BOX_RIGHT });
+    const layoutChildren = buildKuliahWeeklyTwoColumnChildren(groupedData, { boxBottom: WEEKLY_BOX_BOTTOM, boxLeft: WEEKLY_BOX_LEFT, boxRight: WEEKLY_BOX_RIGHT });
     const layoutInfo = getWeeklyLayoutInfo(groupedData);
 
     // Set children: header, boxLayer, cards

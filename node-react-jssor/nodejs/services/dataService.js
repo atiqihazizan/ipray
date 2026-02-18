@@ -167,6 +167,7 @@ class DataService {
           image: parts[1] || '',
           duration: parts[2] || '',
           checkbox: parts[3] || '',
+          hide: parts[4] === '1' ? '1' : '0',
           raw: line
         });
       } else if (normalized === 'kuliah') {
@@ -276,7 +277,7 @@ class DataService {
   getColumns(filename) {
     const normalized = this.normalizeFilename(filename);
     const columnMap = {
-      'slides': ['type', 'image', 'duration', 'checkbox'],
+      'slides': ['type', 'image', 'duration', 'checkbox', 'hide'],
       'kuliah': ['week', 'day', 'type', 'speaker', 'speakerId', 'title'],
       'kuliah-batal': ['date', 'type', 'notes'],
       'images': ['imageCode', 'imagePath'],
@@ -596,16 +597,65 @@ class DataService {
     const parsed = {};
     if (!content || typeof content !== 'string') return parsed;
     content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0).forEach(line => {
-      const [slideType, imagePath, duration, datetimeStr] = line.split('|');
+      const p = line.split('|');
+      const slideType = p[0];
+      const imagePath = p[1];
+      const duration = p[2];
+      const datetimeStr = p[3];
+      const hide = p[4] === '1';
       if (slideType) {
         parsed[slideType] = {
           image: imagePath || '',
           duration: duration ? parseInt(duration, 10) : null,
-          datetime: datetimeStr ? datetimeStr.split(',').map(s => s.trim()).filter(s => s) : []
+          datetime: datetimeStr ? datetimeStr.split(',').map(s => s.trim()).filter(s => s) : [],
+          hide
         };
       }
     });
     return parsed;
+  }
+
+  /**
+   * Toggle hide/show untuk satu baris slide. Hanya untuk filename 'slides'.
+   * @param {string} filename - 'slides'
+   * @param {number} id - Row ID (1-based)
+   * @returns {Promise<{ success: boolean, hide: boolean }>} - hide true = disembunyikan
+   */
+  toggleSlideHide(filename, id) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const normalized = this.normalizeFilename(filename);
+        if (normalized !== 'slides' || !this.isValidFilename(normalized)) {
+          return reject(new Error('Invalid filename; toggleSlideHide only supports slides'));
+        }
+        const content = await this.readFile(normalized);
+        const allLines = content.split('\n');
+        let lineIndex = null;
+        let currentId = 0;
+        for (let i = 0; i < allLines.length; i++) {
+          const line = allLines[i];
+          if (line.trim() !== '' && !line.trim().startsWith('#')) {
+            currentId++;
+            if (currentId === id) {
+              lineIndex = i;
+              break;
+            }
+          }
+        }
+        if (lineIndex === null || lineIndex < 0 || lineIndex >= allLines.length) {
+          return reject(new Error('Invalid row ID'));
+        }
+        const parts = allLines[lineIndex].split('|');
+        while (parts.length < 5) parts.push('0');
+        const wasHidden = parts[4] === '1';
+        parts[4] = wasHidden ? '0' : '1';
+        allLines[lineIndex] = parts.join('|');
+        await this.writeFile(normalized, allLines.join('\n'));
+        resolve({ success: true, hide: !wasHidden });
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 
   /**

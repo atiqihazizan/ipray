@@ -36,8 +36,8 @@ module.exports = {
     max_restarts: 10, // Maximum restarts dalam 1 minit
     restart_delay: 4000, // Delay sebelum restart (4 seconds)
     
-    // Process management
-    kill_timeout: 5000, // Timeout untuk graceful shutdown (5 seconds)
+    // Process management (selari dengan main.js SHUTDOWN_TIMEOUT_MS)
+    kill_timeout: 3000, // Timeout sebelum PM2 hantar SIGKILL (3 seconds)
     listen_timeout: 10000, // Timeout untuk listen (10 seconds)
     shutdown_with_message: true,
     

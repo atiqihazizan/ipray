@@ -280,7 +280,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
 
         if (sliderContainerRef.current && !isInitializingRef.current) {
           isInitializingRef.current = true;
-          
+
           if (sliderInstanceRef.current) {
             try {
               // CRITICAL: Stop all animations and scale to 0 before destroy
@@ -293,8 +293,8 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                 }
                 // Wait for animations to stop
                 setTimeout(() => {
-                  if (sliderInstanceRef.current && 
-                      sliderInstanceRef.current.$Elmt && 
+                  if (sliderInstanceRef.current &&
+                      sliderInstanceRef.current.$Elmt &&
                       typeof sliderInstanceRef.current.$Destroy === 'function') {
                     try {
                       sliderInstanceRef.current.$Destroy();
@@ -310,7 +310,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
               sliderInstanceRef.current = null;
             }
           }
-          
+
           setTimeout(() => {
             if (sliderContainerRef.current && !sliderInstanceRef.current) {
               try {
@@ -328,10 +328,10 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
             // Start interval untuk check slider ready
             let checkCount = 0;
             const maxChecks = 100; // Max 5 saat (100 * 50ms)
-            
+
             scaleAfterInitIntervalRef.current = setInterval(() => {
               checkCount++;
-              
+
               // Fallback: set loading false selepas max checks
               if (checkCount >= maxChecks) {
                 clearInterval(scaleAfterInitIntervalRef.current);
@@ -341,34 +341,34 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
               }
 
               // Check if slider instance is valid and has required methods
-              if (sliderInstanceRef.current && 
-                  sliderInstanceRef.current.$Elmt && 
+              if (sliderInstanceRef.current &&
+                  sliderInstanceRef.current.$Elmt &&
                   typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
                   typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
                 clearInterval(scaleAfterInitIntervalRef.current);
                 scaleAfterInitIntervalRef.current = null;
                 const ScaleSlider = () => {
                   // Double check instance is still valid before using
-                  if (sliderInstanceRef.current && 
-                      sliderInstanceRef.current.$Elmt && 
+                  if (sliderInstanceRef.current &&
+                      sliderInstanceRef.current.$Elmt &&
                       typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
                       typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
                     const parentNode = sliderInstanceRef.current.$Elmt.parentNode;
                     const parentWidth = parentNode?.clientWidth;
                     const parentHeight = parentNode?.clientHeight;
-                    
+
                     if (parentWidth && parentHeight) {
                       // Calculate scale berdasarkan width dan height untuk maintain aspect ratio
                       const widthRatio = parentWidth / sliderConfig.container.width;
                       const heightRatio = parentHeight / sliderConfig.container.height;
                       // Pilih scale yang lebih kecil untuk pastikan slider muat dalam parent
                       const scale = Math.min(widthRatio, heightRatio);
-                      
+
                       const scaledWidth = Math.max(
-                        Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth), 
+                        Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth),
                         sliderConfig.container.minWidth
                       );
-                      
+
                       sliderInstanceRef.current.$ScaleWidth(scaledWidth);
                       const aspectRatio = sliderConfig.container.height / sliderConfig.container.width;
                       const scaledHeight = scaledWidth * aspectRatio;
@@ -389,7 +389,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                 setLoading(false);
               }
             }, 50);
-          }, 250); // Increased to ensure old slider fully destroyed before creating new one
+          }, 150);
         }
       } catch (error) {
         // Ignore initialization errors

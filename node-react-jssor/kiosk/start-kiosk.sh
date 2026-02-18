@@ -166,6 +166,8 @@ if [ -z "$CHROMIUM_CMD" ]; then
 fi
 
 echo "  Using Chromium: $CHROMIUM_CMD"
+# Penting: --autoplay-policy=no-user-gesture-required supaya beep waktu solat boleh berbunyi
+# tanpa user klik (kiosk tiada interaksi). Jangan guna --mute atau --mute-audio.
 $CHROMIUM_CMD \
   --kiosk \
   --noerrdialogs \

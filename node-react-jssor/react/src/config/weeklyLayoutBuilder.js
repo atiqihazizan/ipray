@@ -33,8 +33,8 @@ export const CARD_INNER_STYLE = {
 };
 
 /** Font size standard untuk kandungan kad */
-export const CARD_FONT_PENCERAMAH = '55px';
-export const CARD_FONT_DATE = '40px';
+export const CARD_FONT_PENCERAMAH = '50px';
+export const CARD_FONT_DATE = '37px';
 export const CARD_FONT_STATUS = '22px';
 
 /** Style string asas penceramah (tambah color dalam processor: default/batal/active) */
@@ -90,17 +90,20 @@ const BASE_HEIGHT = 1080;
  * @param {Object} groupedData - Data kuliah yang telah dikumpulkan mengikut kategori
  * @param {Object} [options]
  * @param {number} [options.boxBottom] - Bottom box (px). Default 200 = height box lebih. Wajib untuk sesuaikan content dalam box.
+ * @param {number} [options.boxLeft] - Left box (px). Default: BOX_LEFT. Kurangkan untuk box lebih lebar.
+ * @param {number} [options.boxRight] - Right box (px). Default: BOX_RIGHT. Kurangkan untuk box lebih lebar.
  * @returns {Array} Array of children elements untuk kuliah mingguan
  */
 export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
   const children = [];
   const boxBottom = options.boxBottom ?? 200;
+  const boxLeft = options.boxLeft ?? BOX_LEFT;
+  const boxRight = options.boxRight ?? BOX_RIGHT;
 
   // Content area dalam box (base 1920x1080)
-  // const contentLeftBase = BOX_LEFT + BOX_PADDING;
-  const contentLeftBase = BOX_LEFT - 20;
+  const contentLeftBase = boxLeft + BOX_PADDING;
   const contentTopBase = BOX_TOP + BOX_PADDING;
-  const contentRightBase = BASE_WIDTH - BOX_RIGHT + 20;
+  const contentRightBase = BASE_WIDTH - boxRight - BOX_PADDING;
   const contentBottomBase = BASE_HEIGHT - boxBottom - BOX_PADDING;
   const contentWidthBase = contentRightBase - contentLeftBase;
   const contentHeightBase = contentBottomBase - contentTopBase;
@@ -110,10 +113,11 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
   const baseTop = top(contentTopBase);
   const contentWidth = width(contentWidthBase);
 
-  // Column widths (dalam content area)
+  // Column widths (dalam content area) - COL_GAP discale dengan width()
   const COL_GAP = 40;
-  const COL1_WIDTH = (contentWidth - COL_GAP) * 0.5;
-  const COL2_WIDTH = (contentWidth - COL_GAP) * 0.5;
+  const COL_GAP_SCALED = width(COL_GAP);
+  const COL1_WIDTH = (contentWidth - COL_GAP_SCALED) * 0.5;
+  const COL2_WIDTH = (contentWidth - COL_GAP_SCALED) * 0.5;
 
   // Saiz kad seragam untuk Col1 dan Col2
   const COL1_MAX_ITEMS = 8;
@@ -135,6 +139,9 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
   const labelAreaTop = baseTop;
   const cardsStartTop = baseTop + (LABEL_HEIGHT + LABEL_GAP) * ratio;
 
+  const labelHeightScaled = height(LABEL_HEIGHT);
+  const cardHeightScaled = height(CARD_HEIGHT);
+
   // Label untuk Kuliah Maghrib
   if (maghribCount > 0) {
     children.push({
@@ -142,7 +149,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       transition: TRANSITION_IN,
       delay: DELAY_IN,
       content: 'KULIAH MAGHRIB',
-      style: { ...LABEL_SECTION_STYLE, left: START_LEFT, top: labelAreaTop, width: COL1_WIDTH }
+      style: { ...LABEL_SECTION_STYLE, left: START_LEFT, top: labelAreaTop, width: COL1_WIDTH, height: labelHeightScaled }
     });
   }
   
@@ -152,7 +159,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       type: 'div',
       transition: TRANSITION_IN,
       delay: DELAY_IN,
-      style: { ...CARD_WRAPPER_BASE_STYLE, left: START_LEFT, top: topOffset, width: COL1_WIDTH, height: COL1_CARD_HEIGHT },
+      style: { ...CARD_WRAPPER_BASE_STYLE, left: START_LEFT, top: topOffset, width: COL1_WIDTH, height: cardHeightScaled },
       children: [{ type: 'div', style: { ...CARD_INNER_STYLE }, content: '' }]
     });
   }
@@ -164,7 +171,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
   const subuhCount = Math.min(subuhData.length, 4); // max 4 Subuh supaya ada ruang Dhuha
   const dhuhaCount = Math.min(dhuhaDataRaw.length, COL2_MAX_SLOTS - subuhCount); // baki slot untuk Dhuha
   
-  const col2Left = START_LEFT + COL1_WIDTH + COL_GAP;
+  const col2Left = START_LEFT + COL1_WIDTH + COL_GAP_SCALED;
   
   // Label untuk Kuliah Subuh (tajuk kecil dari top boxLayer)
   if (subuhCount > 0) {
@@ -173,7 +180,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       transition: TRANSITION_IN,
       delay: DELAY_IN,
       content: 'KULIAH SUBUH',
-      style: { ...LABEL_SECTION_STYLE, left: col2Left, top: labelAreaTop, width: COL2_WIDTH }
+      style: { ...LABEL_SECTION_STYLE, left: col2Left, top: labelAreaTop, width: COL2_WIDTH, height: labelHeightScaled }
     });
   }
   
@@ -183,7 +190,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       type: 'div',
       transition: TRANSITION_IN,
       delay: DELAY_IN,
-      style: { ...CARD_WRAPPER_BASE_STYLE, left: col2Left, top: topOffset, width: COL2_WIDTH, height: CARD_HEIGHT },
+      style: { ...CARD_WRAPPER_BASE_STYLE, left: col2Left, top: topOffset, width: COL2_WIDTH, height: cardHeightScaled },
       children: [{ type: 'div', style: { ...CARD_INNER_STYLE }, content: '' }]
     });
   }
@@ -193,7 +200,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
   
   // Bawah kad Subuh terakhir (kad bermula dari cardsStartTop)
   const subuhLastCardBottom = subuhCount > 0
-    ? cardsStartTop + (subuhCount - 1) * (CARD_HEIGHT + CARD_GAP) * ratio + CARD_HEIGHT
+    ? cardsStartTop + (subuhCount - 1) * (CARD_HEIGHT + CARD_GAP) * ratio + cardHeightScaled
     : baseTop;
   const gapAfterSubuh = (LABEL_HEIGHT + LABEL_GAP + ROW_SECTION_GAP) * ratio; // ruang: gap + label + jarak sebelum kad
   const dhuhaStartTop = subuhLastCardBottom + gapAfterSubuh;
@@ -205,7 +212,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       transition: TRANSITION_IN,
       delay: DELAY_IN,
       content: 'KULIAH DHUHA',
-      style: { ...LABEL_SECTION_STYLE, left: col2Left, top: subuhLastCardBottom + ROW_SECTION_GAP * ratio, width: COL2_WIDTH }
+      style: { ...LABEL_SECTION_STYLE, left: col2Left, top: subuhLastCardBottom + ROW_SECTION_GAP * ratio, width: COL2_WIDTH, height: labelHeightScaled }
     });
   }
   
@@ -215,7 +222,7 @@ export function buildKuliahWeeklyTwoColumnChildren(groupedData, options = {}) {
       type: 'div',
       transition: TRANSITION_IN,
       delay: DELAY_IN,
-      style: { ...CARD_WRAPPER_BASE_STYLE, left: col2Left, top: topOffset, width: COL2_WIDTH, height: CARD_HEIGHT },
+      style: { ...CARD_WRAPPER_BASE_STYLE, left: col2Left, top: topOffset, width: COL2_WIDTH, height: cardHeightScaled },
       children: [{ type: 'div', style: { ...CARD_INNER_STYLE }, content: '' }]
     });
   }
