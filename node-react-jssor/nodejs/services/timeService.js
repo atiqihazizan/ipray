@@ -1,21 +1,21 @@
+const { execSync } = require('child_process');
 const { syncTimeWithRetry } = require('../utils/ntpClient');
 
 /**
  * Time Service
- * Hybrid time service dengan 3-layer fallback:
- * 1. NTP time (online, auto-sync)
- * 2. Manual offset dari config.txt (offline calibration)
- * 3. System time (fallback terakhir)
+ * NTP sync + set jam mesin (Raspberry Pi). Selepas NTP berjaya, jam mesin di-update
+ * supaya seluruh app guna Date.now() = masa mesin. Fallback: manual offset / system time.
  */
 
 class TimeService {
   constructor() {
-    this.ntpOffset = null;           // Offset dari NTP server (ms)
+    this.ntpOffset = null;           // Offset dari NTP server (ms); 0 bila jam mesin sudah di-set
     this.manualOffset = 0;            // Manual offset dari config (ms)
     this.lastNtpSync = null;          // Timestamp last successful NTP sync
     this.ntpSyncInterval = null;      // Auto-sync interval timer
     this.isOnline = false;            // Internet connectivity status
     this.timeSource = 'system';       // Current time source: 'ntp' | 'manual' | 'system'
+    this.systemClockSet = false;      // True bila jam mesin berjaya di-update (Raspi)
     this.cmosIssue = null;            // CMOS battery issue detection result
     
     // Test/Debug mode (masa test bermula dari testTimestamp, kemudian jalan seperti biasa)
@@ -96,6 +96,29 @@ class TimeService {
   }
 
   /**
+   * Set jam mesin (Raspberry Pi / Linux). Guna selepas NTP berjaya atau dari setting UI.
+   * @param {number} timestampMs - Unix timestamp (ms) yang betul
+   * @returns {boolean} - true jika berjaya
+   */
+  setSystemClock(timestampMs) {
+    try {
+      const d = new Date(timestampMs);
+      const str = d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0') + ' ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0') + ':' +
+        String(d.getSeconds()).padStart(2, '0');
+      execSync(`sudo date -s "${str}"`, { stdio: 'pipe', timeout: 5000 });
+      this.systemClockSet = true;
+      return true;
+    } catch (e) {
+      this.systemClockSet = false;
+      return false;
+    }
+  }
+
+  /**
    * Try NTP sync (non-blocking, dengan error handling)
    */
   async tryNtpSync() {
@@ -105,10 +128,13 @@ class TimeService {
       this.ntpOffset = offset;
       this.lastNtpSync = Date.now();
       this.isOnline = true;
+      if (this.setSystemClock(Date.now() + offset)) {
+        this.ntpOffset = 0;
+        console.log('[TimeService] ✓ System clock updated');
+      }
       this.updateTimeSource();
       console.log(`[TimeService] ✓ NTP sync successful, offset: ${offset}ms`);
       
-      // Jika CMOS issue detected dan NTP sync berjaya, log success message
       if (this.cmosIssue && this.cmosIssue.detected) {
         console.log('[TimeService] ✓ Time fixed via NTP sync');
       }
@@ -189,12 +215,14 @@ class TimeService {
    * @returns {Object} - Time info object
    */
   getTimeInfo() {
+    const timestamp = this.systemClockSet ? Date.now() : this.now();
     return {
-      timestamp: this.now(),
+      timestamp,
       source: this.isTestMode ? 'test' : this.timeSource,
       offset: this.ntpOffset !== null ? this.ntpOffset : this.manualOffset,
       lastNtpSync: this.lastNtpSync,
       isOnline: this.isOnline,
+      systemClockSet: this.systemClockSet,
       systemTime: Date.now(),
       cmosIssue: this.cmosIssue,
       isTestMode: this.isTestMode,

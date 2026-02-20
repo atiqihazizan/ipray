@@ -258,6 +258,38 @@ class ApiServerService {
         res.status(500).json({ error: error.message });
       }
     });
+
+    // Set system clock (date/time mesin) dari setting UI
+    this.app.post('/api/time/set', async (req, res) => {
+      try {
+        if (!this.timeService) {
+          return res.status(503).json({ error: 'Time service not available' });
+        }
+        const { dateTime } = req.body;
+        if (!dateTime || typeof dateTime !== 'string') {
+          return res.status(400).json({ error: 'dateTime is required (YYYY-MM-DD HH:MM:SS or ISO string)' });
+        }
+        const ts = new Date(dateTime.trim()).getTime();
+        if (Number.isNaN(ts)) {
+          return res.status(400).json({ error: 'Invalid dateTime format' });
+        }
+        const year = new Date(ts).getFullYear();
+        if (year < 2020 || year > 2030) {
+          return res.status(400).json({ error: 'Year out of allowed range (2020-2030)' });
+        }
+        const ok = this.timeService.setSystemClock(ts);
+        if (!ok) {
+          return res.status(500).json({ error: 'Failed to set system clock (check sudo)' });
+        }
+        if (this.socketServerService) {
+          this.socketServerService.broadcastEvent('time-system-updated', { success: true });
+        }
+        res.json({ success: true, message: 'System clock updated' });
+      } catch (error) {
+        console.error('Error setting system time:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
     
     // List all data files
     this.app.get('/api/files', async (req, res) => {

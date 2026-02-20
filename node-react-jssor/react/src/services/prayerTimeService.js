@@ -23,8 +23,7 @@ class PrayerTimeService {
   getPrayerTime(date, prayerName, timeService = null) {
     // Jika date tidak diberikan, guna current time (calibrated jika timeService ada)
     if (!date) {
-      const timestamp = timeService ? timeService.now() : Date.now();
-      date = new Date(timestamp);
+      date = new Date(Date.now());
     }
     
     const dateStr = this.formatDateKey(date);
@@ -60,8 +59,7 @@ class PrayerTimeService {
   checkPrayerTime(currentDate, prayerName, toleranceSeconds = 0, timeService = null) {
     // Jika currentDate tidak diberikan, guna current time (calibrated jika timeService ada)
     if (!currentDate) {
-      const timestamp = timeService ? timeService.now() : Date.now();
-      currentDate = new Date(timestamp);
+      currentDate = new Date(Date.now());
     }
     const prayerTime = this.getPrayerTime(currentDate, prayerName, timeService);
     
@@ -93,10 +91,8 @@ class PrayerTimeService {
   // Check semua waktu solat untuk tarikh tertentu
   // timeService: optional, untuk guna calibrated time
   checkAllPrayerTimes(currentDate, toleranceSeconds = 0, timeService = null) {
-    // Jika currentDate tidak diberikan, guna current time (calibrated jika timeService ada)
     if (!currentDate) {
-      const timestamp = timeService ? timeService.now() : Date.now();
-      currentDate = new Date(timestamp);
+      currentDate = new Date(Date.now());
     }
     
     const prayers = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];

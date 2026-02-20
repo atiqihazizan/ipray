@@ -1303,22 +1303,17 @@
 						</div>
 					</div>
 
-					<!-- Calibration Section -->
+					<!-- Set Masa Mesin (Raspberry Pi) -->
 					<div class="calibration-card">
-						<h3>Tetapkan Masa Yang Betul</h3>
-						<p class="note">Gunakan jika masa sistem tidak tepat (CMOS battery rosak atau offline)</p>
-						
+						<h3>Set Masa Mesin (Raspberry Pi)</h3>
+						<p class="note">Update tarikh/masa sistem terus pada mesin. Selepas berjaya, paparan akan dimuat semula.</p>
 						<div class="calibration-form">
 							<div class="form-group">
-								<label for="correct-datetime">Pilih Masa Yang Betul:</label>
-								<input 
-									type="datetime-local" 
-									id="correct-datetime" 
-									class="datetime-input"
-								/>
+								<label for="system-datetime">Tarikh & Masa:</label>
+								<input type="datetime-local" id="system-datetime" class="datetime-input"/>
 							</div>
-							<button onclick="setCorrectTime()" class="btn btn-primary">
-								<span>✓</span> Tetapkan Masa
+							<button onclick="setSystemTime()" class="btn btn-primary">
+								<span>🕐</span> Set Masa Mesin
 							</button>
 						</div>
 					</div>

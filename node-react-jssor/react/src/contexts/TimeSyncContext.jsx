@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import socketService from '../services/socketService';
-import timeService from '../services/timeService';
+import timeServiceStub from '../services/timeServiceStub';
 
 /**
- * Konteks untuk kalibrasi masa.
- * Bila masa kalibrasi berubah (test/offset), sync dengan server kemudian reload window (seperti reboot).
+ * Konteks untuk kalibrasi masa. Guna timeServiceStub (Date.now() sahaja).
+ * Bila masa kalibrasi berubah (test/offset) atau time-system-updated, reload window.
  */
 const TimeSyncContext = createContext(null);
 
@@ -23,13 +23,15 @@ export const TimeSyncProvider = ({ children }) => {
   useEffect(() => {
     isMountedRef.current = true;
 
+    const handleReload = () => {
+      if (isMountedRef.current) window.location.reload();
+    };
+
     const handleTimeCalibrationUpdate = () => {
       if (!isMountedRef.current) return;
-      timeService
+      timeServiceStub
         .syncWithServer()
-        .then(() => {
-          if (isMountedRef.current) window.location.reload();
-        })
+        .then(handleReload)
         .catch(() => {
           console.warn('[TimeSync] Sync failed after calibration update');
         });
@@ -44,16 +46,18 @@ export const TimeSyncProvider = ({ children }) => {
     const unsubTestOff = socketService.on('time-test-mode-disabled', () => {
       if (isMountedRef.current) handleTimeCalibrationUpdate();
     });
+    const unsubSystemUpdated = socketService.on('time-system-updated', handleReload);
 
     return () => {
       isMountedRef.current = false;
       unsubOffset();
       unsubTestOn();
       unsubTestOff();
+      unsubSystemUpdated();
     };
   }, []);
 
-  const value = { timeSyncVersion, timeService };
+  const value = { timeSyncVersion, timeService: timeServiceStub };
 
   return (
     <TimeSyncContext.Provider value={value}>

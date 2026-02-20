@@ -225,8 +225,7 @@ export const calculateHijri = ({ hdata, daysm, maghrib = 0, currentMinutes = 0 }
  * @returns {Object} Maklumat lengkap tarikh, waktu, dan waktu solat
  */
 export const getCurrentIslamicTime = ({ hdata, wdata, timeService }) => {
-  // Guna calibrated time jika timeService tersedia, otherwise guna Date.now()
-  const timestamp = timeService ? timeService.now() : Date.now();
+  const timestamp = Date.now();
   const now = new Date(timestamp);
   const year = now.getFullYear();
   const month = now.getMonth() + 1;

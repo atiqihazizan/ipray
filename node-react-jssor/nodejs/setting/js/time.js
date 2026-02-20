@@ -110,40 +110,41 @@ function formatTime(date) {
 }
 
 /**
- * Set correct time (calibration)
+ * Set system clock (date/time mesin) - POST /api/time/set, then socket emits time-system-updated -> window reload
  */
-async function setCorrectTime() {
-    const input = document.getElementById('correct-datetime');
-    const selectedTime = input.value;
-    
-    if (!selectedTime) {
-        showError('Sila pilih masa yang betul');
+async function setSystemTime() {
+    const input = document.getElementById('system-datetime');
+    const value = input && input.value ? input.value.trim() : '';
+    if (!value) {
+        showError('Sila pilih tarikh dan masa');
         return;
     }
-    
     try {
-        // Calculate offset
-        const correctTime = new Date(selectedTime).getTime();
-        const systemTime = timeInfo.systemTime;
-        const offsetMs = correctTime - systemTime;
-        
-        // Call API
-        const response = await fetch('/api/time/offset', {
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) {
+            showError('Format tarikh/masa tidak sah');
+            return;
+        }
+        const dateTimeStr = d.getFullYear() + '-' +
+            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+            String(d.getDate()).padStart(2, '0') + ' ' +
+            String(d.getHours()).padStart(2, '0') + ':' +
+            String(d.getMinutes()).padStart(2, '0') + ':' +
+            String(d.getSeconds()).padStart(2, '0');
+        const response = await fetch('/api/time/set', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ offsetMs })
+            body: JSON.stringify({ dateTime: dateTimeStr })
         });
-        
-        if (!response.ok) throw new Error('Failed to set offset');
-        
-        // Reload time info
-        await loadTimeInfo();
-        
-        showSuccess('Masa berjaya ditetapkan!');
-        input.value = '';
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'Gagal set masa mesin');
+        }
+        showSuccess('Masa mesin berjaya dikemas kini. Paparan akan dimuat semula.');
+        if (input) input.value = '';
     } catch (error) {
-        console.error('Error setting time:', error);
-        showError('Gagal menetapkan masa: ' + error.message);
+        console.error('Error setting system time:', error);
+        showError('Gagal set masa mesin: ' + error.message);
     }
 }
 
@@ -327,18 +328,11 @@ export async function initTimeTab() {
     await loadTimeInfo();
     startAutoUpdate();
     
-    // Set current datetime as default in datetime input
     const now = new Date();
-    const datetimeInput = document.getElementById('correct-datetime');
-    if (datetimeInput) {
-        // Format: YYYY-MM-DDTHH:MM
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        datetimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateTimeValue = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const systemDatetimeInput = document.getElementById('system-datetime');
+    if (systemDatetimeInput) systemDatetimeInput.value = dateTimeValue;
 }
 
 /**
@@ -350,7 +344,7 @@ export function cleanupTimeTab() {
 
 // Export functions untuk global access
 if (typeof window !== 'undefined') {
-    window.setCorrectTime = setCorrectTime;
+    window.setSystemTime = setSystemTime;
     window.testPrayerTime = testPrayerTime;
     window.resetTime = resetTime;
     window.syncWithInternet = syncWithInternet;

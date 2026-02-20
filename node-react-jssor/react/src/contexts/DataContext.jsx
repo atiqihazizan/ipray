@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getApiBase } from '../services/apiBase';
 import socketService from '../services/socketService';
-import timeService from '../services/timeService';
+import timeServiceStub from '../services/timeServiceStub';
 
 /**
  * Default constants untuk timing configuration (fallback jika file config.txt tidak wujud)
@@ -145,17 +145,9 @@ export const DataProvider = ({ children }) => {
     }
   }, []);
 
-  /**
-   * Initialize time service
-   */
   useEffect(() => {
-    timeService.init().catch((error) => {
-      console.warn('Time service init failed:', error);
-    });
-    
-    return () => {
-      timeService.cleanup();
-    };
+    timeServiceStub.init().catch(() => {});
+    return () => { timeServiceStub.cleanup(); };
   }, []);
 
   /**
@@ -333,7 +325,7 @@ export const DataProvider = ({ children }) => {
     refresh: loadAllData,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
-    timeService
+    timeService: timeServiceStub
   };
 
   return (

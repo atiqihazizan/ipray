@@ -1323,7 +1323,13 @@ export async function openEditDialog(rowId) {
             const res = await fetch(`${API_URL}/data/images`);
             if (res.ok) {
                 const data = await res.json();
-                imagesList = data.data || [];
+                let list = data.data || [];
+                if (currentFileName === 'slides') {
+                    list = list.filter(im => (im.imagePath || '').includes('/slides/'));
+                } else if (currentFileName === 'kuliah') {
+                    list = list.filter(im => (im.imagePath || '').includes('/penceramah/'));
+                }
+                imagesList = list;
             }
         } catch (e) {
             console.warn(`Could not load images for ${currentFileName} dropdown:`, e);

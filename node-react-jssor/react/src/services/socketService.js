@@ -123,6 +123,10 @@ class SocketService {
       console.log('[Socket] time-test-mode-disabled diterima', data);
       this.notifyListeners('time-test-mode-disabled', data);
     });
+    this.socket.on('time-system-updated', (data) => {
+      console.log('[Socket] time-system-updated diterima', data);
+      this.notifyListeners('time-system-updated', data);
+    });
   }
 
   /**
