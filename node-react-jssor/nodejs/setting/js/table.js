@@ -241,9 +241,9 @@ export async function loadTable(fileName, scrollToRowId = null) {
     
     setCurrentFileName(fileName);
     
-    // Handle kuliah-batal table IDs
-    const theadId = fileName === 'kuliah-batal' ? 'kuliah-batal-thead' : `${fileName}-thead`;
-    const tbodyId = fileName === 'kuliah-batal' ? 'kuliah-batal-tbody' : `${fileName}-tbody`;
+    // Handle kuliah-override table IDs
+    const theadId = fileName === 'kuliah-override' ? 'kuliah-override-thead' : `${fileName}-thead`;
+    const tbodyId = fileName === 'kuliah-override' ? 'kuliah-override-tbody' : `${fileName}-tbody`;
     const thead = document.getElementById(theadId);
     const tbody = document.getElementById(tbodyId);
     const tableContainer = tbody?.closest('.table-container');
@@ -308,9 +308,11 @@ export async function loadTable(fileName, scrollToRowId = null) {
         const headerRow = document.createElement('tr');
         headerRow.innerHTML = '<th class="w-20">ID</th>';
         const columnLabels = fileName === 'slides' && { hide: 'Show/Hide' };
+        const kbColumnLabels = fileName === 'kuliah-override' && { format: 'Format', date: 'Tarikh', tahun: 'Tahun', bulan: 'Bulan', type: 'Type', hari: 'Hari', replace: 'Ganti (1=ya)', notes: 'Catatan', showAnnounce: 'Announce', title: 'Tajuk', tempat: 'Tempat', jemputan: 'Jemputan' };
+        const cdColumnLabels = fileName === 'countdowns' && { format: 'Format', date: 'Tarikh', tahun: 'Tahun', bulan: 'Bulan', hari: 'Hari', event: 'Event', windowDays: 'Window (hari)' };
         currentColumns.forEach(col => {
             const th = document.createElement('th');
-            th.textContent = (columnLabels && columnLabels[col]) || col.charAt(0).toUpperCase() + col.slice(1);
+            th.textContent = (columnLabels && columnLabels[col]) || (kbColumnLabels && kbColumnLabels[col]) || (cdColumnLabels && cdColumnLabels[col]) || col.charAt(0).toUpperCase() + col.slice(1);
             headerRow.appendChild(th);
         });
         headerRow.innerHTML += '<th class="w-32" style="width:114px">Tindakan</th>';
@@ -337,7 +339,18 @@ export async function loadTable(fileName, scrollToRowId = null) {
                 
                 currentColumns.forEach(col => {
                     const td = document.createElement('td');
-                    const value = row[col] || '';
+                    let value = row[col] || '';
+                    // Kuliah-batal: papar Format sebagai Tarikh/Range; kosongkan sel tidak berkenaan
+                    if (fileName === 'kuliah-override') {
+                        if (col === 'format') value = value === 'hijri' ? 'Hijri' : (value === 'range' ? 'Range' : 'Tarikh');
+                        if (col === 'showAnnounce') value = value === '1' ? 'Ya' : (value === '0' ? 'Tidak' : (value || '–'));
+                        if (value === '' && (col === 'date' || col === 'tahun' || col === 'bulan' || col === 'hari' || col === 'replace' || col === 'showAnnounce' || col === 'title' || col === 'tempat' || col === 'jemputan')) value = '–';
+                    }
+                    // Countdowns: papar Format; kosongkan sel tidak berkenaan
+                    if (fileName === 'countdowns') {
+                        if (col === 'format') value = value === 'hijri' ? 'Hijri (ulang)' : (value === 'masihi' ? 'Masihi (ulang)' : 'Tarikh tetap');
+                        if (value === '' && (col === 'date' || col === 'tahun' || col === 'bulan' || col === 'hari' || col === 'windowDays')) value = '–';
+                    }
                     
                     // Special handling untuk speakerId dalam kuliah table: papar image thumbnail
                     if (fileName === 'kuliah' && col === 'speakerId') {
@@ -640,8 +653,23 @@ export async function loadTable(fileName, scrollToRowId = null) {
                     deleteBtn.title = 'Delete';
                     deleteBtn.onclick = () => deleteRow(row.id);
                     actionTd.appendChild(deleteBtn);
-                } else if (fileName === 'kuliah-batal') {
+                } else if (fileName === 'kuliah-override') {
                     // Kuliah Batal: Edit + Delete
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn-icon btn-edit';
+                    editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
+                    editBtn.title = 'Edit';
+                    editBtn.onclick = () => openEditDialog(row.id);
+                    actionTd.appendChild(editBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-icon btn-delete';
+                    deleteBtn.innerHTML = `<span>${Icons.trash}</span>`;
+                    deleteBtn.title = 'Delete';
+                    deleteBtn.onclick = () => deleteRow(row.id);
+                    actionTd.appendChild(deleteBtn);
+                } else if (fileName === 'countdowns') {
+                    // Countdown: Edit + Delete
                     const editBtn = document.createElement('button');
                     editBtn.className = 'btn-icon btn-edit';
                     editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
@@ -764,9 +792,10 @@ export function showTab(tabName) {
         'slides': { icon: '🖼️', name: 'Slides' },
         'slideshow': { icon: '🎬', name: 'Slideshow' },
         'kuliah': { icon: '📚', name: 'Kuliah' },
-        'kuliah-batal': { icon: '❌', name: 'Kuliah Batal' },
+        'kuliah-override': { icon: '📋', name: 'Override Kuliah' },
         'images': { icon: '🖼️', name: 'Galery' },
         'announcements': { icon: '📢', name: 'Pengumuman' },
+        'countdowns': { icon: '⏳', name: 'Countdown' },
         'takwim': { icon: '📅', name: 'Takwim' },
         'time': { icon: '⏰', name: 'Kalibrasi Masa' }
     };

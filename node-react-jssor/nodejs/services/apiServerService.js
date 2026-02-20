@@ -5,6 +5,8 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const { URL } = require('url');
+const { parseKuliahOverride } = require('./kuliahOverrideParser');
+const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require('./kuliahProcessor');
 
 /**
  * API Server Service
@@ -292,22 +294,64 @@ class ApiServerService {
     });
 
     // Get all app data parsed (single endpoint for React app - no client-side parsing)
+    // Kuliah: backend processes kuliah + kuliah-override and returns only processed lists
     this.app.get('/api/data/app', async (req, res) => {
       try {
-        const [takwimContent, announcementsContent, kuliahContent, kuliahBatalContent, imagesContent, slidesContent, configContent, slideshowContent] = await Promise.all([
+        const [takwimContent, announcementsContent, countdownsContent, kuliahContent, kuliahOverrideContent, imagesContent, slidesContent, configContent, slideshowContent] = await Promise.all([
           this.dataService.readFile('takwim').catch(() => ''),
           this.dataService.readFile('announcements').catch(() => ''),
+          this.dataService.readFile('countdowns').catch(() => ''),
           this.dataService.readFile('kuliah').catch(() => ''),
-          this.dataService.readFile('kuliah-batal').catch(() => ''),
+          this.dataService.readFile('kuliah-override').catch(() => ''),
           this.dataService.readFile('images').catch(() => ''),
           this.dataService.readFile('slides').catch(() => ''),
           this.dataService.readFile('config').catch(() => ''),
           this.dataService.readFile('slideshow').catch(() => '')
         ]);
         const takwim = this.dataService.getTakwimForAppFull(takwimContent);
+        const overrideParsed = parseKuliahOverride(kuliahOverrideContent);
+        const today = new Date();
+        const currentMinutes = today.getHours() * 60 + today.getMinutes();
+        const getHijri = (d) => this.dataService.getHijriForDate(takwimContent, d, currentMinutes);
+        const batalOptions = { expanded: overrideParsed.expanded, hijriRules: overrideParsed.hijriRules || [], getHijri };
         const announcements = this.dataService.parseAnnouncements(announcementsContent);
-        const kuliah = this.dataService.parseKuliah(kuliahContent);
-        const kuliahBatal = this.dataService.parseFileContent('kuliah-batal', kuliahBatalContent);
+        const countdownsRaw = this.dataService.parseCountdowns(countdownsContent);
+        const countdowns = [];
+        for (const c of countdownsRaw) {
+          let dateTimeRaw;
+          let event = c.event;
+          let windowDays = c.windowDays ?? 0;
+          if (c.type === 'COUNTDOWN_HIJRI') {
+            const gregorianDate = this.dataService.getNextGregorianForHijriDate(
+              takwimContent, c.month, c.day, today
+            );
+            if (!gregorianDate) continue;
+            dateTimeRaw = `${gregorianDate} 00:00`;
+          } else if (c.type === 'COUNTDOWN_MASIHI') {
+            const gregorianDate = this.dataService.getNextGregorianForMonthDay(c.month, c.day, today);
+            if (!gregorianDate) continue;
+            dateTimeRaw = `${gregorianDate} 00:00`;
+          } else {
+            dateTimeRaw = c.dateTimeRaw || '';
+            if (!dateTimeRaw) continue;
+          }
+          const { daysRemaining, countdownText } = this.dataService.getCountdownFromDate(dateTimeRaw, today);
+          if (countdownText === 'LEWAT') continue;
+          if (windowDays > 0 && daysRemaining > windowDays) continue;
+          countdowns.push({
+            type: 'COUNTDOWN',
+            dateTimeRaw,
+            event,
+            windowDays,
+            raw: c.raw,
+            daysRemaining,
+            countdownText
+          });
+        }
+        const kuliahLines = this.dataService.parseKuliah(kuliahContent);
+        const kuliahHariProcessed = processKuliahHari(kuliahLines, batalOptions, today);
+        const kuliahMingguProcessed = processKuliahMinggu(kuliahLines, batalOptions, today);
+        const kuliahBulananProcessed = processKuliahBulanan(kuliahLines, batalOptions, today);
         const images = this.dataService.parseImages(imagesContent);
         const slidesConfig = this.dataService.parseSlidesConfig(slidesContent);
         const config = this.dataService.parseConfig(configContent);
@@ -315,8 +359,10 @@ class ApiServerService {
         res.json({
           takwim,
           announcements,
-          kuliah,
-          kuliahBatal,
+          countdowns,
+          kuliahHariProcessed,
+          kuliahMingguProcessed,
+          kuliahBulananProcessed,
           images,
           slidesConfig,
           config,
@@ -761,7 +807,7 @@ class ApiServerService {
     this.app.post('/api/system/reload-react', async (req, res) => {
       try {
         // Broadcast data:updated untuk semua data types untuk trigger React reload
-        const dataTypes = ['slides', 'kuliah', 'images', 'announcements', 'takwim', 'config'];
+        const dataTypes = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config'];
         
         dataTypes.forEach(filename => {
           this.socketServerService.broadcastDataUpdate(filename, { action: 'reload:react' });

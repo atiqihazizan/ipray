@@ -11,7 +11,7 @@ import { usePrayerTimeNavigation } from './hooks/usePrayerTimeNavigation.js'
 import audioService from './services/audioService.js'
 
 const AppContent = () => {
-  const { loading: dataLoading, error, socketConnected, socketReady } = useData()
+  const { loading: dataLoading, error, socketConnected, socketReady, midnightReloadMessage } = useData()
   const [sliderReady, setSliderReady] = useState(false)
   const currentView = usePrayerTimeNavigation()
 
@@ -45,6 +45,11 @@ const AppContent = () => {
   // SliderPage akan render di belakang LoadingPage untuk init process
   return (
     <>
+      {midnightReloadMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <p className="text-white text-2xl font-bold">{midnightReloadMessage}</p>
+        </div>
+      )}
       {(dataLoading || !sliderReady) && <LoadingPage />}
       <div 
         className="bg-black flex items-center justify-center" 

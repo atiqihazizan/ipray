@@ -29,10 +29,12 @@ const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 class DataService {
   constructor(dataPath) {
     this.dataPath = dataPath;
-    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'takwim', 'config', 'slideshow', 'kuliah-batal'];
+    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override'];
     this.filenameAliases = {
       announcement: 'announcements',
       announcements: 'announcements',
+      countdown: 'countdowns',
+      countdowns: 'countdowns',
       image: 'images',
       images: 'images',
       penceramah: 'images',
@@ -40,7 +42,8 @@ class DataService {
       slides: 'slides',
       takwim: 'takwim',
       kuliah: 'kuliah',
-      'kuliah-batal': 'kuliah-batal',
+      'kuliah-override': 'kuliah-override',
+      'kuliah-batal': 'kuliah-override',
       config: 'config',
       slideshow: 'slideshow'
     };
@@ -181,18 +184,89 @@ class DataService {
           title: parts[5] || '',
           raw: line
         });
-      } else if (normalized === 'kuliah-batal') {
-        // Skip empty lines
-        if (!line.trim()) {
+      } else if (normalized === 'kuliah-override') {
+        if (!line.trim()) return;
+        const first = (parts[0] || '').trim();
+        if (first.toLowerCase() === 'hijri' && parts.length >= 6) {
+          parsed.push({
+            id: index + 1,
+            format: 'hijri',
+            date: '',
+            tahun: (parts[1] || '').trim(),
+            bulan: (parts[2] || '').trim(),
+            hari: (parts[3] || '').trim(),
+            type: (parts[4] || '').trim(),
+            replace: (parts[5] || '').trim(),
+            notes: (parts[6] || '').trim(),
+            showAnnounce: parts.length >= 8 ? (parts[7] || '').trim() : '',
+            title: (parts[8] || '').trim(),
+            tempat: (parts[9] || '').trim(),
+            jemputan: (parts[10] || '').trim(),
+            raw: line
+          });
           return;
         }
-        parsed.push({
-          id: index + 1,
-          date: parts[0] || '',
-          type: parts[1] || '',
-          notes: parts[2] || '',
-          raw: line
-        });
+        const isLegacy = /^\d{2}-\d{2}-\d{4}$/.test(first);
+        if (isLegacy) {
+          parsed.push({
+            id: index + 1,
+            format: 'single',
+            date: parts[0] || '',
+            type: parts[1] || '',
+            notes: parts[2] || '',
+            tahun: '',
+            bulan: '',
+            hari: '',
+            replace: '',
+            raw: line
+          });
+        } else {
+          let tahun = '';
+          let bulan = '';
+          let type = '';
+          let hari = '';
+          let replace = '';
+          let notes = '';
+          if (parts.length === 4) {
+            bulan = parts[0] || '';
+            type = parts[1] || '';
+            hari = parts[2] || '';
+            notes = parts[3] || '';
+          } else if (parts.length === 5) {
+            if (/^\d{4}$/.test((parts[0] || '').trim())) {
+              tahun = parts[0] || '';
+              bulan = parts[1] || '';
+              type = parts[2] || '';
+              hari = parts[3] || '';
+              notes = parts[4] || '';
+            } else {
+              bulan = parts[0] || '';
+              type = parts[1] || '';
+              hari = parts[2] || '';
+              replace = parts[3] || '';
+              notes = parts[4] || '';
+            }
+          } else if (parts.length >= 6) {
+            tahun = parts[0] || '';
+            bulan = parts[1] || '';
+            type = parts[2] || '';
+            hari = parts[3] || '';
+            replace = parts[4] || '';
+            notes = parts[5] || '';
+          }
+          parsed.push({
+            id: index + 1,
+            format: 'range',
+            date: '',
+            tahun,
+            bulan,
+            type,
+            hari,
+            replace,
+            notes,
+            raw: line
+          });
+        }
       } else if (normalized === 'images') {
         parsed.push({
           id: index + 1,
@@ -212,6 +286,46 @@ class DataService {
           audience: parts[6] || '',
           raw: line
         });
+      } else if (normalized === 'countdowns') {
+        // COUNTDOWN|date|event|windowDays | COUNTDOWN_MASIHI|bulan|hari|event|windowDays | COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays
+        const typeRaw = (parts[0] || '').trim().toUpperCase();
+        if (typeRaw === 'COUNTDOWN_HIJRI' && parts.length >= 5) {
+          parsed.push({
+            id: parsed.length + 1,
+            format: 'hijri',
+            date: '',
+            tahun: (parts[1] || '').trim(),
+            bulan: (parts[2] || '').trim(),
+            hari: (parts[3] || '').trim(),
+            event: (parts[4] || '').trim(),
+            windowDays: (parts[5] || '').trim(),
+            raw: line
+          });
+        } else if (typeRaw === 'COUNTDOWN_MASIHI' && parts.length >= 4) {
+          parsed.push({
+            id: parsed.length + 1,
+            format: 'masihi',
+            date: '',
+            tahun: '',
+            bulan: (parts[1] || '').trim(),
+            hari: (parts[2] || '').trim(),
+            event: (parts[3] || '').trim(),
+            windowDays: (parts[4] || '').trim(),
+            raw: line
+          });
+        } else {
+          parsed.push({
+            id: parsed.length + 1,
+            format: 'date',
+            date: (parts[1] || '').trim(),
+            tahun: '',
+            bulan: '',
+            hari: '',
+            event: (parts[2] || '').trim(),
+            windowDays: (parts[3] || '').trim(),
+            raw: line
+          });
+        }
       } else if (normalized === 'takwim') {
         // Takwim format: Skip 2 baris pertama (header)
         // Format: DD-MM-YYYY DD-MM-HHHH\tImsak\tSubuh\tSyuruk\tZohor\tAsar\tMaghrib\tIsyak
@@ -279,9 +393,10 @@ class DataService {
     const columnMap = {
       'slides': ['type', 'image', 'duration', 'checkbox', 'hide'],
       'kuliah': ['week', 'day', 'type', 'speaker', 'speakerId', 'title'],
-      'kuliah-batal': ['date', 'type', 'notes'],
+      'kuliah-override': ['format', 'date', 'tahun', 'bulan', 'type', 'hari', 'replace', 'notes', 'showAnnounce', 'title', 'tempat', 'jemputan'],
       'images': ['imageCode', 'imagePath'],
       'announcements': ['type', 'title', 'speaker', 'category', 'datetime', 'location', 'audience'],
+      'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
       'slideshow': ['caption', 'image']
@@ -322,10 +437,12 @@ class DataService {
             }
           }
         } else {
-          // Other files: Filter kosong dulu, kemudian cari ID
+          // Other files: Filter kosong dan comment (#) dulu, kemudian cari ID (countdowns guna #)
+          const skipComment = normalized === 'countdowns';
           for (let i = 0; i < allLines.length; i++) {
             const line = allLines[i];
-            if (line.trim() !== '') {
+            const trimmed = line.trim();
+            if (trimmed !== '' && (!skipComment || !trimmed.startsWith('#'))) {
               currentId++;
               if (currentId === id) {
                 lineIndex = i;
@@ -435,10 +552,12 @@ class DataService {
             }
           }
         } else {
-          // Other files: Filter kosong dulu, kemudian cari ID
+          // Other files: Filter kosong dan comment (#) dulu (countdowns guna #)
+          const skipComment = normalized === 'countdowns';
           for (let i = 0; i < allLines.length; i++) {
             const line = allLines[i];
-            if (line.trim() !== '') {
+            const trimmed = line.trim();
+            if (trimmed !== '' && (!skipComment || !trimmed.startsWith('#'))) {
               currentId++;
               if (currentId === id) {
                 lineIndex = i;
@@ -543,12 +662,261 @@ class DataService {
     return [days, daysm];
   }
 
+  /** HHMM integer -> minit sejak tengah malam (formula sama seperti frontend islamicTimeUtils) */
+  timeToMinutes(hhmm) {
+    const h = Math.floor(Number(hhmm) / 100);
+    const m = Number(hhmm) % 100;
+    return h * 60 + m;
+  }
+
+  /**
+   * Kira tarikh Hijri dari tarikh Masehi (formula sama seperti frontend islamicTimeUtils.calculateHijri)
+   * @param {Object} params - { hdata, daysm, maghrib = 0, currentMinutes = 0 }
+   * @returns {Object} { day, month, year, monthName }
+   */
+  calculateHijri({ hdata, daysm, maghrib = 0, currentMinutes = 0 }) {
+    const HIJRI_MONTHS = [
+      'HIJRAH', 'MUHARRAM', 'SAFAR', 'RAB.AWAL', 'RAB.AKHIR',
+      'JAM.AWAL', 'JAM.AKHIR', 'REJAB', 'SYA`BAN', 'RAMADHAN',
+      'SYAWAL', 'ZULKAEDAH', 'ZULHIJJAH'
+    ];
+    let DayH = 25;
+    let MonH = 9;
+    let YearH = 1420;
+    let DaysH = daysm;
+    if (maghrib <= currentMinutes && currentMinutes < 1440) {
+      DaysH++;
+    }
+    let SetF = 31 - DayH;
+    let DatP = 1;
+    let BitP = 0;
+    let SetS = hdata[DatP] != null ? hdata[DatP] : 0;
+    while (DaysH > 0) {
+      if (SetS & 0x01) SetF++;
+      if (DaysH > SetF) {
+        DayH = 0;
+        DaysH -= SetF;
+        MonH++;
+        if (MonH === 13) {
+          MonH = 1;
+          YearH++;
+        }
+        SetS = SetS >> 1;
+        SetF = 29;
+        BitP++;
+        if (BitP === 8) {
+          DatP++;
+          BitP = 0;
+          SetS = hdata[DatP] != null ? hdata[DatP] : 0;
+        }
+      } else {
+        DayH += DaysH;
+        DaysH = 0;
+      }
+    }
+    return {
+      day: DayH,
+      month: MonH,
+      year: YearH,
+      monthName: HIJRI_MONTHS[MonH] || ''
+    };
+  }
+
+  /**
+   * Dapatkan tarikh Hijri untuk satu tarikh Gregorian menggunakan data takwim (formula sama frontend)
+   * @param {string} takwimContent - Kandungan takwim.txt (untuk hdata + waktu Maghrib)
+   * @param {Date} date - Tarikh Gregorian
+   * @param {number} [currentMinutes] - Minit sejak tengah malam (jika tidak beri, guna 12:00); selepas Maghrib = hari Hijri berikut
+   * @returns {Object|null} { day, month, year, monthName } atau null jika takwim tidak cukup
+   */
+  getHijriForDate(takwimContent, date, currentMinutes) {
+    if (!takwimContent || typeof takwimContent !== 'string') return null;
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const lines = takwimContent.split(/\r?\n/);
+    const hijriLine = lines[1] || '';
+    const hijriData = (hijriLine.split('=')[1] || '').trim();
+    const hdata = [24];
+    for (let i = 0; i < hijriData.length; i += 2) {
+      const byte = parseInt(hijriData.substr(i, 2), 16);
+      if (!isNaN(byte)) hdata.push(byte);
+    }
+    const [, daysm] = this.getYearDays(year, month, day);
+    let maghribMinutes = 0;
+    for (let i = 2; i < lines.length; i++) {
+      const tabParts = lines[i].trim().split('\t');
+      if (tabParts.length < 8) continue;
+      const dateParts = (tabParts[0].split(/\s+/)[0] || '').split('-');
+      if (dateParts.length !== 3) continue;
+      const d = parseInt(dateParts[0], 10);
+      const m = parseInt(dateParts[1], 10);
+      const y = parseInt(dateParts[2], 10);
+      if (d === day && m === month && y === year) {
+        const maghribStr = (tabParts[6] || '').trim();
+        maghribMinutes = this.timeToMinutes(this.timeToValue(maghribStr));
+        break;
+      }
+    }
+    const mins = currentMinutes != null ? currentMinutes : 12 * 60;
+    return this.calculateHijri({ hdata, daysm, maghrib: maghribMinutes, currentMinutes: mins });
+  }
+
+  /**
+   * Cari tarikh Gregorian seterusnya yang bersamaan dengan tarikh Hijri (bulan, hari).
+   * Guna untuk countdown berulang tahun (contoh: 1 Syawal). Gelung dari fromDate sehingga ~400 hari.
+   * @param {string} takwimContent - Kandungan takwim (untuk getHijriForDate)
+   * @param {number} hijriMonth - Bulan Hijri (1-12, 10 = Syawal)
+   * @param {number} hijriDay - Hari dalam bulan
+   * @param {Date} [fromDate] - Mula cari dari tarikh ini (default: hari ini)
+   * @returns {string|null} YYYY-MM-DD atau null jika tidak jumpa
+   */
+  getNextGregorianForHijriDate(takwimContent, hijriMonth, hijriDay, fromDate) {
+    if (!takwimContent || hijriMonth < 1 || hijriMonth > 12 || hijriDay < 1 || hijriDay > 30) return null;
+    const start = fromDate ? new Date(fromDate) : new Date();
+    start.setHours(0, 0, 0, 0);
+    const currentMinutes = 12 * 60;
+    for (let offset = 0; offset < 400; offset++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + offset);
+      const hijri = this.getHijriForDate(takwimContent, d, currentMinutes);
+      if (hijri && hijri.month === hijriMonth && hijri.day === hijriDay) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Tarikh Gregorian seterusnya untuk bulan/hari Masihi (ulang setiap tahun).
+   * Contoh: bulan 8, hari 31 = 31 Ogos tahun ini atau tahun depan jika sudah berlalu.
+   * @param {number} month - Bulan 1-12
+   * @param {number} day - Hari 1-31
+   * @param {Date} [fromDate] - Mula cari dari tarikh ini
+   * @returns {string|null} YYYY-MM-DD
+   */
+  getNextGregorianForMonthDay(month, day, fromDate) {
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const start = fromDate ? new Date(fromDate) : new Date();
+    start.setHours(0, 0, 0, 0);
+    const thisYear = start.getFullYear();
+    const lastDayOfMonth = new Date(thisYear, month, 0).getDate();
+    if (day > lastDayOfMonth) return null;
+    let d = new Date(thisYear, month - 1, day);
+    if (d < start) d = new Date(thisYear + 1, month - 1, day);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dayStr = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dayStr}`;
+  }
+
+  /**
+   * Kira baki hari dan teks countdown (kiraan tengah malam / hari kalendar).
+   * @param {string} dateTimeRaw - Format "YYYY-MM-DD HH:mm" atau "YYYY-MM-DD"
+   * @param {Date} fromDate - Tarikh rujukan (biasanya hari ini di server)
+   * @returns {{ daysRemaining: number, countdownText: string }}
+   */
+  getCountdownFromDate(dateTimeRaw, fromDate) {
+    if (!dateTimeRaw || typeof dateTimeRaw !== 'string') {
+      return { daysRemaining: -1, countdownText: 'LEWAT' };
+    }
+    const s = dateTimeRaw.trim();
+    const datePart = s.includes(' ') ? s.split(' ')[0] : s;
+    const timePart = s.includes(' ') ? s.split(' ')[1] : '00:00';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      return { daysRemaining: -1, countdownText: 'LEWAT' };
+    }
+    const [y, m, d] = datePart.split('-').map(Number);
+    const [h, min] = (timePart.split('-')[0] || '00:00').split(':').map((x) => parseInt(x, 10) || 0);
+    const targetDate = new Date(y, m - 1, d, h, min, 0, 0);
+    const startOfToday = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0, 0);
+    const diffMs = targetDate.getTime() - startOfToday.getTime();
+    const daysRemaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    let countdownText;
+    if (daysRemaining < 0) {
+      countdownText = 'LEWAT';
+    } else if (daysRemaining === 0) {
+      const now = new Date(fromDate.getTime());
+      if (targetDate.getTime() - now.getTime() < 0) countdownText = 'LEWAT';
+      else countdownText = 'HARI INI';
+    } else if (daysRemaining === 1) {
+      countdownText = '1 HARI LAGI';
+    } else {
+      countdownText = `${daysRemaining} HARI LAGI`;
+    }
+    return { daysRemaining, countdownText };
+  }
+
   /**
    * Parse announcements content -> array of non-empty trimmed lines
    */
   parseAnnouncements(content) {
     if (!content || typeof content !== 'string') return [];
     return content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+  }
+
+  /**
+   * Parse countdowns content -> array of rule objects
+   * Format:
+   * - Gregorian (sekali): COUNTDOWN|YYYY-MM-DD [HH:mm]|event|windowDays
+   * - Hijri (ulang setiap tahun): COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays (tahun kosong = setiap tahun)
+   * - Masihi ulang tahun: COUNTDOWN_MASIHI|bulan|hari|event|windowDays (contoh: 8|31 = 31 Ogos setiap tahun)
+   */
+  parseCountdowns(content) {
+    if (!content || typeof content !== 'string') return [];
+    return content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0 && !line.startsWith('#'))
+      .map((line) => {
+        const parts = line.split('|').map((p) => p.trim());
+        const typeRaw = (parts[0] || 'COUNTDOWN').trim().toUpperCase();
+        if (typeRaw === 'COUNTDOWN_HIJRI' && parts.length >= 5) {
+          const yearStr = (parts[1] || '').trim();
+          const year = yearStr ? parseInt(yearStr, 10) : null;
+          const month = parseInt(parts[2], 10);
+          const day = parseInt(parts[3], 10);
+          const event = (parts[4] || '').trim();
+          const windowStr = (parts[5] || '').trim();
+          let windowDays = 0;
+          if (windowStr) {
+            const n = parseInt(windowStr, 10);
+            if (!isNaN(n) && n >= 0) windowDays = n;
+          }
+          if (isNaN(month) || month < 1 || month > 12 || isNaN(day) || day < 1 || day > 30) {
+            return { type: 'COUNTDOWN', dateTimeRaw: '', event: '', windowDays: 0, raw: line };
+          }
+          return { type: 'COUNTDOWN_HIJRI', year, month, day, event, windowDays, raw: line };
+        }
+        if (typeRaw === 'COUNTDOWN_MASIHI' && parts.length >= 4) {
+          const month = parseInt(parts[1], 10);
+          const day = parseInt(parts[2], 10);
+          const event = (parts[3] || '').trim();
+          const windowStr = (parts[4] || '').trim();
+          let windowDays = 0;
+          if (windowStr) {
+            const n = parseInt(windowStr, 10);
+            if (!isNaN(n) && n >= 0) windowDays = n;
+          }
+          if (isNaN(month) || month < 1 || month > 12 || isNaN(day) || day < 1 || day > 31) {
+            return { type: 'COUNTDOWN', dateTimeRaw: '', event: '', windowDays: 0, raw: line };
+          }
+          return { type: 'COUNTDOWN_MASIHI', month, day, event, windowDays, raw: line };
+        }
+        const type = (typeRaw === 'COUNTDOWN_HIJRI' || typeRaw === 'COUNTDOWN_MASIHI') ? 'COUNTDOWN' : typeRaw;
+        const dateTimeRaw = (parts[1] || '').trim();
+        const event = (parts[2] || '').trim();
+        const windowStr = (parts[3] || '').trim();
+        let windowDays = 0;
+        if (windowStr) {
+          const n = parseInt(windowStr, 10);
+          if (!isNaN(n) && n >= 0) windowDays = n;
+        }
+        return { type, dateTimeRaw, event, windowDays, raw: line };
+      });
   }
 
   /**

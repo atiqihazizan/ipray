@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================================
 // Import screen utilities dari utils folder
-import { getContainerSize, top, bottom, sz } from '../utils/screenUtils';
+import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils';
 // Import build functions dan constants dari slideBuilders
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 
@@ -150,6 +150,28 @@ export const slidesTemplate = {
           {
             type: "div", transition: "CLIP|LR", delay: -300, content: "",
             style: { position: 'absolute', left: 0, bottom: bottom(192), width: sz().width, height: 180, textAlign: 'center', fontSize: 62, color: '#FFFFFF', fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 180, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+          }
+        ]
+      }
+    ]
+  },
+  countDown: {
+    transitionType: 'auto',
+    datetime: ['next-solat', 'small-time'],
+    image: null,
+    captions: [
+      {
+        type: "div",
+        duration: 500,
+        style: { position: 'absolute', left: 0, top: 0, width: sz().width, height: sz().height },
+        children: [
+          {
+            type: "div", transition: "CLIP|LR", duration: 1000, content: "",
+            style: { position: 'absolute', left: 0, right: 0, top: `${top(25)}%`, width: sz().width, height: height(200), textAlign: 'center', fontSize: 200, color: '#FFFFFF', fontFamily: "'SairaCondensed', sans-serif", fontWeight: 'bold', lineHeight: 1.2, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+          },
+          {
+            type: "div", transition: "CLIP|LR", duration: 1000, content: "",
+            style: { position: 'absolute', left: 0, right: 0, bottom: bottom(220), width: sz().width, height: 180, textAlign: 'center', fontSize: 100, color: 'rgb(245 206 28)', fontWeight: 'bold', fontFamily: "system-ui", lineHeight: 180, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
           }
         ]
       }

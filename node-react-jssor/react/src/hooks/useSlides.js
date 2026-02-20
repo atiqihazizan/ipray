@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { slidesTemplate } from '../config/sliderConfig';
 import { useData } from '../contexts/DataContext';
 import { processAnnouncements } from '../processors/announcementProcessor';
+import { processCountdowns } from '../processors/countdownProcessor';
 import { processKuliahMingguan, processKuliahHarian, processKuliahBulanan } from '../processors/kuliahProcessor';
 import { processSlideshow } from '../processors/slideshowProcessor';
 
@@ -12,7 +13,7 @@ import { processSlideshow } from '../processors/slideshowProcessor';
  * - Array indeks 0-based (contoh [0, 3] = slide 1 & 4, [1] = slide 2 sahaja, [0, 2] = slide 1 & 3)
  */
 const DEBUG_SLIDES = false;
-// const DEBUG_SLIDES = [2];
+// const DEBUG_SLIDES = [1];
 
 /**
  * Custom hook untuk menguruskan slides data.
@@ -23,8 +24,10 @@ export const useSlides = () => {
   const [loading, setLoading] = useState(true);
   const {
     announcementsData,
-    kuliahData,
-    kuliahBatalData,
+    countdownsData,
+    kuliahHariProcessed,
+    kuliahMingguProcessed,
+    kuliahBulananProcessed,
     imagesData,
     slidesConfigData,
     slideshowData,
@@ -56,14 +59,16 @@ export const useSlides = () => {
 
     const homeSlide = applyConfig(slidesTemplate.home, 'home');
     const announceSlides = processAnnouncements(announcementsData, slidesConfigData, applyConfig);
-    const kuliahHariSlides = processKuliahHarian(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig);
-    const kuliahMigguanSlides = processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig);
-    const kuliahBulananSlides = processKuliahBulanan(kuliahData, kuliahBatalData, slidesConfigData, applyConfig);
+    const countDownSlides = processCountdowns(countdownsData, slidesConfigData, applyConfig);
+    const kuliahHariSlides = processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig);
+    const kuliahMigguanSlides = processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig);
+    const kuliahBulananSlides = processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, applyConfig);
     const slideshowSlides = processSlideshow(slideshowData, slidesConfigData, applyConfig);
 
     const slides = [
       ...(!slidesConfigData?.home?.hide ? [homeSlide] : []),
       ...(!slidesConfigData?.announce?.hide ? announceSlides : []),
+      ...(!slidesConfigData?.countDown?.hide ? countDownSlides : []),
       ...(!slidesConfigData?.kuliahHari?.hide ? kuliahHariSlides : []),
       ...(!slidesConfigData?.kuliahWeekly?.hide ? kuliahMigguanSlides : []),
       ...(!slidesConfigData?.kuliahBulanan?.hide ? kuliahBulananSlides : []),
@@ -78,7 +83,7 @@ export const useSlides = () => {
       return slides.slice(0, DEBUG_SLIDES);
     }
     return slides;
-  }, [announcementsData, kuliahData, kuliahBatalData, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]);
+  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]);
 
   useEffect(() => {
     if (dataLoading) {

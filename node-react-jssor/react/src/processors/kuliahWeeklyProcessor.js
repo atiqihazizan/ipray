@@ -25,7 +25,7 @@ import {
 } from '../utils/kuliahHelpers';
 import { top, getContainerSize, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer } from '../utils/boxLayerUtils';
-import { escapeHtml, isKuliahBatal } from './slideHelpers';
+import { escapeHtml } from './slideHelpers';
 
 /** Bottom box untuk weekly (lebih kecil = height box lebih) */
 const WEEKLY_BOX_BOTTOM = 200;
@@ -37,53 +37,37 @@ const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH SUBUH', 'KULIAH DHUHA', 'KULIA
 
 /**
  * Bina HTML kandungan standard untuk satu kad kuliah weekly (Maghrib/Subuh/Dhuha).
- * Guna style dari weeklyLayoutBuilder: STYLE_PENCERAMAH_BASE, STYLE_DATE_BASE, STYLE_NOTE_STATUS, STYLE_CARD_CONTENT_WRAPPER.
- * Layout: flex justify-between — penceramah | status | tarikh.
+ * Data sudah diproses backend (tiada batal replace); hanya papar penceramah + tarikh.
  */
 function buildWeeklyCardContent(item, ctx) {
-  const { kuliahBatalData, currentDay, esc } = ctx;
+  const { currentDay, esc } = ctx;
   const arr = item.split('|');
   const weekCode = arr[0];
   const day = arr[1];
   const penceramah = (arr[3] || '').trim();
-  const batalInfo = isKuliahBatal(item, kuliahBatalData);
   const dayName = DAY_NAMES[day] || '';
   const calculatedDate = weekCode != null && day != null && String(weekCode).match(/^w[1-4]$/) && String(day).match(/^h[0-6]$/)
     ? calculateDateFromCodes(weekCode, day)
     : null;
   const shortDate = calculatedDate ? formatShortDate(calculatedDate) : '';
   const hariTarikh = dayName && shortDate ? `${dayName} | ${shortDate}` : '';
-  const isBatal = batalInfo.isBatal && day === currentDay;
-  const isActive = day === currentDay && !isBatal;
-  const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+  const isActive = day === currentDay;
   const activeStyle = isActive ? 'color:#ff4444;' : '';
-  const defaultPenceramahColor = !batalStyle && !activeStyle ? 'color:#1a1a1a;' : '';
+  const defaultPenceramahColor = !activeStyle ? 'color:#1a1a1a;' : '';
   const dateColor = isActive ? 'color:#ff4444;' : 'color:#555;';
 
-  const penceramahHtml = `<div style="${STYLE_PENCERAMAH_BASE};${defaultPenceramahColor}${batalStyle}${activeStyle}">${esc(penceramah.toUpperCase())}</div>`;
+  const penceramahHtml = `<div style="${STYLE_PENCERAMAH_BASE};${defaultPenceramahColor}${activeStyle}">${esc(penceramah.toUpperCase())}</div>`;
   const dateHtml = hariTarikh ? `<div style="${STYLE_DATE_BASE};${dateColor}">${esc(hariTarikh)}</div>` : '';
-  let statusHtml = '';
-  if (isBatal) {
-    const notes = (batalInfo.notes || '').trim();
-    statusHtml = notes
-      ? `<div style="${STYLE_NOTE_STATUS}">${esc(notes).toUpperCase()}</div>`
-      : `<div style="${STYLE_NOTE_STATUS}">KULIAH DIBATALKAN</div>`;
-  }
-  return `<div style="${STYLE_CARD_CONTENT_WRAPPER}">${penceramahHtml}${statusHtml}${dateHtml}</div>`;
+  return `<div style="${STYLE_CARD_CONTENT_WRAPPER}">${penceramahHtml}${dateHtml}</div>`;
 }
 
-export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
+export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig) {
   const esc = escapeHtml;
-  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const safeData = kuliahMingguProcessed && Array.isArray(kuliahMingguProcessed) ? kuliahMingguProcessed : [];
   const currentDate = new Date();
-  const currentWeek = getWeekCode(currentDate);
   const currentDay = getDayCode(currentDate);
 
-  // Filter data untuk minggu semasa
-  let dataToDisplay = safeKuliahData.filter((item) => {
-    const arr = item.split('|');
-    return arr[0] === currentWeek;
-  });
+  let dataToDisplay = safeData;
 
   // Jika tiada data, paparkan mesej
   if (dataToDisplay.length === 0) {
@@ -104,7 +88,7 @@ export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, s
         height: height(300),
         textAlign: 'center',
         fontSize: Math.round(textSize(200)),
-        color: '#000000',
+        color: "#fefa00",
         fontFamily: "'SairaCondensed', sans-serif",
         fontWeight: 'bold',
         lineHeight: Math.round(textSize(120)),
@@ -171,7 +155,7 @@ export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, s
     parent.children = [parent.children[0], boxLayer, ...layoutChildren];
 
     // Fill content untuk Kuliah Maghrib (Col 1) - slot dummy papar "TIADA KULIAH"
-    const cardCtx = { kuliahBatalData, currentDay, esc };
+    const cardCtx = { currentDay, esc };
     layoutInfo.maghrib.data.forEach((item, i) => {
       const arr = item.split('|');
       const childIndex = 1 + layoutInfo.maghrib.startIndex + layoutInfo.maghrib.labelOffset + i;

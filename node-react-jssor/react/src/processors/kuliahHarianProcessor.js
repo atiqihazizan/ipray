@@ -1,35 +1,22 @@
 /**
  * Process data kuliah hari ini ke slides.
+ * Input: kuliahHariProcessed (backend sudah filter hari ini & buang replace=1).
  * Satu slide per kategori (Subuh, Dhuha, Maghrib, Khas) yang ada data hari ini.
- * Layout: title "KULIAH HARI INI" atas tengah, box 2 column:
- *   Col1: kuliah type + penceramah (font besar) + kitab — grouped, center middle
- *   Col2: image middle
  */
 import { slidesTemplate } from '../config/sliderConfig';
 import {
   TYPE_LABELS,
-  getWeekCode,
-  getDayCode,
   resolveImagePath,
   getCenteredImageStyle
 } from '../utils/kuliahHelpers';
 import { top, left, right, bottom, getContainerSize, width, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
-import { escapeHtml, isKuliahBatal } from './slideHelpers';
 
 const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH DHUHA', 'KULIAH SUBUH', 'KULIAH KHAS'];
 
-export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
-  const esc = escapeHtml;
-  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
-  const currentDate = new Date();
-  const currentWeek = getWeekCode(currentDate);
-  const currentDay = getDayCode(currentDate);
-
-  const dataToDisplay = safeKuliahData.filter((item) => {
-    const arr = item.split('|');
-    return arr[0] === currentWeek && arr[1] === currentDay;
-  });
+export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig) {
+  const safeData = kuliahHariProcessed && Array.isArray(kuliahHariProcessed) ? kuliahHariProcessed : [];
+  const dataToDisplay = safeData;
 
   if (dataToDisplay.length === 0) {
     const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
@@ -51,7 +38,7 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
           height: height(300),
           textAlign: 'center',
           fontSize: Math.round(textSize(200)),
-          color: '#000000',
+          color: "#ffff00",
           fontFamily: "'SairaCondensed', sans-serif",
           fontWeight: 'bold',
           lineHeight: Math.round(textSize(120)),
@@ -113,10 +100,9 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
 
       const boxLayer = createBoxLayer({ bottom: BOX_BOTTOM });
 
-      boxLayer.transition = categoryIndex > 0 ? null : 'FADE'
-      boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT'
+      boxLayer.transition = categoryIndex > 0 ? null : 'FADE';
+      boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT';
 
-      const batalInfo = isKuliahBatal(item, kuliahBatalData);
       const imagePath = resolveImagePath(imageCode, imagesData);
 
       parent.children[0].transition = categoryIndex > 0 ? null : 'CLIP|LR';
@@ -137,13 +123,13 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
           top: top(BOX_TOP + 28),
           textAlign: 'center',
           fontSize: Math.round(textSize(72)),
-          fontFamily:"'SairaCondensed',sans-serif",
-          color:'#fff',
+          fontFamily: "'SairaCondensed',sans-serif",
+          color: '#fff',
           lineHeight: Math.round(textSize(78)),
-          color:'#ffdb00',
-          fontWeight:'bold',
+          color: '#ffdb00',
+          fontWeight: 'bold',
           backgroundColor: 'black',
-          height: height(79),
+          height: height(79)
         }
       };
       const penceramahChild = {
@@ -159,12 +145,12 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
           top: penceramahTop,
           textAlign: 'center',
           fontSize: Math.round(textSize(116)),
-          fontFamily:"'SairaCondensed',sans-serif",
-          color:'#000000',
-          fontWeight:'bold',
+          fontFamily: "'SairaCondensed',sans-serif",
+          color: '#000000',
+          fontWeight: 'bold',
           height: height(200),
           overflow: 'hidden',
-          margin:'8px 0'
+          margin: '8px 0'
         }
       };
       const kitabChild = {
@@ -172,7 +158,7 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
         transition: 'CLIP|LR',
         duration: 2000,
         delay: 0,
-        content: batalInfo.isBatal ? 'DITANGGUH SEMENTARA' : kitab,
+        content: kitab,
         style: {
           position: 'absolute',
           left: left(INNER_LEFT_PX),
@@ -180,11 +166,11 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
           top: kitabTop,
           textAlign: 'center',
           fontSize: Math.round(textSize(68)),
-          fontFamily:"'SairaCondensed',sans-serif",
-          color:'#000000',
-          fontWeight:'bold',
+          fontFamily: "'SairaCondensed',sans-serif",
+          color: '#000000',
+          fontWeight: 'bold',
           textWrapStyle: 'balance',
-          margin:'8px 0',
+          margin: '8px 0'
         }
       };
 
@@ -209,8 +195,7 @@ export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, sli
       imageChild.style = { ...imageStyle, top: imageTop };
       imageChild.content = imagePath;
 
-      // parent.children = [boxLayer, parent.children[0], col1Group, imageChild];
-      parent.children = [boxLayer, parent.children[0], typeChild,penceramahChild,kitabChild, imageChild];
+      parent.children = [boxLayer, parent.children[0], typeChild, penceramahChild, kitabChild, imageChild];
     }
 
     kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';

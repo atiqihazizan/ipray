@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getApiBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeService from '../services/timeService';
@@ -26,6 +26,10 @@ const DEFAULT_COLOR_CONFIG = {
   WARNING_PRAYER: '#FF0000',
 };
 
+const DATA_LOAD_DATE_KEY = 'dataLoadDate';
+const MIDNIGHT_CHECK_INTERVAL_MS = 60000;
+const RELOAD_DELAY_MS = 15000;
+
 /**
  * Data Context untuk menyimpan semua data dalam memory
  * Fetch sekali sahaja untuk elakkan fetch berulang kali
@@ -44,9 +48,13 @@ export const DataProvider = ({ children }) => {
   const [takwimArray, setTakwimArray] = useState(null);
   const [takwimParsed, setTakwimParsed] = useState(null);
   const [announcementsData, setAnnouncementsData] = useState(null);
-  const [kuliahData, setKuliahData] = useState(null);
-  const [kuliahBatalData, setKuliahBatalData] = useState(null);
+  const [countdownsData, setCountdownsData] = useState(null);
+  const [kuliahHariProcessed, setKuliahHariProcessed] = useState([]);
+  const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
+  const [kuliahBulananProcessed, setKuliahBulananProcessed] = useState([]);
   const [imagesData, setImagesData] = useState(null);
+  const dataLoadDateRef = useRef(null);
+  const [midnightReloadMessage, setMidnightReloadMessage] = useState(null);
   const [slidesConfigData, setSlidesConfigData] = useState(null);
   const [slideshowData, setSlideshowData] = useState(null);
   const [configData, setConfigData] = useState({
@@ -80,8 +88,10 @@ export const DataProvider = ({ children }) => {
       setTakwimArray(data.takwim?.takwimArray ?? []);
       setTakwimParsed(data.takwim?.takwimParsed ?? null);
       setAnnouncementsData(data.announcements ?? []);
-      setKuliahData(data.kuliah ?? []);
-      setKuliahBatalData(data.kuliahBatal ?? []);
+      setCountdownsData(data.countdowns ?? []);
+      setKuliahHariProcessed(data.kuliahHariProcessed ?? []);
+      setKuliahMingguProcessed(data.kuliahMingguProcessed ?? []);
+      setKuliahBulananProcessed(data.kuliahBulananProcessed ?? []);
       setImagesData(data.images ?? {});
       setSlidesConfigData(data.slidesConfig ?? {});
       setSlideshowData(data.slideshow ?? []);
@@ -89,6 +99,12 @@ export const DataProvider = ({ children }) => {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
         COLOR_CONFIG: DEFAULT_COLOR_CONFIG
       });
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      dataLoadDateRef.current = todayStr;
+      try {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(DATA_LOAD_DATE_KEY, todayStr);
+      } catch (_) {}
 
       setLoading(false);
       setTimeout(() => {
@@ -101,8 +117,9 @@ export const DataProvider = ({ children }) => {
       setTakwimArray([]);
       setTakwimParsed(null);
       setAnnouncementsData([]);
-      setKuliahData([]);
-      setKuliahBatalData([]);
+      setKuliahHariProcessed([]);
+      setKuliahMingguProcessed([]);
+      setKuliahBulananProcessed([]);
       setImagesData({});
       setSlidesConfigData({});
       setSlideshowData([]);
@@ -137,6 +154,24 @@ export const DataProvider = ({ children }) => {
     return () => {
       timeService.cleanup();
     };
+  }, []);
+
+  /**
+   * Reload tengah malam: semak setiap 60s bila tarikh bertukar (hari baru).
+   * Tarikh last load disimpan dalam memory (ref) dan localStorage untuk semakan hari berikut.
+   */
+  useEffect(() => {
+    const id = setInterval(() => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const lastLoad = dataLoadDateRef.current ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null) ?? '';
+      if (lastLoad && todayStr !== lastLoad) {
+        setMidnightReloadMessage('Mengemas kini…');
+        setTimeout(() => {
+          window.location.reload();
+        }, RELOAD_DELAY_MS);
+      }
+    }, MIDNIGHT_CHECK_INTERVAL_MS);
+    return () => clearInterval(id);
   }, []);
 
   /**
@@ -278,9 +313,12 @@ export const DataProvider = ({ children }) => {
     takwimArray,
     takwimParsed,
     announcementsData,
-    kuliahData,
-    kuliahBatalData,
+    countdownsData,
+    kuliahHariProcessed,
+    kuliahMingguProcessed,
+    kuliahBulananProcessed,
     imagesData,
+    midnightReloadMessage,
     slidesConfigData,
     slideshowData,
     loading,

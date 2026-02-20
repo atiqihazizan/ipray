@@ -131,6 +131,61 @@ function createFormFields(form, row, isAdd, options = {}) {
         if (currentFileName === 'kuliah' && col === 'title') {
             label.textContent = 'Nama Kitab / Tajuk Kuliah';
         }
+        // Kuliah-override: label kolom
+        if (currentFileName === 'kuliah-override') {
+            const kbLabels = { format: 'Format', date: 'Tarikh (DD-MM-YYYY)', tahun: 'Tahun (pilihan)', bulan: 'Bulan (1-12)', type: 'Type', hari: 'Hari (cth: 1-30 atau 1,2,3)', replace: 'Ganti paparan (1=ya)', notes: 'Catatan', showAnnounce: 'Paparkan di announcement (1=ya)', title: 'Tajuk (announcement)', tempat: 'Tempat', jemputan: 'Jemputan' };
+            if (kbLabels[col]) label.textContent = kbLabels[col];
+        }
+        // Countdown: label kolom
+        if (currentFileName === 'countdowns') {
+            const cdLabels = { format: 'Format', date: 'Tarikh', tahun: 'Tahun (kosong = setiap tahun)', bulan: 'Bulan', hari: 'Hari', event: 'Event', windowDays: 'Papar bila tinggal ___ hari (0 = selalu)' };
+            if (cdLabels[col]) label.textContent = cdLabels[col];
+        }
+        
+        // Kuliah-batal: format dropdown (Tarikh tunggal / Range)
+        if (currentFileName === 'kuliah-override' && col === 'format') {
+            const select = document.createElement('select');
+            select.id = 'field-format';
+            select.name = 'format';
+            select.className = 'form-control';
+            const fmt = !isAdd && row[col] ? (row[col] || 'single').toLowerCase() : 'single';
+            // [{ value: 'single', label: 'Tarikh tunggal (DD-MM-YYYY|type|notes)' }, { value: 'range', label: 'Range bulan/hari Masihi (tahun?|bulan|type|hari|flag|catatan)' }, { value: 'hijri', label: 'Tarikh Hijri (bulan|hari|type|flag|catatan)' }].forEach(opt => {
+            [{ value: 'single', label: 'Tarikh tunggal' }, { value: 'range', label: 'Range bulan/hari Masihi' }, { value: 'hijri', label: 'Tarikh Hijri' }].forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt.value;
+                o.textContent = opt.label;
+                if (fmt === opt.value) o.selected = true;
+                select.appendChild(o);
+            });
+            group.appendChild(label);
+            group.appendChild(select);
+            form.appendChild(group);
+            select.addEventListener('change', () => {
+                const v = select.value;
+                form.querySelectorAll('[data-kb-single]').forEach(el => { el.style.display = v === 'single' ? '' : 'none'; });
+                form.querySelectorAll('[data-kb-range]').forEach(el => { el.style.display = (v === 'range' || v === 'hijri') ? '' : 'none'; });
+                form.querySelectorAll('[data-kb-hijri]').forEach(el => { el.style.display = v === 'hijri' ? '' : 'none'; });
+            });
+            return;
+        }
+        // Kuliah-batal: date (format single) - toggle by format
+        if (currentFileName === 'kuliah-override' && col === 'date') {
+            group.setAttribute('data-kb-single', '1');
+            const fmt = !isAdd && row.format ? (row.format || 'single').toLowerCase() : 'single';
+            if (fmt === 'range' || fmt === 'hijri') group.style.display = 'none';
+        }
+        // Kuliah-override: tahun, bulan, hari, replace (format range atau hijri) - toggle by format
+        if (currentFileName === 'kuliah-override' && (col === 'tahun' || col === 'bulan' || col === 'hari' || col === 'replace')) {
+            group.setAttribute('data-kb-range', '1');
+            const fmt = !isAdd && row.format ? (row.format || 'single').toLowerCase() : 'single';
+            if (fmt === 'single') group.style.display = 'none';
+        }
+        // Kuliah-override: showAnnounce, title, tempat, jemputan (format hijri sahaja - untuk announcement)
+        if (currentFileName === 'kuliah-override' && (col === 'showAnnounce' || col === 'title' || col === 'tempat' || col === 'jemputan')) {
+            group.setAttribute('data-kb-hijri', '1');
+            const fmt = !isAdd && row.format ? (row.format || 'single').toLowerCase() : 'single';
+            if (fmt !== 'hijri') group.style.display = 'none';
+        }
         
         // Slides: type adalah key, tidak boleh diubah (disabled)
         if (currentFileName === 'slides' && col === 'type') {
@@ -983,7 +1038,81 @@ function createFormFields(form, row, isAdd, options = {}) {
                 
                 // Set default values untuk type (add mode)
                 if (isAdd && col === 'type') {
-                    input.value = 'PENGUMUMAN';
+                    if (currentFileName === 'announcements') input.value = 'PENGUMUMAN';
+                    }
+
+                // Countdowns: format dropdown
+                if (currentFileName === 'countdowns' && col === 'format') {
+                    const select = document.createElement('select');
+                    select.id = 'field-format';
+                    select.name = 'format';
+                    select.className = 'form-control';
+                    const fmt = !isAdd && row[col] ? (row[col] || 'date').toLowerCase() : 'date';
+                    [
+                        // { value: 'date', label: 'Tarikh tetap (COUNTDOWN|YYYY-MM-DD|event|windowDays)' },
+                        // { value: 'masihi', label: 'Masihi ulang tahun (COUNTDOWN_MASIHI|bulan|hari|event|windowDays)' },
+                        // { value: 'hijri', label: 'Hijri ulang tahun (COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays)' }
+                        { value: 'date', label: 'Tarikh tetap' },
+                        { value: 'masihi', label: 'Masihi ulang tahun' },
+                        { value: 'hijri', label: 'Hijri ulang tahun' }
+                    ].forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value;
+                        o.textContent = opt.label;
+                        if (fmt === opt.value) o.selected = true;
+                        select.appendChild(o);
+                    });
+                    group.appendChild(label);
+                    group.appendChild(select);
+                    form.appendChild(group);
+                    select.addEventListener('change', () => {
+                        const v = select.value;
+                        form.querySelectorAll('[data-cd-date]').forEach(el => { el.style.display = v === 'date' ? '' : 'none'; });
+                        form.querySelectorAll('[data-cd-range]').forEach(el => { el.style.display = (v === 'masihi' || v === 'hijri') ? '' : 'none'; });
+                        form.querySelectorAll('[data-cd-hijri]').forEach(el => { el.style.display = v === 'hijri' ? '' : 'none'; });
+                    });
+                    return;
+                }
+                if (col === 'date' && currentFileName === 'countdowns') {
+                    group.setAttribute('data-cd-date', '1');
+                    const fmt = !isAdd && row.format ? (row.format || 'date').toLowerCase() : 'date';
+                    if (fmt !== 'date') group.style.display = 'none';
+                    input.type = 'date';
+                    if (!isAdd && row[col]) {
+                        const raw = String(row[col]).trim();
+                        const datePart = raw.split(' ')[0];
+                        if (datePart && /^\d{4}-\d{2}-\d{2}$/.test(datePart)) input.value = datePart;
+                    }
+                }
+                if (col === 'tahun' && currentFileName === 'countdowns') {
+                    group.setAttribute('data-cd-range', '1');
+                    group.setAttribute('data-cd-hijri', '1');
+                    const fmt = !isAdd && row.format ? (row.format || 'date').toLowerCase() : 'date';
+                    if (fmt !== 'hijri') group.style.display = 'none';
+                    input.type = 'number';
+                    input.placeholder = 'Kosong = setiap tahun';
+                    input.min = '1440';
+                    input.max = '1500';
+                }
+                if (col === 'bulan' && currentFileName === 'countdowns') {
+                    group.setAttribute('data-cd-range', '1');
+                    const fmt = !isAdd && row.format ? (row.format || 'date').toLowerCase() : 'date';
+                    if (fmt === 'date') group.style.display = 'none';
+                    input.type = 'number';
+                    input.min = '1';
+                    input.max = '12';
+                    input.placeholder = '1-12 (10=Syawal)';
+                }
+                if (col === 'hari' && currentFileName === 'countdowns') {
+                    group.setAttribute('data-cd-range', '1');
+                    const fmt = !isAdd && row.format ? (row.format || 'date').toLowerCase() : 'date';
+                    if (fmt === 'date') group.style.display = 'none';
+                    input.placeholder = '1-31 (Masihi) atau 1-30 (Hijri)';
+                }
+                if (col === 'windowDays' && currentFileName === 'countdowns') {
+                    input.type = 'number';
+                    input.min = '0';
+                    input.placeholder = 'Contoh: 0 = selalu, 30 = tunjuk bila tinggal 30 hari atau kurang';
                 }
                 
                 // Tukar kepada datetime-local untuk datetime field
@@ -995,8 +1124,8 @@ function createFormFields(form, row, isAdd, options = {}) {
                     }
                 }
                 
-                // Special handling untuk date field dalam kuliah-batal: date input
-                if (col === 'date' && currentFileName === 'kuliah-batal') {
+                // Special handling untuk date field dalam kuliah-override: date input
+                if (col === 'date' && currentFileName === 'kuliah-override') {
                     input.type = 'date';
                     // Convert DD-MM-YYYY to YYYY-MM-DD for date input
                     if (!isAdd && row[col]) {
@@ -1006,9 +1135,65 @@ function createFormFields(form, row, isAdd, options = {}) {
                         }
                     }
                 }
+                // Kuliah-batal: tahun (nombor, pilihan)
+                if (col === 'tahun' && currentFileName === 'kuliah-override') {
+                    input.type = 'number';
+                    input.placeholder = 'Kosong = setiap tahun';
+                    input.min = '2020';
+                    input.max = '2040';
+                }
+                // Kuliah-batal: bulan (1-12)
+                if (col === 'bulan' && currentFileName === 'kuliah-override') {
+                    input.type = 'number';
+                    input.min = '1';
+                    input.max = '12';
+                    input.placeholder = '1-12';
+                }
+                // Kuliah-batal: hari (range atau senarai)
+                if (col === 'hari' && currentFileName === 'kuliah-override') {
+                    input.placeholder = 'cth: 1-30 atau 1,2,3,5';
+                }
+                // Kuliah-batal: replace dropdown (0/1)
+                if (col === 'replace' && currentFileName === 'kuliah-override') {
+                    const selectReplace = document.createElement('select');
+                    selectReplace.id = `field-${col}`;
+                    selectReplace.name = col;
+                    selectReplace.className = 'form-control';
+                    const rv = !isAdd && row[col] != null ? String(row[col]).trim() : '0';
+                    [{ value: '0', label: '0 - Papar DITANGGUH' }, { value: '1', label: '1 - Ganti dengan catatan' }].forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value;
+                        o.textContent = opt.label;
+                        if (rv === opt.value) o.selected = true;
+                        selectReplace.appendChild(o);
+                    });
+                    group.appendChild(label);
+                    group.appendChild(selectReplace);
+                    form.appendChild(group);
+                    return;
+                }
+                // Kuliah-override: showAnnounce dropdown (0/1) - paparkan di announcement
+                if (col === 'showAnnounce' && currentFileName === 'kuliah-override') {
+                    const selectShow = document.createElement('select');
+                    selectShow.id = `field-${col}`;
+                    selectShow.name = col;
+                    selectShow.className = 'form-control';
+                    const sv = !isAdd && row[col] != null ? String(row[col]).trim() : '0';
+                    [{ value: '0', label: '0 - Tidak' }, { value: '1', label: '1 - Ya (paparkan di Pengumuman)' }].forEach(opt => {
+                        const o = document.createElement('option');
+                        o.value = opt.value;
+                        o.textContent = opt.label;
+                        if (sv === opt.value) o.selected = true;
+                        selectShow.appendChild(o);
+                    });
+                    group.appendChild(label);
+                    group.appendChild(selectShow);
+                    form.appendChild(group);
+                    return;
+                }
                 
-                // Special handling untuk type field dalam kuliah-batal: dropdown
-                if (col === 'type' && currentFileName === 'kuliah-batal') {
+                // Special handling untuk type field dalam kuliah-override: dropdown
+                if (col === 'type' && currentFileName === 'kuliah-override') {
                     const select = document.createElement('select');
                     select.id = `field-${col}`;
                     select.name = col;
@@ -1075,9 +1260,9 @@ export function openAddDialog() {
     const currentFileName = getCurrentFileName();
     const currentColumns = getCurrentColumns();
     
-    // Allow add untuk announcements, images, slideshow, dan kuliah-batal
-    if (currentFileName !== 'announcements' && currentFileName !== 'images' && currentFileName !== 'slideshow' && currentFileName !== 'kuliah-batal') {
-        showNotification('✗ Fungsi tambah hanya untuk Pengumuman, Images, Slideshow, dan Kuliah Batal', 'error');
+    // Allow add untuk announcements, countdowns, images, slideshow, dan kuliah-override
+    if (currentFileName !== 'announcements' && currentFileName !== 'countdowns' && currentFileName !== 'images' && currentFileName !== 'slideshow' && currentFileName !== 'kuliah-override') {
+        showNotification('✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, dan Override Kuliah', 'error');
         return;
     }
     
@@ -1097,12 +1282,14 @@ export function openAddDialog() {
     // Set title berdasarkan file type
     if (currentFileName === 'announcements') {
         title.textContent = 'Tambah Pengumuman Baru';
+    } else if (currentFileName === 'countdowns') {
+        title.textContent = 'Tambah Countdown Baru';
     } else if (currentFileName === 'images') {
         title.textContent = 'Tambah Image Baru';
     } else if (currentFileName === 'slideshow') {
         title.textContent = 'Tambah Slideshow Baru';
-    } else if (currentFileName === 'kuliah-batal') {
-        title.textContent = 'Tambah Rekod Kuliah Batal';
+    } else if (currentFileName === 'kuliah-override') {
+        title.textContent = 'Tambah Rekod Override Kuliah';
     }
     
     form.innerHTML = '';
@@ -1146,8 +1333,13 @@ export async function openEditDialog(rowId) {
     const dialog = document.getElementById('edit-dialog');
     const form = document.getElementById('edit-form');
     const title = document.getElementById('dialog-title');
-    
-    title.textContent = `Edit Baris #${rowId}`;
+    if (currentFileName === 'announcements') {
+        title.textContent = 'Edit Pengumuman';
+    } else if (currentFileName === 'countdowns') {
+        title.textContent = 'Edit Countdown';
+    } else {
+        title.textContent = `Edit Baris #${rowId}`;
+    }
     form.innerHTML = '';
     
     createFormFields(form, row, false, { imagesList });

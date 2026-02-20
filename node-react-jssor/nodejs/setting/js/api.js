@@ -19,12 +19,55 @@ function reconstructRawLine(fileName, rowData) {
         return `${rowData.type || ''}|${rowData.image || ''}|${rowData.duration || ''}|${rowData.checkbox || ''}|${rowData.hide || '0'}`;
     } else if (fileName === 'kuliah') {
         return `${rowData.week || ''}|${rowData.day || ''}|${rowData.type || ''}|${rowData.speaker || ''}|${rowData.speakerId || ''}|${rowData.title || ''}`;
-    } else if (fileName === 'kuliah-batal') {
-        return `${rowData.date || ''}|${rowData.type || ''}|${rowData.notes || ''}`;
+    } else if (fileName === 'kuliah-override') {
+        const format = (rowData.format || 'single').toLowerCase();
+        if (format === 'single') {
+            return `${rowData.date || ''}|${rowData.type || ''}|${rowData.notes || ''}`;
+        }
+        const tahun = (rowData.tahun || '').trim();
+        const bulan = (rowData.bulan || '').trim();
+        const type = (rowData.type || '').trim();
+        const hari = (rowData.hari || '').trim();
+        const replace = (rowData.replace || '').trim();
+        const notes = (rowData.notes || '').trim();
+        if (format === 'hijri') {
+            const showAnnounce = (rowData.showAnnounce || '').toString().trim() === '1' ? '1' : '0';
+            const title = (rowData.title || '').trim();
+            const tempat = (rowData.tempat || '').trim();
+            const jemputan = (rowData.jemputan || '').trim();
+            if (showAnnounce === '1' || title || tempat || jemputan) {
+                return `hijri|${tahun}|${bulan}|${hari}|${type}|${replace || '0'}|${notes}|${showAnnounce}|${title}|${tempat}|${jemputan}`;
+            }
+            return `hijri|${tahun}|${bulan}|${hari}|${type}|${replace || '0'}|${notes}`;
+        }
+        if (tahun) {
+            return `${tahun}|${bulan}|${type}|${hari}|${replace || '0'}|${notes}`;
+        }
+        if (replace) {
+            return `${bulan}|${type}|${hari}|${replace}|${notes}`;
+        }
+        return `${bulan}|${type}|${hari}|${notes}`;
     } else if (fileName === 'images') {
         return `${rowData.imageCode || ''}|${rowData.imagePath || ''}`;
     } else if (fileName === 'announcements') {
         return `${rowData.type || ''}|${rowData.title || ''}|${rowData.speaker || ''}|${rowData.category || ''}|${rowData.datetime || ''}|${rowData.location || ''}|${rowData.audience || ''}`;
+    } else if (fileName === 'countdowns') {
+        const format = (rowData.format || 'date').toLowerCase();
+        const event = (rowData.event || '').trim();
+        const windowDays = (rowData.windowDays || '').trim();
+        if (format === 'hijri') {
+            const tahun = (rowData.tahun || '').trim();
+            const bulan = (rowData.bulan || '').trim();
+            const hari = (rowData.hari || '').trim();
+            return `COUNTDOWN_HIJRI|${tahun}|${bulan}|${hari}|${event}|${windowDays}`;
+        }
+        if (format === 'masihi') {
+            const bulan = (rowData.bulan || '').trim();
+            const hari = (rowData.hari || '').trim();
+            return `COUNTDOWN_MASIHI|${bulan}|${hari}|${event}|${windowDays}`;
+        }
+        const date = (rowData.date || '').trim();
+        return `COUNTDOWN|${date}|${event}|${windowDays}`;
     } else if (fileName === 'config') {
         return `${rowData.key || ''}|${rowData.value || ''}`;
     } else if (fileName === 'takwim') {
@@ -85,9 +128,17 @@ export async function saveRow() {
     if (currentFileName === 'announcements' && rowData.datetime) {
         rowData.datetime = rowData.datetime.replace('T', ' ');
     }
+
+    // Countdowns: jika format date dan date hanya YYYY-MM-DD (10 char), tambah 00:00 untuk backend
+    if (currentFileName === 'countdowns' && (rowData.format || 'date').toLowerCase() === 'date' && rowData.date) {
+        const d = String(rowData.date).trim();
+        if (d.length === 10 && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+            rowData.date = d + ' 00:00';
+        }
+    }
     
-    // Convert date input format (YYYY-MM-DD) to storage format (DD-MM-YYYY) untuk kuliah-batal
-    if (currentFileName === 'kuliah-batal' && rowData.date) {
+    // Convert date input (YYYY-MM-DD) to storage (DD-MM-YYYY) untuk kuliah-override format single sahaja
+    if (currentFileName === 'kuliah-override' && (rowData.format || 'single').toLowerCase() === 'single' && rowData.date) {
         const dateParts = rowData.date.split('-');
         if (dateParts.length === 3) {
             rowData.date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
@@ -146,22 +197,66 @@ export async function saveRow() {
             return;
         }
     }
+
+    // Validate countdowns: event wajib; format date = tarikh wajib; format masihi/hijri = bulan + hari wajib
+    if (currentFileName === 'countdowns') {
+        if (!rowData.event || !rowData.event.trim()) {
+            showNotification('✗ Event wajib diisi', 'error');
+            return;
+        }
+        const fmt = (rowData.format || 'date').toLowerCase();
+        if (fmt === 'date') {
+            if (!rowData.date || !rowData.date.trim()) {
+                showNotification('✗ Tarikh wajib diisi (YYYY-MM-DD)', 'error');
+                return;
+            }
+        } else {
+            const bulan = parseInt(rowData.bulan, 10);
+            const hari = parseInt(rowData.hari, 10);
+            if (!rowData.bulan || !rowData.bulan.trim() || isNaN(bulan) || bulan < 1 || bulan > 12) {
+                showNotification('✗ Bulan wajib (1-12)', 'error');
+                return;
+            }
+            if (!rowData.hari || !rowData.hari.trim() || isNaN(hari) || hari < 1 || hari > 31) {
+                showNotification('✗ Hari wajib (1-31 Masihi, 1-30 Hijri)', 'error');
+                return;
+            }
+        }
+    }
     
-    // Validate untuk kuliah-batal: date dan type wajib
-    if (currentFileName === 'kuliah-batal') {
-        if (!rowData.date || !rowData.date.trim()) {
-            showNotification('✗ Tarikh wajib diisi (format: DD-MM-YYYY)', 'error');
-            return;
-        }
-        // Validate date format (basic check)
-        const datePattern = /^\d{2}-\d{2}-\d{4}$/;
-        if (!datePattern.test(rowData.date.trim())) {
-            showNotification('✗ Format tarikh tidak betul. Gunakan format: DD-MM-YYYY (cth: 15-01-2025)', 'error');
-            return;
-        }
+    // Validate untuk kuliah-override: ikut format (single = date+type; range = bulan+type+hari)
+    if (currentFileName === 'kuliah-override') {
+        const format = (rowData.format || 'single').toLowerCase();
         if (!rowData.type || !rowData.type.trim()) {
             showNotification('✗ Type kuliah wajib dipilih', 'error');
             return;
+        }
+        if (format === 'single') {
+            if (!rowData.date || !rowData.date.trim()) {
+                showNotification('✗ Tarikh wajib diisi (format: DD-MM-YYYY)', 'error');
+                return;
+            }
+            const datePattern = /^\d{2}-\d{2}-\d{4}$/;
+            const dateVal = rowData.date.trim();
+            if (!datePattern.test(dateVal)) {
+                const ymd = dateVal.split('-');
+                if (ymd.length === 3) {
+                    rowData.date = `${ymd[2]}-${ymd[1]}-${ymd[0]}`;
+                } else {
+                    showNotification('✗ Format tarikh tidak betul. Gunakan: DD-MM-YYYY atau YYYY-MM-DD', 'error');
+                    return;
+                }
+            }
+        } else {
+            const bulan = parseInt(rowData.bulan, 10);
+            if (!rowData.bulan || !rowData.bulan.trim() || isNaN(bulan) || bulan < 1 || bulan > 12) {
+                showNotification('✗ Bulan wajib (1-12)', 'error');
+                return;
+            }
+            if (!rowData.hari || !rowData.hari.trim()) {
+                showNotification('✗ Hari wajib (cth: 1-30 atau 1,2,3)', 'error');
+                return;
+            }
         }
     }
     

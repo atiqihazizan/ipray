@@ -31,3 +31,4 @@ picture4e|/images/slides/picture4e.png
 picture4f|/images/slides/picture4f.png
 silverbackground|/images/penceramah/SilverBackground4.jpg
 picture1b|/images/penceramah/picture1b.jpg
+picture3|/images/slides/picture3.jpg

@@ -110,7 +110,10 @@ const formatTimeTo24Hour = (hours, minutes) => {
 };
 
 /**
- * Kira countdown dari tarikh dan masa sekarang ke tarikh dan masa yang diberikan
+ * Kira countdown dari tarikh dan masa sekarang ke tarikh dan masa yang diberikan.
+ * Formula: baki hari = hari kalendar dari tengah malam hari ini ke tarikh sasaran (kiraan siang).
+ * Disimpan sebagai library/rujukan; paparan countdown slides biasanya guna countdownText dari backend.
+ * Digunakan sebagai fallback bila backend tidak hantar countdownText.
  * @param {string} dateTimeString - Format: "2023-04-02 19:00" atau "2023-04-02 19:00-21:30"
  * @returns {string} Format: "3 HARI LAGI", "HARI INI", "1 HARI LAGI", atau "LEWAT" jika sudah lepas
  */
@@ -140,14 +143,12 @@ export const getCountdown = (dateTimeString) => {
   // Buat Date object untuk target date/time
   const targetDate = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
   
-  // Dapatkan tarikh dan masa sekarang
   const now = new Date();
-  
-  // Kira perbezaan dalam milliseconds
+  // Tengah malam hari ini: untuk countdown guna kiraan hari kalendar (siang), bukan jam 24 penuh
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   const diffMs = targetDate.getTime() - now.getTime();
-  
-  // Kira perbezaan dalam hari (bulatkan ke bawah)
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  // Baki hari = hari kalendar dari tengah malam hari ini ke tarikh sasaran
+  const diffDays = Math.floor((targetDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
   
   // Format countdown
   if (diffDays < 0) {
@@ -170,4 +171,24 @@ export const getCountdown = (dateTimeString) => {
   } else {
     return `${diffDays} HARI LAGI`;
   }
+};
+
+/**
+ * Kira bilangan hari lagi sehingga tarikh/masa (untuk filter windowDays).
+ * Formula sama seperti getCountdown: tengah malam hari ini ke tarikh sasaran (library/rujukan).
+ * @param {string} dateTimeString - Format: "2023-04-02 19:00"
+ * @returns {number} Bilangan hari lagi; negatif jika sudah LEWAT
+ */
+export const getCountdownDays = (dateTimeString) => {
+  if (!dateTimeString) return -1;
+  const [datePart, timePart] = dateTimeString.trim().split(' ');
+  if (!datePart || !timePart) return -1;
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return -1;
+  const startTime = timePart.split('-')[0];
+  const [hours, minutes] = startTime.split(':').map(Number);
+  const targetDate = new Date(year, month - 1, day, hours || 0, minutes || 0, 0, 0);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  return Math.floor((targetDate.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
 };
