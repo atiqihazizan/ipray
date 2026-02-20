@@ -2,8 +2,9 @@ import { getApiBase } from './apiBase';
 
 /**
  * Time Service (Client-side)
- * Fetch calibrated time dari server dan cache offset dalam memory
- * Fallback ke Date.now() jika API fail
+ * Fetch calibrated time dari server dan cache offset dalam memory.
+ * Bila offline: kekal guna offset dari sync terakhir (masa tak ikut jam peranti yang mungkin lambat).
+ * Fallback ke Date.now() hanya bila belum pernah sync berjaya (first load offline).
  */
 
 class TimeService {
@@ -81,7 +82,10 @@ class TimeService {
       console.log(`[TimeService] Synced with server (source: ${this.timeSource}, offset: ${this.offset}ms)`);
     } catch (error) {
       console.warn('[TimeService] Sync failed:', error.message);
-      this.usingFallback = true;
+      // Offline: hanya guna fallback jika belum pernah sync berjaya; jika ada lastSync, kekal guna cached offset
+      if (this.lastSync == null) {
+        this.usingFallback = true;
+      }
       throw error;
     }
   }
