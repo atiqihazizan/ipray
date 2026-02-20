@@ -61,6 +61,8 @@ export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, a
     const dayNumFontSize = Math.round(textSize(117));
     const KULIAH_BULANAN_FONT_SIZE = Math.round(textSize(24));
     const KITAB_ITEM_FONT_SIZE = Math.round(textSize(15));
+    const KULIAH_BULANAN_FONT_SIZE_SINGLE = Math.round(textSize(35));
+    const KITAB_ITEM_FONT_SIZE_SINGLE = Math.round(textSize(22));
 
     for (let i = 0; i < totalDays; i++) {
       const dayData = safeData[i];
@@ -75,10 +77,14 @@ export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, a
 
       let contentHtml = '';
       if (dayData.entries && dayData.entries.length > 0) {
+        const isSingleRekod = dayData.entries.length === 1;
+        // Font besar untuk single row/rekod sahaja; selain itu kekal saiz asal (24px / 15px)
+        const fs = isSingleRekod ? KULIAH_BULANAN_FONT_SIZE_SINGLE : KULIAH_BULANAN_FONT_SIZE;
+        const kitabFs = isSingleRekod ? KITAB_ITEM_FONT_SIZE_SINGLE : KITAB_ITEM_FONT_SIZE;
         const rows = dayData.entries.map((k, rowIndex) => {
           if (k.replacementText != null && k.replacementText !== '') {
             const rowGapTop = rowIndex === 0 ? '0' : '1px';
-            const replacementStyle = `font-size:${KULIAH_BULANAN_FONT_SIZE}px; font-weight:bold; vertical-align:top; padding:0; padding-top:${rowGapTop}; color:#ff0000; text-transform:uppercase; text-align:center;`;
+            const replacementStyle = `font-size:${fs}px; font-weight:bold; vertical-align:top; padding:0; padding-top:${rowGapTop}; color:#ff0000; text-transform:uppercase; text-align:center;`;
             return `<tr><td colspan="3" style="${replacementStyle}">${esc(k.replacementText)}</td></tr>`;
           }
           const typeLabel = (k.type || '').toUpperCase();
@@ -90,30 +96,45 @@ export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, a
               .map((item) => item.trim())
               .filter(Boolean);
             const itemStyle = isBatal
-              ? `font-size:${KITAB_ITEM_FONT_SIZE}px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;`
-              : `font-size:${KITAB_ITEM_FONT_SIZE}px;word-wrap:break-word;white-space:normal;line-height:1`;
+              ? `font-size:${kitabFs}px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;`
+              : `font-size:${kitabFs}px;word-wrap:break-word;white-space:normal;line-height:1`;
             const kitabItemsHtml = kitabItems.map((item) => `<li style="${itemStyle}">${esc(item)}</li>`).join('');
             kitabHtml = `<ul style="margin-top:-3px;margin-left:19px;list-style-type:square">${kitabItemsHtml}</ul>`;
           }
           const typeStyle = isBatal
-            ? `font-size:${KULIAH_BULANAN_FONT_SIZE}px;text-decoration:line-through;opacity:0.6;`
-            : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;`;
+            ? `font-size:${fs}px;text-decoration:line-through;opacity:0.6;`
+            : `font-size:${fs}px;`;
           const penceramahStyle = isBatal
-            ? `font-size:${KULIAH_BULANAN_FONT_SIZE}px;text-decoration:line-through;opacity:0.6;`
-            : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;`;
+            ? `font-size:${fs}px;text-decoration:line-through;opacity:0.6;`
+            : `font-size:${fs}px;`;
           const rowGapTop = rowIndex === 0 ? '0' : '1px';
+          const rowHeight = isSingleRekod ? 'auto' : '40px';
+          const wordBreakStyle = isSingleRekod ? 'word-break:break-word;' : 'word-break:break-all;';
+
+          if (isSingleRekod) {
+            const mergedContent = isBatal
+              ? `${typeLabel} | <span style="color:#e00;font-size:${fs}px;">(DITANGGUH)</span>`
+              : `${typeLabel} | <span style="${penceramahStyle} word-wrap:break-word; white-space:normal; margin:0; padding:0; line-height:1.25;">${esc(k.penceramah || '')}</span>`;
+            const cellStyle = `font-size:${fs}px; vertical-align:middle; padding:0; text-align:center; ${wordBreakStyle}`;
+            // return `<tr><td colspan="3" style="${cellStyle}">${mergedContent}${kitabHtml ? `<br/>${kitabHtml}` : ''}</td></tr>`;
+            return `<tr><td colspan="3" style="${cellStyle}">${mergedContent}</td></tr>`;
+          }
+
           return `<tr>
             <td style="${typeStyle} vertical-align:top; padding:0 5px; padding-top:${rowGapTop}; white-space:nowrap; width:49.3px">${typeLabel}</td>
-            <td style="font-size:${KULIAH_BULANAN_FONT_SIZE}px; vertical-align:top; padding:0; padding-right: 3px; padding-top:${rowGapTop}; color:#666;">|</td>
+            <td style="font-size:${fs}px; vertical-align:top; padding:0; padding-right: 3px; padding-top:${rowGapTop}; color:#666;">|</td>
             <td style="vertical-align:top; padding:0; padding-top:${rowGapTop}; text-align:left;">
-              <div style="padding-right:3px; word-break: break-all; height: 40px; overflow: hidden;">
+              <div style="padding-right:3px; ${wordBreakStyle} height: ${rowHeight}; overflow: hidden;">
                 ${isBatal
-                  ? `<span style="color:#e00;font-size:${KULIAH_BULANAN_FONT_SIZE}px;">(DITANGGUH)</span>`
+                  ? `<span style="color:#e00;font-size:${fs}px;">(DITANGGUH)</span>`
                   : `<span style="display:block; ${penceramahStyle} word-wrap:break-word; white-space:normal; margin:0; padding:0; text-align:left; line-height:1.25;padding-top: 4px;">${esc(k.penceramah || '')}</span> `}
               </div>
             </td></tr>`;
         });
-        contentHtml = `<div style="font-size:${KULIAH_BULANAN_FONT_SIZE}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; margin:0; padding:0;width:100%">
+        const wrapperStyle = isSingleRekod
+          ? `font-size:${fs}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; right:0; bottom:0; margin:0; padding:0; display:flex; align-items:center; justify-content:center;`
+          : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; margin:0; padding:0; width:100%`;
+        contentHtml = `<div style="${wrapperStyle}">
           <table style="border-collapse:collapse; width:100%; margin:0; padding:0;"><tbody>${rows.join('')}</tbody></table>
           </div>`;
       }

@@ -12,8 +12,8 @@ import { processSlideshow } from '../processors/slideshowProcessor';
  * - Nombor (contoh 2) = papar N slide pertama
  * - Array indeks 0-based (contoh [0, 3] = slide 1 & 4, [1] = slide 2 sahaja, [0, 2] = slide 1 & 3)
  */
-const DEBUG_SLIDES = false;
-// const DEBUG_SLIDES = [1];
+// const DEBUG_SLIDES = false;
+const DEBUG_SLIDES = [1];
 
 /**
  * Custom hook untuk menguruskan slides data.
@@ -26,6 +26,7 @@ export const useSlides = () => {
     announcementsData,
     countdownsData,
     kuliahHariProcessed,
+    kuliahHariReplacements,
     kuliahMingguProcessed,
     kuliahBulananProcessed,
     imagesData,
@@ -60,7 +61,7 @@ export const useSlides = () => {
     const homeSlide = applyConfig(slidesTemplate.home, 'home');
     const announceSlides = processAnnouncements(announcementsData, slidesConfigData, applyConfig);
     const countDownSlides = processCountdowns(countdownsData, slidesConfigData, applyConfig);
-    const kuliahHariSlides = processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig);
+    const kuliahHariSlides = processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements);
     const kuliahMigguanSlides = processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig);
     const kuliahBulananSlides = processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, applyConfig);
     const slideshowSlides = processSlideshow(slideshowData, slidesConfigData, applyConfig);
@@ -83,7 +84,7 @@ export const useSlides = () => {
       return slides.slice(0, DEBUG_SLIDES);
     }
     return slides;
-  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]);
+  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]);
 
   useEffect(() => {
     if (dataLoading) {

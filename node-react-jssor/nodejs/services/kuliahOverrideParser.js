@@ -1,6 +1,7 @@
 /**
  * Parser kuliah-override: peraturan override paparan kuliah (batal / ganti).
  * Format: lama (DD-MM-YYYY|type|notes), Gregorian (tahun?|bulan|type|hari|flag?|catatan), Hijri (hijri|tahun|bulan|hari|type|flag|catatan).
+ * Weekly: weekly|dayOfWeek|type|replace|catatan — dayOfWeek 0=Ahad,1=Isnin,2=Selasa,3=Rabu,4=Khamis,5=Jumaat,6=Sabtu.
  * Pilihan untuk papar di Pengumuman: tambah |1|tajuk|tempat|jemputan selepas catatan.
  */
 
@@ -54,6 +55,22 @@ function parseLine(line, refYear) {
       entries: [],
       hijriRule: { year, month, days, type, notes, replaceDisplay, showInAnnounce, title, tempat, jemputan }
     };
+  }
+
+  if (first === 'weekly' && parts.length >= 5) {
+    const dayOfWeek = parseInt(parts[1], 10);
+    const type = (parts[2] || '').trim();
+    const replaceDisplay = parts[3] === '1';
+    const notes = (parts[4] || '').trim();
+    if (!isNaN(dayOfWeek) && dayOfWeek >= 0 && dayOfWeek <= 6 && ['km', 'kd', 'ks'].includes(type)) {
+      return {
+        legacy: false,
+        hijri: false,
+        entries: [],
+        hijriRule: null,
+        weeklyRule: { dayOfWeek, type, notes, replaceDisplay }
+      };
+    }
   }
 
   const firstPart = parts[0] || '';
@@ -133,14 +150,16 @@ function parseKuliahOverride(content, refYear) {
   const ref = refYear ?? new Date().getFullYear();
   const expanded = [];
   const hijriRules = [];
-  if (!content || typeof content !== 'string') return { expanded, hijriRules };
+  const weeklyRules = [];
+  if (!content || typeof content !== 'string') return { expanded, hijriRules, weeklyRules };
   const lines = content.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   for (const line of lines) {
     const parsed = parseLine(line, ref);
     if (parsed.entries.length) expanded.push(...parsed.entries);
     if (parsed.hijriRule) hijriRules.push(parsed.hijriRule);
+    if (parsed.weeklyRule) weeklyRules.push(parsed.weeklyRule);
   }
-  return { expanded, hijriRules };
+  return { expanded, hijriRules, weeklyRules };
 }
 
 function matchBatal(date, type, expandedList, options = {}) {
@@ -154,7 +173,7 @@ function matchBatal(date, type, expandedList, options = {}) {
       return { isBatal: true, notes: e.notes || '', replaceDisplay: e.replaceDisplay === true };
     }
   }
-  const { hijriRules = [], getHijri } = options;
+  const { hijriRules = [], getHijri, weeklyRules = [] } = options;
   if (getHijri && typeof getHijri === 'function' && hijriRules.length > 0) {
     const hijri = getHijri(date);
     if (hijri && hijri.month != null && hijri.day != null) {
@@ -163,6 +182,14 @@ function matchBatal(date, type, expandedList, options = {}) {
         if (r.year != null && r.year !== hijri.year) continue;
         if (r.month !== hijri.month) continue;
         if (!r.days || !r.days.includes(hijri.day)) continue;
+        return { isBatal: true, notes: r.notes || '', replaceDisplay: r.replaceDisplay === true };
+      }
+    }
+  }
+  if (weeklyRules.length > 0) {
+    const dayOfWeek = date.getDay();
+    for (const r of weeklyRules) {
+      if (r.dayOfWeek === dayOfWeek && r.type === typeNorm) {
         return { isBatal: true, notes: r.notes || '', replaceDisplay: r.replaceDisplay === true };
       }
     }

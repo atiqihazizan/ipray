@@ -50,6 +50,7 @@ export const DataProvider = ({ children }) => {
   const [announcementsData, setAnnouncementsData] = useState(null);
   const [countdownsData, setCountdownsData] = useState(null);
   const [kuliahHariProcessed, setKuliahHariProcessed] = useState([]);
+  const [kuliahHariReplacements, setKuliahHariReplacements] = useState([]);
   const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
   const [kuliahBulananProcessed, setKuliahBulananProcessed] = useState([]);
   const [imagesData, setImagesData] = useState(null);
@@ -90,6 +91,7 @@ export const DataProvider = ({ children }) => {
       setAnnouncementsData(data.announcements ?? []);
       setCountdownsData(data.countdowns ?? []);
       setKuliahHariProcessed(data.kuliahHariProcessed ?? []);
+      setKuliahHariReplacements(data.kuliahHariReplacements ?? []);
       setKuliahMingguProcessed(data.kuliahMingguProcessed ?? []);
       setKuliahBulananProcessed(data.kuliahBulananProcessed ?? []);
       setImagesData(data.images ?? {});
@@ -315,6 +317,7 @@ export const DataProvider = ({ children }) => {
     announcementsData,
     countdownsData,
     kuliahHariProcessed,
+    kuliahHariReplacements,
     kuliahMingguProcessed,
     kuliahBulananProcessed,
     imagesData,

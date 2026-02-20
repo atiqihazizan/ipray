@@ -313,7 +313,7 @@ class ApiServerService {
         const today = new Date();
         const currentMinutes = today.getHours() * 60 + today.getMinutes();
         const getHijri = (d) => this.dataService.getHijriForDate(takwimContent, d, currentMinutes);
-        const batalOptions = { expanded: overrideParsed.expanded, hijriRules: overrideParsed.hijriRules || [], getHijri };
+        const batalOptions = { expanded: overrideParsed.expanded, hijriRules: overrideParsed.hijriRules || [], weeklyRules: overrideParsed.weeklyRules || [], getHijri };
         const announcements = this.dataService.parseAnnouncements(announcementsContent);
         const countdownsRaw = this.dataService.parseCountdowns(countdownsContent);
         const countdowns = [];
@@ -349,7 +349,9 @@ class ApiServerService {
           });
         }
         const kuliahLines = this.dataService.parseKuliah(kuliahContent);
-        const kuliahHariProcessed = processKuliahHari(kuliahLines, batalOptions, today);
+        const kuliahHariResult = processKuliahHari(kuliahLines, batalOptions, today);
+        const kuliahHariProcessed = kuliahHariResult.lines || [];
+        const kuliahHariReplacements = kuliahHariResult.replacements || [];
         const kuliahMingguProcessed = processKuliahMinggu(kuliahLines, batalOptions, today);
         const kuliahBulananProcessed = processKuliahBulanan(kuliahLines, batalOptions, today);
         const images = this.dataService.parseImages(imagesContent);
@@ -361,6 +363,7 @@ class ApiServerService {
           announcements,
           countdowns,
           kuliahHariProcessed,
+          kuliahHariReplacements,
           kuliahMingguProcessed,
           kuliahBulananProcessed,
           images,

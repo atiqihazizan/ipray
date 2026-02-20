@@ -25,29 +25,37 @@ function parseKuliahLine(line) {
 
 /**
  * Kuliah hari ini: filter by today week+day, drop items where batal has replaceDisplay.
+ * Juga kembalikan replacements untuk hari ini (ganti paparan tanpa imej di slide kuliah hari ini sahaja).
  * @param {string[]} kuliahLines
- * @param {{ expanded: Array, hijriRules: Array, getHijri: function }} batalOptions
+ * @param {{ expanded: Array, hijriRules: Array, weeklyRules: Array, getHijri: function }} batalOptions
  * @param {Date} today
- * @returns {string[]}
+ * @returns {{ lines: string[], replacements: Array<{ type: string, replacementText: string }> }}
  */
 function processKuliahHari(kuliahLines, batalOptions, today) {
   const week = getWeekCode(today);
   const day = getDayCode(today);
   const list = (batalOptions && batalOptions.expanded) ? batalOptions.expanded : (Array.isArray(batalOptions) ? batalOptions : []);
-  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri)) ? { hijriRules: batalOptions.hijriRules || [], getHijri: batalOptions.getHijri } : {};
+  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri || batalOptions.weeklyRules)) ? { hijriRules: batalOptions.hijriRules || [], weeklyRules: batalOptions.weeklyRules || [], getHijri: batalOptions.getHijri } : {};
   const filtered = (kuliahLines || []).filter((line) => {
     const p = parseKuliahLine(line);
     if (!p || p.week !== week || p.day !== day) return false;
     const m = matchBatal(today, p.type, list, opts);
     return !m.replaceDisplay;
   });
-  return filtered;
+  const replacements = [];
+  for (const type of ['km', 'kd', 'ks']) {
+    const m = matchBatal(today, type, list, opts);
+    if (m.replaceDisplay && (m.notes || '').trim()) {
+      replacements.push({ type, replacementText: (m.notes || '').trim() });
+    }
+  }
+  return { lines: filtered, replacements };
 }
 
 /**
  * Kuliah minggu ini: filter by current week, drop items where (date, type) has replaceDisplay.
  * @param {string[]} kuliahLines
- * @param {{ expanded: Array, hijriRules: Array, getHijri: function }} batalOptions
+ * @param {{ expanded: Array, hijriRules: Array, weeklyRules: Array, getHijri: function }} batalOptions
  * @param {Date} today
  * @returns {string[]}
  */
@@ -56,7 +64,7 @@ function processKuliahMinggu(kuliahLines, batalOptions, today) {
   const year = today.getFullYear();
   const month = today.getMonth();
   const list = (batalOptions && batalOptions.expanded) ? batalOptions.expanded : (Array.isArray(batalOptions) ? batalOptions : []);
-  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri)) ? { hijriRules: batalOptions.hijriRules || [], getHijri: batalOptions.getHijri } : {};
+  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri || batalOptions.weeklyRules)) ? { hijriRules: batalOptions.hijriRules || [], weeklyRules: batalOptions.weeklyRules || [], getHijri: batalOptions.getHijri } : {};
   const filtered = (kuliahLines || []).filter((line) => {
     const p = parseKuliahLine(line);
     if (!p || p.week !== week) return false;
@@ -74,7 +82,7 @@ const BULANAN_TYPES = ['km', 'kd', 'ks'];
  * Kuliah bulanan: for each day in month, build entries. replaceDisplay -> replacementText only.
  * Jika tiada kuliah untuk (hari, type) tetapi batal ada replaceDisplay untuk (tarikh, type), suntik entri gantian.
  * @param {string[]} kuliahLines
- * @param {{ expanded: Array, hijriRules: Array, getHijri: function }} batalOptions
+ * @param {{ expanded: Array, hijriRules: Array, weeklyRules: Array, getHijri: function }} batalOptions
  * @param {Date} today
  * @returns {Array<{ dayNumber: number, dayOfWeek: number, date: string, entries: Array<{ type?, penceramah?, kitab?, replacementText? }> }>}
  */
@@ -91,7 +99,7 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
   }
 
   const list = (batalOptions && batalOptions.expanded) ? batalOptions.expanded : (Array.isArray(batalOptions) ? batalOptions : []);
-  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri)) ? { hijriRules: batalOptions.hijriRules || [], getHijri: batalOptions.getHijri } : {};
+  const opts = (batalOptions && (batalOptions.hijriRules || batalOptions.getHijri || batalOptions.weeklyRules)) ? { hijriRules: batalOptions.hijriRules || [], weeklyRules: batalOptions.weeklyRules || [], getHijri: batalOptions.getHijri } : {};
 
   /** Set "dayNum-type" yang sudah ada dari kuliah.txt (termasuk yang diganti) */
   const addedFromKuliah = new Set();

@@ -1,6 +1,7 @@
 /**
  * Process data kuliah hari ini ke slides.
  * Input: kuliahHariProcessed (backend sudah filter hari ini & buang replace=1).
+ * kuliahHariReplacements: gantian untuk hari ini sahaja (contoh Majlis Bacaan Yassin) — dipapar tanpa imej.
  * Satu slide per kategori (Subuh, Dhuha, Maghrib, Khas) yang ada data hari ini.
  */
 import { slidesTemplate } from '../config/sliderConfig';
@@ -14,11 +15,27 @@ import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from
 
 const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH DHUHA', 'KULIAH SUBUH', 'KULIAH KHAS'];
 
-export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig) {
+export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = []) {
   const safeData = kuliahHariProcessed && Array.isArray(kuliahHariProcessed) ? kuliahHariProcessed : [];
-  const dataToDisplay = safeData;
+  const replacements = Array.isArray(kuliahHariReplacements) ? kuliahHariReplacements : [];
 
-  if (dataToDisplay.length === 0) {
+  const groupedData = {};
+  replacements.forEach((r) => {
+    const typeLabel = TYPE_LABELS[r.type] || (r.type || '').toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push({ replacementText: r.replacementText || '', type: r.type });
+  });
+  safeData.forEach((item) => {
+    const arr = item.split('|');
+    const type = arr[2];
+    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push(item);
+  });
+
+  const categoryKeys = CATEGORY_ORDER.filter((cat) => groupedData[cat] && groupedData[cat].length > 0);
+
+  if (categoryKeys.length === 0) {
     const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
     const kuliahHariSlide = JSON.parse(JSON.stringify(kuliahTemplate));
     const parent = kuliahHariSlide.captions[0];
@@ -54,21 +71,60 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     return [kuliahHariSlide];
   }
 
-  const groupedData = {};
-  dataToDisplay.forEach((item) => {
-    const arr = item.split('|');
-    const type = arr[2];
-    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
-    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
-    groupedData[typeLabel].push(item);
-  });
-
   const kuliahHariSlides = [];
-  const categoryKeys = CATEGORY_ORDER.filter((cat) => groupedData[cat]);
-
   categoryKeys.forEach((categoryTitle, categoryIndex) => {
     const categoryData = groupedData[categoryTitle];
     const item = categoryData[0];
+    const isReplacement = item && typeof item === 'object' && item.replacementText != null;
+    if (isReplacement) {
+      const replacementText = (item.replacementText || '').trim();
+      const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
+      const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+      const parent = kuliahSlide.captions[0];
+      if (parent && parent.children && parent.children.length >= 2) {
+        if (parent.children[0]) parent.children[0].content = 'PERISTIWA HARI INI';
+        const isLastCategory = categoryIndex === categoryKeys.length - 1;
+        if (categoryIndex > 0) parent.transition = null;
+        parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+        const BOX_BOTTOM = DEFAULT_BOX_BOTTOM - 80;
+        const BOX_PADDING = 20;
+        const INNER_LEFT_PX = BOX_LEFT + BOX_PADDING;
+        const boxLayer = createBoxLayer({ bottom: BOX_BOTTOM });
+        boxLayer.transition = categoryIndex > 0 ? null : 'FADE';
+        boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT';
+        const replacementChild = {
+          type: 'div',
+          transition: 'CLIP|LR',
+          duration: 2000,
+          delay: 0,
+          content: replacementText.toUpperCase(),
+          style: {
+            position: 'absolute',
+            left: left(INNER_LEFT_PX),
+            right: right(BOX_RIGHT + BOX_PADDING),
+            top: top(BOX_TOP + 28),
+            bottom: bottom(BOX_BOTTOM + 20),
+            textAlign: 'center',
+            fontSize: Math.round(textSize(120)),
+            fontFamily: "'SairaCondensed',sans-serif",
+            color: '#000000',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: 0
+          }
+        };
+        parent.children[0].transition = categoryIndex > 0 ? null : 'CLIP|LR';
+        parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+        parent.children[0].duration = 2000;
+        parent.children[0].delay = 0;
+        parent.children = [boxLayer, parent.children[0], replacementChild];
+      }
+      kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+      kuliahHariSlides.push(kuliahSlide);
+      return;
+    }
     const arr = item.split('|');
     const penceramah = (arr[3] || '').trim();
     const imageCode = (arr[4] || '').trim();
