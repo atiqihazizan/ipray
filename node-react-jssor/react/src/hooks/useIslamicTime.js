@@ -1,102 +1,51 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getCurrentIslamicTime } from '../utils/islamicTimeUtils';
-import { useTakwimData } from './useTakwimData';
-import { useTimeSync } from '../contexts/TimeSyncContext';
+import { useContext, useState, useEffect } from 'react';
+import { TimeContext, SnapshotContext } from '../contexts/TimeContext';
 
 /**
- * Custom Hook untuk menguruskan waktu Islam (Hijri, Masehi, Waktu Solat)
- * Update setiap 1 saat. Guna timeService dari context = masa dari kalibrasi/server (termasuk test mode).
- *
- * @param {Object} externalTakwimParsed - Optional: Parsed takwim data {zone, hdata, wdata}
- * @returns {Object} { islamicTime, loading, error }
+ * Bina objek islamicTime dari TimeContext + SnapshotContext (satu interval dalam TimeProvider).
+ * @param {Object} externalTakwimParsed - tidak digunakan bila dalam TimeProvider; disimpan untuk API
  */
-export const useIslamicTime = (externalTakwimParsed = null) => {
-  const [islamicTime, setIslamicTime] = useState(null);
-  const [lastMinute, setLastMinute] = useState(null);
+function useIslamicTimeFromContext(externalTakwimParsed = null) {
+  const timeContext = useContext(TimeContext);
+  const snapshotContext = useContext(SnapshotContext);
+  const { time, loading, zone } = timeContext || {};
+  const { snapshot } = snapshotContext || {};
 
-  const { timeService, timeSyncVersion } = useTimeSync();
-
-  // Guna useTakwimData jika takwimDataParsed tidak diberikan
-  const { takwimParsed: internalTakwimParsed, loading: takwimLoading } = useTakwimData();
-
-  // Guna external jika diberikan, jika tidak guna internal
-  const takwimDataParsed = externalTakwimParsed || internalTakwimParsed;
-
-  // Loading bergantung kepada data takwim tersedia atau tidak
-  const loading = externalTakwimParsed ? !externalTakwimParsed : takwimLoading;
-  const error = null;
-
-  /**
-   * Update waktu semasa (guna timeService = masa dari server/kalibrasi)
-   */
-  const updateTime = useCallback(() => {
-    if (!takwimDataParsed) return;
-
-    try {
-      const currentTime = getCurrentIslamicTime({
-        hdata: takwimDataParsed.hdata,
-        wdata: takwimDataParsed.wdata,
-        timeService
-      });
-
-      setIslamicTime(currentTime);
-
-      const currentMinute = currentTime.time.minutes;
-      if (lastMinute !== currentMinute) {
-        setLastMinute(currentMinute);
-      }
-    } catch (err) {
-      console.error('Error updating time:', err);
-    }
-  }, [takwimDataParsed, lastMinute, timeService]);
-
-  /**
-   * Refresh - placeholder (data refresh handled at context level)
-   */
-  const refresh = useCallback(() => {
-    console.log('Refresh takwim data from context');
-  }, []);
-
-  /**
-   * Setup interval untuk update setiap 1 saat
-   */
-  useEffect(() => {
-    if (!takwimDataParsed) return;
-
-    updateTime();
-
-    const intervalId = setInterval(() => {
-      updateTime();
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [takwimDataParsed, updateTime]);
-
-  /**
-   * Bila kalibrasi masa berubah (test mode/offset dari admin), update paparan serta-merta
-   */
-  useEffect(() => {
-    if (takwimDataParsed) updateTime();
-  }, [timeSyncVersion]);
+  const islamicTime =
+    time != null && snapshot
+      ? {
+          time,
+          gregorian: snapshot.gregorian,
+          hijri: snapshot.hijri,
+          prayer: snapshot.prayer
+        }
+      : null;
 
   return {
     islamicTime,
-    loading,
-    error,
-    refresh,
-    zone: takwimDataParsed?.zone || ''
+    loading: loading ?? true,
+    error: null,
+    refresh: () => {},
+    zone: zone || ''
   };
+}
+
+/**
+ * Custom Hook untuk menguruskan waktu Islam (Hijri, Masehi, Waktu Solat).
+ * Guna TimeContext + SnapshotContext — satu interval dalam TimeProvider, hanya masa update setiap saat.
+ *
+ * @param {Object} externalTakwimParsed - Optional (legacy API)
+ * @returns {Object} { islamicTime, loading, error, refresh, zone }
+ */
+export const useIslamicTime = (externalTakwimParsed = null) => {
+  return useIslamicTimeFromContext(externalTakwimParsed);
 };
 
 /**
  * Hook mudah untuk dapatkan waktu semasa sahaja
- * Update setiap 0.5 saat
- * 
- * @returns {Object} { time, loading }
  */
 export const useCurrentTime = () => {
-  const { islamicTime, loading } = useIslamicTime();
-  
+  const { islamicTime, loading } = useIslamicTimeFromContext();
   return {
     time: islamicTime?.time || null,
     loading
@@ -104,14 +53,10 @@ export const useCurrentTime = () => {
 };
 
 /**
- * Hook untuk dapatkan tarikh Hijri semasa
- * Update setiap 0.5 saat (akan berubah pada waktu Maghrib)
- * 
- * @returns {Object} { hijri, loading }
+ * Hook untuk dapatkan tarikh Hijri semasa (initial dari snapshot; update lepas Maghrib via event di DisplayDate)
  */
 export const useHijriDate = () => {
-  const { islamicTime, loading } = useIslamicTime();
-  
+  const { islamicTime, loading } = useIslamicTimeFromContext();
   return {
     hijri: islamicTime?.hijri || null,
     loading
@@ -120,13 +65,9 @@ export const useHijriDate = () => {
 
 /**
  * Hook untuk dapatkan tarikh Masehi semasa
- * Update setiap 0.5 saat
- * 
- * @returns {Object} { gregorian, loading }
  */
 export const useGregorianDate = () => {
-  const { islamicTime, loading } = useIslamicTime();
-  
+  const { islamicTime, loading } = useIslamicTimeFromContext();
   return {
     gregorian: islamicTime?.gregorian || null,
     loading
@@ -135,21 +76,15 @@ export const useGregorianDate = () => {
 
 /**
  * Hook untuk dapatkan waktu solat
- * Update setiap 0.5 saat
- *
- * @param {Object} externalTakwimParsed - Optional: Parsed takwim data {zone, hdata, wdata}
- * @returns {Object} { prayer, loading, nextPrayerData, nextPrayerName }
  */
 export const usePrayerTimes = (externalTakwimParsed = null) => {
-  const { islamicTime, loading } = useIslamicTime(externalTakwimParsed);
+  const { islamicTime, loading } = useIslamicTimeFromContext(externalTakwimParsed);
   const prayer = islamicTime?.prayer || null;
 
-  const nextPrayerData = useMemo(() => {
-    return prayer?.next && prayer?.nextTime
+  const nextPrayerData =
+    prayer?.next && prayer?.nextTime
       ? { next: prayer.next, nextTime: prayer.nextTime }
       : null;
-  }, [prayer?.next, prayer?.nextTime]);
-
   const nextPrayerName = prayer?.next || null;
 
   return {
@@ -162,42 +97,27 @@ export const usePrayerTimes = (externalTakwimParsed = null) => {
 
 /**
  * Hook dengan callback apabila minit berubah
- * Berguna untuk trigger animasi atau sound
- * 
- * @param {Function} onMinuteChange - Callback yang dipanggil apabila minit berubah
- * @returns {Object} { islamicTime, loading }
  */
 export const useIslamicTimeWithCallback = (onMinuteChange) => {
-  const { islamicTime, loading, error, refresh, zone } = useIslamicTime();
+  const { islamicTime, loading, error, refresh, zone } = useIslamicTimeFromContext();
   const [prevMinute, setPrevMinute] = useState(null);
 
   useEffect(() => {
-    if (islamicTime && islamicTime.time) {
+    if (islamicTime?.time) {
       const currentMinute = islamicTime.time.minutes;
-      
-      if (prevMinute !== null && prevMinute !== currentMinute) {
-        // Minit berubah, panggil callback
-        if (typeof onMinuteChange === 'function') {
-          onMinuteChange({
-            time: islamicTime.time,
-            hijri: islamicTime.hijri,
-            gregorian: islamicTime.gregorian,
-            prayer: islamicTime.prayer
-          });
-        }
+      if (prevMinute !== null && prevMinute !== currentMinute && typeof onMinuteChange === 'function') {
+        onMinuteChange({
+          time: islamicTime.time,
+          hijri: islamicTime.hijri,
+          gregorian: islamicTime.gregorian,
+          prayer: islamicTime.prayer
+        });
       }
-      
       setPrevMinute(currentMinute);
     }
   }, [islamicTime, prevMinute, onMinuteChange]);
 
-  return {
-    islamicTime,
-    loading,
-    error,
-    refresh,
-    zone
-  };
+  return { islamicTime, loading, error, refresh, zone };
 };
 
 export default useIslamicTime;

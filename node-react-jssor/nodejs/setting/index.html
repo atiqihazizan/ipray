@@ -468,157 +468,6 @@
 			margin: 0;
 		}
 
-		/* Time Calibration Tab Styles */
-		.time-info-card, .calibration-card, .test-prayer-card, .sync-card {
-			background: white;
-			border-radius: 8px;
-			padding: 24px;
-			margin-bottom: 20px;
-			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-		}
-
-		.time-info-card h3, .calibration-card h3, .test-prayer-card h3, .sync-card h3 {
-			margin: 0 0 16px 0;
-			font-size: 18px;
-			font-weight: 600;
-			color: #1f2937;
-		}
-
-		.time-info-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-			gap: 16px;
-		}
-
-		.time-info-item {
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-		}
-
-		.time-info-item label {
-			font-size: 14px;
-			color: #6b7280;
-			font-weight: 500;
-		}
-
-		.time-display {
-			font-size: 24px;
-			font-weight: 600;
-			color: #1f2937;
-			font-family: 'Courier New', monospace;
-		}
-
-		.time-source-badge {
-			display: inline-block;
-			padding: 6px 12px;
-			border-radius: 4px;
-			font-size: 14px;
-			font-weight: 600;
-		}
-
-		.time-source-badge.ntp {
-			background: #10b981;
-			color: white;
-		}
-
-		.time-source-badge.manual {
-			background: #f59e0b;
-			color: white;
-		}
-
-		.time-source-badge.system {
-			background: #6b7280;
-			color: white;
-		}
-
-		.time-source-badge.test {
-			background: #ddd6fe;
-			color: #7c3aed;
-			animation: pulse 2s ease-in-out infinite;
-		}
-
-		@keyframes pulse {
-			0%, 100% { opacity: 1; }
-			50% { opacity: 0.7; }
-		}
-
-		.time-status {
-			font-size: 14px;
-			color: #6b7280;
-		}
-
-		.calibration-form, .test-form, .sync-form {
-			display: flex;
-			flex-direction: column;
-			gap: 16px;
-		}
-
-		.form-group {
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-		}
-
-		.form-group label {
-			font-size: 14px;
-			font-weight: 500;
-			color: #374151;
-		}
-
-		.datetime-input, .time-input {
-			padding: 10px 12px;
-			border: 1px solid #d1d5db;
-			border-radius: 6px;
-			font-size: 16px;
-			font-family: 'Courier New', monospace;
-		}
-
-		.datetime-input:focus, .time-input:focus {
-			outline: none;
-			border-color: #3b82f6;
-			box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-		}
-
-		.test-buttons {
-			display: flex;
-			gap: 12px;
-			flex-wrap: wrap;
-		}
-
-		.test-status, .sync-status {
-			padding: 12px;
-			border-radius: 6px;
-			font-size: 14px;
-		}
-
-		.test-status.success, .sync-status.success {
-			background: #d1fae5;
-			color: #065f46;
-			border: 1px solid #10b981;
-		}
-
-		.test-status.error, .sync-status.error {
-			background: #fee2e2;
-			color: #991b1b;
-			border: 1px solid #ef4444;
-		}
-
-		.test-status.info, .sync-status.info {
-			background: #dbeafe;
-			color: #1e40af;
-			border: 1px solid #3b82f6;
-		}
-
-		@media (max-width: 768px) {
-			.time-info-grid {
-				grid-template-columns: 1fr;
-			}
-			
-			.test-buttons {
-				flex-direction: column;
-			}
-		}
 	</style>
 </head>
 
@@ -668,10 +517,6 @@
 			<div class="menu-item" onclick="showTab('takwim')" data-tab="takwim">
 				<span class="menu-item-icon">📅</span>
 				<span class="menu-item-text">Takwim</span>
-			</div>
-			<div class="menu-item" onclick="showTab('time')" data-tab="time">
-				<span class="menu-item-icon">⏰</span>
-				<span class="menu-item-text">Kalibrasi Masa</span>
 			</div>
 		</nav>
 	</aside>
@@ -884,6 +729,46 @@
 					</div>
 				</div>
 
+				<!-- Masa Sistem (Raspberry Pi) - sudo date -->
+				<div class="system-control-section" style="margin-top: 32px;">
+					<h3 class="system-control-title">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						Masa Sistem (Raspberry Pi)
+					</h3>
+					<div class="system-control-content">
+						<div class="system-control-item" style="margin-bottom: 20px;">
+							<div class="system-control-info">
+								<div class="system-control-label">Update Tarikh & Masa</div>
+								<div class="system-control-description" style="margin-bottom: 12px;">
+									Set tarikh/masa sistem pada mesin (menghantar <code>sudo date -s "..."</code> pada Raspi). Selepas berjaya, paparan kiosk akan dimuat semula.
+								</div>
+								<div style="display: flex; flex-direction: column; gap: 12px; max-width: 320px;">
+									<div>
+										<label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; color: #1e293b;">Tarikh & Masa:</label>
+										<input type="datetime-local" id="system-datetime" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: white;">
+									</div>
+									<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+										<button type="button" onclick="setSystemTime()" class="btn-reboot" style="background: #3b82f6;">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+											</svg>
+											<span>Set Masa Mesin</span>
+										</button>
+										<button type="button" onclick="syncTimeWithInternet()" class="btn-reboot" style="background: #10b981;">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9a9 9 0 019-9m-9 9a9 9 0 019 9" />
+											</svg>
+											<span>Sync dengan Internet</span>
+										</button>
+									</div>
+									<div id="time-set-status" class="system-control-description" style="display: none; margin-top: 4px;"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 
 				<!-- Seksyen Konfigurasi WiFi -->
 				<div class="system-control-section" style="margin-top: 32px;">
@@ -1277,87 +1162,6 @@
 				</div>
 			</div>
 
-			<!-- Time Calibration Tab -->
-			<div id="time-tab" class="tab-content">
-				<div class="content-card">
-					<!-- Current Time Info -->
-					<div class="time-info-card">
-						<h3>Maklumat Masa Semasa</h3>
-						<div class="time-info-grid">
-							<div class="time-info-item">
-								<label>Masa Sistem:</label>
-								<div id="system-time" class="time-display">--:--:--</div>
-							</div>
-							<div class="time-info-item">
-								<label>Masa Sekarang:</label>
-								<div id="calibrated-time" class="time-display">--:--:--</div>
-							</div>
-							<div class="time-info-item">
-								<label>Sumber Masa:</label>
-								<div id="time-source" class="time-source-badge">--</div>
-							</div>
-							<div class="time-info-item">
-								<label>Status:</label>
-								<div id="time-status" class="time-status">--</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Set Masa Mesin (Raspberry Pi) -->
-					<div class="calibration-card">
-						<h3>Set Masa Mesin (Raspberry Pi)</h3>
-						<p class="note">Update tarikh/masa sistem terus pada mesin. Selepas berjaya, paparan akan dimuat semula.</p>
-						<div class="calibration-form">
-							<div class="form-group">
-								<label for="system-datetime">Tarikh & Masa:</label>
-								<input type="datetime-local" id="system-datetime" class="datetime-input"/>
-							</div>
-							<button onclick="setSystemTime()" class="btn btn-primary">
-								<span>🕐</span> Set Masa Mesin
-							</button>
-						</div>
-					</div>
-
-					<!-- Test Prayer Time Section -->
-					<div class="test-prayer-card">
-						<h3>Test Waktu Solat</h3>
-						<p class="note">Set masa untuk test audio waktu solat. Masa akan berubah sementara.</p>
-						
-						<div class="test-form">
-							<div class="form-group">
-								<label for="test-time">Waktu Solat Untuk Test:</label>
-								<input 
-									type="time" 
-									id="test-time" 
-									class="time-input"
-								/>
-							</div>
-							<div class="test-buttons">
-								<button onclick="testPrayerTime()" class="btn btn-warning">
-									<span>🔊</span> Test Waktu Solat
-								</button>
-								<button onclick="resetTime()" class="btn btn-secondary" id="reset-btn" style="display: none;">
-									<span>↺</span> Reset Masa
-								</button>
-							</div>
-							<div id="test-status" class="test-status" style="display: none;"></div>
-						</div>
-					</div>
-
-					<!-- Auto Sync Section -->
-					<div class="sync-card">
-						<h3>Sync Automatik</h3>
-						<p class="note">Sync masa dengan internet (memerlukan sambungan internet)</p>
-						
-						<div class="sync-form">
-							<button onclick="syncWithInternet()" class="btn btn-success">
-								<span>🌐</span> Sync Dengan Internet
-							</button>
-							<div id="sync-status" class="sync-status" style="display: none;"></div>
-						</div>
-					</div>
-				</div>
-			</div>
 		</div>
 	</main>
 
@@ -1409,7 +1213,6 @@
 	<script type="module" src="js/dialog.js"></script>
 	<script type="module" src="js/table.js"></script>
 	<script type="module" src="js/wifi.js"></script>
-	<script type="module" src="js/time.js"></script>
 	<script type="module" src="js/main.js"></script>
 
 	<script>
@@ -1493,8 +1296,6 @@
 					window.NotificationUtils.showNotification('Konfigurasi berjaya dimuat', 'success');
 				}
 				
-				// Note: System Date & Time configuration removed - guna Time Calibration tab instead
-				// refreshSystemTime() tidak diperlukan lagi
 			}
 		} catch (error) {
 			console.error('Ralat memuat konfigurasi:', error);
@@ -1557,8 +1358,62 @@
 			}
 		}
 
-		// Note: System Date/Time functions removed
-		// Guna Time Calibration tab (Kalibrasi Masa) untuk set masa
+		// Update masa sistem (Raspberry Pi) - sudo date -s "..."
+		async function setSystemTime() {
+			const input = document.getElementById('system-datetime');
+			const value = input && input.value ? input.value.trim() : '';
+			const statusEl = document.getElementById('time-set-status');
+			if (!value) {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sila pilih tarikh dan masa', 'error');
+				return;
+			}
+			const d = new Date(value);
+			if (Number.isNaN(d.getTime())) {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Format tarikh/masa tidak sah', 'error');
+				return;
+			}
+			const dateTimeStr = d.getFullYear() + '-' +
+				String(d.getMonth() + 1).padStart(2, '0') + '-' +
+				String(d.getDate()).padStart(2, '0') + ' ' +
+				String(d.getHours()).padStart(2, '0') + ':' +
+				String(d.getMinutes()).padStart(2, '0') + ':' +
+				String(d.getSeconds()).padStart(2, '0');
+			const apiBase = (getApiUrl() || '').replace(/\/api\/?$/, '');
+			try {
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Sedang set masa mesin...'; }
+				const response = await fetch(apiBase + '/api/time/set', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ dateTime: dateTimeStr })
+				});
+				const data = await response.json().catch(() => ({}));
+				if (!response.ok) throw new Error(data.error || 'Gagal set masa mesin');
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Masa mesin berjaya dikemas kini. Paparan akan dimuat semula.', 'success');
+				if (input) input.value = '';
+				if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Berjaya. Paparan akan dimuat semula.'; }
+			} catch (err) {
+				console.error('Error setting system time:', err);
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Gagal set masa mesin: ' + err.message, 'error');
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#dc2626'; statusEl.textContent = '✗ ' + err.message; }
+			}
+		}
+
+		async function syncTimeWithInternet() {
+			const statusEl = document.getElementById('time-set-status');
+			const apiBase = (getApiUrl() || '').replace(/\/api\/?$/, '');
+			try {
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Sedang sync dengan internet (NTP)...'; }
+				const response = await fetch(apiBase + '/api/time/sync');
+				if (!response.ok) throw new Error('Sync gagal');
+				const result = await response.json();
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync berjaya! Masa kini menggunakan Internet (NTP).', 'success');
+				if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Sync berjaya.'; }
+			} catch (err) {
+				console.error('Error syncing time:', err);
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync gagal. Pastikan ada sambungan internet.', 'error');
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#dc2626'; statusEl.textContent = '✗ ' + (err.message || 'Sync gagal'); }
+			}
+		}
 
 		// Handle Kiosk Reboot
 		function handleRebootKiosk() {
@@ -1587,6 +1442,13 @@
 
 		// Sync color picker with text input
 		document.addEventListener('DOMContentLoaded', function () {
+			// Default system-datetime to now (for Set Masa Mesin)
+			const systemDatetimeInput = document.getElementById('system-datetime');
+			if (systemDatetimeInput) {
+				const now = new Date();
+				const pad = (n) => String(n).padStart(2, '0');
+				systemDatetimeInput.value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+			}
 			// Color picker sync
 			['COLOR_DEFAULT', 'COLOR_NEXT_PRAYER', 'COLOR_WARNING_PRAYER'].forEach(key => {
 				const colorInput = document.getElementById(key);

@@ -103,10 +103,10 @@ export const getDisplayTimeBlinkContainerStyle = ({
   blink
 }) => {
   if (effectiveIsPrayerTime) {
-    return { opacity: blink ? 1 : 0, transition: 'opacity 0.1s ease' };
+    return { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' };
   }
   if (effectiveIs30SecondsBeforePrayer && !effectiveIsPrayerTime) {
-    return { opacity: blink ? 1 : 0, transition: 'opacity 0.1s ease' };
+    return { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' };
   }
   if (effectiveIsInPrayerMinute && !effectiveIsPrayerTime) {
     return { opacity: 1 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import SliderPage from './components/SliderPage'
 import LoadingPage from './components/LoadingPage'
 import PageAzan from './components/PageAzan'
@@ -6,18 +6,16 @@ import PageIqamah from './components/PageIqamah'
 import PageSolat from './components/PageSolat'
 import { DataProvider, useData } from './contexts/DataContext'
 import { TimeSyncProvider } from './contexts/TimeSyncContext'
-import { usePrayerTimeProcess } from './hooks/usePrayerTimeProcess.js'
-import { usePrayerTimeNavigation } from './hooks/usePrayerTimeNavigation.js'
+import { TimeProvider } from './contexts/TimeContext'
+import MidnightReloadListener from './components/MidnightReloadListener'
+import PrayerTimeController from './components/PrayerTimeController'
 import audioService from './services/audioService.js'
 
 const AppContent = () => {
-  const { loading: dataLoading, error, socketConnected, socketReady, midnightReloadMessage } = useData()
+  const { loading: dataLoading, socketConnected, socketReady, midnightReloadMessage } = useData()
   const [sliderReady, setSliderReady] = useState(false)
-  const currentView = usePrayerTimeNavigation()
+  const [currentView, setCurrentView] = useState('slide')
 
-  usePrayerTimeProcess()
-
-  // Jika sambungan gagal, show error dan skip semua operations
   if (socketReady && !socketConnected) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -30,21 +28,14 @@ const AppContent = () => {
     )
   }
 
-  // Tunggu socket connected baru proceed
-  // return <LoadingPage />
-  if (!socketConnected) {
-    return <LoadingPage />
-  }
-
-  // Masuk waktu: page azan (AZAN_DURATION_MIN) → page iqamah (IQAMAH_DURATION_MIN) → page solat (SOLAT_DURATION_MIN) → kembali slide
+  if (!socketConnected) return <LoadingPage />
   if (currentView === 'azan') return <PageAzan />
   if (currentView === 'iqamah') return <PageIqamah />
   if (currentView === 'solat') return <PageSolat />
 
-  // Show loading screen sehingga data siap dan slider ready
-  // SliderPage akan render di belakang LoadingPage untuk init process
   return (
     <>
+      <PrayerTimeController setCurrentView={setCurrentView} />
       {midnightReloadMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <p className="text-white text-2xl font-bold">{midnightReloadMessage}</p>
@@ -67,71 +58,24 @@ const AppContent = () => {
 }
 
 function App() {
-  // Unlock audio untuk kiosk: Chromium dengan --autoplay-policy=no-user-gesture-required
-  // kadangkala perlukan masa sebelum play() dibenarkan. Retry beberapa kali.
   useEffect(() => {
+    // Simple init untuk Chromium dengan autoplay flag
     audioService.init();
-
-    const tryEnableAudio = async () => {
-      if (audioService.getIsEnabled()) return true;
-      try {
-        await audioService.enableAudio();
-        return true;
-      } catch {
-        return false;
-      }
-    };
-
-    // Percubaan pertama selepas 500ms
-    const t1 = setTimeout(() => { tryEnableAudio(); }, 500);
-
-    // Retry setiap 2s (max 15 kali = 30s) supaya kiosk sempat unlock audio sebelum waktu solat
-    let attempts = 0;
-    const maxAttempts = 15;
-    const retryInterval = setInterval(async () => {
-      if (audioService.getIsEnabled() || attempts >= maxAttempts) {
-        clearInterval(retryInterval);
-        return;
-      }
-      attempts += 1;
-      await tryEnableAudio();
-    }, 2000);
+    console.log('[Audio] Initialized for Chromium Kiosk');
     
-    // Fallback: Beep pada interaksi pertama (untuk browser biasa tanpa autoplay policy)
-    const handleFirstInteraction = async (event) => {
-      try {
-        if (!audioService.getIsEnabled()) {
-          await audioService.enableAudio()
-        }
-        audioService.play({ playCount: 1, volume: 1 })
-      } catch (err) {
-        console.warn('[Audio] First interaction handler error:', err)
-      }
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('touchstart', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-      document.removeEventListener('pointerdown', handleFirstInteraction)
-    }
-    
-    document.addEventListener('click', handleFirstInteraction, { once: true })
-    document.addEventListener('touchstart', handleFirstInteraction, { once: true })
-    document.addEventListener('keydown', handleFirstInteraction, { once: true })
-    document.addEventListener('pointerdown', handleFirstInteraction, { once: true })
-    
-    return () => {
-      clearTimeout(t1);
-      clearInterval(retryInterval);
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-      document.removeEventListener('pointerdown', handleFirstInteraction);
-    };
+    // Optional: Test audio capability sekali
+    audioService.enableAudio()
+      .then(() => console.log('[Audio] Ready'))
+      .catch(err => console.warn('[Audio] Warning:', err));
   }, []);
   
   return (
     <DataProvider>
       <TimeSyncProvider>
-        <AppContent />
+        <MidnightReloadListener />
+        <TimeProvider>
+          <AppContent />
+        </TimeProvider>
       </TimeSyncProvider>
     </DataProvider>
   )

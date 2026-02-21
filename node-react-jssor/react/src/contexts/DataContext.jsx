@@ -27,7 +27,6 @@ const DEFAULT_COLOR_CONFIG = {
 };
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
-const MIDNIGHT_CHECK_INTERVAL_MS = 60000;
 const RELOAD_DELAY_MS = 15000;
 
 /**
@@ -151,21 +150,17 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
-   * Reload tengah malam: semak setiap 60s bila tarikh bertukar (hari baru).
-   * Tarikh last load disimpan dalam memory (ref) dan localStorage untuk semakan hari berikut.
+   * Reload tengah malam: dipanggil oleh MidnightReloadListener bila dapat event date-changed dari TimeProvider.
+   * Tiada setInterval di sini — driver masa dispatch date-changed bila tarikh bertukar.
    */
-  useEffect(() => {
-    const id = setInterval(() => {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const lastLoad = dataLoadDateRef.current ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null) ?? '';
-      if (lastLoad && todayStr !== lastLoad) {
-        setMidnightReloadMessage('Mengemas kini…');
-        setTimeout(() => {
-          window.location.reload();
-        }, RELOAD_DELAY_MS);
-      }
-    }, MIDNIGHT_CHECK_INTERVAL_MS);
-    return () => clearInterval(id);
+  const checkMidnight = useCallback((todayStr) => {
+    const lastLoad = dataLoadDateRef.current ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null) ?? '';
+    if (lastLoad && todayStr !== lastLoad) {
+      setMidnightReloadMessage('Mengemas kini…');
+      setTimeout(() => {
+        window.location.reload();
+      }, RELOAD_DELAY_MS);
+    }
   }, []);
 
   /**
@@ -278,8 +273,8 @@ export const DataProvider = ({ children }) => {
       if (isMounted) window.location.reload();
     });
 
-    // Nota: Event kalibrasi masa (time-offset-updated, time-test-mode-enabled, time-test-mode-disabled)
-    // diurus oleh TimeSyncProvider supaya hanya paparan masa re-render, elak seluruh app reload
+    // Nota: Event kalibrasi masa (time-offset-updated) diurus oleh TimeSyncProvider
+    // supaya hanya paparan masa re-render, elak seluruh app reload
 
     // Cleanup on unmount
     return () => {
@@ -323,6 +318,7 @@ export const DataProvider = ({ children }) => {
     isReloading, // Expose reload status
     reloadCounter, // Expose reload counter untuk force refresh di hooks
     refresh: loadAllData,
+    checkMidnight,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
     timeService: timeServiceStub

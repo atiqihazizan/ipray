@@ -25,6 +25,16 @@ export const useDisplayTime = ({
 
   const shouldBlink = !showSeconds && isCurrentTime;
 
+  // Kelipan titik (colon) pada interval tetap 1 saat — elak terlalu cepat
+  useEffect(() => {
+    if (!shouldBlink && !isPrayerTime && !is30SecondsBeforePrayer) {
+      setBlink(true);
+      return;
+    }
+    const id = setInterval(() => setBlink((prev) => !prev), 1000);
+    return () => clearInterval(id);
+  }, [shouldBlink, isPrayerTime, is30SecondsBeforePrayer]);
+
   const isPrayerTimeMode = prayerName != null;
   const isNextPrayerMode = nextPrayerTime != null;
 
@@ -42,14 +52,6 @@ export const useDisplayTime = ({
     };
     return prayerMap[prayerName] || null;
   };
-
-  useEffect(() => {
-    if (!shouldBlink && !isPrayerTime && !is30SecondsBeforePrayer) {
-      setBlink(true);
-      return;
-    }
-    setBlink((prev) => !prev);
-  }, [islamicTime, shouldBlink, isPrayerTime, is30SecondsBeforePrayer]);
 
   const formattedTime = useMemo(() => {
     if (loading || !islamicTime) return '00:00';

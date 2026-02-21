@@ -22,6 +22,11 @@ etc-systemd-system/kiosk.service
   -> /etc/systemd/system/kiosk.service
   sudo systemctl daemon-reload && sudo systemctl enable kiosk && sudo systemctl start kiosk
 
+etc-sudoers-d/ipray-kiosk
+  -> /etc/sudoers.d/ipray-kiosk
+  sudo chmod 440 /etc/sudoers.d/ipray-kiosk
+  (Supaya user ipray boleh jalankan systemctl reload/restart kiosk tanpa minta password.)
+
 etc-nginx-sites-available/ipray
   -> /etc/nginx/sites-available/ipray
   sudo ln -sf /etc/nginx/sites-available/ipray /etc/nginx/sites-enabled/ipray

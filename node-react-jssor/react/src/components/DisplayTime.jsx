@@ -63,7 +63,7 @@ const DisplayTime = ({
     const parts = displayTime.split(':');
     if (parts.length === 1) return displayTime;
 
-    const colonStyle = effectiveShouldBlink ? { opacity: blink ? 1 : 0, transition: 'opacity 0.1s' } : { opacity: 1 };
+    const colonStyle = effectiveShouldBlink ? { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' } : { opacity: 1 };
 
     if (showSeconds && parts.length === 3) {
       const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';

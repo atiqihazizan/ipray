@@ -32,13 +32,23 @@ xset s off
 xset -dpms
 xset s noblank
 
+# background kosong (solid hitam)
+xsetroot -solid black
+
 # hide mouse
 unclutter -idle 0 &
+
+# benarkan audio dan set volume maksimum (ALSA)
+amixer set PCM unmute 2>/dev/null || true
+amixer set PCM 100% 2>/dev/null || true
+amixer set Master unmute 2>/dev/null || true
+amixer set Master 100% 2>/dev/null || true
 
 # start window manager ringan
 matchbox-window-manager &
 
 # launch browser (profil kiosk sendiri, --no-sandbox untuk Pi)
+# --autoplay-policy=no-user-gesture-required = wajib supaya audio/video boleh main tanpa klik (kiosk berbunyi)
 chromium \
   --user-data-dir="$CHROMIUM_PROFILE" \
   --no-sandbox \
@@ -48,5 +58,10 @@ chromium \
   --kiosk \
   --incognito \
   --disable-session-crashed-bubble \
+  --autoplay-policy=no-user-gesture-required \
   --check-for-update-interval=31536000 \
+  --disable-dev-shm-usage \
+  --disable-backgrounding-occluded-windows \
+  --disable-background-timer-throttling \
+  --js-flags="--max-old-space-size=256" \
   http://localhost:3000

@@ -1,7 +1,8 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { useIslamicTime } from '../hooks/useIslamicTime';
+import { TIME_EVENTS } from '../utils/timeEvents';
 
-const DisplayDate = ({ 
+const DisplayDate = ({
   type = 1, // 1 = kiri, 2 = kanan
   dateType = 'gregorian', // 'gregorian' atau 'hijri'
   size = 72,
@@ -9,18 +10,26 @@ const DisplayDate = ({
   style: customStyle = {}
 }) => {
   const { islamicTime, loading } = useIslamicTime();
-  
-  // Memoize date data - hanya update bila date benar-benar berubah
-  // Tarikh hanya berubah pada waktu tertentu (Maghrib untuk Hijri, tengah malam untuk Gregorian)
-  // Guna date key untuk comparison yang stable
-  const dateKey = dateType === 'hijri' 
-    ? `${islamicTime?.hijri?.day}-${islamicTime?.hijri?.month}-${islamicTime?.hijri?.year}`
+  const [hijriOverride, setHijriOverride] = useState(null);
+
+  useEffect(() => {
+    if (dateType !== 'hijri') return;
+    const handler = (e) => {
+      if (e.detail?.hijri) setHijriOverride(e.detail.hijri);
+    };
+    window.addEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
+    return () => window.removeEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
+  }, [dateType]);
+
+  const effectiveHijri = hijriOverride ?? islamicTime?.hijri;
+  const dateKey = dateType === 'hijri'
+    ? `${effectiveHijri?.day}-${effectiveHijri?.month}-${effectiveHijri?.year}`
     : `${islamicTime?.gregorian?.day}-${islamicTime?.gregorian?.month}-${islamicTime?.gregorian?.year}`;
-  
+
   const dateData = useMemo(() => {
-    if (!islamicTime) return null;
-    return dateType === 'hijri' ? islamicTime.hijri : islamicTime.gregorian;
-  }, [dateKey, dateType, islamicTime]);
+    if (!islamicTime && !effectiveHijri) return null;
+    return dateType === 'hijri' ? effectiveHijri : islamicTime?.gregorian;
+  }, [dateKey, dateType, islamicTime, effectiveHijri]);
 
   // Handle loading state
   if (loading || !dateData) {

@@ -17,13 +17,7 @@ class TimeService {
     this.timeSource = 'system';       // Current time source: 'ntp' | 'manual' | 'system'
     this.systemClockSet = false;      // True bila jam mesin berjaya di-update (Raspi)
     this.cmosIssue = null;            // CMOS battery issue detection result
-    
-    // Test/Debug mode (masa test bermula dari testTimestamp, kemudian jalan seperti biasa)
-    this.isTestMode = false;
-    this.testTimestamp = null;        // Masa "permulaan" test (e.g. 6:32)
-    this.testModeStartRealTime = null; // Date.now() bila test mode diaktifkan
-    this.savedOffset = null;
-    
+
     // Config
     this.ntpEnabled = true;
     this.ntpServer = 'pool.ntp.org';
@@ -189,15 +183,9 @@ class TimeService {
 
   /**
    * Get calibrated time (current timestamp dengan offset)
-   * Dalam test mode: masa bermula dari testTimestamp dan jalan mengikut masa sebenar (6:32 -> 6:33 -> 6:34)
    */
   now() {
-    if (this.isTestMode && this.testTimestamp !== null && this.testModeStartRealTime !== null) {
-      const elapsed = Date.now() - this.testModeStartRealTime;
-      return this.testTimestamp + elapsed;
-    }
-    
-    // Normal mode - 3-layer fallback
+    // 3-layer fallback
     if (this.ntpOffset !== null) {
       // Priority 1: NTP time
       return Date.now() + this.ntpOffset;
@@ -218,15 +206,13 @@ class TimeService {
     const timestamp = this.systemClockSet ? Date.now() : this.now();
     return {
       timestamp,
-      source: this.isTestMode ? 'test' : this.timeSource,
+      source: this.timeSource,
       offset: this.ntpOffset !== null ? this.ntpOffset : this.manualOffset,
       lastNtpSync: this.lastNtpSync,
       isOnline: this.isOnline,
       systemClockSet: this.systemClockSet,
       systemTime: Date.now(),
       cmosIssue: this.cmosIssue,
-      isTestMode: this.isTestMode,
-      testTimestamp: this.testTimestamp,
       config: {
         ntpEnabled: this.ntpEnabled,
         ntpServer: this.ntpServer,
@@ -316,54 +302,6 @@ class TimeService {
   }
 
   /**
-   * Enable test mode dengan fixed timestamp
-   * @param {number} timestamp - Fixed timestamp untuk test (ms)
-   * @returns {Object} - Test mode result
-   */
-  enableTestMode(timestamp) {
-    if (typeof timestamp !== 'number') {
-      throw new Error('Timestamp must be a number');
-    }
-
-    // Save current state
-    if (!this.isTestMode) {
-      this.savedOffset = this.ntpOffset !== null ? this.ntpOffset : this.manualOffset;
-    }
-
-    // Enable test mode (masa akan jalan dari timestamp ini)
-    this.isTestMode = true;
-    this.testTimestamp = timestamp;
-    this.testModeStartRealTime = Date.now();
-
-    console.log(`[TimeService] Test mode enabled, masa bermula: ${new Date(timestamp).toISOString()}`);
-
-    return {
-      success: true,
-      isTestMode: true,
-      testTimestamp: this.testTimestamp,
-      testTime: new Date(timestamp).toISOString()
-    };
-  }
-
-  /**
-   * Disable test mode dan restore normal operation
-   * @returns {Object} - Reset result
-   */
-  disableTestMode() {
-    this.isTestMode = false;
-    this.testTimestamp = null;
-    this.testModeStartRealTime = null;
-
-    console.log('[TimeService] Test mode disabled');
-
-    return {
-      success: true,
-      isTestMode: false,
-      source: this.timeSource
-    };
-  }
-
-  /**
    * Cleanup (stop auto-sync)
    */
   cleanup() {
@@ -371,12 +309,6 @@ class TimeService {
       clearInterval(this.ntpSyncInterval);
       this.ntpSyncInterval = null;
     }
-    
-    // Disable test mode jika active
-    if (this.isTestMode) {
-      this.disableTestMode();
-    }
-    
     console.log('[TimeService] Cleaned up');
   }
 }

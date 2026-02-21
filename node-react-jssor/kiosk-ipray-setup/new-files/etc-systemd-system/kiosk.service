@@ -1,17 +1,30 @@
 [Unit]
-Description=Kiosk Backend
+Description=iPray Waktu Solat Kiosk
 After=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/node /home/ipray/apps/main.js
-WorkingDirectory=/home/ipray/apps
-Restart=always
-RestartSec=5
-User=ipray
-Environment=NODE_ENV=production
+Wants=network-online.target
+# Elak restart loop (lindungi SD card)
 StartLimitIntervalSec=60
 StartLimitBurst=10
+
+[Service]
+Environment=DISPLAY=:0
+Environment=NODE_ENV=production
+Environment=PROD_MODE=true
+Type=simple
+User=ipray
+WorkingDirectory=/home/ipray/apps
+ExecStart=/usr/bin/node /home/ipray/apps/main.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Restart tidak stuck: systemd hantar SIGKILL selepas 5 saat
+TimeoutStopSec=5
+
+# Memory limits (optional safety)
+MemoryMax=1.5G
+MemoryHigh=1.2G
 
 [Install]
 WantedBy=multi-user.target

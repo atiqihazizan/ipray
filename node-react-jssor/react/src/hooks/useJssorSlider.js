@@ -325,70 +325,47 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
               isInitializingRef.current = false;
             }
 
-            // Start interval untuk check slider ready
-            let checkCount = 0;
-            const maxChecks = 100; // Max 5 saat (100 * 50ms)
+            // Timeout 150ms sahaja: scale selepas slider init
+            if (sliderInstanceRef.current &&
+                sliderInstanceRef.current.$Elmt &&
+                typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
+                typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
+              const ScaleSlider = () => {
+                if (sliderInstanceRef.current &&
+                    sliderInstanceRef.current.$Elmt &&
+                    typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
+                    typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
+                  const parentNode = sliderInstanceRef.current.$Elmt.parentNode;
+                  const parentWidth = parentNode?.clientWidth;
+                  const parentHeight = parentNode?.clientHeight;
 
-            scaleAfterInitIntervalRef.current = setInterval(() => {
-              checkCount++;
+                  if (parentWidth && parentHeight) {
+                    const widthRatio = parentWidth / sliderConfig.container.width;
+                    const heightRatio = parentHeight / sliderConfig.container.height;
+                    const scale = Math.min(widthRatio, heightRatio);
 
-              // Fallback: set loading false selepas max checks
-              if (checkCount >= maxChecks) {
-                clearInterval(scaleAfterInitIntervalRef.current);
-                scaleAfterInitIntervalRef.current = null;
-                setLoading(false);
-                return;
-              }
+                    const scaledWidth = Math.max(
+                      Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth),
+                      sliderConfig.container.minWidth
+                    );
 
-              // Check if slider instance is valid and has required methods
-              if (sliderInstanceRef.current &&
-                  sliderInstanceRef.current.$Elmt &&
-                  typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
-                  typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
-                clearInterval(scaleAfterInitIntervalRef.current);
-                scaleAfterInitIntervalRef.current = null;
-                const ScaleSlider = () => {
-                  // Double check instance is still valid before using
-                  if (sliderInstanceRef.current &&
-                      sliderInstanceRef.current.$Elmt &&
-                      typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
-                      typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
-                    const parentNode = sliderInstanceRef.current.$Elmt.parentNode;
-                    const parentWidth = parentNode?.clientWidth;
-                    const parentHeight = parentNode?.clientHeight;
-
-                    if (parentWidth && parentHeight) {
-                      // Calculate scale berdasarkan width dan height untuk maintain aspect ratio
-                      const widthRatio = parentWidth / sliderConfig.container.width;
-                      const heightRatio = parentHeight / sliderConfig.container.height;
-                      // Pilih scale yang lebih kecil untuk pastikan slider muat dalam parent
-                      const scale = Math.min(widthRatio, heightRatio);
-
-                      const scaledWidth = Math.max(
-                        Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth),
-                        sliderConfig.container.minWidth
-                      );
-
-                      sliderInstanceRef.current.$ScaleWidth(scaledWidth);
-                      const aspectRatio = sliderConfig.container.height / sliderConfig.container.width;
-                      const scaledHeight = scaledWidth * aspectRatio;
-                      if (sliderInstanceRef.current.$ScaleHeight) {
-                        sliderInstanceRef.current.$ScaleHeight(scaledHeight);
-                      }
-                      // Paksa $GoTo(0) selepas scale: pastikan di slide 0 dan caption slide 0 reset semula
-                      if (sliderInstanceRef.current.$GoTo) {
-                        sliderInstanceRef.current.$GoTo(0);
-                      }
-                    } else {
-                      window.setTimeout(ScaleSlider, 30);
+                    sliderInstanceRef.current.$ScaleWidth(scaledWidth);
+                    const aspectRatio = sliderConfig.container.height / sliderConfig.container.width;
+                    const scaledHeight = scaledWidth * aspectRatio;
+                    if (sliderInstanceRef.current.$ScaleHeight) {
+                      sliderInstanceRef.current.$ScaleHeight(scaledHeight);
                     }
+                    if (sliderInstanceRef.current.$GoTo) {
+                      sliderInstanceRef.current.$GoTo(0);
+                    }
+                  } else {
+                    window.setTimeout(ScaleSlider, 30);
                   }
-                };
-                ScaleSlider();
-                // Set loading false selepas slider siap init dan scale
-                setLoading(false);
-              }
-            }, 50);
+                }
+              };
+              ScaleSlider();
+            }
+            setLoading(false);
           }, 150);
         }
       } catch (error) {
@@ -441,7 +418,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
 
     return () => {
       if (scaleAfterInitIntervalRef.current) {
-        clearInterval(scaleAfterInitIntervalRef.current);
+        clearTimeout(scaleAfterInitIntervalRef.current);
         scaleAfterInitIntervalRef.current = null;
       }
       

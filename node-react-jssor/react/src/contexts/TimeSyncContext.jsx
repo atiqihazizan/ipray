@@ -40,19 +40,11 @@ export const TimeSyncProvider = ({ children }) => {
     const unsubOffset = socketService.on('time-offset-updated', () => {
       if (isMountedRef.current) handleTimeCalibrationUpdate();
     });
-    const unsubTestOn = socketService.on('time-test-mode-enabled', () => {
-      if (isMountedRef.current) handleTimeCalibrationUpdate();
-    });
-    const unsubTestOff = socketService.on('time-test-mode-disabled', () => {
-      if (isMountedRef.current) handleTimeCalibrationUpdate();
-    });
     const unsubSystemUpdated = socketService.on('time-system-updated', handleReload);
 
     return () => {
       isMountedRef.current = false;
       unsubOffset();
-      unsubTestOn();
-      unsubTestOff();
       unsubSystemUpdated();
     };
   }, []);
