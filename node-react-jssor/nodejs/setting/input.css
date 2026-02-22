@@ -134,7 +134,8 @@
   
   .config-item label {
     @apply text-sm font-medium text-gray-700;
-    @apply flex-shrink-0 w-48;
+    @apply flex-shrink-0 w-48 whitespace-nowrap;
+    text-wrap-mode: nowrap;
   }
   
   .config-item-control {

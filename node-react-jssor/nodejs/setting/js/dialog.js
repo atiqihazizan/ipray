@@ -511,14 +511,12 @@ function createFormFields(form, row, isAdd, options = {}) {
             return;
         }
 
-        // Special handling untuk column checkbox dalam slides: pilihan checkbox (date, solat, time, next-solat, small-time)
+        // Special handling untuk column checkbox dalam slides: pilihan overlay (date, solat-time, solat-time-small)
         if (currentFileName === 'slides' && col === 'checkbox') {
             const CHECKBOX_OPTIONS = [
                 { value: 'date', label: 'Date (Tarikh)' },
-                { value: 'solat', label: 'Solat (Waktu solat)' },
-                { value: 'time', label: 'Time (Masa semasa)' },
-                { value: 'next-solat', label: 'Next Solat' },
-                { value: 'small-time', label: 'Small Time' }
+                { value: 'solat-time', label: 'Solat + Time (Waktu solat + jam besar)' },
+                { value: 'solat-time-small', label: 'Next Solat + Small Time' }
             ];
             const currentVal = !isAdd && row[col] ? String(row[col] || '').trim() : '';
             const selectedSet = new Set(currentVal ? currentVal.split(',').map(s => s.trim()).filter(Boolean) : []);
@@ -664,6 +662,34 @@ function createFormFields(form, row, isAdd, options = {}) {
             uploadContainer.appendChild(hiddenInput);
             group.appendChild(label);
             group.appendChild(uploadContainer);
+            form.appendChild(group);
+            return;
+        }
+
+        // Special handling untuk validFrom/validTo dalam slideshow: date input (optional) + butang clear
+        if (currentFileName === 'slideshow' && (col === 'validFrom' || col === 'validTo')) {
+            label.textContent = col === 'validFrom' ? 'Valid From (pilihan, YYYY-MM-DD)' : 'Valid To (pilihan, YYYY-MM-DD)';
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.id = `field-${col}`;
+            input.name = col;
+            input.value = isAdd ? '' : (row[col] || '');
+            input.className = 'form-control';
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '8px';
+            wrapper.style.alignItems = 'center';
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.textContent = 'Clear';
+            clearBtn.className = 'btn-cancel';
+            clearBtn.style.padding = '6px 12px';
+            clearBtn.style.flexShrink = '0';
+            clearBtn.onclick = () => { input.value = ''; };
+            wrapper.appendChild(input);
+            wrapper.appendChild(clearBtn);
+            group.appendChild(label);
+            group.appendChild(wrapper);
             form.appendChild(group);
             return;
         }

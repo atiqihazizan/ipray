@@ -99,7 +99,7 @@ export const slidesTemplate = {
         content: "TANAH LIAT"
       },
     ],
-    datetime: ['date', 'solat', 'time'] // overlay yang ditunjukkan: date=tarikh, solat=waktu solat, time=masa semasa
+    datetime: ['date', 'solat-time'] // overlay: date=tarikh, solat-time=waktu solat+jam besar
   },
   announce: {
     transitionType: 'auto',
@@ -157,7 +157,7 @@ export const slidesTemplate = {
   },
   countDown: {
     transitionType: 'auto',
-    datetime: ['next-solat', 'small-time'],
+    datetime: ['solat-time-small'],
     image: null,
     captions: [
       {
@@ -179,7 +179,7 @@ export const slidesTemplate = {
   },
   kuliahHari: {
     transitionType: 'auto',
-    datetime: ['next-solat', 'small-time'],
+    datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Harian" },
     captions: [
       {
@@ -212,7 +212,7 @@ export const slidesTemplate = {
   },
   kuliahWeekly: {
     transitionType: 'auto',
-    datetime: ['next-solat', 'small-time'],
+    datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Mingguan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
@@ -243,7 +243,7 @@ export const slidesTemplate = {
   },
   kuliahBulanan: {
     transitionType: 'auto',
-    datetime: ['next-solat', 'small-time'],
+    datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Bulanan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)

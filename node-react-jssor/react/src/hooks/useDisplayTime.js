@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useIslamicTime } from './useIslamicTime';
+import { useData } from '../contexts/DataContext';
+import { getPrayerIndex, getPrayerTimeByIndex, isSyurukIndex } from '../utils/prayerIndexUtils';
 
 /**
  * Hook untuk DisplayTime component.
- * Masa dan format dari useIslamicTime.
+ * Masa dan format dari useIslamicTime. Tempoh amaran sebelum waktu (kelip) dari config WARNING_START_SECONDS.
  */
 export const useDisplayTime = ({
   format = '24h',
@@ -15,25 +17,49 @@ export const useDisplayTime = ({
   nextPrayerName = null
 }) => {
   const { islamicTime, loading } = useIslamicTime();
+  const { PRAYER_TIME_CONFIG } = useData();
   const [blink, setBlink] = useState(true);
+  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 30;
+  const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 10;
 
-  const prayerState = { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false };
+  const prayerState = useMemo(() => {
+    if (!prayerName || !islamicTime?.time || !islamicTime?.prayer?.times) {
+      return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false, isSyurukInFirst10Sec: false };
+    }
+    const times = islamicTime.prayer.times;
+    const prayerIdx = getPrayerIndex(prayerName);
+    if (prayerIdx == null) return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false, isSyurukInFirst10Sec: false };
+    const timeStr = getPrayerTimeByIndex(times, prayerIdx);
+    if (!timeStr) return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false, isSyurukInFirst10Sec: false };
+    const [ph, pm] = timeStr.split(':').map(Number);
+    const prayerTotalSeconds = ph * 3600 + pm * 60;
+    const { hours, minutes, seconds } = islamicTime.time;
+    const currentTotalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const is30SecondsBeforePrayer = currentTotalSeconds >= prayerTotalSeconds - warningSeconds && currentTotalSeconds < prayerTotalSeconds;
+    const isInPrayerMinute = currentTotalSeconds >= prayerTotalSeconds && currentTotalSeconds < prayerTotalSeconds + 60;
+    const isPrayerTime = currentTotalSeconds === prayerTotalSeconds;
+    const isSyurukInFirst10Sec = isSyurukIndex(prayerIdx) && currentTotalSeconds >= prayerTotalSeconds && currentTotalSeconds < prayerTotalSeconds + beepCount + 4;
+    return { is30SecondsBeforePrayer, isPrayerTime, isInPrayerMinute, isSyurukInFirst10Sec };
+  }, [prayerName, warningSeconds, beepCount, islamicTime?.time?.hours, islamicTime?.time?.minutes, islamicTime?.time?.seconds, islamicTime?.prayer?.times]);
 
   const isPrayerTime = prayerState.isPrayerTime;
   const isInPrayerMinute = prayerState.isInPrayerMinute;
   const is30SecondsBeforePrayer = prayerState.is30SecondsBeforePrayer;
+  const isSyurukInFirst10Sec = prayerState.isSyurukInFirst10Sec;
 
   const shouldBlink = !showSeconds && isCurrentTime;
+  const isSyuruk = isSyurukIndex(getPrayerIndex(prayerName));
+  const use30sBeforeForBlink = !isSyuruk && is30SecondsBeforePrayer;
+  const useSyuruk10SecBlink = isSyurukInFirst10Sec;
 
-  // Kelipan titik (colon) pada interval tetap 1 saat — elak terlalu cepat
+  // Kelipan: driven oleh event time-update. Syuruk: blink pada waktu dan 10 saat pertama selepas masuk waktu; lain: 30s sebelum + masuk waktu.
   useEffect(() => {
-    if (!shouldBlink && !isPrayerTime && !is30SecondsBeforePrayer) {
+    if (!shouldBlink && !isPrayerTime && !use30sBeforeForBlink && !useSyuruk10SecBlink) {
       setBlink(true);
       return;
     }
-    const id = setInterval(() => setBlink((prev) => !prev), 1000);
-    return () => clearInterval(id);
-  }, [shouldBlink, isPrayerTime, is30SecondsBeforePrayer]);
+    if (islamicTime?.time != null) setBlink((prev) => !prev);
+  }, [islamicTime?.time?.seconds, shouldBlink, isPrayerTime, use30sBeforeForBlink, useSyuruk10SecBlink]);
 
   const isPrayerTimeMode = prayerName != null;
   const isNextPrayerMode = nextPrayerTime != null;
@@ -41,16 +67,9 @@ export const useDisplayTime = ({
   const getPrayerTimeValue = () => {
     if (!islamicTime || !prayerName) return null;
     const prayerTimes = islamicTime.prayer?.times;
-    const prayerMap = {
-      Imsak: prayerTimes?.Imsak,
-      Subuh: prayerTimes?.Subuh,
-      Syuruk: prayerTimes?.Syuruk,
-      Zohor: prayerTimes?.Zohor,
-      Asar: prayerTimes?.Asar,
-      Maghrib: prayerTimes?.Maghrib,
-      Isyak: prayerTimes?.Isyak
-    };
-    return prayerMap[prayerName] || null;
+    if (!prayerTimes) return null;
+    const idx = getPrayerIndex(prayerName);
+    return idx != null ? getPrayerTimeByIndex(prayerTimes, idx) : null;
   };
 
   const formattedTime = useMemo(() => {
@@ -109,10 +128,9 @@ export const useDisplayTime = ({
   }, [isCurrentTime, prayerName, islamicTime?.prayer?.times]);
 
   const isDefaultTime = useMemo(() => {
-    return (
-      (isPrayerTimeMode && (!prayerName || !formattedTime || formattedTime === '' || (prayerName && prayerTimeValue === null))) ||
-      (isNextPrayerMode && (!nextPrayerTime || !formattedTime || formattedTime === ''))
-    );
+    if (isNextPrayerMode) return !nextPrayerTime || !formattedTime || formattedTime === '';
+    if (isPrayerTimeMode) return !prayerName || !formattedTime || formattedTime === '' || (prayerName && prayerTimeValue === null);
+    return false;
   }, [isPrayerTimeMode, isNextPrayerMode, prayerName, nextPrayerTime, formattedTime, prayerTimeValue]);
 
   const displayTime = useMemo(() => {
@@ -123,8 +141,9 @@ export const useDisplayTime = ({
 
   const effectiveIsPrayerTime = isDefaultTime ? false : isPrayerTime;
   const effectiveIsInPrayerMinute = isDefaultTime ? false : isInPrayerMinute;
-  const effectiveIs30SecondsBeforePrayer = isDefaultTime ? false : is30SecondsBeforePrayer;
-  const effectiveShouldBlink = isDefaultTime ? false : (shouldBlink || isPrayerTime || is30SecondsBeforePrayer);
+  const effectiveIs30SecondsBeforePrayer = isDefaultTime ? false : (isSyuruk ? false : is30SecondsBeforePrayer);
+  const effectiveIsSyurukInFirst10Sec = isDefaultTime ? false : isSyurukInFirst10Sec;
+  const effectiveShouldBlink = isDefaultTime ? false : (shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyuruk10SecBlink);
 
   const isNextPrayer =
     isPrayerTimeMode &&
@@ -135,8 +154,8 @@ export const useDisplayTime = ({
     time: formattedTime,
     currentTime: islamicTime?.time || null,
     prayerTime: prayerTimeValue,
-    blink: shouldBlink || isPrayerTime || is30SecondsBeforePrayer ? blink : true,
-    shouldBlink: shouldBlink || isPrayerTime || is30SecondsBeforePrayer,
+    blink: (shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyuruk10SecBlink) ? blink : true,
+    shouldBlink: shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyuruk10SecBlink,
     isPrayerTime,
     isInPrayerMinute,
     is30SecondsBeforePrayer,
@@ -146,7 +165,8 @@ export const useDisplayTime = ({
     effectiveIsInPrayerMinute,
     effectiveIs30SecondsBeforePrayer,
     effectiveShouldBlink,
-    isNextPrayer
+    isNextPrayer,
+    effectiveIsSyurukInFirst10Sec
   };
 };
 

@@ -17,7 +17,7 @@ export const getCaptionAttributes = ({ transition, transition2, delay, duration 
 };
 
 /**
- * @param {Object} opts - { size, customStyle, color, textAlign, effectiveIsPrayerTime }
+ * @param {Object} opts - { size, customStyle, color, textAlign, effectiveIsPrayerTime, type } type: 3 = next solat (warna kekal)
  * @returns {Object} Base style object
  */
 export const getDisplayTimeBaseStyle = ({
@@ -25,7 +25,8 @@ export const getDisplayTimeBaseStyle = ({
   customStyle = {},
   color,
   textAlign,
-  effectiveIsPrayerTime
+  effectiveIsPrayerTime,
+  type = 1
 }) => {
   const baseStyle = {
     position: 'absolute',
@@ -33,7 +34,7 @@ export const getDisplayTimeBaseStyle = ({
     fontSize: customStyle.fontSize ? `${customStyle.fontSize}px` : `${size}px`,
     lineHeight: customStyle.lineHeight ? `${customStyle.lineHeight}px` : 1,
     fontWeight: 'normal',
-    color: effectiveIsPrayerTime ? '#FF0000' : (customStyle.color || color),
+    color: effectiveIsPrayerTime && type !== 3 ? '#FF0000' : (customStyle.color || color),
     textShadow: customStyle.textShadow || '3px 3px 0px rgba(0,0,0,1)',
     transition: 'color 0.3s ease',
     ...customStyle
@@ -43,7 +44,7 @@ export const getDisplayTimeBaseStyle = ({
 };
 
 /**
- * @param {Object} opts - { labelColor, color, size, labelSize, isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, COLOR_CONFIG }
+ * @param {Object} opts - { labelColor, color, size, labelSize, isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, type, ... } type=3 = warna kekal (tiada WARNING)
  * @returns {Object} Label style object
  */
 export const getDisplayTimeLabelStyle = ({
@@ -54,13 +55,16 @@ export const getDisplayTimeLabelStyle = ({
   isNextPrayer,
   effectiveIsInPrayerMinute,
   effectiveIs30SecondsBeforePrayer,
+  type = 1,
+  effectiveIsSyurukInFirst10Sec = false,
+  effectiveIsPrayerTime = false,
   COLOR_CONFIG
 }) => {
   let labelColorFinal = labelColor || color;
   if (isNextPrayer && !effectiveIsInPrayerMinute && !effectiveIs30SecondsBeforePrayer) {
     labelColorFinal = COLOR_CONFIG.NEXT_PRAYER;
   }
-  if (effectiveIsInPrayerMinute || effectiveIs30SecondsBeforePrayer) {
+  if (type !== 3 && (effectiveIsInPrayerMinute || effectiveIs30SecondsBeforePrayer)) {
     labelColorFinal = COLOR_CONFIG.WARNING_PRAYER;
   }
   return {
@@ -93,16 +97,24 @@ export const getDisplayTimeWrapperStyle = ({ customStyle = {}, textAlign }) => (
 });
 
 /**
- * @param {Object} opts - { effectiveIsPrayerTime, effectiveIs30SecondsBeforePrayer, effectiveIsInPrayerMinute, blink }
+ * @param {Object} opts - { effectiveIsPrayerTime, effectiveIs30SecondsBeforePrayer, effectiveIsInPrayerMinute, effectiveIsSyurukInFirst10Sec, blink, type } type: 1=clock, 2=waktu solat, 3=next solat
  * @returns {Object} Blink container style object
  */
 export const getDisplayTimeBlinkContainerStyle = ({
   effectiveIsPrayerTime,
   effectiveIs30SecondsBeforePrayer,
   effectiveIsInPrayerMinute,
-  blink
+  effectiveIsSyurukInFirst10Sec = false,
+  blink,
+  type = 1
 }) => {
+  if (type === 3 && (effectiveIsPrayerTime || effectiveIsSyurukInFirst10Sec || effectiveIs30SecondsBeforePrayer)) {
+    return {};
+  }
   if (effectiveIsPrayerTime) {
+    return { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' };
+  }
+  if (effectiveIsSyurukInFirst10Sec) {
     return { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' };
   }
   if (effectiveIs30SecondsBeforePrayer && !effectiveIsPrayerTime) {
@@ -115,20 +127,23 @@ export const getDisplayTimeBlinkContainerStyle = ({
 };
 
 /**
- * @param {Object} opts - { isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, COLOR_CONFIG }
+ * @param {Object} opts - { isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, type, ... } type=3 = warna kekal (tiada WARNING)
  * @returns {Object} Time text style object
  */
 export const getDisplayTimeTextStyle = ({
   isNextPrayer,
   effectiveIsInPrayerMinute,
   effectiveIs30SecondsBeforePrayer,
+  type = 1,
+  effectiveIsSyurukInFirst10Sec = false,
+  effectiveIsPrayerTime = false,
   COLOR_CONFIG
 }) => {
   let timeColorFinal = 'inherit';
   if (isNextPrayer && !effectiveIsInPrayerMinute && !effectiveIs30SecondsBeforePrayer) {
     timeColorFinal = COLOR_CONFIG.NEXT_PRAYER;
   }
-  if (effectiveIsInPrayerMinute || effectiveIs30SecondsBeforePrayer) {
+  if (type !== 3 && (effectiveIsInPrayerMinute || effectiveIs30SecondsBeforePrayer)) {
     timeColorFinal = COLOR_CONFIG.WARNING_PRAYER;
   }
   return { color: timeColorFinal, transition: 'color 0.3s ease' };

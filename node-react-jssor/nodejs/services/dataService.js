@@ -369,14 +369,18 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'slideshow') {
-        // Slideshow format: caption\timagePath (tab delimiter supaya caption boleh ada pipe)
+        // Slideshow format: caption|image|validFrom|validTo (validFrom/validTo optional, YYYY-MM-DD; empty = always show)
         const tabParts = line.split('|');
         const caption = (tabParts[0] || '').trim();
         const imagePath = (tabParts[1] || '').trim();
+        const validFrom = (tabParts[2] || '').trim();
+        const validTo = (tabParts[3] || '').trim();
         parsed.push({
           id: index + 1,
           caption,
           image: imagePath,
+          validFrom,
+          validTo,
           raw: line
         });
       }
@@ -399,7 +403,7 @@ class DataService {
       'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
-      'slideshow': ['caption', 'image']
+      'slideshow': ['caption', 'image', 'validFrom', 'validTo']
     };
     return columnMap[normalized] || [];
   }
@@ -941,7 +945,8 @@ class DataService {
   }
 
   /**
-   * Parse slideshow content: caption\timagePath per baris -> array of { caption, image }
+   * Parse slideshow content: caption|image|validFrom|validTo per baris -> array of { caption, image, validFrom, validTo }
+   * validFrom/validTo optional (empty = no limit, always show).
    */
   parseSlideshow(content) {
     if (!content || typeof content !== 'string') return [];
@@ -949,13 +954,34 @@ class DataService {
       .map(line => line.trim())
       .filter(line => line.length > 0)
       .map(line => {
-        // const tabParts = line.split('\t');
         const tabParts = line.split('|');
         const caption = (tabParts[0] || '').trim();
         let imagePath = (tabParts[1] || '').trim();
         if (imagePath && !imagePath.startsWith('/')) imagePath = `/${imagePath}`;
-        return { caption, image: imagePath };
+        const validFrom = (tabParts[2] || '').trim();
+        const validTo = (tabParts[3] || '').trim();
+        return { caption, image: imagePath, validFrom, validTo };
       });
+  }
+
+  /**
+   * Filter slideshow items by validity period. refDate = tarikh rujukan (biasanya new Date()).
+   * Include item if: (validFrom empty OR refDate >= validFrom) AND (validTo empty OR refDate <= validTo).
+   * Returns array of { caption, image } only (for API response).
+   */
+  filterSlideshowByValidity(parsedSlideshow, refDate) {
+    if (!parsedSlideshow || !Array.isArray(parsedSlideshow)) return [];
+    const ref = refDate instanceof Date ? refDate : new Date(refDate);
+    const refStr = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}-${String(ref.getDate()).padStart(2, '0')}`;
+    return parsedSlideshow
+      .filter((item) => {
+        const from = (item.validFrom || '').trim();
+        const to = (item.validTo || '').trim();
+        if (from && refStr < from) return false;
+        if (to && refStr > to) return false;
+        return true;
+      })
+      .map((item) => ({ caption: item.caption, image: item.image }));
   }
 
   /**
@@ -1027,7 +1053,7 @@ class DataService {
   }
 
   /**
-   * Parse config content (key|value) -> { PRAYER_TIME_CONFIG, COLOR_CONFIG, DATETIME_CONFIG }
+   * Parse config content (key|value) -> { PRAYER_TIME_CONFIG, COLOR_CONFIG, DATETIME_CONFIG, MARQUEE_CONFIG }
    */
   parseConfig(content) {
     const parsed = {
@@ -1038,6 +1064,11 @@ class DataService {
         NTP_ENABLED: true,
         NTP_SERVER: 'pool.ntp.org',
         NTP_SYNC_INTERVAL_MS: 3600000
+      },
+      MARQUEE_CONFIG: {
+        ENABLED: true,
+        TEXT: 'Ahlan wa sahlan • Maklumat masjid • ',
+        DURATION: 25
       }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
@@ -1061,6 +1092,9 @@ class DataService {
       else if (key === 'DATETIME_NTP_ENABLED') parsed.DATETIME_CONFIG.NTP_ENABLED = value.toLowerCase() === 'true';
       else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;
       else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
+      else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
+      else if (key === 'MARQUEE_TEXT') parsed.MARQUEE_CONFIG.TEXT = value;
+      else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
     });
     return parsed;
   }

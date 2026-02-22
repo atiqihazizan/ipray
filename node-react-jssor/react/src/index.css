@@ -133,3 +133,10 @@ body {
     opacity: 0;
   }
 }
+
+/* Marquee: teks masuk dari kanan, scroll kiri seamless loop */
+/* Guna -50% kerana ada 2 salinan teks — apabila salinan pertama habis, salinan kedua ambil alih */
+@keyframes marquee-from-right {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}

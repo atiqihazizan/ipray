@@ -16,12 +16,15 @@ const SliderPage = ({ onReady }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const wasPlayingRef = useRef(true);
   const resumeTimerRef = useRef(null);
+  const transitionActiveRef = useRef(false);
 
-  const handleTransitionStart = useCallback((toIndex, fromIndex) => {
+  const handleTransitionStart = useCallback(() => {
+    transitionActiveRef.current = true;
     setIsTransitioning(true);
   }, []);
 
-  const handleTransitionEnd = useCallback((toIndex, fromIndex) => {
+  const handleTransitionEnd = useCallback((toIndex) => {
+    transitionActiveRef.current = false;
     setIsTransitioning(false);
     setCurrentSlideIndex(toIndex);
   }, []);
@@ -41,8 +44,11 @@ const SliderPage = ({ onReady }) => {
       if (idx >= 0) setCurrentSlideIndex(idx);
       if (typeof s.$On === 'function') {
         s.$On(203, (slideIndex) => {
-          setCurrentSlideIndex(slideIndex);
+          const wasInTransition = transitionActiveRef.current;
+          transitionActiveRef.current = false;
           setIsTransitioning(false);
+          // Jangan update currentSlideIndex bila 203 fire semasa transition — biar handleTransitionEnd sahaja yang update, elak overlay (marquee) berklip
+          if (!wasInTransition) setCurrentSlideIndex(slideIndex);
         });
       }
     } catch (error) {

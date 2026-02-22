@@ -26,6 +26,12 @@ const DEFAULT_COLOR_CONFIG = {
   WARNING_PRAYER: '#FF0000',
 };
 
+const DEFAULT_MARQUEE_CONFIG = {
+  ENABLED: true,
+  TEXT: 'Selamat datang • Maklumat masjid • ',
+  DURATION: 25,
+};
+
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
 const RELOAD_DELAY_MS = 15000;
 
@@ -59,7 +65,8 @@ export const DataProvider = ({ children }) => {
   const [slideshowData, setSlideshowData] = useState(null);
   const [configData, setConfigData] = useState({
     PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
-    COLOR_CONFIG: DEFAULT_COLOR_CONFIG
+    COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
+    MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,7 +105,8 @@ export const DataProvider = ({ children }) => {
       setSlideshowData(data.slideshow ?? []);
       setConfigData(data.config ?? {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
-        COLOR_CONFIG: DEFAULT_COLOR_CONFIG
+        COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
+        MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
       });
 
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -150,7 +158,7 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
-   * Reload tengah malam: dipanggil oleh MidnightReloadListener bila dapat event date-changed dari TimeProvider.
+   * Reload tengah malam: dipanggil oleh MidnightReloadListener bila dapat event date-changed dari driver masa (useTimeDriver).
    * Tiada setInterval di sini — driver masa dispatch date-changed bila tarikh bertukar.
    */
   const checkMidnight = useCallback((todayStr) => {
@@ -273,7 +281,7 @@ export const DataProvider = ({ children }) => {
       if (isMounted) window.location.reload();
     });
 
-    // Nota: Event kalibrasi masa (time-offset-updated) diurus oleh TimeSyncProvider
+    // Nota: Event kalibrasi masa (time-offset-updated, time-system-updated) tidak lagi didengari; TimeSyncContext telah dibuang
     // supaya hanya paparan masa re-render, elak seluruh app reload
 
     // Cleanup on unmount
@@ -321,6 +329,7 @@ export const DataProvider = ({ children }) => {
     checkMidnight,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
+    MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
     timeService: timeServiceStub
   };
 

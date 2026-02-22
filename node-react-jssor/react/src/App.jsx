@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
 import SliderPage from './components/SliderPage'
 import LoadingPage from './components/LoadingPage'
-import PageAzan from './components/PageAzan'
-import PageIqamah from './components/PageIqamah'
-import PageSolat from './components/PageSolat'
+import PrayerSequencePage from './components/PrayerSequencePage'
 import { DataProvider, useData } from './contexts/DataContext'
-import { TimeSyncProvider } from './contexts/TimeSyncContext'
-import { TimeProvider } from './contexts/TimeContext'
+import TimeDriver from './components/TimeDriver'
 import MidnightReloadListener from './components/MidnightReloadListener'
 import PrayerTimeController from './components/PrayerTimeController'
 import audioService from './services/audioService.js'
@@ -29,9 +26,7 @@ const AppContent = () => {
   }
 
   if (!socketConnected) return <LoadingPage />
-  if (currentView === 'azan') return <PageAzan />
-  if (currentView === 'iqamah') return <PageIqamah />
-  if (currentView === 'solat') return <PageSolat />
+  if (currentView === 'prayer') return <PrayerSequencePage onComplete={() => setCurrentView('slide')} />
 
   return (
     <>
@@ -71,12 +66,9 @@ function App() {
   
   return (
     <DataProvider>
-      <TimeSyncProvider>
-        <MidnightReloadListener />
-        <TimeProvider>
-          <AppContent />
-        </TimeProvider>
-      </TimeSyncProvider>
+      <MidnightReloadListener />
+      <TimeDriver />
+      <AppContent />
     </DataProvider>
   )
 }

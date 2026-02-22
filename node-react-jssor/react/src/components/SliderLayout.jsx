@@ -1,17 +1,34 @@
-import { useEffect } from 'react';
-import SlidesLayout from './SlidesLayout';
-import DateTimeOverlay from './DateTimeOverlay';
-import audioService from '../services/audioService';
-import { sliderConfig } from '../config/sliderConfig';
+import { useEffect } from "react";
+import SlidesLayout from "./SlidesLayout";
+import DateTimeOverlay from "./DateTimeOverlay";
+import { useData } from "../contexts/DataContext";
+import audioService from "../services/audioService";
+import { sliderConfig } from "../config/sliderConfig";
 
-// datetime: array dalam template slide, e.g. ['date','solat','time']. Nilai: date=tarikh, solat=waktu solat, time=masa semasa. Jika kunci ada dalam datetime → overlay show.
-const SliderLayout = ({ config, slides, containerRef, currentSlideIndex = 0, isTransitioning = false }) => {
+// datetime: array dalam template slide. Key: date=tarikh, solat-time=waktu solat+jam besar, solat-time-small=next solat+jam kecil. Jika kunci ada dalam datetime → overlay show.
+const SliderLayout = ({
+  config,
+  slides,
+  containerRef,
+  currentSlideIndex = 0,
+  isTransitioning = false,
+}) => {
+  const { MARQUEE_CONFIG } = useData();
   const dt = slides[currentSlideIndex]?.datetime;
+
   const showOverlay = (key) => {
-    // Hide semua overlay semasa transition
-    if (isTransitioning) return false;
-    if (dt == null) return true; // tiada datetime = show (backward compat)
-    return Array.isArray(dt) && dt.includes(key);
+    if (dt == null) return true;
+    if (!Array.isArray(dt)) return false;
+    if (dt.includes(key)) return true;
+    if (key === "solat-time" && dt.includes("solat") && dt.includes("time"))
+      return true;
+    if (
+      key === "solat-time-small" &&
+      dt.includes("next-solat") &&
+      dt.includes("small-time")
+    )
+      return true;
+    return false;
   };
 
   // Unlock audio (autoplay policy): mesti ada interaksi user dahulu.
@@ -30,14 +47,14 @@ const SliderLayout = ({ config, slides, containerRef, currentSlideIndex = 0, isT
       }
     };
 
-    window.addEventListener('pointerdown', unlock, { passive: true });
-    window.addEventListener('touchstart', unlock, { passive: true });
-    window.addEventListener('keydown', unlock);
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("touchstart", unlock, { passive: true });
+    window.addEventListener("keydown", unlock);
 
     return () => {
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('touchstart', unlock);
-      window.removeEventListener('keydown', unlock);
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("keydown", unlock);
     };
   }, []);
 
@@ -45,23 +62,22 @@ const SliderLayout = ({ config, slides, containerRef, currentSlideIndex = 0, isT
     <>
       {/* Container slider: MESTI ada width/height dalam pixel untuk Jssor initialization */}
       {/* Jssor akan auto-scale berdasarkan parent width (100vw) melalui $ScaleWidth() */}
-      <div 
-        id={config.container.id} 
-        ref={containerRef} 
-        className="relative overflow-hidden" 
-        style={{ 
-          width: `${sliderConfig.container.width}px`, 
+      <div
+        id={config.container.id}
+        ref={containerRef}
+        className="relative overflow-hidden"
+        style={{
+          width: `${sliderConfig.container.width}px`,
           height: `${sliderConfig.container.height}px`,
-          maxWidth: '100%',
-          maxHeight: '100%'
+          maxWidth: "100%",
+          maxHeight: "100%",
         }}
       >
         <SlidesLayout slides={slides} config={config} />
-        <DateTimeOverlay showOverlay={showOverlay} />
+        <DateTimeOverlay showOverlay={showOverlay} marqueeEnabled={MARQUEE_CONFIG?.ENABLED} />
       </div>
     </>
   );
 };
 
 export default SliderLayout;
-

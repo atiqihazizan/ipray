@@ -49,12 +49,12 @@ const DisplayTime = ({
   // Jika type 2 atau 3, pastikan isCurrentTime = false
   const effectiveIsCurrentTime = isCurrentTimeMode ? isCurrentTime : false;
   
-  const { blink, loading, displayTime, effectiveIsPrayerTime, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, effectiveShouldBlink, isNextPrayer } = useDisplayTime({
+  const { blink, loading, displayTime, effectiveIsPrayerTime, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, effectiveShouldBlink, isNextPrayer, effectiveIsSyurukInFirst10Sec } = useDisplayTime({
     format,
     showSeconds,
     showAmPm,
     isCurrentTime: effectiveIsCurrentTime,
-    prayerName: isPrayerTimeMode ? prayerName : null,
+    prayerName: isPrayerTimeMode ? prayerName : (isNextPrayerMode ? label : null),
     nextPrayerTime: isNextPrayerMode ? nextPrayerTime : null,
     nextPrayerName: isPrayerTimeMode ? nextPrayerName : null
   });
@@ -77,11 +77,11 @@ const DisplayTime = ({
   };
 
   const attrs = getCaptionAttributes({ transition, transition2, delay, duration });
-  const styleObj = getDisplayTimeBaseStyle({ size, customStyle, color, textAlign, effectiveIsPrayerTime });
+  const styleObj = getDisplayTimeBaseStyle({ size, customStyle, color, textAlign, effectiveIsPrayerTime, type });
   const wrapperStyle = getDisplayTimeWrapperStyle({ customStyle, textAlign });
-  const labelStyle = getDisplayTimeLabelStyle({ labelColor, color, size, labelSize, isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, COLOR_CONFIG });
-  const blinkContainerStyle = getDisplayTimeBlinkContainerStyle({ effectiveIsPrayerTime, effectiveIs30SecondsBeforePrayer, effectiveIsInPrayerMinute, blink });
-  const timeTextStyle = getDisplayTimeTextStyle({ isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, COLOR_CONFIG });
+  const labelStyle = getDisplayTimeLabelStyle({ labelColor, color, size, labelSize, isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, type, effectiveIsSyurukInFirst10Sec, effectiveIsPrayerTime, COLOR_CONFIG });
+  const blinkContainerStyle = getDisplayTimeBlinkContainerStyle({ effectiveIsPrayerTime, effectiveIs30SecondsBeforePrayer, effectiveIsInPrayerMinute, effectiveIsSyurukInFirst10Sec, blink, type });
+  const timeTextStyle = getDisplayTimeTextStyle({ isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, type, effectiveIsSyurukInFirst10Sec, effectiveIsPrayerTime, COLOR_CONFIG });
 
   return (
     <div {...attrs} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>

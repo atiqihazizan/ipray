@@ -6,32 +6,18 @@ import { TIME_EVENTS } from '../utils/timeEvents';
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 
 /**
- * Listen prayer-time event; trigger beep dan navigate (azan → iqamah → solat → slide).
- * AppContent tidak subscribe time context — hanya terima currentView dari callback ini.
+ * Listen prayer-time event: beep dan navigate ke halaman solat (azan → iqamah → solat → slide).
+ * Listen syuruk-time: beep sahaja, tiada warning sebelum dan tiada navigate ke PrayerSequencePage.
  */
 export default function PrayerTimeController({ setCurrentView }) {
   const { PRAYER_TIME_CONFIG } = useData();
-  const timerAzanRef = useRef(null);
-  const timerIqamahRef = useRef(null);
-  const timerSolatRef = useRef(null);
 
   useEffect(() => {
     if (typeof setCurrentView !== 'function') return;
 
-    const azanMin = PRAYER_TIME_CONFIG?.AZAN_DURATION_MIN ?? 0.5;
-    const iqamahMin = PRAYER_TIME_CONFIG?.IQAMAH_DURATION_MIN ?? 2;
-    const solatMin = PRAYER_TIME_CONFIG?.SOLAT_DURATION_MIN ?? 3;
-    const azanMs = azanMin * 60 * 1000;
-    const iqamahMs = iqamahMin * 60 * 1000;
-    const solatMs = solatMin * 60 * 1000;
-
-    const handler = (e) => {
+    const prayerHandler = (e) => {
       const prayerName = e.detail?.prayerName;
       if (!prayerName || !ACTIVE_PRAYERS.includes(prayerName)) return;
-
-      if (timerAzanRef.current) clearTimeout(timerAzanRef.current);
-      if (timerIqamahRef.current) clearTimeout(timerIqamahRef.current);
-      if (timerSolatRef.current) clearTimeout(timerSolatRef.current);
 
       const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 5;
       if (beepCount > 0) {
@@ -39,28 +25,22 @@ export default function PrayerTimeController({ setCurrentView }) {
         audioService.play({ volume: 1, playCount: beepCount }).catch(() => {});
       }
 
-      setCurrentView('azan');
-
-      timerAzanRef.current = setTimeout(() => {
-        timerAzanRef.current = null;
-        setCurrentView('iqamah');
-        timerIqamahRef.current = setTimeout(() => {
-          timerIqamahRef.current = null;
-          setCurrentView('solat');
-          timerSolatRef.current = setTimeout(() => {
-            timerSolatRef.current = null;
-            setCurrentView('slide');
-          }, solatMs);
-        }, iqamahMs);
-      }, azanMs);
+      setCurrentView('prayer');
     };
 
-    window.addEventListener(TIME_EVENTS.PRAYER_TIME, handler);
+    const syurukHandler = () => {
+      const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 5;
+      if (beepCount > 0) {
+        if (audioService.getIsPlaying()) audioService.stop();
+        audioService.play({ volume: 1, playCount: beepCount }).catch(() => {});
+      }
+    };
+
+    window.addEventListener(TIME_EVENTS.PRAYER_TIME, prayerHandler);
+    window.addEventListener(TIME_EVENTS.SYURUK_TIME, syurukHandler);
     return () => {
-      window.removeEventListener(TIME_EVENTS.PRAYER_TIME, handler);
-      if (timerAzanRef.current) clearTimeout(timerAzanRef.current);
-      if (timerIqamahRef.current) clearTimeout(timerIqamahRef.current);
-      if (timerSolatRef.current) clearTimeout(timerSolatRef.current);
+      window.removeEventListener(TIME_EVENTS.PRAYER_TIME, prayerHandler);
+      window.removeEventListener(TIME_EVENTS.SYURUK_TIME, syurukHandler);
     };
   }, [setCurrentView, PRAYER_TIME_CONFIG]);
 

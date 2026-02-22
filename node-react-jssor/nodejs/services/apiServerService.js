@@ -345,7 +345,8 @@ class ApiServerService {
         const images = this.dataService.parseImages(imagesContent);
         const slidesConfig = this.dataService.parseSlidesConfig(slidesContent);
         const config = this.dataService.parseConfig(configContent);
-        const slideshow = this.dataService.parseSlideshow(slideshowContent);
+        const slideshowParsed = this.dataService.parseSlideshow(slideshowContent);
+        const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date());
         res.json({
           takwim,
           announcements,

@@ -1,39 +1,28 @@
-import { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCurrentIslamicTime } from '../utils/islamicTimeUtils';
-import { useTakwimData } from '../hooks/useTakwimData';
-import { useTimeSync } from './TimeSyncContext';
+import { useTakwimData } from './useTakwimData';
+import { useData } from '../contexts/DataContext';
 import {
+  dispatchTimeUpdate,
   dispatchHijriDateChanged,
   dispatchPrayerWarning,
   dispatchPrayerTime,
+  dispatchSyurukTime,
   dispatchDateChanged
 } from '../utils/timeEvents';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
-const WARNING_SECONDS_BEFORE = 30;
-
-export const TimeContext = createContext(null);
-export const SnapshotContext = createContext(null);
-
-export const useTime = () => {
-  const ctx = useContext(TimeContext);
-  if (!ctx) throw new Error('useTime must be used within TimeProvider');
-  return ctx;
-};
-
-export const useTimeSnapshot = () => {
-  const ctx = useContext(SnapshotContext);
-  if (!ctx) throw new Error('useTimeSnapshot must be used within TimeProvider');
-  return ctx;
-};
 
 /**
- * Satu interval untuk masa sahaja. Dispatch event untuk tarikh Hijri, warning 30s, waktu solat, dan date-changed (midnight).
- * Context hanya pegang time (jam) supaya hanya paparan jam re-render setiap saat.
+ * Hook untuk driver masa — satu interval sahaja, fokus pada time.
+ * Setiap tick: update time, dispatch time-update (flag/data pada window event), dan dispatch event lain (hijri, prayer, midnight).
+ * Panggil hook ini di SATU tempat sahaja (e.g. komponen TimeDriver) supaya hanya satu interval wujud.
+ * @returns {Object} { time, loading, snapshot, zone }
  */
-export function TimeProvider({ children }) {
+export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
-  const { timeService } = useTimeSync();
+  const { timeService, PRAYER_TIME_CONFIG } = useData();
+  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 30;
   const [time, setTime] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
   const snapshotSetRef = useRef(false);
@@ -41,6 +30,7 @@ export function TimeProvider({ children }) {
   const lastDateStrRef = useRef('');
   const prayerTriggeredRef = useRef({});
   const prayerWarningTriggeredRef = useRef({});
+  const syurukTriggeredRef = useRef({});
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
@@ -56,14 +46,17 @@ export function TimeProvider({ children }) {
 
         setTime(islamicTime.time);
 
+        const snapshotData = {
+          gregorian: islamicTime.gregorian,
+          hijri: islamicTime.hijri,
+          prayer: islamicTime.prayer
+        };
         if (!snapshotSetRef.current) {
           snapshotSetRef.current = true;
-          setSnapshot({
-            gregorian: islamicTime.gregorian,
-            hijri: islamicTime.hijri,
-            prayer: islamicTime.prayer
-          });
+          setSnapshot(snapshotData);
         }
+
+        dispatchTimeUpdate({ time: islamicTime.time, snapshot: snapshotData });
 
         const { time: t, hijri, gregorian, prayer } = islamicTime;
         const currentSeconds = t.seconds;
@@ -89,13 +82,13 @@ export function TimeProvider({ children }) {
             const [ph, pm] = timeStr.split(':').map(Number);
             const prayerTotalSeconds = ph * 3600 + pm * 60;
 
-            if (currentTotalSeconds === prayerTotalSeconds - WARNING_SECONDS_BEFORE) {
+            if (currentTotalSeconds === prayerTotalSeconds - warningSeconds) {
               const warnKey = `${name}-${todayStr}-warn`;
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
                 dispatchPrayerWarning(name);
               }
-            } else if (currentTotalSeconds > prayerTotalSeconds - WARNING_SECONDS_BEFORE + 60) {
+            } else if (currentTotalSeconds > prayerTotalSeconds - warningSeconds + 60) {
               delete prayerWarningTriggeredRef.current[`${name}-${todayStr}-warn`];
             }
 
@@ -113,29 +106,37 @@ export function TimeProvider({ children }) {
               }
             }
           }
+
+          const syurukStr = prayerTimes.Syuruk;
+          if (syurukStr) {
+            const [sh, sm] = syurukStr.split(':').map(Number);
+            if (currentSeconds === 0 && t.hours === sh && t.minutes === sm) {
+              const syurukKey = `Syuruk-${new Date().toDateString()}`;
+              if (!syurukTriggeredRef.current[syurukKey]) {
+                syurukTriggeredRef.current[syurukKey] = true;
+                dispatchSyurukTime();
+              }
+            } else {
+              const currentMinutes = t.hours * 60 + t.minutes;
+              const syurukMinutes = sh * 60 + sm;
+              if (currentMinutes > syurukMinutes + 1) delete syurukTriggeredRef.current[`Syuruk-${new Date().toDateString()}`];
+            }
+          }
         }
       } catch (err) {
-        console.error('[TimeProvider]', err);
+        console.error('[useTimeDriver]', err);
       }
     };
 
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [takwimParsed, timeService]);
+  }, [takwimParsed, timeService, warningSeconds]);
 
-  const timeValue = {
+  return {
     time,
     loading: takwimLoading,
+    snapshot,
     zone: takwimParsed?.zone || ''
   };
-  const snapshotValue = { snapshot };
-
-  return (
-    <TimeContext.Provider value={timeValue}>
-      <SnapshotContext.Provider value={snapshotValue}>
-        {children}
-      </SnapshotContext.Provider>
-    </TimeContext.Provider>
-  );
 }

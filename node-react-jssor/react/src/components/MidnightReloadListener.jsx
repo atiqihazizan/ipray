@@ -3,7 +3,7 @@ import { useData } from '../contexts/DataContext';
 import { TIME_EVENTS } from '../utils/timeEvents';
 
 /**
- * Listen date-changed dari TimeProvider; panggil checkMidnight supaya tiada setInterval 60s dalam DataContext.
+ * Listen date-changed dari driver masa (useTimeDriver); panggil checkMidnight supaya tiada setInterval 60s dalam DataContext.
  */
 export default function MidnightReloadListener() {
   const { checkMidnight } = useData();

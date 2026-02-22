@@ -726,8 +726,43 @@
 										</button>
 									</div>
 								</div>
-					</div>
-				</div>
+							</div>
+						</div>
+
+						<!-- Marquee (bar teks bergerak) -->
+						<div class="config-group">
+							<h3 class="config-group-title">Marquee</h3>
+							<div class="config-group-items">
+								<div class="config-item">
+									<label for="MARQUEE_ENABLED">Aktif</label>
+									<div class="config-item-control">
+										<input type="checkbox" id="MARQUEE_ENABLED" name="MARQUEE_ENABLED" />
+										<button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('MARQUEE_ENABLED')" title="Simpan">
+											<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+										</button>
+									</div>
+								</div>
+								<div class="config-item">
+									<label for="MARQUEE_TEXT">Teks</label>
+									<div class="config-item-control">
+										<input type="text" id="MARQUEE_TEXT" name="MARQUEE_TEXT" placeholder="Selamat datang • Maklumat masjid • " style="min-width: 400px; width: 100%; max-width: 560px;" />
+										<button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('MARQUEE_TEXT')" title="Simpan">
+											<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+										</button>
+									</div>
+								</div>
+								<div class="config-item">
+									<label for="MARQUEE_DURATION">Kelajuan (saat per pusingan)</label>
+									<div class="config-item-control">
+										<input type="number" id="MARQUEE_DURATION" name="MARQUEE_DURATION" placeholder="25" min="5" max="120" />
+										<span class="config-unit">s</span>
+										<button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('MARQUEE_DURATION')" title="Simpan">
+											<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
 
 				<!-- Masa Sistem (Raspberry Pi) - sudo date -->
 				<div class="system-control-section" style="margin-top: 32px;">
@@ -1263,6 +1298,10 @@
 							configData[row.key] = row.value;
 						}
 					});
+					// Default untuk Marquee jika tiada dalam config
+					if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
+					if (configData.MARQUEE_TEXT === undefined) configData.MARQUEE_TEXT = 'Selamat datang • Maklumat masjid • ';
+					if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
 
 					// Populate form fields
 					Object.keys(configData).forEach(key => {
@@ -1280,7 +1319,11 @@
 								}
 							}
 
-							input.value = displayValue;
+							if (input.type === 'checkbox') {
+								input.checked = displayValue === 'true' || displayValue === '1';
+							} else {
+								input.value = displayValue;
+							}
 
 							// For color inputs, sync with text input
 							if (input.type === 'color') {
@@ -1311,7 +1354,7 @@
 				const input = document.getElementById(key);
 				if (!input) return;
 
-				const value = input.value;
+				const value = input.type === 'checkbox' ? (input.checked ? 'true' : 'false') : input.value;
 				let saveValue = value;
 
 				// HOLD_DURATION & BLINK_DURATION: UI dalam saat (s), simpan sebagai ms dalam config.txt
@@ -1321,18 +1364,20 @@
 						saveValue = String(Math.round(seconds * 1000));
 					}
 				}
+				// MARQUEE_DURATION: pastikan dalam julat 5–120
+				if (key === 'MARQUEE_DURATION') {
+					const n = parseInt(value, 10);
+					if (!isNaN(n)) saveValue = String(Math.max(5, Math.min(120, n)));
+				}
 
-				// Find row ID for this key
 				const response = await fetch(`${getApiUrl()}/data/config`);
 				const result = await response.json();
 
 				if (result.data && Array.isArray(result.data)) {
 					const rowData = result.data.find(r => r.key === key);
+					const formattedRow = `${key}|${saveValue}`;
 
 					if (rowData && rowData.id) {
-						// Format row data as KEY|VALUE string (API format)
-						const formattedRow = `${key}|${saveValue}`;
-
 						// Update existing row
 						const updateResponse = await fetch(`${getApiUrl()}/data/config/${rowData.id}`, {
 							method: 'PUT',
@@ -1340,12 +1385,24 @@
 							body: JSON.stringify({ row: formattedRow })
 						});
 
-						const updateResult = await updateResponse.json();
-
-						if (updateResult.success || updateResponse.ok) {
+						if (updateResponse.ok) {
 							configData[key] = saveValue;
 							if (window.NotificationUtils) {
-								window.NotificationUtils.showNotification(`${key} updated successfully`, 'success');
+								window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+							}
+						}
+					} else {
+						// Baris baru: insert
+						const insertResponse = await fetch(`${getApiUrl()}/data/config/insert`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ row: formattedRow })
+						});
+
+						if (insertResponse.ok) {
+							configData[key] = saveValue;
+							if (window.NotificationUtils) {
+								window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
 							}
 						}
 					}

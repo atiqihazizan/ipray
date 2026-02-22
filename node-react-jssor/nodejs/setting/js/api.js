@@ -84,7 +84,11 @@ function reconstructRawLine(fileName, rowData) {
         ];
         return [dateHijri, ...times].join('\t');
     } else if (fileName === 'slideshow') {
-        return `${(rowData.caption || '').replace(/\t/g, ' ')}|${rowData.image || ''}`;
+        const caption = (rowData.caption || '').replace(/\t/g, ' ');
+        const image = rowData.image || '';
+        const validFrom = (rowData.validFrom || '').trim();
+        const validTo = (rowData.validTo || '').trim();
+        return `${caption}|${image}|${validFrom}|${validTo}`;
     }
     return '';
 }
