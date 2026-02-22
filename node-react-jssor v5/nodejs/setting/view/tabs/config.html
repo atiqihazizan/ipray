@@ -1,0 +1,66 @@
+<!-- Config Tab -->
+<div id="config-tab" class="tab-content active">
+    <!-- WiFi Settings Section -->
+    <div class="content-card" style="margin-bottom: 20px;">
+        <div class="info-box" style="margin-bottom: 15px;">
+            <h2 style="margin: 0 0 10px 0; font-size: 18px;">📶 WiFi Configuration</h2>
+            <p style="font-size: 12px; margin: 0;">Configure WiFi SSID dan password untuk sistem</p>
+        </div>
+        
+        <!-- Current WiFi Status -->
+        <div id="wifi-status" style="margin-bottom: 15px; padding: 10px; background: #f3f4f6; border-radius: 6px;">
+            <p style="margin: 0; font-size: 14px;">
+                <strong>Status:</strong> <span id="wifi-status-text">Loading...</span>
+            </p>
+        </div>
+        
+        <!-- WiFi Configuration Form -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500;">SSID:</label>
+                <select id="wifi-ssid-select" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+                    <option value="">-- Pilih atau masukkan SSID --</option>
+                </select>
+                <input type="text" id="wifi-ssid-input" placeholder="Masukkan SSID" 
+                       style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; margin-top: 5px; display: none;">
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500;">Password:</label>
+                <input type="password" id="wifi-password" placeholder="Password (kosongkan jika open network)" 
+                       style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px;">
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="scanWiFi()" class="btn-icon" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                🔍 Scan Networks
+            </button>
+            <button onclick="configureWiFi()" class="btn-icon" style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                ✅ Connect WiFi
+            </button>
+            <button onclick="refreshWiFiStatus()" class="btn-icon" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                🔄 Refresh Status
+            </button>
+        </div>
+    </div>
+    
+    <!-- Config Table Section -->
+    <div class="content-card">
+        <!-- Button Group Above Table -->
+        <div class="flex justify-end gap-2 mb-3">
+            <button class="btn-icon btn-reload" onclick="loadTable('config')" title="Reload Data">
+                <span>🔄</span>
+            </button>
+            <button class="btn-icon btn-refresh-page" onclick="window.location.reload()" title="Reload Page">
+                <span>🔃</span>
+            </button>
+        </div>
+        <div class="table-container">
+            <table id="config-table" class="data-table">
+                <thead id="config-thead"></thead>
+                <tbody id="config-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>

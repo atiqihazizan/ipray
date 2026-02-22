@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Bebas';
+  src: url('/fonts/bebas.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/Anton,Roboto/Anton/Anton-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+@font-face {
+  font-family: 'Roboto';
+  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap; /* Prevent slow network warning */
+}
+
+/* Saira Condensed - semua weight dari folder Saira_Condensed */
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SairaCondensed';
+  src: url('/fonts/Saira_Condensed/SairaCondensed-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  font-family: Arial, Verdana, Sans-Serif;
+}
+
+* {
+  /* cursor: none !important; */
+}
+
+/* Blinking effect untuk 30 saat sebelum waktu solat */
+.blink-container.blinking {
+  animation: blink 1s ease-in-out infinite;
+  color: red;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}

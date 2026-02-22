@@ -1,0 +1,38 @@
+w1|h0|ks|Ust Suhaimi Abdul Jalil|suhaimi|Sirah Nabawiyah
+w1|h0|km|Tuan Guru Badrolazhar|badrol|Hikam TPM
+w1|h1|km|Ust Hj Omar bin Ibrahim Khalid|omar|I‘tiqod Ahlul Sunnah Wal Jamaah
+w1|h2|km|Ust Mohd Yusoff bin Abdullah|yusoff|Bahrul Mazi
+w1|h3|km|Ust Hassan bin Hj Hashim|hassan-hashim|Sabil Al Muhtadin
+w1|h4|kd|Ustazah Nor Bee|nor-bee|Taharah & Solat
+w1|h5|km|Ust Dato Hj Hassan bin Ahmad|dato-hassan|Mat La’al Badrain
+w1|h6|ks|Ust Muhd Haniff bin Yusof|haniff|Tazkirah
+w1|h6|km|Ust Sallehuddin|sallehuddin|Kitab Hadis 40
+
+w2|h0|ks|Ust Mohd Nasir Abdul Rahim|nasir|Tafsir Nurul Ehsan
+w2|h0|km|Ust Qutub|qutub|Penawar Bagi Hati
+w2|h1|km|Ust Muhd Haniff bin Yusof|haniff|Hidayatul Sobiyyan
+w2|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
+w2|h3|km|Ust Hassan bin Hj Hashim|hassan-hashim|Sabil Al Muhtadin
+w2|h4|kd|Ustazah Siti Hajar|siti-hajar|Syarah Hikam
+w2|h6|ks|Ust Hafezol Saad|hafezol|Misbah Munir
+w2|h6|km|Ust Shukor bin Saleh|shukor|Tafsir Juz Amma
+
+w3|h0|ks|Ust Aiman bin Subri|aiman|Asy-Syamail Al Muhammadiyah
+w3|h0|km|Ust Hassan bin Abdul Latif|hassan-latif|Minhajul Abidin
+w3|h1|km|Ust Rahimi Rahman|rahimi|Keperibadian Seorang Muslim
+w3|h2|km|Ust Mohd Yusoff bin Abdullah|yusoff|Bahrul Mazi
+w3|h3|km|Ust Hassan bin Hj Hashim|hassan-hashim|Sabil Al Muhtadin
+w3|h4|kd|Ust Uzair bin Abd Hani|uzair|Tafsir
+w3|h5|km|Ust Qutub|qutub|Penawar Bagi Hati
+w3|h6|ks|Ust Taufik bin Hussin|taufik|Ayyuhal Walad
+w3|h6|km|Tuan Guru Abu Bakar Pelantek|bakar|Faridatul Faraid
+
+w4|h0|ks|Ust Hafezol Saad|hafezol|Misbah Munir
+w4|h0|km|Tuan Guru Ahmad Ridhoudin|ridhoudin|Hidayatul Mutafakirin
+w4|h1|km|Ust Uzair Abdul Hani Al Banjari|uzair|Anak Kunci Syurga
+w4|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
+w4|h3|km|Ust Hassan bin Hj Hashim|hassan-hashim|Sabil Al Muhtadin
+w4|h4|kd|Ustazah Mardhiah Zakaria|mardhiah|Aqidatul Awam
+w4|h5|km|Ust Mohd Shakir|shakir|Ummul Amradh
+w4|h6|ks|Ust Shukor bin Saleh|shukor|Kasyful Ghaibiyyah
+w4|h6|km|Ust Samsuri Hassan|samsuri|Tajul Arus
