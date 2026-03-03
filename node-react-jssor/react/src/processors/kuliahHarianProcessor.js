@@ -13,14 +13,14 @@ import {
 import { top, left, right, bottom, getContainerSize, width, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
 
-const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH DHUHA', 'KULIAH SUBUH', 'KULIAH KHAS'];
+const CATEGORY_ORDER = ['KULIAH SUBUH', 'KULIAH DHUHA', 'KULIAH MAGHRIB', 'KULIAH KHAS'];
 
 export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = []) {
   const safeData = kuliahHariProcessed && Array.isArray(kuliahHariProcessed) ? kuliahHariProcessed : [];
   const replacements = Array.isArray(kuliahHariReplacements) ? kuliahHariReplacements : [];
 
   const groupedData = {};
-  replacements.forEach((r) => {
+  replacements.filter((r) => !r.displaySkip).forEach((r) => {
     const typeLabel = TYPE_LABELS[r.type] || (r.type || '').toUpperCase();
     if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
     groupedData[typeLabel].push({ replacementText: r.replacementText || '', type: r.type });

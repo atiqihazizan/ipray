@@ -228,11 +228,19 @@ export async function saveRow() {
         }
     }
     
-    // Validate untuk kuliah-override: ikut format (single = date+type; range = bulan+type+hari)
+    // Validate untuk kuliah-override: ikut format (single = date+type; range = bulan+type+hari). Type boleh berbilang: kd,ks
     if (currentFileName === 'kuliah-override') {
         const format = (rowData.format || 'single').toLowerCase();
-        if (!rowData.type || !rowData.type.trim()) {
+        const typeStr = (rowData.type || '').trim();
+        if (!typeStr) {
             showNotification('✗ Type kuliah wajib dipilih', 'error');
+            return;
+        }
+        const validTypes = ['km', 'kd', 'ks', 'kk'];
+        const typeParts = typeStr.split(',').map(t => t.trim()).filter(Boolean);
+        const invalid = typeParts.some(t => !validTypes.includes(t));
+        if (invalid) {
+            showNotification('✗ Type mestilah km, kd, ks, atau kk (boleh guna koma: kd,ks)', 'error');
             return;
         }
         if (format === 'single') {

@@ -90,11 +90,16 @@ class TimeService {
   }
 
   /**
-   * Set jam mesin (Raspberry Pi / Linux). Guna selepas NTP berjaya atau dari setting UI.
+   * Set jam mesin (Raspberry Pi / Linux sahaja). Guna selepas NTP berjaya atau dari setting UI.
+   * Pada macOS/Windows, skip (tiada sudo) supaya tiada prompt password semasa dev.
    * @param {number} timestampMs - Unix timestamp (ms) yang betul
    * @returns {boolean} - true jika berjaya
    */
   setSystemClock(timestampMs) {
+    if (process.platform !== 'linux') {
+      // Hanya set jam sistem pada Linux (Raspi). macOS/Windows guna offset dalam app sahaja.
+      return false;
+    }
     try {
       const d = new Date(timestampMs);
       const str = d.getFullYear() + '-' +
@@ -122,10 +127,11 @@ class TimeService {
       this.ntpOffset = offset;
       this.lastNtpSync = Date.now();
       this.isOnline = true;
-      if (this.setSystemClock(Date.now() + offset)) {
-        this.ntpOffset = 0;
-        console.log('[TimeService] ✓ System clock updated');
-      }
+      // if (this.setSystemClock(Date.now() + offset)) {
+      //   this.ntpOffset = 0;
+      //   console.log('[TimeService] ✓ System clock updated');
+      // }
+      // Guna offset dalam app sahaja; tiada setSystemClock() supaya tidak minta password (sudo) di mana-mana platform.
       this.updateTimeSource();
       console.log(`[TimeService] ✓ NTP sync successful, offset: ${offset}ms`);
       

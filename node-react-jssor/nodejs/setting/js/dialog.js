@@ -1218,29 +1218,54 @@ function createFormFields(form, row, isAdd, options = {}) {
                     return;
                 }
                 
-                // Special handling untuk type field dalam kuliah-override: dropdown
+                // Special handling untuk type field dalam kuliah-override: checkbox (ks, kd, km, kk) -> simpan sebagai kd,ks
                 if (col === 'type' && currentFileName === 'kuliah-override') {
-                    const select = document.createElement('select');
-                    select.id = `field-${col}`;
-                    select.name = col;
-                    select.className = 'form-control';
-                    const options = [
+                    const TYPE_OPTIONS = [
                         { value: 'ks', label: 'KS - Kuliah Subuh' },
-                        { value: 'km', label: 'KM - Kuliah Maghrib' },
                         { value: 'kd', label: 'KD - Kuliah Dhuha' },
+                        { value: 'km', label: 'KM - Kuliah Maghrib' },
                         { value: 'kk', label: 'KK - Kuliah Khas' }
                     ];
                     const currentVal = !isAdd && row[col] ? (row[col] || '').trim() : '';
-                    options.forEach(opt => {
-                        const option = document.createElement('option');
-                        option.value = opt.value;
-                        option.textContent = opt.label;
-                        if (currentVal === opt.value) option.selected = true;
-                        select.appendChild(option);
+                    const currentParts = currentVal ? currentVal.split(',').map((t) => t.trim()).filter(Boolean) : [];
+
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.id = `field-${col}`;
+                    hidden.name = col;
+                    hidden.value = currentVal;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'kuliah-type-checkboxes';
+                    wrapper.style.display = 'flex';
+                    wrapper.style.flexWrap = 'wrap';
+                    wrapper.style.gap = '12px 16px';
+                    wrapper.style.alignItems = 'center';
+
+                    TYPE_OPTIONS.forEach((opt) => {
+                        const labelEl = document.createElement('label');
+                        labelEl.style.display = 'inline-flex';
+                        labelEl.style.alignItems = 'center';
+                        labelEl.style.cursor = 'pointer';
+                        labelEl.style.marginRight = '4px';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.name = `type-${opt.value}`;
+                        cb.value = opt.value;
+                        cb.dataset.type = opt.value;
+                        cb.checked = currentParts.includes(opt.value);
+                        cb.addEventListener('change', () => {
+                            const checked = wrapper.querySelectorAll('input[type="checkbox"]:checked');
+                            hidden.value = Array.from(checked).map((c) => c.value).join(',');
+                        });
+                        labelEl.appendChild(cb);
+                        labelEl.appendChild(document.createTextNode(' ' + opt.label));
+                        wrapper.appendChild(labelEl);
                     });
-                    
+
                     group.appendChild(label);
-                    group.appendChild(select);
+                    group.appendChild(hidden);
+                    group.appendChild(wrapper);
                     form.appendChild(group);
                     return;
                 }

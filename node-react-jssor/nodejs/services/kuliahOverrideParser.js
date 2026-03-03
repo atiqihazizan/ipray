@@ -1,6 +1,6 @@
 /**
  * Parser kuliah-override: peraturan override paparan kuliah (batal / ganti).
- * Format: lama (DD-MM-YYYY|type|notes), Gregorian (tahun?|bulan|type|hari|flag?|catatan), Hijri (hijri|tahun|bulan|hari|type|flag|catatan).
+ * Format: lama (DD-MM-YYYY|type|notes), Gregorian (tahun?|bulan|type|hari|flag?|catatan), Hijri (hijri|tahun|bulan|hari|type|flag|catatan). Type boleh berbilang dengan koma, e.g. kd,ks = satu rekod untuk KD dan KS.
  * Weekly: weekly|dayOfWeek|type|replace|catatan — dayOfWeek 0=Ahad,1=Isnin,2=Selasa,3=Rabu,4=Khamis,5=Jumaat,6=Sabtu.
  * Pilihan untuk papar di Pengumuman: tambah |1|tajuk|tempat|jemputan selepas catatan.
  */
@@ -46,7 +46,9 @@ function parseLine(line, refYear) {
     const tempat = (parts[9] || '').trim();
     const jemputan = (parts[10] || '').trim();
     if (isNaN(month) || month < 1 || month > 12) return { legacy: false, hijri: false, entries: [], hijriRule: null };
-    if (!['km', 'kd', 'ks'].includes(type)) return { legacy: false, hijri: false, entries: [], hijriRule: null };
+    const validTypes = ['km', 'kd', 'ks'];
+    const typeParts = type.split(',').map((t) => t.trim()).filter((t) => validTypes.includes(t));
+    if (typeParts.length === 0) return { legacy: false, hijri: false, entries: [], hijriRule: null };
     const days = expandDayRange(dayStr);
     if (days.length === 0) return { legacy: false, hijri: false, entries: [], hijriRule: null };
     return {
@@ -156,7 +158,17 @@ function parseKuliahOverride(content, refYear) {
   for (const line of lines) {
     const parsed = parseLine(line, ref);
     if (parsed.entries.length) expanded.push(...parsed.entries);
-    if (parsed.hijriRule) hijriRules.push(parsed.hijriRule);
+    if (parsed.hijriRule) {
+      const rule = parsed.hijriRule;
+      const types = (rule.type || '').split(',').map((t) => t.trim()).filter((t) => ['km', 'kd', 'ks'].includes(t));
+      if (types.length > 0) {
+        for (const t of types) {
+          hijriRules.push({ ...rule, type: t });
+        }
+      } else {
+        hijriRules.push(rule);
+      }
+    }
     if (parsed.weeklyRule) weeklyRules.push(parsed.weeklyRule);
   }
   return { expanded, hijriRules, weeklyRules };

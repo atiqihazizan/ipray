@@ -77,11 +77,20 @@ export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, a
 
       let contentHtml = '';
       if (dayData.entries && dayData.entries.length > 0) {
-        const isSingleRekod = dayData.entries.length === 1;
+        // Susunan: ks > kd > km > kh/kk > another event (replacement)
+        const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kh: 3, kk: 3 };
+        const hasReplacementOnly = (e) => e.replacementText != null && e.replacementText !== '' && !e.type;
+        const sortedEntries = [...dayData.entries].sort((a, b) => {
+          if (hasReplacementOnly(a) && hasReplacementOnly(b)) return 0;
+          if (hasReplacementOnly(a)) return 1;
+          if (hasReplacementOnly(b)) return -1;
+          return (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
+        });
+        const isSingleRekod = sortedEntries.length === 1;
         // Font besar untuk single row/rekod sahaja; selain itu kekal saiz asal (24px / 15px)
         const fs = isSingleRekod ? KULIAH_BULANAN_FONT_SIZE_SINGLE : KULIAH_BULANAN_FONT_SIZE;
         const kitabFs = isSingleRekod ? KITAB_ITEM_FONT_SIZE_SINGLE : KITAB_ITEM_FONT_SIZE;
-        const rows = dayData.entries.map((k, rowIndex) => {
+        const rows = sortedEntries.map((k, rowIndex) => {
           if (k.replacementText != null && k.replacementText !== '') {
             const rowGapTop = rowIndex === 0 ? '0' : '1px';
             const replacementStyle = `font-size:${fs}px; font-weight:bold; vertical-align:top; padding:0; padding-top:${rowGapTop}; color:#ff0000; text-transform:uppercase; text-align:center;`;

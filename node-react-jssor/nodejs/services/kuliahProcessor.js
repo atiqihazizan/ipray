@@ -42,13 +42,21 @@ function processKuliahHari(kuliahLines, batalOptions, today) {
     const m = matchBatal(today, p.type, list, opts);
     return !m.replaceDisplay;
   });
-  const replacements = [];
-  for (const type of ['km', 'kd', 'ks']) {
+  const TYPE_PRIORITY = ['ks', 'kd', 'km'];
+  const rawReplacements = [];
+  for (const type of TYPE_PRIORITY) {
     const m = matchBatal(today, type, list, opts);
     if (m.replaceDisplay && (m.notes || '').trim()) {
-      replacements.push({ type, replacementText: (m.notes || '').trim() });
+      rawReplacements.push({ type, replacementText: (m.notes || '').trim() });
     }
   }
+  const seenTexts = new Set();
+  const replacements = rawReplacements.map((r) => {
+    const key = r.replacementText.toUpperCase();
+    if (seenTexts.has(key)) return { ...r, displaySkip: true };
+    seenTexts.add(key);
+    return { ...r, displaySkip: false };
+  });
   return { lines: filtered, replacements };
 }
 
@@ -104,6 +112,8 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
   /** Set "dayNum-type" yang sudah ada dari kuliah.txt (termasuk yang diganti) */
   const addedFromKuliah = new Set();
 
+  const seenReplacementPerDay = {};
+
   const lines = kuliahLines || [];
   for (const line of lines) {
     const p = parseKuliahLine(line);
@@ -114,7 +124,12 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
     addedFromKuliah.add(`${dayNum}-${p.type}`);
     const m = matchBatal(date, p.type, list, opts);
     if (m.replaceDisplay) {
-      dayToSlots[dayNum].push({ replacementText: m.notes || '' });
+      if (!seenReplacementPerDay[dayNum]) seenReplacementPerDay[dayNum] = new Set();
+      const key = (m.notes || '').toUpperCase();
+      if (!seenReplacementPerDay[dayNum].has(key)) {
+        seenReplacementPerDay[dayNum].add(key);
+        dayToSlots[dayNum].push({ replacementText: m.notes || '' });
+      }
     } else {
       dayToSlots[dayNum].push({
         type: p.type,
@@ -128,11 +143,16 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
 
   for (let dayNum = 1; dayNum <= lastDay; dayNum++) {
     const date = new Date(year, month, dayNum);
+    if (!seenReplacementPerDay[dayNum]) seenReplacementPerDay[dayNum] = new Set();
     for (const type of BULANAN_TYPES) {
       if (addedFromKuliah.has(`${dayNum}-${type}`)) continue;
       const m = matchBatal(date, type, list, opts);
       if (m.replaceDisplay) {
-        dayToSlots[dayNum].push({ replacementText: m.notes || '' });
+        const key = (m.notes || '').toUpperCase();
+        if (!seenReplacementPerDay[dayNum].has(key)) {
+          seenReplacementPerDay[dayNum].add(key);
+          dayToSlots[dayNum].push({ replacementText: m.notes || '' });
+        }
       }
     }
   }
