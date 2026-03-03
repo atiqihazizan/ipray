@@ -683,6 +683,21 @@ export async function loadTable(fileName, scrollToRowId = null) {
                     deleteBtn.title = 'Delete';
                     deleteBtn.onclick = () => deleteRow(row.id);
                     actionTd.appendChild(deleteBtn);
+                } else if (fileName === 'hebahan') {
+                    // Hebahan: Edit + Delete
+                    const editBtn = document.createElement('button');
+                    editBtn.className = 'btn-icon btn-edit';
+                    editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
+                    editBtn.title = 'Edit';
+                    editBtn.onclick = () => openEditDialog(row.id);
+                    actionTd.appendChild(editBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'btn-icon btn-delete';
+                    deleteBtn.innerHTML = `<span>${Icons.trash}</span>`;
+                    deleteBtn.title = 'Delete';
+                    deleteBtn.onclick = () => deleteRow(row.id);
+                    actionTd.appendChild(deleteBtn);
                 } else {
                     // Table lain (kuliah, slides): Edit sahaja, tiada Delete
                     const editBtn = document.createElement('button');
@@ -744,8 +759,6 @@ export async function loadTable(fileName, scrollToRowId = null) {
                 }, 100);
             }
         }
-        
-        showNotification(`✓ Data berjaya dimuat (${currentData.length} baris)`, 'success');
     } catch (error) {
         console.error('Error loading table:', error);
         const errorRow = document.createElement('tr');
@@ -779,6 +792,11 @@ export function showTab(tabName) {
     
     // Show selected tab
     document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // Load config sub-tab (e.g. Waktu Solat) when opening Config tab if panel empty
+    if (tabName === 'config' && typeof window.loadConfigSubTabIfNeeded === 'function') {
+        window.loadConfigSubTabIfNeeded();
+    }
     
     // Add active class to clicked menu item
     const activeMenuItem = document.querySelector(`[data-tab="${tabName}"]`);

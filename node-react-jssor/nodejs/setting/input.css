@@ -108,6 +108,18 @@
     height: 14px;
   }
   
+  /* Config sub-tabs (setiap card = satu tab) */
+  #config-subnav {
+    @apply flex gap-2 flex-wrap mb-4 pb-3 border-b border-gray-200;
+  }
+  .config-subtab {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-colors;
+    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+  }
+  .config-subtab.active {
+    @apply bg-indigo-600 text-white hover:bg-indigo-700;
+  }
+
   /* Configuration Form - System UI Style */
   .config-form {
     @apply space-y-6;
@@ -116,6 +128,10 @@
   .config-group {
     @apply border border-gray-200 rounded-lg overflow-hidden bg-white;
     overflow-x: auto
+  }
+  /* Jarak antara config-group (HTML dimuat dinamik, Tailwind mt-* tiada dalam output) */
+  .config-group + .config-group {
+    margin-top: 24px;
   }
   
   .config-group-title {

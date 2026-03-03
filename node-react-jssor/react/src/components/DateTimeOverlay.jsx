@@ -9,13 +9,25 @@ import prayerTimeService from '../services/prayerTimeService';
 import { OVERLAY_PRAYER_TIMES } from '../utils/prayerUtils';
 import { top as topPx, left as leftPx, right as rightPx, bottom as bottomPx } from '../utils/screenUtils';
 
+// Hardcode nama masjid - protected dari dicetak rompak
+const MOSQUE_NAME = 'MASJID TUAN ABDULLAH';
+
 const DateTimeOverlay = ({ showOverlay, marqueeEnabled = false }) => {
   const { takwimArray, takwimParsed } = useTakwimData();
-  const { MARQUEE_CONFIG } = useData();
+  const { MARQUEE_CONFIG, hebahanData } = useData();
   const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
   const showSolatTimeSmall = showOverlay('solat-time-small');
-  const showMarqueeInMiddle = marqueeEnabled && showSolatTimeSmall && MARQUEE_CONFIG?.TEXT;
+  
+  // Gabung mesej hebahan aktif dengan separator bullet, dengan nama masjid sebagai prefix
+  const hebahanMessages = hebahanData && hebahanData.length > 0 
+    ? hebahanData.map(h => h.text).join(' • ')
+    : '';
+  const hebahanText = hebahanMessages 
+    ? `${MOSQUE_NAME} • ${hebahanMessages}`
+    : MOSQUE_NAME;
+  
+  const showMarqueeInMiddle = marqueeEnabled && showSolatTimeSmall && hebahanText;
 
   useEffect(() => {
     if (takwimArray && takwimArray.length > 0) {
@@ -34,7 +46,7 @@ const DateTimeOverlay = ({ showOverlay, marqueeEnabled = false }) => {
           <DisplayDate type={2} dateType="hijri" size={72} color="#ffff00" style={{ margin: '14px 0' }} />
         </div>
       </div>
-      {/* solat-time: waktu solat + jam di atas; bila marquee on → bar marquee di bawah (bottom 0) */}
+      {/* solat-time: waktu solat + jam di atas; bila hebahan on → bar hebahan di bawah (bottom 0) */}
       <div className={`absolute inset-0 pointer-events-none overlay-datetime overlay-solat z-10 ${showOverlay('solat-time') ? 'opacity-100' : 'opacity-0'}`} aria-hidden={!showOverlay('solat-time')}>
         <div className="absolute" style={{ bottom: bottomPx(timeBottom), left: leftPx(0), display: 'flex', gap: '20px' }}>
           {OVERLAY_PRAYER_TIMES.map((waktu, index) => (
@@ -44,9 +56,9 @@ const DateTimeOverlay = ({ showOverlay, marqueeEnabled = false }) => {
         <div className="absolute" style={{ bottom: bottomPx(timeBottom), right: rightPx(0) }}>
           <DisplayTime type={1} size={148} format="12h" showSeconds={false} showAmPm={false} color="#ffff00" style={{ bottom: 0, right: 0, borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem', backgroundColor: '#000000' }} />
         </div>
-        {marqueeEnabled && MARQUEE_CONFIG?.TEXT && (
+        {marqueeEnabled && hebahanText && (
           <div className="absolute left-0 right-0 flex items-center bg-black/80 z-0 py-2" style={{ bottom: bottomPx(0) }}>
-            <Marquee text={MARQUEE_CONFIG.TEXT} duration={MARQUEE_CONFIG.DURATION} className="w-full" />
+            <Marquee text={hebahanText} duration={MARQUEE_CONFIG.DURATION} className="w-full" />
           </div>
         )}
       </div>
@@ -61,7 +73,7 @@ const DateTimeOverlay = ({ showOverlay, marqueeEnabled = false }) => {
           </div>
           <div className={`flex-1 min-w-0 items-center overflow-hidden min-w-[80px] py-2 ${showMarqueeInMiddle ? 'bg-black/80' : ''}`}>
             {showMarqueeInMiddle && (
-              <Marquee text={MARQUEE_CONFIG.TEXT} duration={MARQUEE_CONFIG.DURATION} />
+              <Marquee text={hebahanText} duration={MARQUEE_CONFIG.DURATION} />
             )}
           </div>
           <div className="shrink-0">

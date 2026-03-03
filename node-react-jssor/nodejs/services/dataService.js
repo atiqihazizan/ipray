@@ -29,7 +29,7 @@ const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 class DataService {
   constructor(dataPath) {
     this.dataPath = dataPath;
-    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override'];
+    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan'];
     this.filenameAliases = {
       announcement: 'announcements',
       announcements: 'announcements',
@@ -45,7 +45,8 @@ class DataService {
       'kuliah-override': 'kuliah-override',
       'kuliah-batal': 'kuliah-override',
       config: 'config',
-      slideshow: 'slideshow'
+      slideshow: 'slideshow',
+      hebahan: 'hebahan'
     };
   }
 
@@ -383,6 +384,15 @@ class DataService {
           validTo,
           raw: line
         });
+      } else if (normalized === 'hebahan') {
+        // Hebahan format: TEKS_MESEJ|TARIKH_MULA|TARIKH_AKHIR
+        parsed.push({
+          id: index + 1,
+          text: parts[0] || '',
+          startDate: parts[1] || '',
+          endDate: parts[2] || '',
+          raw: line
+        });
       }
     });
     
@@ -403,7 +413,8 @@ class DataService {
       'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
-      'slideshow': ['caption', 'image', 'validFrom', 'validTo']
+      'slideshow': ['caption', 'image', 'validFrom', 'validTo'],
+      'hebahan': ['text', 'startDate', 'endDate']
     };
     return columnMap[normalized] || [];
   }
@@ -863,6 +874,58 @@ class DataService {
   }
 
   /**
+   * Parse hebahan content -> array of active messages
+   * Format: TEKS_MESEJ|TARIKH_MULA|TARIKH_AKHIR
+   * - Tiada tarikh mula DAN tiada tarikh akhir (kedua kosong): papar sentiasa.
+   * - Tiada tarikh mula sahaja: papar sehingga tarikh akhir (hari ini <= tarikh akhir).
+   * - Tiada tarikh akhir sahaja: papar dari tarikh mula (hari ini >= tarikh mula).
+   * - Kedua-dua ada: papar jika hari ini dalam julat [mula, akhir].
+   */
+  parseHebahan(content) {
+    if (!content || typeof content !== 'string') return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return content
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith('#'))
+      .map(line => {
+        const parts = line.split('|').map(p => p.trim());
+        const text = parts[0];
+        if (!text) return null;
+        
+        const startStr = parts[1] || '';
+        const endStr = parts[2] || '';
+        const startDate = startStr ? new Date(startStr) : null;
+        const endDate = endStr ? new Date(endStr) : null;
+        
+        const hasStart = startDate && !isNaN(startDate.getTime());
+        const hasEnd = endDate && !isNaN(endDate.getTime());
+        
+        if (hasStart) startDate.setHours(0, 0, 0, 0);
+        if (hasEnd) endDate.setHours(23, 59, 59, 999);
+        
+        let isActive = false;
+        if (!hasStart && !hasEnd) {
+          isActive = true; // Tiada kedua tarikh → papar sentiasa
+        } else if (hasStart && !hasEnd) {
+          isActive = today >= startDate; // Tiada akhir → papar dari tarikh mula
+        } else if (!hasStart && hasEnd) {
+          isActive = today <= endDate; // Tiada mula → papar sehingga tarikh akhir
+        } else {
+          isActive = today >= startDate && today <= endDate; // Kedua ada → dalam julat
+        }
+        
+        if (isActive) {
+          return { text, startDate: startStr, endDate: endStr };
+        }
+        return null;
+      })
+      .filter(item => item !== null);
+  }
+
+  /**
    * Parse countdowns content -> array of rule objects
    * Format:
    * - Gregorian (sekali): COUNTDOWN|YYYY-MM-DD [HH:mm]|event|windowDays
@@ -1067,8 +1130,15 @@ class DataService {
       },
       MARQUEE_CONFIG: {
         ENABLED: true,
-        TEXT: 'Ahlan wa sahlan • Maklumat masjid • ',
         DURATION: 25
+      },
+      HOME_TITLE_CONFIG: {
+        TITLE1_TOP: 120,
+        TITLE1_SIZE: 88,
+        TITLE1_COLOR: '#00FFFF',
+        TITLE2_TOP: 250,
+        TITLE2_SIZE: 88,
+        TITLE2_COLOR: '#00FFFF'
       }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
@@ -1093,8 +1163,13 @@ class DataService {
       else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;
       else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
       else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
-      else if (key === 'MARQUEE_TEXT') parsed.MARQUEE_CONFIG.TEXT = value;
       else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
+      else if (key === 'HOME_TITLE1_TOP') parsed.HOME_TITLE_CONFIG.TITLE1_TOP = parseInt(value, 10) || 120;
+      else if (key === 'HOME_TITLE1_SIZE') parsed.HOME_TITLE_CONFIG.TITLE1_SIZE = parseInt(value, 10) || 88;
+      else if (key === 'HOME_TITLE1_COLOR') parsed.HOME_TITLE_CONFIG.TITLE1_COLOR = value;
+      else if (key === 'HOME_TITLE2_TOP') parsed.HOME_TITLE_CONFIG.TITLE2_TOP = parseInt(value, 10) || 250;
+      else if (key === 'HOME_TITLE2_SIZE') parsed.HOME_TITLE_CONFIG.TITLE2_SIZE = parseInt(value, 10) || 88;
+      else if (key === 'HOME_TITLE2_COLOR') parsed.HOME_TITLE_CONFIG.TITLE2_COLOR = value;
     });
     return parsed;
   }

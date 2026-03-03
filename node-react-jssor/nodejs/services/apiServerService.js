@@ -285,7 +285,7 @@ class ApiServerService {
     // Kuliah: backend processes kuliah + kuliah-override and returns only processed lists
     this.app.get('/api/data/app', async (req, res) => {
       try {
-        const [takwimContent, announcementsContent, countdownsContent, kuliahContent, kuliahOverrideContent, imagesContent, slidesContent, configContent, slideshowContent] = await Promise.all([
+        const [takwimContent, announcementsContent, countdownsContent, kuliahContent, kuliahOverrideContent, imagesContent, slidesContent, configContent, slideshowContent, hebahanContent] = await Promise.all([
           this.dataService.readFile('takwim').catch(() => ''),
           this.dataService.readFile('announcements').catch(() => ''),
           this.dataService.readFile('countdowns').catch(() => ''),
@@ -294,7 +294,8 @@ class ApiServerService {
           this.dataService.readFile('images').catch(() => ''),
           this.dataService.readFile('slides').catch(() => ''),
           this.dataService.readFile('config').catch(() => ''),
-          this.dataService.readFile('slideshow').catch(() => '')
+          this.dataService.readFile('slideshow').catch(() => ''),
+          this.dataService.readFile('hebahan').catch(() => '')
         ]);
         const takwim = this.dataService.getTakwimForAppFull(takwimContent);
         const overrideParsed = parseKuliahOverride(kuliahOverrideContent);
@@ -347,6 +348,7 @@ class ApiServerService {
         const config = this.dataService.parseConfig(configContent);
         const slideshowParsed = this.dataService.parseSlideshow(slideshowContent);
         const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date());
+        const hebahan = this.dataService.parseHebahan(hebahanContent);
         res.json({
           takwim,
           announcements,
@@ -358,7 +360,8 @@ class ApiServerService {
           images,
           slidesConfig,
           config,
-          slideshow
+          slideshow,
+          hebahan
         });
       } catch (error) {
         console.error('Error loading app data:', error);

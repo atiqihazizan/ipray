@@ -35,9 +35,12 @@ function setupEventListeners() {
  */
 function initApp() {
     initSocket();
-    // Config tab uses form-based layout, not table
-    // loadConfigData() will be called when tab is active
     setupEventListeners();
+    // Jika Config tab default aktif, muat panel Waktu Solat
+    const configTab = document.getElementById('config-tab');
+    if (configTab && configTab.classList.contains('active') && typeof window.loadConfigSubTabIfNeeded === 'function') {
+        window.loadConfigSubTabIfNeeded();
+    }
 }
 
 // Initialize on page load

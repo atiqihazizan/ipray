@@ -28,8 +28,16 @@ const DEFAULT_COLOR_CONFIG = {
 
 const DEFAULT_MARQUEE_CONFIG = {
   ENABLED: true,
-  TEXT: 'Selamat datang • Maklumat masjid • ',
   DURATION: 25,
+};
+
+const DEFAULT_HOME_TITLE_CONFIG = {
+  TITLE1_TOP: 120,
+  TITLE1_SIZE: 88,
+  TITLE1_COLOR: '#00FFFF',
+  TITLE2_TOP: 250,
+  TITLE2_SIZE: 88,
+  TITLE2_COLOR: '#00FFFF'
 };
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
@@ -54,6 +62,7 @@ export const DataProvider = ({ children }) => {
   const [takwimParsed, setTakwimParsed] = useState(null);
   const [announcementsData, setAnnouncementsData] = useState(null);
   const [countdownsData, setCountdownsData] = useState(null);
+  const [hebahanData, setHebahanData] = useState([]);
   const [kuliahHariProcessed, setKuliahHariProcessed] = useState([]);
   const [kuliahHariReplacements, setKuliahHariReplacements] = useState([]);
   const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
@@ -67,6 +76,7 @@ export const DataProvider = ({ children }) => {
     PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
     COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
     MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
+    HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -96,6 +106,7 @@ export const DataProvider = ({ children }) => {
       setTakwimParsed(data.takwim?.takwimParsed ?? null);
       setAnnouncementsData(data.announcements ?? []);
       setCountdownsData(data.countdowns ?? []);
+      setHebahanData(data.hebahan ?? []);
       setKuliahHariProcessed(data.kuliahHariProcessed ?? []);
       setKuliahHariReplacements(data.kuliahHariReplacements ?? []);
       setKuliahMingguProcessed(data.kuliahMingguProcessed ?? []);
@@ -107,6 +118,7 @@ export const DataProvider = ({ children }) => {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
         COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
         MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
+        HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
       });
 
       const todayStr = new Date().toISOString().slice(0, 10);
@@ -311,6 +323,7 @@ export const DataProvider = ({ children }) => {
     takwimParsed,
     announcementsData,
     countdownsData,
+    hebahanData,
     kuliahHariProcessed,
     kuliahHariReplacements,
     kuliahMingguProcessed,
@@ -330,6 +343,7 @@ export const DataProvider = ({ children }) => {
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
+    HOME_TITLE_CONFIG: configData.HOME_TITLE_CONFIG ?? DEFAULT_HOME_TITLE_CONFIG,
     timeService: timeServiceStub
   };
 

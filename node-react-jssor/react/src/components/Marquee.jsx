@@ -1,11 +1,11 @@
-/** Saiz dan gaya standard marquee (font, warna, padding). */
+/** Saiz dan gaya standard hebahan (font, warna, padding). */
 const MARQUEE_STANDARD_CLASS = 'text-yellow-400 text-xl font-medium py-2';
 
-/** Tinggi bar marquee ikut font + padding (px asas 1080p). Export untuk offset overlay waktu. */
+/** Tinggi bar hebahan ikut font + padding (px asas 1080p). Export untuk offset overlay waktu. */
 export const MARQUEE_STANDARD_HEIGHT_BASE = 72;
 
 /**
- * Marquee — teks scroll dari kanan ke kiri, seamless loop.
+ * Marquee (Hebahan) — teks scroll dari kanan ke kiri, seamless loop.
  * Kelajuan = tempoh satu pusingan penuh (saat). Lebih kecil = lebih laju. Default 25s.
  */
 const Marquee = ({ text = 'Selamat datang • Maklumat masjid • ', duration = 25, className = '' }) => {

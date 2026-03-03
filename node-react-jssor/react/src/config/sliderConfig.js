@@ -7,6 +7,56 @@ import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils'
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 
 // ============================================================================
+// HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
+// ============================================================================
+/**
+ * Build home template dengan styling dinamik dari HOME_TITLE_CONFIG
+ * TEKS adalah HARDCODED untuk protect dari cetak rompak
+ * @param {Object} homeTitleConfig - Config untuk styling title home (tanpa text)
+ * @returns {Object} Home slide template
+ */
+export const buildHomeTemplate = (homeTitleConfig = {}) => {
+  const {
+    TITLE1_TOP = 120,
+    TITLE1_SIZE = 88,
+    TITLE1_COLOR = '#00FFFF',
+    TITLE2_TOP = 250,
+    TITLE2_SIZE = 88,
+    TITLE2_COLOR = '#00FFFF'
+  } = homeTitleConfig;
+
+  return {
+    duration: 1000,
+    transitionType: 'auto',
+    image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
+    captions: [
+      {
+        type: "div", transition: "CLIP|LR", duration: 1500,
+        style: { 
+          left: 0, right: 0, top: top(TITLE1_TOP), width: sz().width, height: 70, 
+          textAlign: 'center', fontSize: TITLE1_SIZE, color: TITLE1_COLOR, 
+          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
+          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' 
+        },
+        content: "MASJID TUAN ABDULLAH" // HARDCODED - tidak boleh diubah dari setting
+      },
+      {
+        type: "div", transition: "CLIP|LR", duration: 1500, delay: 700,
+        style: { 
+          left: 0, right: 0, top: top(TITLE2_TOP), width: sz().width, height: 70, 
+          textAlign: 'center', fontSize: TITLE2_SIZE, color: TITLE2_COLOR, 
+          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
+          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' 
+        },
+        content: "TANAH LIAT" // HARDCODED - tidak boleh diubah dari setting
+      },
+    ],
+    datetime: ['date', 'solat-time']
+  };
+};
+
+
+// ============================================================================
 // CONSTANTS
 // ============================================================================
 // Debug mode: set true untuk development, false untuk production
@@ -83,9 +133,10 @@ export const sliderConfig = {
 // SLIDES TEMPLATE
 // ============================================================================
 export const slidesTemplate = {
+  // Home slide - HARDCODED untuk protect dari cetak rompak
   home: {
-    duration: 1000, // Custom duration untuk slide 1 (5 saat)
-    transitionType: 'auto', // 'auto' = automatic transition, 'static' = tiada transition
+    duration: 1000,
+    transitionType: 'auto',
     image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
     captions: [
       {
@@ -99,7 +150,7 @@ export const slidesTemplate = {
         content: "TANAH LIAT"
       },
     ],
-    datetime: ['date', 'solat-time'] // overlay: date=tarikh, solat-time=waktu solat+jam besar
+    datetime: ['date', 'solat-time']
   },
   announce: {
     transitionType: 'auto',

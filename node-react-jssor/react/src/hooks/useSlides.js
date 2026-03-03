@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { slidesTemplate } from '../config/sliderConfig';
+import { slidesTemplate, buildHomeTemplate } from '../config/sliderConfig';
 import { useData } from '../contexts/DataContext';
 import { processAnnouncements } from '../processors/announcementProcessor';
 import { processCountdowns } from '../processors/countdownProcessor';
@@ -32,6 +32,7 @@ export const useSlides = () => {
     imagesData,
     slidesConfigData,
     slideshowData,
+    HOME_TITLE_CONFIG,
     loading: dataLoading,
     isReloading,
     reloadCounter
@@ -58,7 +59,8 @@ export const useSlides = () => {
       return updated;
     };
 
-    const homeSlide = applyConfig(slidesTemplate.home, 'home');
+    const homeTemplate = buildHomeTemplate(HOME_TITLE_CONFIG);
+    const homeSlide = applyConfig(homeTemplate, 'home');
     const announceSlides = processAnnouncements(announcementsData, slidesConfigData, applyConfig);
     const countDownSlides = processCountdowns(countdownsData, slidesConfigData, applyConfig);
     const kuliahHariSlides = processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements);

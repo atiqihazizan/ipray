@@ -141,6 +141,11 @@ function createFormFields(form, row, isAdd, options = {}) {
             const cdLabels = { format: 'Format', date: 'Tarikh', tahun: 'Tahun (kosong = setiap tahun)', bulan: 'Bulan', hari: 'Hari', event: 'Event', windowDays: 'Papar bila tinggal ___ hari (0 = selalu)' };
             if (cdLabels[col]) label.textContent = cdLabels[col];
         }
+        // Hebahan: label kolom
+        if (currentFileName === 'hebahan') {
+            const hebahanLabels = { text: 'Teks Mesej', startDate: 'Tarikh Mula (YYYY-MM-DD)', endDate: 'Tarikh Akhir (YYYY-MM-DD)' };
+            if (hebahanLabels[col]) label.textContent = hebahanLabels[col];
+        }
         
         // Kuliah-batal: format dropdown (Tarikh tunggal / Range)
         if (currentFileName === 'kuliah-override' && col === 'format') {
@@ -694,6 +699,44 @@ function createFormFields(form, row, isAdd, options = {}) {
             return;
         }
 
+        // Hebahan: input dengan butang clear X merah di dalam inputbox
+        if (currentFileName === 'hebahan' && (col === 'text' || col === 'startDate' || col === 'endDate')) {
+            const input = document.createElement('input');
+            input.type = (col === 'startDate' || col === 'endDate') ? 'date' : 'text';
+            input.id = `field-${col}`;
+            input.name = col;
+            input.value = isAdd ? '' : (row[col] || '');
+            input.className = 'form-control';
+            input.style.paddingRight = '36px';
+            input.style.boxSizing = 'border-box';
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.width = '100%';
+            const clearBtn = document.createElement('button');
+            clearBtn.type = 'button';
+            clearBtn.title = 'Kosongkan';
+            clearBtn.innerHTML = '&times;';
+            clearBtn.style.cssText = 'position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;color:#dc2626;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;';
+            clearBtn.style.display = input.value ? 'flex' : 'none';
+            clearBtn.onclick = () => {
+                input.value = '';
+                clearBtn.style.display = 'none';
+                input.focus();
+            };
+            input.addEventListener('input', () => {
+                clearBtn.style.display = input.value ? 'flex' : 'none';
+            });
+            input.addEventListener('change', () => {
+                clearBtn.style.display = input.value ? 'flex' : 'none';
+            });
+            wrapper.appendChild(input);
+            wrapper.appendChild(clearBtn);
+            group.appendChild(label);
+            group.appendChild(wrapper);
+            form.appendChild(group);
+            return;
+        }
+
         // Special handling untuk imagePath dalam images table (path diset auto via upload/download)
         if (currentFileName === 'images' && col === 'imagePath') {
             label.textContent = 'Image';
@@ -1150,6 +1193,14 @@ function createFormFields(form, row, isAdd, options = {}) {
                     }
                 }
                 
+                // Hebahan: startDate dan endDate gunakan type date
+                if ((col === 'startDate' || col === 'endDate') && currentFileName === 'hebahan') {
+                    input.type = 'date';
+                    if (!isAdd && row[col]) {
+                        input.value = row[col];
+                    }
+                }
+                
                 // Special handling untuk date field dalam kuliah-override: date input
                 if (col === 'date' && currentFileName === 'kuliah-override') {
                     input.type = 'date';
@@ -1311,9 +1362,9 @@ export function openAddDialog() {
     const currentFileName = getCurrentFileName();
     const currentColumns = getCurrentColumns();
     
-    // Allow add untuk announcements, countdowns, images, slideshow, dan kuliah-override
-    if (currentFileName !== 'announcements' && currentFileName !== 'countdowns' && currentFileName !== 'images' && currentFileName !== 'slideshow' && currentFileName !== 'kuliah-override') {
-        showNotification('✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, dan Override Kuliah', 'error');
+    // Allow add untuk announcements, countdowns, images, slideshow, hebahan, dan kuliah-override
+    if (currentFileName !== 'announcements' && currentFileName !== 'countdowns' && currentFileName !== 'images' && currentFileName !== 'slideshow' && currentFileName !== 'hebahan' && currentFileName !== 'kuliah-override') {
+        showNotification('✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, dan Override Kuliah', 'error');
         return;
     }
     
@@ -1339,6 +1390,8 @@ export function openAddDialog() {
         title.textContent = 'Tambah Image Baru';
     } else if (currentFileName === 'slideshow') {
         title.textContent = 'Tambah Slideshow Baru';
+    } else if (currentFileName === 'hebahan') {
+        title.textContent = 'Tambah Hebahan Baru';
     } else if (currentFileName === 'kuliah-override') {
         title.textContent = 'Tambah Rekod Override Kuliah';
     }
@@ -1394,6 +1447,8 @@ export async function openEditDialog(rowId) {
         title.textContent = 'Edit Pengumuman';
     } else if (currentFileName === 'countdowns') {
         title.textContent = 'Edit Countdown';
+    } else if (currentFileName === 'hebahan') {
+        title.textContent = 'Edit Hebahan';
     } else {
         title.textContent = `Edit Baris #${rowId}`;
     }
