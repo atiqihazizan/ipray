@@ -2,12 +2,15 @@
   "name": "ipray-nodejs-app",
   "version": "1.0.0",
   "description": "iPray Node.js Application",
-  "main": "main.js",
+  "main": "electron-main.js",
   "scripts": {
     "start": "node main.js",
     "start:prod": "PROD_MODE=true node main.js",
     "dev": "nodemon main.js",
     "dev:prod": "PROD_MODE=true nodemon main.js",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder --win",
+    "electron:build:linux": "electron-builder --linux",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -25,6 +28,8 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
+    "electron": "^35.1.2",
+    "electron-builder": "^26.0.12",
     "nodemon": "^3.0.0"
   }
 }

@@ -95,12 +95,28 @@ class SocketService {
     // Listen for data updates
     this.socket.on('data:updated', (data) => {
       audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+      // Hantar ACK ke server sebelum reload supaya Setting panel tahu React sudah terima
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('data:ack', {
+          fileName: data.fileName,
+          status: 'received',
+          timestamp: Date.now()
+        });
+      }
       this.notifyListeners('data:updated', data);
     });
 
     // Listen for takwim refresh
     this.socket.on('takwim:refresh', (data) => {
       audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+      // Hantar ACK untuk takwim refresh
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('data:ack', {
+          fileName: 'takwim',
+          status: 'received',
+          timestamp: Date.now()
+        });
+      }
       this.notifyListeners('takwim:refresh', data);
     });
 
@@ -108,6 +124,11 @@ class SocketService {
     this.socket.on('reboot', (data) => {
       audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
       this.notifyListeners('reboot', data);
+    });
+
+    // Listen for test sound from setting panel
+    this.socket.on('test-sound', () => {
+      audioService.play({ sound: 'beep_once', playCount: 3, volume: 1 }).catch(() => {});
     });
 
     // Listen for time calibration events (offset) - React mesti terima untuk update masa

@@ -2,6 +2,8 @@
 module.exports = {
   content: [
     "./index.html",
+    "./config-tabs/**/*.html",
+    "./js/**/*.js",
     "./script.js",
   ],
   theme: {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import SliderPage from './components/SliderPage'
 import LoadingPage from './components/LoadingPage'
 import PrayerSequencePage from './components/PrayerSequencePage'
+import DateTimeOverlay from './components/DateTimeOverlay'
 import { DataProvider, useData } from './contexts/DataContext'
 import TimeDriver from './components/TimeDriver'
 import MidnightReloadListener from './components/MidnightReloadListener'
@@ -38,7 +39,7 @@ const AppContent = () => {
       )}
       {(dataLoading || !sliderReady) && <LoadingPage />}
       <div 
-        className="bg-black flex items-center justify-center" 
+        className="relative bg-black flex items-center justify-center" 
         style={{ 
           width: '100vw', 
           height: '100vh', 
@@ -47,6 +48,7 @@ const AppContent = () => {
         }}
       >
         <SliderPage onReady={() => setSliderReady(true)} />
+        <DateTimeOverlay />
       </div>
     </>
   )
@@ -56,7 +58,7 @@ function App() {
   useEffect(() => {
     // Simple init untuk Chromium dengan autoplay flag
     audioService.init();
-    console.log('[Audio] Initialized for Chromium Kiosk');
+    // console.log('[Audio] Initialized for Chromium Kiosk');
     
     // Optional: Test audio capability sekali
     audioService.enableAudio()

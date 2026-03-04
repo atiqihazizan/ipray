@@ -8,6 +8,7 @@
 	<link rel="stylesheet" href="output.css">
 	<link rel="stylesheet" href="css/table.css">
 	<link rel="stylesheet" href="css/dialog.css">
+	<link rel="stylesheet" href="css/gallery.css">
 	<style>
 		/* Sidebar Styles */
 		.sidebar {
@@ -677,16 +678,30 @@
 			<!-- Override Kuliah Tab -->
 			<div id="kuliah-override-tab" class="tab-content">
 				<div class="content-card">
-					<div class="info-box" style="margin-bottom: 16px;">
-						<p><strong>Override Kuliah:</strong> Fail ini menyimpan peraturan tarikh + type kuliah untuk batal atau ganti paparan (cth. Solat Tarawih, Hari Raya). Tarikh yang match akan dipaparkan sebagai "BATAL" atau diganti dengan catatan (ikut flag).</p>
-						<p style="margin-top: 8px;"><strong>Format disokong:</strong></p>
-						<ul style="margin: 4px 0 0 16px; padding-left: 8px;">
-							<li><strong>Tarikh tunggal (Masihi):</strong> DD-MM-YYYY|type|notes</li>
-							<li><strong>Range Masihi:</strong> tahun?|bulan|type|hari|flag|catatan (tahun kosong = tahun semasa)</li>
-							<li><strong>Tarikh Hijri:</strong> hijri|tahun|bulan|hari|type|flag|catatan (wajib). Pilihan papar di Pengumuman: tambah |1|tajuk|tempat|jemputan (flag 1 = papar di slide Pengumuman).</li>
-						</ul>
-						<p style="margin-top: 6px;"><strong>Type:</strong> ks, km, kd, kk. <strong>Ganti paparan (1):</strong> slot kuliah diganti dengan catatan. <strong>Paparkan di announcement (1):</strong> event akan muncul dalam slide Pengumuman dengan format PENGUMUMAN|tajuk|note|tarikh|tempat|jemputan.</p>
+					<!-- Info collapsible -->
+					<div style="margin-bottom:0;">
+						<button type="button" onclick="this.nextElementSibling.classList.toggle('ko-hidden')" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#6b7280;padding:0;letter-spacing:0.03em;">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px;flex-shrink:0;color:#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+							FORMAT &amp; PANDUAN
+						</button>
+						<div class="ko-hidden" style="margin-top:8px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;line-height:1.7;color:#475569;">
+							<p style="margin:0 0 6px;">Fail ini menyimpan peraturan tarikh + type kuliah untuk <strong>batal</strong> atau <strong>ganti</strong> paparan (cth. Solat Tarawih, Hari Raya).</p>
+							<table style="width:100%;border-collapse:collapse;">
+								<thead><tr style="border-bottom:1px solid #e2e8f0;">
+									<th style="text-align:left;padding:3px 8px 3px 0;font-weight:700;white-space:nowrap;color:#334155;">Format</th>
+									<th style="text-align:left;padding:3px 0;font-weight:700;color:#334155;">Sintaks</th>
+								</tr></thead>
+								<tbody>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Tarikh tunggal (Masihi)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">DD-MM-YYYY|type|notes</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Range Masihi</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">tahun?|bulan|type|hari|flag|catatan</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Hijri</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">hijri|tahun|bulan|hari|type|flag|catatan</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">+ Pengumuman (Hijri)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">…|1|tajuk|tempat|jemputan</td></tr>
+								</tbody>
+							</table>
+							<p style="margin:8px 0 0;"><span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">type</span> — <code>ks</code> · <code>km</code> · <code>kd</code> · <code>kk</code> &nbsp;|&nbsp; <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">flag ganti=1</span> slot diganti catatan &nbsp;|&nbsp; <span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">tahun kosong</span> = tahun semasa</p>
+						</div>
 					</div>
+					<style>.ko-hidden{display:none!important}</style>
 					<!-- Button Group Above Table -->
 					<div class="flex justify-end gap-2 mb-3">
 						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Rekod Override">
@@ -712,30 +727,25 @@
 				</div>
 			</div>
 
-			<!-- Images Tab -->
-            <div id="images-tab" class="tab-content">
-                <div class="content-card">
-                    <!-- Button Group Above Table -->
-                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+			<!-- Images Tab (Gallery Grid) -->
+			<div id="images-tab" class="tab-content">
+				<div class="content-card">
+					<!-- Button Group -->
+					<div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
 						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Image">
-							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-									stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-								</svg></span>
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+							</svg></span>
 						</button>
-						<button class="btn-icon btn-reload" onclick="loadTable('images')" title="Reload Data">
-							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-									stroke="currentColor">
-									<path stroke-linecap="round" stroke-linejoin="round"
-										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-								</svg></span>
+						<button class="btn-icon btn-reload" onclick="loadGallery()" title="Reload Galeri">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+							</svg></span>
 						</button>
 					</div>
-					<div class="table-container">
-						<table id="images-table" class="data-table">
-							<thead id="images-thead"></thead>
-							<tbody id="images-tbody"></tbody>
-						</table>
+					<!-- Gallery grid container -->
+					<div class="gallery-container">
+						<div id="gallery-grid" class="gallery-grid"></div>
 					</div>
 				</div>
 			</div>
@@ -868,6 +878,7 @@
 		</div>
 	</div>
 
+	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
 	<script src="js/socket.io.min.js"></script>
 	<!-- Load utility scripts first -->
 	<script src="js/dateUtils.js"></script>
@@ -879,6 +890,7 @@
 	<script type="module" src="js/socket.js"></script>
 	<script type="module" src="js/api.js"></script>
 	<script type="module" src="js/dialog.js"></script>
+	<script type="module" src="js/gallery.js"></script>
 	<script type="module" src="js/table.js"></script>
 	<script type="module" src="js/config-tabs.js"></script>
 	<script type="module" src="js/wifi.js"></script>
@@ -1124,6 +1136,23 @@
 
 			// Emit reboot event via socket (simple - server will broadcast to React)
 			socket.emit('reboot');
+		}
+
+		// Handle Test Sound
+		function handleTestSound() {
+			const socket = window.AppState?.getSocket();
+
+			if (!socket || !socket.connected) {
+				if (window.NotificationUtils) {
+					window.NotificationUtils.showNotification('Socket not connected. Please wait and try again.', 'error');
+				}
+				return;
+			}
+
+			socket.emit('test-sound');
+			if (window.NotificationUtils) {
+				window.NotificationUtils.showNotification('Test sound sent to kiosk display.', 'success');
+			}
 		}
 
 		// Sync color picker with text input

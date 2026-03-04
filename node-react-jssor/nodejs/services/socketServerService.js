@@ -80,9 +80,9 @@ class SocketServerService {
       // Listen on 0.0.0.0 to allow access from network
       const host = '0.0.0.0';
       this.httpServer.listen(this.port, host, () => {
-        console.log(`Socket.IO Server running at http://${host}:${this.port}`);
-        console.log(`Real-time updates enabled for data synchronization`);
-        console.log(`Socket.IO CORS: All origins allowed`);
+        // console.log(`Socket.IO Server running at http://${host}:${this.port}`);
+        // console.log(`Real-time updates enabled for data synchronization`);
+        // console.log(`Socket.IO CORS: All origins allowed`);
         resolve();
       });
 
@@ -114,9 +114,18 @@ class SocketServerService {
         }
       });
       
+      // Forward ACK dari React ke Setting panel (dan semua client lain)
+      socket.on('data:ack', (data) => {
+        socket.broadcast.emit('data:ack', {
+          fileName: data.fileName,
+          status: data.status || 'received',
+          timestamp: data.timestamp || Date.now()
+        });
+      });
+
       // Handle reboot request from admin panel
       socket.on('reboot', () => {
-        console.log(`🔄 Reboot requested by client: ${socket.id}`);
+        // console.log(`🔄 Reboot requested by client: ${socket.id}`);
         
         // Broadcast reboot event to all clients EXCEPT sender (React will receive and reload window)
         socket.broadcast.emit('reboot', {
@@ -132,6 +141,13 @@ class SocketServerService {
         //     }
         //   });
         // }, 2000); // Delay 2 seconds untuk React reload window dulu
+      });
+
+      // Handle test sound request from admin panel
+      socket.on('test-sound', () => {
+        socket.broadcast.emit('test-sound', {
+          timestamp: Date.now()
+        });
       });
       
       // Handle disconnect

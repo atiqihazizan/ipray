@@ -17,29 +17,36 @@ const SETTING_PORT = 3001; // API Server dan Socket.IO share port ini
  * Detect application mode
  * Mode 1: Development - Default mode (path dari nodejs/data + images)
  * Mode 2: Production - PROD_MODE=true (path dari process.cwd()/data + images)
+ * Mode 3: Electron - ELECTRON_MODE=true (path data+images bersebelahan EXE, di luar asar)
  */
-const PROD_MODE = process.env.PROD_MODE === 'true';
-const DEV_MODE = !PROD_MODE;
+const ELECTRON_MODE = process.env.ELECTRON_MODE === 'true' || !!process.versions.electron;
+const PROD_MODE = !ELECTRON_MODE && process.env.PROD_MODE === 'true';
+const DEV_MODE = !PROD_MODE && !ELECTRON_MODE;
 
 // Determine paths based on mode
 let publicPath, settingPath, dataPath, imagesPath;
 let appMode;
 
-if (DEV_MODE) {
-  // Development mode (path dari nodejs/data + images)
+if (ELECTRON_MODE) {
+  appMode = 'ELECTRON';
+  const exeDir = process.env.ELECTRON_EXE_DIR || process.cwd();
+  publicPath = path.join(__dirname, 'public');
+  settingPath = path.join(__dirname, 'setting');
+  dataPath = path.join(exeDir, 'data');
+  imagesPath = path.join(exeDir, 'images');
+} else if (PROD_MODE) {
+  appMode = 'PRODUCTION';
+  const appDir = process.cwd();
+  publicPath = path.join(__dirname, 'public');
+  settingPath = path.join(__dirname, 'setting');
+  dataPath = path.join(appDir, 'data');
+  imagesPath = path.join(appDir, 'images');
+} else {
   appMode = 'DEVELOPMENT';
   publicPath = path.join(__dirname, 'public');
   settingPath = path.join(__dirname, 'setting');
   dataPath = path.join(__dirname, 'data');
   imagesPath = path.join(__dirname, 'images');
-} else {
-  // Production mode (path dari process.cwd()/data + images)
-  appMode = 'PRODUCTION';
-  const appDir = process.cwd();
-  publicPath = path.join(__dirname, 'public');
-  settingPath = path.join(__dirname, 'setting');
-  dataPath = path.join(appDir, 'data'); // Data di luar (boleh write)
-  imagesPath = path.join(appDir, 'images'); // Images di luar (boleh write)
 }
 
 // Initialize data service (set on app ready)
@@ -51,8 +58,8 @@ let timeService = null;
  */
 async function startServers() {
   try {
-    // Ensure data and images directories exist in production mode
-    if (PROD_MODE) {
+    // Ensure data and images directories exist (production / electron mode)
+    if (PROD_MODE || ELECTRON_MODE) {
       try {
         // Get initial data path untuk copy initial files
         const initialDataPath = path.join(__dirname, 'data');
@@ -196,7 +203,9 @@ async function startServers() {
     console.log(`Images Path: ${imagesPath}`);
     console.log(`Public Server: http://localhost:${PUBLIC_PORT}`);
     console.log(`API Server: http://localhost:${SETTING_PORT}`);
-    if (PROD_MODE) {
+    if (ELECTRON_MODE) {
+      console.log(`✓ Electron mode (data & images di luar asar)`);
+    } else if (PROD_MODE) {
       console.log(`✓ Production mode`);
     } else {
       console.log(`ℹ️  Development mode (set PROD_MODE=true for production)`);
