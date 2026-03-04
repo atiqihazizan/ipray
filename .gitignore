@@ -158,6 +158,16 @@ linux/
 *.rpm
 *.snap
 
+# Electron build folders
+dist-electron/
+**/dist-electron/
+electron-out/
+**/electron-out/
+electron-build/
+**/electron-build/
+.electron/
+**/.electron/
+
 # -----------------------------------------------------------------------------
 # Environment & secrets (v2)
 # -----------------------------------------------------------------------------
