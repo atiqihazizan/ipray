@@ -80,10 +80,13 @@ export const DataProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [socketConnected, setSocketConnected] = useState(false); // Track Socket.IO connection status
-  const [socketReady, setSocketReady] = useState(false); // Flag untuk indicate socket sudah attempt connect
-  const [isReloading, setIsReloading] = useState(false); // Flag untuk indicate data reload in progress
-  const [reloadCounter, setReloadCounter] = useState(0); // Counter untuk force data refresh
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketReady, setSocketReady] = useState(false);
+  const [isReloading, setIsReloading] = useState(false);
+  const [reloadCounter, setReloadCounter] = useState(0);
+  const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
+  const [liveStreamData, setLiveStreamData] = useState(null);
+  const kematianTimerRef = useRef(null);
 
   /**
    * Load semua data sekali sahaja dari API (parsed di server, tiada parsing di client)
@@ -294,8 +297,41 @@ export const DataProvider = ({ children }) => {
       if (isMounted) window.location.reload();
     });
 
-    // Nota: Event kalibrasi masa (time-offset-updated, time-system-updated) tidak lagi didengari; TimeSyncContext telah dibuang
-    // supaya hanya paparan masa re-render, elak seluruh app reload
+    // Kematian announcement
+    const unsubscribeKematianUpdated = socketService.on('kematian:updated', (data) => {
+      if (!isMounted) return;
+      if (kematianTimerRef.current) clearTimeout(kematianTimerRef.current);
+      setDeathAnnouncementData(data);
+      const durasi = data?.durasiSaat;
+      if (durasi && durasi > 0) {
+        kematianTimerRef.current = setTimeout(() => {
+          // if (isMounted) setDeathAnnouncementData(null);
+          if (isMounted) {
+            setDeathAnnouncementData(null);
+            window.location.reload();
+          }
+          kematianTimerRef.current = null;
+        }, durasi * 1000);
+      }
+    });
+    const unsubscribeKematianCleared = socketService.on('kematian:cleared', () => {
+      if (!isMounted) return;
+      if (kematianTimerRef.current) { clearTimeout(kematianTimerRef.current); kematianTimerRef.current = null; }
+      // setDeathAnnouncementData(null);
+      window.location.reload();
+    });
+
+    // Live streaming
+    const unsubscribeLiveStarted = socketService.on('live:started', (data) => {
+      if (isMounted) setLiveStreamData(data);
+    });
+    const unsubscribeLiveStopped = socketService.on('live:stopped', () => {
+      // if (isMounted) setLiveStreamData(null);
+      if (isMounted) {
+        // setLiveStreamData(null);
+        window.location.reload();
+      }
+    });
 
     // Cleanup on unmount
     return () => {
@@ -308,14 +344,17 @@ export const DataProvider = ({ children }) => {
       }
       if (reloadDebounceTimer) clearTimeout(reloadDebounceTimer);
       if (takwimReloadDebounceTimer) clearTimeout(takwimReloadDebounceTimer);
+      if (kematianTimerRef.current) { clearTimeout(kematianTimerRef.current); kematianTimerRef.current = null; }
       unsubscribeConnect();
       unsubscribeDisconnect();
       unsubscribeError();
       unsubscribeTakwimRefresh();
       unsubscribeDataUpdated();
       unsubscribeReboot();
-      // Don't disconnect during React StrictMode cleanup - let it reconnect
-      // socketService.disconnect();
+      unsubscribeKematianUpdated();
+      unsubscribeKematianCleared();
+      unsubscribeLiveStarted();
+      unsubscribeLiveStopped();
     };
   }, [socketConnected, loadAllData, loadTakwimOnly]);
 
@@ -335,10 +374,12 @@ export const DataProvider = ({ children }) => {
     slideshowData,
     loading,
     error,
-    socketConnected, // Expose Socket.IO connection status
-    socketReady, // Expose socket ready status
-    isReloading, // Expose reload status
-    reloadCounter, // Expose reload counter untuk force refresh di hooks
+    socketConnected,
+    socketReady,
+    isReloading,
+    reloadCounter,
+    deathAnnouncementData,
+    liveStreamData,
     refresh: loadAllData,
     checkMidnight,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,

@@ -29,7 +29,7 @@ const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 class DataService {
   constructor(dataPath) {
     this.dataPath = dataPath;
-    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan'];
+    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan', 'livestream'];
     this.filenameAliases = {
       announcement: 'announcements',
       announcements: 'announcements',
@@ -46,7 +46,8 @@ class DataService {
       'kuliah-batal': 'kuliah-override',
       config: 'config',
       slideshow: 'slideshow',
-      hebahan: 'hebahan'
+      hebahan: 'hebahan',
+      livestream: 'livestream'
     };
   }
 
@@ -393,6 +394,15 @@ class DataService {
           endDate: parts[2] || '',
           raw: line
         });
+      } else if (normalized === 'livestream') {
+        // Livestream format: tajuk|url|jenis
+        parsed.push({
+          id: index + 1,
+          tajuk: parts[0] || '',
+          url: parts[1] || '',
+          jenis: parts[2] || '',
+          raw: line
+        });
       }
     });
     
@@ -414,7 +424,8 @@ class DataService {
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
       'slideshow': ['caption', 'image', 'validFrom', 'validTo'],
-      'hebahan': ['text', 'startDate', 'endDate']
+      'hebahan': ['text', 'startDate', 'endDate'],
+      'livestream': ['tajuk', 'url', 'jenis']
     };
     return columnMap[normalized] || [];
   }

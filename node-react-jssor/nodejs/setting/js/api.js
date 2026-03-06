@@ -98,6 +98,8 @@ function reconstructRawLine(fileName, rowData) {
     return `${caption}|${image}|${validFrom}|${validTo}`;
   } else if (fileName === "hebahan") {
     return `${rowData.text || ""}|${rowData.startDate || ""}|${rowData.endDate || ""}`;
+  } else if (fileName === "livestream") {
+    return `${rowData.tajuk || ""}|${rowData.url || ""}|${rowData.jenis || ""}`;
   }
   return "";
 }
@@ -317,6 +319,14 @@ export async function saveRow() {
     }
   }
 
+  // Validate untuk livestream: URL wajib
+  if (currentFileName === "livestream") {
+    if (!rowData.url || !rowData.url.trim()) {
+      showNotification("✗ URL / IP Streaming wajib diisi", "error");
+      return;
+    }
+  }
+
   // Reconstruct raw line
   rowData.raw = reconstructRawLine(currentFileName, rowData);
 
@@ -469,9 +479,8 @@ export async function toggleSlideHide(rowId) {
       { method: "POST" },
     );
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const result = await response.json();
-    // showNotification(result.hide ? '✓ Slide disembunyikan' : '✓ Slide dipaparkan', 'success');
-    // loadTable(currentFileName);
+    await response.json();
+    if (typeof window.loadTable === "function") window.loadTable("slides");
   } catch (error) {
     console.error("Error toggling slide hide:", error);
     showNotification("✗ Gagal kemaskini", "error");

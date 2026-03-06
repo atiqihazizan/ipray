@@ -63,14 +63,104 @@
   }
   
   .btn-icon.btn-edit {
-    @apply bg-blue-500 text-white;
-    @apply hover:bg-blue-600 focus:ring-blue-400;
+    @apply bg-transparent border-none shadow-none;
+    fill: #3b82f6;
   }
-  
+  .btn-icon.btn-edit:hover { fill: #1d4ed8; }
+
+  /* Edit button style: putih, rounded, shadow, ikon biru */
+  .btn-icon.btn-edit-box {
+    @apply border-none;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 6px;
+  }
+  .btn-icon.btn-edit-box span svg,
+  .btn-icon.btn-edit-box span svg path {
+    fill: #3b82f6 !important;
+  }
+  .btn-icon.btn-edit-box:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+  .btn-icon.btn-edit-box:hover span svg,
+  .btn-icon.btn-edit-box:hover span svg path {
+    fill: #1d4ed8 !important;
+  }
+  .btn-icon.btn-edit-box span svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+  }
+
+  .btn-icon.btn-nav-page {
+    @apply border-none;
+    background: transparent;
+    border-radius: 8px;
+    padding: 6px;
+    transition: box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .btn-icon.btn-nav-page span svg,
+  .btn-icon.btn-nav-page span svg path {
+    fill: #6366f1 !important;
+  }
+  .btn-icon.btn-nav-page:hover {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  .btn-icon.btn-nav-page:hover span svg,
+  .btn-icon.btn-nav-page:hover span svg path {
+    fill: #4f46e5 !important;
+  }
+
+  .btn-icon.btn-toggle-hide {
+    @apply border-none;
+    background: transparent;
+    border-radius: 8px;
+    padding: 6px;
+    transition: box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .btn-icon.btn-toggle-hide:hover {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+
+  .btn-icon.btn-chevron-back {
+    @apply border-none;
+    background: transparent;
+    border-radius: 8px;
+    padding: 6px;
+    color: #64748b;
+    transition: box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+  .btn-icon.btn-chevron-back:hover {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    color: #475569;
+  }
+  .btn-icon.btn-chevron-back span svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+
   .btn-icon.btn-delete {
-    @apply bg-red-500 text-white;
-    @apply hover:bg-red-600 focus:ring-red-400;
+    @apply bg-transparent border-none shadow-none;
+    fill: #ef4444;
   }
+  .btn-icon.btn-delete:hover { fill: #b91c1c; }
+
+  .btn-icon.btn-play {
+    @apply bg-transparent border-none shadow-none;
+    fill: #22c55e;
+  }
+  .btn-icon.btn-play:hover { fill: #15803d; }
+
+  .btn-icon.btn-stop-action {
+    @apply bg-transparent border-none shadow-none;
+    fill: #ef4444;
+  }
+  .btn-icon.btn-stop-action:hover { fill: #b91c1c; }
   
   /* Button Group Container - Framework-like spacing */
   .flex.justify-end.gap-2.mb-3 {
@@ -94,18 +184,18 @@
     display: block;
   }
   
-  /* Table action buttons - smaller untuk dalam table */
+  /* Table action buttons — plain icon style */
   .data-table .btn-icon {
-    @apply w-8 h-8;
+    @apply w-auto h-auto p-1;
+    background: none !important;
   }
-  
-  .data-table .btn-icon span {
-    font-size: 14px;
-  }
-  
-  .data-table .btn-icon span svg {
-    width: 14px;
-    height: 14px;
+
+  .data-table .btn-icon span svg,
+  .data-table .btn-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: inherit;
+    display: block;
   }
   
   /* Config sub-tabs (setiap card = satu tab) */

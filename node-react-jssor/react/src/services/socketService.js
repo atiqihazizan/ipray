@@ -131,6 +131,24 @@ class SocketService {
       audioService.play({ sound: 'beep_once', playCount: 3, volume: 1 }).catch(() => {});
     });
 
+    // Listen for kematian announcement
+    this.socket.on('kematian:updated', (data) => {
+      this.notifyListeners('kematian:updated', data);
+    });
+
+    this.socket.on('kematian:cleared', (data) => {
+      this.notifyListeners('kematian:cleared', data);
+    });
+
+    // Listen for live streaming
+    this.socket.on('live:started', (data) => {
+      this.notifyListeners('live:started', data);
+    });
+
+    this.socket.on('live:stopped', (data) => {
+      this.notifyListeners('live:stopped', data);
+    });
+
     // Listen for time calibration events (offset) - React mesti terima untuk update masa
     this.socket.on('time-offset-updated', (data) => {
       console.log('[Socket] time-offset-updated diterima', data);

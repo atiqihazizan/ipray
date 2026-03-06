@@ -12,7 +12,7 @@ const API_URL = window.Config?.API_URL || '/api';
  */
 export async function scanWiFi() {
     try {
-        showNotification('🔍 Scanning WiFi networks...', 'info');
+        showNotification('🔍 Mengimbas rangkaian WiFi...', 'info');
         
         const response = await fetch(`${API_URL}/wifi/scan`);
         
@@ -33,13 +33,13 @@ export async function scanWiFi() {
             result.networks.forEach(network => {
                 const option = document.createElement('option');
                 option.value = network.ssid;
-                option.textContent = `${network.ssid} (${network.signal}%${network.inUse ? ' - Connected' : ''})`;
+                option.textContent = `${network.ssid} (${network.signal}%${network.inUse ? ' - Disambung' : ''})`;
                 if (network.inUse) option.selected = true;
                 ssidSelect.appendChild(option);
             });
         }
         
-        showNotification(`✓ Ditemui ${result.networks.length} WiFi networks`, 'success');
+        showNotification(`✓ Ditemui ${result.networks.length} rangkaian WiFi`, 'success');
     } catch (error) {
         console.error('Error scanning WiFi:', error);
         showNotification(`✗ Gagal scan WiFi: ${error.message}`, 'error');
@@ -79,7 +79,7 @@ export async function configureWiFi() {
         }
         
         if (!result.success) {
-            throw new Error(result.error || 'Gagal configure WiFi');
+            throw new Error(result.error || 'Gagal tetapkan WiFi');
         }
         
         showNotification(result.fallback ? result.message : `✓ ${result.message}`, 'success');
@@ -87,7 +87,7 @@ export async function configureWiFi() {
         setTimeout(() => { refreshWiFiStatus(); refreshHotspotStatus && refreshHotspotStatus(); }, 2000);
     } catch (error) {
         console.error('Error configuring WiFi:', error);
-        showNotification(`✗ Gagal configure WiFi: ${error.message}`, 'error');
+        showNotification(`✗ Gagal tetapkan WiFi: ${error.message}`, 'error');
     }
 }
 
@@ -113,13 +113,13 @@ export async function enableHotspot() {
         
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || `HTTP error! status: ${response.status}`);
-        if (!result.success) throw new Error(result.error || 'Gagal enable hotspot');
+        if (!result.success) throw new Error(result.error || 'Gagal aktifkan hotspot');
         
         showNotification(`✓ ${result.message}`, 'success');
         setTimeout(() => { refreshWiFiStatus(); refreshHotspotStatus(); }, 2000);
     } catch (error) {
         console.error('Error enabling hotspot:', error);
-        showNotification(`✗ Gagal enable hotspot: ${error.message}`, 'error');
+        showNotification(`✗ Gagal aktifkan hotspot: ${error.message}`, 'error');
     }
 }
 
@@ -138,13 +138,13 @@ export async function disableHotspot() {
         
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || `HTTP error! status: ${response.status}`);
-        if (!result.success) throw new Error(result.error || 'Gagal disable hotspot');
+        if (!result.success) throw new Error(result.error || 'Gagal nyahaktif hotspot');
         
         showNotification(`✓ ${result.message}`, 'success');
         setTimeout(() => { refreshWiFiStatus(); refreshHotspotStatus(); }, 2000);
     } catch (error) {
         console.error('Error disabling hotspot:', error);
-        showNotification(`✗ Gagal disable hotspot: ${error.message}`, 'error');
+        showNotification(`✗ Gagal nyahaktif hotspot: ${error.message}`, 'error');
     }
 }
 
@@ -155,7 +155,7 @@ export async function refreshHotspotStatus() {
     try {
         const statusText = document.getElementById('hotspot-status-text');
         if (!statusText) return;
-        statusText.textContent = 'Loading...';
+        statusText.textContent = 'Memuatkan...';
         
         const response = await fetch(`${API_URL}/wifi/hotspot/status`);
         const result = await response.json();
@@ -186,7 +186,7 @@ export async function refreshHotspotStatus() {
 export async function refreshWiFiStatus() {
     try {
         const statusText = document.getElementById('wifi-status-text');
-        if (statusText) statusText.textContent = 'Loading...';
+        if (statusText) statusText.textContent = 'Memuatkan...';
         
         const response = await fetch(`${API_URL}/wifi/status`);
         const result = await response.json();
@@ -196,19 +196,19 @@ export async function refreshWiFiStatus() {
         const status = result.status;
         if (statusText) {
             if (status.connected) {
-                statusText.textContent = `Connected: ${status.ssid || 'Unknown'} (${status.device || 'wlan0'})`;
+                statusText.textContent = `Disambung: ${status.ssid || 'Tidak diketahui'} (${status.device || 'wlan0'})`;
                 statusText.style.color = '#10b981';
             } else if (status.deviceAvailable === false) {
-                statusText.textContent = status.error || 'WiFi Device Tidak Tersedia (Unplug)';
+                statusText.textContent = status.error || 'Peranti WiFi tidak tersedia';
                 statusText.style.color = '#ef4444';
             } else if (status.error) {
                 statusText.textContent = status.error;
                 statusText.style.color = '#ef4444';
             } else if (!status.device) {
-                statusText.textContent = 'WiFi Device Tidak Tersedia';
+                statusText.textContent = 'Peranti WiFi tidak tersedia';
                 statusText.style.color = '#ef4444';
             } else {
-                statusText.textContent = 'Not Connected';
+                statusText.textContent = 'Tidak disambung';
                 statusText.style.color = '#ef4444';
             }
         }

@@ -21,7 +21,7 @@ const resolveOverlay = (dt, key) => {
   return false;
 };
 
-const DateTimeOverlay = () => {
+const DateTimeOverlay = ({ overlayOverride = null }) => {
   const dtRef = useRef(null);
   const [, forceRender] = useState(0);
   const { takwimArray, takwimParsed } = useTakwimData();
@@ -39,7 +39,17 @@ const DateTimeOverlay = () => {
     return () => window.removeEventListener(TIME_EVENTS.SLIDE_CHANGED, handler);
   }, []);
 
-  const showOverlay = (key) => resolveOverlay(dtRef.current, key);
+  const hasOverride = overlayOverride != null;
+  const showOverlay = (key) => {
+    if (hasOverride) {
+      if (key === 'date') return overlayOverride.showDate !== false;
+      if (key === 'solat-time-small') return overlayOverride.showSmallTime !== false;
+      if (key === 'solat-time') return false;
+      return false;
+    }
+    return resolveOverlay(dtRef.current, key);
+  };
+  const showMarqueeOverride = hasOverride ? (overlayOverride.showMarquee !== false) : true;
   const showSolatTimeSmall = showOverlay('solat-time-small');
 
   const hebahanMessages = hebahanData && hebahanData.length > 0 
@@ -50,7 +60,7 @@ const DateTimeOverlay = () => {
     ? `${MOSQUE_NAME} • ${hebahanMessages}`
     : MOSQUE_NAME;
   
-  const showMarqueeInMiddle = marqueeEnabled && showSolatTimeSmall && hebahanText;
+  const showMarqueeInMiddle = marqueeEnabled && showMarqueeOverride && showSolatTimeSmall && hebahanText;
 
   useEffect(() => {
     if (takwimArray && takwimArray.length > 0) {
@@ -63,13 +73,13 @@ const DateTimeOverlay = () => {
       {/* <div className={`fixed top-0 left-0 right-0 flex justify-between items-center z-10 px-0 py-[14px] ${showOverlay('date') ? 'opacity-100' : 'opacity-0'}`} aria-hidden={!showOverlay('date')}> */}
       
       {showOverlay('date') && (
-        <div className={`fixed top-0 left-0 right-0 flex justify-between items-center z-10 px-0 py-[14px]`}>
+        <div className={`fixed top-0 left-0 right-0 flex justify-between items-center z-[70] px-0 py-[14px]`}>
             <DisplayDate type={1} dateType="gregorian" size={72} color="#ffff00" />
             <DisplayDate type={2} dateType="hijri" size={72} color="#ffff00" />
         </div>
       )}
 
-      <div className={`fixed bottom-0 left-0 right-0`}>
+      <div className={`fixed bottom-0 left-0 right-0 z-[70]`}>
         {showOverlay('solat-time') && (
           <div className={`flex justify-between items-center`}>
             <div className="flex gap-[20px]">
@@ -96,7 +106,7 @@ const DateTimeOverlay = () => {
               }} />
             </div>
           )}
-          {marqueeEnabled && hebahanText && (<Marquee text={hebahanText} duration={MARQUEE_CONFIG.DURATION} className="w-full bg-black/80" />)}
+          {marqueeEnabled && showMarqueeOverride && hebahanText && (<Marquee text={hebahanText} duration={MARQUEE_CONFIG.DURATION} className="w-full bg-black/80" />)}
         </div>
       </div>
     </>

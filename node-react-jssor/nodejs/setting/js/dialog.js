@@ -132,9 +132,12 @@ function createFormFields(form, row, isAdd, options = {}) {
     label.textContent = col.charAt(0).toUpperCase() + col.slice(1);
     label.setAttribute("for", `field-${col}`);
 
-    // Slides: tunjuk unit saat untuk duration supaya jelas (UI dalam saat, storage dalam ms)
+    // Slides: label BM
     if (currentFileName === "slides" && col === "duration") {
-      label.textContent = "Duration (s)";
+      label.textContent = "Tempoh (s)";
+    }
+    if (currentFileName === "slides" && (col === "type" || col === "image")) {
+      label.textContent = col === "type" ? "Jenis" : "Imej";
     }
 
     // Kuliah: label mesra pengguna
@@ -186,6 +189,41 @@ function createFormFields(form, row, isAdd, options = {}) {
         endDate: "Tarikh Akhir (YYYY-MM-DD)",
       };
       if (hebahanLabels[col]) label.textContent = hebahanLabels[col];
+    }
+    // Siaran langsung: label kolom
+    if (currentFileName === "livestream") {
+      const lsLabels = {
+        tajuk: "Tajuk Siaran",
+        url: "URL / IP Streaming",
+        jenis: "Jenis Siaran",
+      };
+      if (lsLabels[col]) label.textContent = lsLabels[col];
+    }
+
+    // Siaran langsung: jenis sebagai dropdown
+    if (currentFileName === "livestream" && col === "jenis") {
+      const select = document.createElement("select");
+      select.id = "field-jenis";
+      select.name = "jenis";
+      select.className = "form-control";
+      const currentVal = !isAdd && row[col] ? (row[col] || "").trim().toLowerCase() : "";
+      [
+        { value: "", label: "— Pilih jenis —" },
+        { value: "youtube", label: "YouTube" },
+        { value: "facebook", label: "Facebook" },
+        { value: "hls", label: "HLS (.m3u8)" },
+        { value: "video", label: "Video (.mp4 / .webm)" },
+      ].forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (currentVal === opt.value) o.selected = true;
+        select.appendChild(o);
+      });
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
     }
 
     // Kuliah-batal: format dropdown (Tarikh tunggal / Range)
@@ -600,15 +638,12 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Special handling untuk column checkbox dalam slides: pilihan overlay (date, solat-time, solat-time-small)
+    // Special handling untuk column checkbox dalam slides: pilihan overlay (tiada label "Checkbox", no wrap, selari dengan Sembunyikan slide)
     if (currentFileName === "slides" && col === "checkbox") {
       const CHECKBOX_OPTIONS = [
-        { value: "date", label: "Date (Tarikh)" },
-        {
-          value: "solat-time",
-          label: "Solat + Time (Waktu solat + jam besar)",
-        },
-        { value: "solat-time-small", label: "Next Solat + Small Time" },
+        { value: "date", label: "Tarikh" },
+        { value: "solat-time", label: "Waktu solat penuh" },
+        { value: "solat-time-small", label: "Waktu solat seterusnya" },
       ];
       const currentVal =
         !isAdd && row[col] ? String(row[col] || "").trim() : "";
@@ -628,10 +663,11 @@ function createFormFields(form, row, isAdd, options = {}) {
       hiddenInput.value = currentVal;
 
       const container = document.createElement("div");
-      container.className = "checkbox-group";
+      container.className = "checkbox-group slides-dialog-checkbox-row";
       container.style.display = "flex";
       container.style.flexWrap = "wrap";
-      container.style.gap = "12px 16px";
+      container.style.gap = "16px 20px";
+      container.style.alignItems = "center";
 
       const updateHidden = (chkContainer) => {
         const checked = chkContainer.querySelectorAll(
@@ -645,10 +681,12 @@ function createFormFields(form, row, isAdd, options = {}) {
 
       CHECKBOX_OPTIONS.forEach((opt) => {
         const labelWrap = document.createElement("label");
+        labelWrap.className = "slides-dialog-checkbox-row";
         labelWrap.style.display = "inline-flex";
         labelWrap.style.alignItems = "center";
         labelWrap.style.gap = "6px";
         labelWrap.style.cursor = "pointer";
+        labelWrap.style.whiteSpace = "nowrap";
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.value = opt.value;
@@ -656,21 +694,20 @@ function createFormFields(form, row, isAdd, options = {}) {
         cb.addEventListener("change", () => updateHidden(container));
         const span = document.createElement("span");
         span.textContent = opt.label;
+        span.style.whiteSpace = "nowrap";
         labelWrap.appendChild(cb);
         labelWrap.appendChild(span);
         container.appendChild(labelWrap);
       });
 
-      group.appendChild(label);
       group.appendChild(container);
       group.appendChild(hiddenInput);
       form.appendChild(group);
       return;
     }
 
-    // Special handling untuk column hide dalam slides: checkbox Sembunyikan slide
+    // Special handling untuk column hide dalam slides: selari dengan checkbox Paparan
     if (currentFileName === "slides" && col === "hide") {
-      label.textContent = "Sembunyikan slide";
       const hiddenInput = document.createElement("input");
       hiddenInput.type = "hidden";
       hiddenInput.id = `field-${col}`;
@@ -678,21 +715,24 @@ function createFormFields(form, row, isAdd, options = {}) {
       const isHidden = !isAdd && (row[col] === "1" || row[col] === true);
       hiddenInput.value = isHidden ? "1" : "0";
       const labelWrap = document.createElement("label");
+      labelWrap.className = "slides-dialog-checkbox-row";
       labelWrap.style.display = "inline-flex";
       labelWrap.style.alignItems = "center";
       labelWrap.style.gap = "8px";
       labelWrap.style.cursor = "pointer";
+      labelWrap.style.whiteSpace = "nowrap";
       const cb = document.createElement("input");
+      cb.style.width = "auto";
       cb.type = "checkbox";
       cb.checked = isHidden;
       cb.addEventListener("change", () => {
         hiddenInput.value = cb.checked ? "1" : "0";
       });
       const span = document.createElement("span");
-      span.textContent = "Sembunyikan slide (tidak papar dalam slider)";
+      span.textContent = "Sembunyikan slide";
+      span.style.whiteSpace = "nowrap";
       labelWrap.appendChild(cb);
       labelWrap.appendChild(span);
-      group.appendChild(label);
       group.appendChild(labelWrap);
       group.appendChild(hiddenInput);
       form.appendChild(group);
@@ -1239,6 +1279,13 @@ function createFormFields(form, row, isAdd, options = {}) {
           if (currentFileName === "announcements") input.value = "PENGUMUMAN";
         }
 
+        // Slides: duration = number (saat)
+        if (currentFileName === "slides" && col === "duration") {
+          input.type = "number";
+          input.min = "0";
+          input.step = "1";
+        }
+
         // Countdowns: format dropdown
         if (currentFileName === "countdowns" && col === "format") {
           const select = document.createElement("select");
@@ -1537,9 +1584,10 @@ export function openAddDialog() {
     currentFileName !== "images" &&
     currentFileName !== "slideshow" &&
     currentFileName !== "hebahan" &&
-    currentFileName !== "kuliah-override"
+    currentFileName !== "kuliah-override" &&
+    currentFileName !== "livestream"
   ) {
-    showNotification("✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, dan Override Kuliah","error");
+    showNotification("✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, Override Kuliah, dan Siaran Langsung","error");
     return;
   }
 

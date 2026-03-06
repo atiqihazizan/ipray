@@ -11,7 +11,9 @@ class SocketServerService {
     this.httpServer = null;
     this.io = null;
     this.port = null;
-    this.isAttached = false; // Track if attached to existing server
+    this.isAttached = false;
+    this.deathAnnouncementData = null;
+    this.liveStreamData = null;
   }
 
   /**
@@ -150,6 +152,40 @@ class SocketServerService {
         });
       });
       
+      // Handle kematian announcement
+      socket.on('kematian:update', (data) => {
+        console.log(`📡 Kematian update received:`, data);
+        this.deathAnnouncementData = { ...data, active: true, timestamp: Date.now() };
+        this.io.emit('kematian:updated', this.deathAnnouncementData);
+      });
+
+      socket.on('kematian:clear', () => {
+        console.log(`📡 Kematian cleared`);
+        this.deathAnnouncementData = null;
+        this.io.emit('kematian:cleared', { timestamp: Date.now() });
+      });
+
+      // Handle live streaming
+      socket.on('live:start', (data) => {
+        console.log(`📡 Live stream start:`, data);
+        this.liveStreamData = { ...data, active: true, timestamp: Date.now() };
+        this.io.emit('live:started', this.liveStreamData);
+      });
+
+      socket.on('live:stop', () => {
+        console.log(`📡 Live stream stopped`);
+        this.liveStreamData = null;
+        this.io.emit('live:stopped', { timestamp: Date.now() });
+      });
+
+      // Send current state to newly connected client
+      if (this.deathAnnouncementData) {
+        socket.emit('kematian:updated', this.deathAnnouncementData);
+      }
+      if (this.liveStreamData) {
+        socket.emit('live:started', this.liveStreamData);
+      }
+
       // Handle disconnect
       socket.on('disconnect', () => {
         console.log(`🔌 Socket.IO client disconnected: ${socket.id}`);

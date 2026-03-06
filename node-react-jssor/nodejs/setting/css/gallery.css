@@ -73,11 +73,11 @@
 
 /* Card Footer */
 .gallery-footer {
-    padding: 8px 10px;
+    /* padding: 8px 10px; */
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    /* gap: 6px; */
     border-top: 1px solid #f3f4f6;
     background: #fafafa;
 }
@@ -107,7 +107,315 @@
 .gallery-actions {
     display: flex;
     gap: 4px;
+    /* flex-shrink: 0; */
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 5px;
+}
+
+/* ── Gallery template-style (seperti template, tiada meta) ───────────────────── */
+.gallery-grid--template-style {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.gallery-card--template-style {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.gallery-card--template-style:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+}
+
+.gallery-card--template-style .gallery-footer--actions-only {
+    display: block;
+    padding: 0;
+    border-top: 1px solid #f3f4f6;
+    background: #ffffff;
+}
+
+.gallery-card--template-style .gallery-footer--actions-only .gallery-code {
+    display: none;
+}
+
+.gallery-card--template-style .gallery-footer.slides-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+}
+
+.gallery-card--template-style .slides-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.gallery-card--template-style .slides-card-meta .slides-card-type {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-card--template-style .slides-card-meta .slides-card-duration {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Template page card (style baru) ───────────────────── */
+.slides-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.slides-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.slides-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+}
+
+/* Card header: tajuk kiri, "Tindakan" kanan */
+.slides-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.slides-card-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slides-card-header-more {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
     flex-shrink: 0;
+}
+
+/* Image section */
+.slides-card .slides-card-img-wrap {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #f9fafb;
+    cursor: default;
+}
+
+.slides-card .slides-card-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.slides-card .slides-card-img-wrap:hover img {
+    transform: none;
+    opacity: 1;
+}
+
+.slides-card .slides-card-img-wrap::after {
+    display: none;
+}
+
+/* Footer: meta + actions (layout seperti reference card) */
+.slides-card .gallery-footer,
+.slides-card .slides-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    /* gap: 10px 12px; */
+    /* padding: 14px 16px; */
+    background: #ffffff;
+    border-top: 1px solid #f3f4f6;
+}
+
+.slides-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+    padding: 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.slides-card-type {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.slides-card-duration {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.slides-card-paparan {
+    font-size: 11px;
+    color: #9ca3af;
+    line-height: 1.4;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Action icons dengan pemisah menegak */
+.slides-card .slides-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    margin-top: 0;
+}
+
+.slides-card .slides-card-actions .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.slides-card .slides-card-actions .btn-icon:hover {
+    color: #6366f1;
+    background: #f5f3ff;
+}
+
+.slides-card .slides-card-actions .btn-icon + .btn-icon {
+    border-left: 1px solid #e5e7eb;
+    margin-left: 4px;
+    /* padding-left: 8px; */
+}
+
+.slides-card .slides-card-actions .btn-icon svg,
+.slides-card .slides-card-actions .btn-icon span {
+    width: 18px;
+    height: 18px;
+}
+
+.slides-card .slides-card-actions .btn-icon span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Card actions: ul/li Ant Design style (no vertical dividers) */
+.slides-card .ant-card-actions.semantic-mark-actions,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    /* border-top: 1px solid #f3f4f6; */
+    background: #ffffff;
+    margin: 12px 0;
+}
+
+.slides-card .ant-card-actions.semantic-mark-actions > li,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* padding: 6px 0; */
+    min-height: 24px;
+    color: #6b7280;
+    transition: color 0.15s ease, background 0.15s ease;
+    border: none;
+    border-left: none;
+    border-right: none;
+}
+
+.slides-card .ant-card-actions.semantic-mark-actions > li + li,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li + li {
+    border-left: none;
+}
+.slides-card .ant-card-actions.semantic-mark-actions > li:not(:last-child),
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li:not(:last-child) {
+    border-inline-end: 1px solid #f3f4f6;
+}
+
+.slides-card .ant-card-actions.semantic-mark-actions > li:hover,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li:hover {
+    color: #6366f1;
+    /* background: #f5f3ff; */
+}
+
+.slides-card .ant-card-actions.semantic-mark-actions .anticon,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions .anticon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slides-card .ant-card-actions.semantic-mark-actions .anticon svg,
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions .anticon svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+/* .gallery-card--template-style .ant-card-actions.semantic-mark-actions > li.action-delete {
+    color: #ef4444;
+} */
+
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li.action-delete .anticon svg {
+    /* fill: #ef4444; */
+}
+
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li.action-delete:hover {
+    color: #b91c1c;
+    /* background: #fef2f2; */
+}
+
+.gallery-card--template-style .ant-card-actions.semantic-mark-actions > li.action-delete:hover .anticon svg {
+    fill: #b91c1c;
 }
 
 /* Gallery loading/empty/error states */

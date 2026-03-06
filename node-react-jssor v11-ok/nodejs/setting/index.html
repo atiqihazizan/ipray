@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ms">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>iPray - Setting Panel</title>
+	<link rel="stylesheet" href="output.css">
+	<link rel="stylesheet" href="css/table.css">
+	<link rel="stylesheet" href="css/dialog.css">
+	<link rel="stylesheet" href="css/gallery.css">
+	<style>
+		/* Sidebar Styles */
+		.sidebar {
+			width: 280px;
+			background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+			color: white;
+			position: fixed;
+			left: 0;
+			top: 0;
+			height: 100vh;
+			overflow-y: auto;
+			z-index: 100;
+			transition: transform 0.3s ease;
+			box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+		}
+
+		.sidebar-header {
+			padding: 24px 20px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			background: rgba(0, 0, 0, 0.2);
+		}
+
+		.sidebar-logo {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			font-size: 24px;
+			font-weight: 700;
+		}
+
+		.sidebar-menu {
+			padding: 16px 0;
+		}
+
+		.menu-item {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 14px 20px;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			border-left: 3px solid transparent;
+			color: rgba(255, 255, 255, 0.7);
+			font-size: 15px;
+			font-weight: 500;
+		}
+
+		.menu-item:hover {
+			background: rgba(255, 255, 255, 0.05);
+			color: white;
+			border-left-color: #6366f1;
+		}
+
+		.menu-item.active {
+			background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
+			color: white;
+			border-left-color: #6366f1;
+			font-weight: 600;
+		}
+
+		.menu-item-icon {
+			font-size: 20px;
+			width: 24px;
+			text-align: center;
+		}
+
+		.menu-item-text {
+			flex: 1;
+		}
+
+		/* Config sub-tabs (tab dalam halaman Config) */
+		#config-subnav {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			margin-bottom: 16px;
+			padding-bottom: 12px;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		.config-subtab {
+			padding: 8px 16px;
+			font-size: 14px;
+			font-weight: 500;
+			color: #475569;
+			background: #f1f5f9;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: background 0.2s, color 0.2s, border-color 0.2s;
+		}
+		.config-subtab:hover {
+			background: #e2e8f0;
+			color: #334155;
+		}
+		.config-subtab.active {
+			background: #6366f1;
+			color: white;
+			border-color: #6366f1;
+		}
+		.config-subtab.active:hover {
+			background: #4f46e5;
+			border-color: #4f46e5;
+		}
+		/* Jarak antara config-group dalam panel (kandungan dimuat dinamik) */
+		#config-tab-panel .config-group + .config-group {
+			margin-top: 24px;
+		}
+
+		/* Main Content Area */
+		.main-content {
+			margin-left: 280px;
+			min-height: 100vh;
+			background: #f8fafc;
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+		}
+
+		.top-header {
+			background: white;
+			padding: 20px 32px;
+			border-bottom: 1px solid #e2e8f0;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+			position: sticky;
+			top: 0;
+			z-index: 50;
+		}
+
+		.top-header-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.page-title {
+			font-size: 28px;
+			font-weight: 700;
+			color: #1e293b;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.connection-status {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 8px 16px;
+			background: #f1f5f9;
+			border-radius: 20px;
+			font-size: 14px;
+			color: #64748b;
+		}
+
+		.status-dot {
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: #22c55e;
+			animation: pulse 2s infinite;
+		}
+
+		.content-wrapper {
+			padding: 32px;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			height: calc(100vh - 84px);
+		}
+
+		.tab-content {
+			display: none;
+			flex: 1;
+			flex-direction: column;
+			min-height: 0;
+		}
+
+		.tab-content.active {
+			display: flex;
+		}
+
+		.content-card {
+			background: white;
+			border-radius: 12px;
+			padding: 24px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+			/* margin-bottom: 24px; <- Buang dalam flexbox context untuk elak extra height */
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+		}
+
+		.info-box {
+			background: linear-gradient(135deg, #eff6ff 0%, #faf5ff 100%);
+			border-left: 4px solid #6366f1;
+			padding: 16px;
+			border-radius: 8px;
+			margin-bottom: 24px;
+		}
+
+		.info-box p {
+			margin: 4px 0;
+			font-size: 14px;
+			color: #475569;
+		}
+
+		.info-box strong {
+			color: #1e293b;
+		}
+
+		/* Mobile Sidebar Toggle */
+		.sidebar-toggle {
+			display: none;
+			position: fixed;
+			top: 20px;
+			left: 20px;
+			z-index: 200;
+			background: #6366f1;
+			color: white;
+			border: none;
+			padding: 12px;
+			border-radius: 8px;
+			cursor: pointer;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		}
+
+		@media (max-width: 1024px) {
+			.sidebar {
+				transform: translateX(-100%);
+			}
+
+			.sidebar.open {
+				transform: translateX(0);
+			}
+
+			.main-content {
+				margin-left: 0;
+			}
+
+			.sidebar-toggle {
+				display: block;
+			}
+		}
+
+		/* Phone / tablet optimizations */
+		@media (max-width: 768px) {
+			.content-wrapper {
+				padding: 16px;
+			}
+
+			.content-card {
+				padding: 16px;
+				margin-bottom: 16px;
+				/* overflow-x: auto; <- BUANG untuk elak scroll di content-card */
+			}
+
+			.connection-status {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 4px;
+			}
+
+			.table-container {
+				flex: 1;
+				min-height: 200px;
+				max-height: none;
+			}
+
+			/* Config form: elak overflow di telefon */
+			.config-group-items {
+				display: flex;
+				flex-direction: column;
+				gap: 12px;
+			}
+
+			.config-item-control {
+				display: flex;
+				flex-direction: column;
+				align-items: stretch;
+				gap: 8px;
+			}
+
+			.config-item-control input,
+			.config-item-control .color-text-input {
+				width: 100%;
+			}
+
+			.config-item-control .config-unit {
+				align-self: flex-start;
+			}
+
+			.config-item-control .btn-icon {
+				width: 100%;
+				justify-content: center;
+			}
+		}
+
+		/* Scrollbar untuk sidebar */
+		.sidebar::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		.sidebar::-webkit-scrollbar-track {
+			background: rgba(0, 0, 0, 0.1);
+		}
+
+		.sidebar::-webkit-scrollbar-thumb {
+			background: rgba(255, 255, 255, 0.2);
+			border-radius: 3px;
+		}
+
+		.sidebar::-webkit-scrollbar-thumb:hover {
+			background: rgba(255, 255, 255, 0.3);
+		}
+
+		/* Button Styles */
+		.btn-add {
+			background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+			color: white;
+			padding: 12px 24px;
+			border: none;
+			border-radius: 8px;
+			font-size: 16px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+		}
+
+		.btn-add:hover {
+			background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+			transform: translateY(-2px);
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.btn-delete {
+			padding: 6px 12px;
+			background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+			color: white;
+			border: none;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 500;
+			transition: all 0.2s ease;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+		}
+
+		.btn-delete:hover {
+			background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+		}
+
+		.action-buttons {
+			display: flex;
+			gap: 8px;
+			flex-wrap: wrap;
+			width: 114px;
+		}
+
+		/* Today Takwim Configuration Layout */
+		.today-takwim-container {
+			width: 100%;
+		}
+
+		.today-takwim-header {
+			border-bottom: 1px solid #e2e8f0;
+			padding-bottom: 16px;
+			margin-bottom: 24px;
+		}
+
+		.today-takwim-title {
+			font-size: 20px;
+			font-weight: 600;
+			color: #1e293b;
+			margin: 0 0 8px 0;
+		}
+
+		.today-takwim-dates {
+			font-size: 14px;
+			color: #64748b;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.today-takwim-fields {
+			display: flex;
+			flex-direction: column;
+			gap: 0;
+		}
+
+		.today-takwim-field {
+			display: flex;
+			align-items: center;
+			padding: 12px 0;
+			border-bottom: 1px solid #f1f5f9;
+			gap: 12px;
+		}
+
+		.today-takwim-field:last-of-type {
+			border-bottom: none;
+		}
+
+		.today-takwim-label {
+			width: 120px;
+			font-size: 14px;
+			font-weight: 500;
+			color: #475569;
+			flex-shrink: 0;
+		}
+
+		.today-takwim-input {
+			flex: 1;
+			padding: 8px 12px;
+			border: 1px solid #cbd5e1;
+			border-radius: 6px;
+			font-size: 14px;
+			color: #1e293b;
+			background-color: #ffffff;
+			transition: all 0.2s ease;
+		}
+
+		.today-takwim-input:focus {
+			outline: none;
+			border-color: #6366f1;
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+		}
+
+		.today-takwim-btn-field-save {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 6px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			background-color: #22c55e;
+			color: white;
+			flex-shrink: 0;
+		}
+
+		.today-takwim-btn-field-save:hover {
+			background-color: #16a34a;
+		}
+
+		.today-takwim-btn-field-save:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		.today-takwim-actions {
+			display: flex;
+			justify-content: flex-end;
+			gap: 12px;
+			margin-top: 24px;
+			padding-top: 16px;
+			border-top: 1px solid #e2e8f0;
+		}
+
+		.today-takwim-btn {
+			padding: 10px 20px;
+			border: none;
+			border-radius: 6px;
+			font-size: 14px;
+			font-weight: 500;
+			cursor: pointer;
+			transition: all 0.2s ease;
+		}
+
+
+		.today-takwim-btn-reload {
+			background-color: #f1f5f9;
+			color: #475569;
+		}
+
+		.today-takwim-btn-reload:hover {
+			background-color: #e2e8f0;
+		}
+
+		.today-takwim-empty {
+			text-align: center;
+			padding: 48px 20px;
+			color: #64748b;
+		}
+
+		.today-takwim-empty p {
+			margin: 0;
+		}
+
+	</style>
+</head>
+
+<body>
+	<!-- Sidebar -->
+	<aside class="sidebar" id="sidebar">
+		<div class="sidebar-header">
+			<div class="sidebar-logo">
+				<span>📝</span>
+				<span>iPray</span>
+			</div>
+			<div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px;">Setting Panel</div>
+		</div>
+		<nav class="sidebar-menu">
+			<div class="menu-item active" onclick="showTab('config')" data-tab="config">
+				<span class="menu-item-icon">⚙️</span>
+				<span class="menu-item-text">Config</span>
+			</div>
+			<div class="menu-item" onclick="showTab('slides')" data-tab="slides">
+				<span class="menu-item-icon">🖼️</span>
+				<span class="menu-item-text">Slides</span>
+			</div>
+			<div class="menu-item" onclick="showTab('slideshow')" data-tab="slideshow">
+				<span class="menu-item-icon">🎬</span>
+				<span class="menu-item-text">Slideshow</span>
+			</div>
+			<div class="menu-item" onclick="showTab('kuliah')" data-tab="kuliah">
+				<span class="menu-item-icon">📚</span>
+				<span class="menu-item-text">Kuliah</span>
+			</div>
+			<div class="menu-item" onclick="showTab('kuliah-override')" data-tab="kuliah-override">
+				<span class="menu-item-icon">📋</span>
+				<span class="menu-item-text">Override Kuliah</span>
+			</div>
+			<div class="menu-item" onclick="showTab('images')" data-tab="images">
+				<span class="menu-item-icon">🖼️</span>
+				<span class="menu-item-text">Galery</span>
+			</div>
+		<div class="menu-item" onclick="showTab('announcements')" data-tab="announcements">
+			<span class="menu-item-icon">📢</span>
+			<span class="menu-item-text">Pengumuman</span>
+		</div>
+		<div class="menu-item" onclick="showTab('hebahan')" data-tab="hebahan">
+			<span class="menu-item-icon">📰</span>
+			<span class="menu-item-text">Hebahan</span>
+		</div>
+		<div class="menu-item" onclick="showTab('countdowns')" data-tab="countdowns">
+			<span class="menu-item-icon">⏳</span>
+			<span class="menu-item-text">Countdown</span>
+		</div>
+			<div class="menu-item" onclick="showTab('takwim')" data-tab="takwim">
+				<span class="menu-item-icon">📅</span>
+				<span class="menu-item-text">Takwim</span>
+			</div>
+		</nav>
+	</aside>
+
+	<!-- Main Content -->
+	<main class="main-content">
+		<!-- Top Header -->
+		<header class="top-header">
+			<div class="top-header-content">
+				<div>
+					<h1 class="page-title" id="page-title">
+						<span id="page-icon">⚙️</span>
+						<span id="page-name">Config</span>
+					</h1>
+				</div>
+				<div class="connection-status">
+					<div class="status-dot" id="status-dot"></div>
+					<span id="connection-status">Connected</span>
+				</div>
+			</div>
+		</header>
+
+		<!-- Content Wrapper -->
+		<div class="content-wrapper">
+            <!-- Config Tab -->
+            <div id="config-tab" class="tab-content active">
+                <div class="content-card">
+                    <!-- Config sub-tabs (setiap card dalam fail berasingan) -->
+                    <nav id="config-subnav" class="config-subnav">
+                        <button type="button" class="config-subtab active" data-config-tab="waktu-solat" onclick="showConfigSubTab('waktu-solat')">Waktu Solat</button>
+                        <button type="button" class="config-subtab" data-config-tab="hebahan" onclick="showConfigSubTab('hebahan')">Hebahan</button>
+                        <button type="button" class="config-subtab" data-config-tab="title-home" onclick="showConfigSubTab('title-home')">Title Home</button>
+                        <button type="button" class="config-subtab" data-config-tab="masa-sistem" onclick="showConfigSubTab('masa-sistem')">Masa Sistem</button>
+                        <button type="button" class="config-subtab" data-config-tab="wifi" onclick="showConfigSubTab('wifi')">WiFi</button>
+                        <button type="button" class="config-subtab" data-config-tab="hotspot" onclick="showConfigSubTab('hotspot')">Hotspot</button>
+                        <button type="button" class="config-subtab" data-config-tab="system" onclick="showConfigSubTab('system')">System</button>
+                    </nav>
+                    <div id="config-form" class="config-form" style="flex: 1; overflow-y: auto; min-height: 0;">
+                        <div id="config-tab-panel"></div>
+                    </div>
+                </div>
+            </div>
+
+
+			<!-- Slides Tab -->
+            <div id="slides-tab" class="tab-content">
+                <div class="content-card">
+                    <!-- Button Group Above Table -->
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-reload" onclick="loadTable('slides')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="slides-table" class="data-table">
+							<thead id="slides-thead"></thead>
+							<tbody id="slides-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Slideshow Tab -->
+            <div id="slideshow-tab" class="tab-content">
+                <div class="content-card">
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Slideshow">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+								</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadTable('slideshow')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="slideshow-table" class="data-table">
+							<thead id="slideshow-thead"></thead>
+							<tbody id="slideshow-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Kuliah Tab -->
+            <div id="kuliah-tab" class="tab-content">
+                <div class="content-card">
+                    <!-- Button Group Above Table -->
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-reload" onclick="loadTable('kuliah')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="kuliah-table" class="data-table">
+							<thead id="kuliah-thead"></thead>
+							<tbody id="kuliah-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Override Kuliah Tab -->
+			<div id="kuliah-override-tab" class="tab-content">
+				<div class="content-card">
+					<!-- Info collapsible -->
+					<div style="margin-bottom:0;">
+						<button type="button" onclick="this.nextElementSibling.classList.toggle('ko-hidden')" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#6b7280;padding:0;letter-spacing:0.03em;">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px;flex-shrink:0;color:#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+							FORMAT &amp; PANDUAN
+						</button>
+						<div class="ko-hidden" style="margin-top:8px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;line-height:1.7;color:#475569;">
+							<p style="margin:0 0 6px;">Fail ini menyimpan peraturan tarikh + type kuliah untuk <strong>batal</strong> atau <strong>ganti</strong> paparan (cth. Solat Tarawih, Hari Raya).</p>
+							<table style="width:100%;border-collapse:collapse;">
+								<thead><tr style="border-bottom:1px solid #e2e8f0;">
+									<th style="text-align:left;padding:3px 8px 3px 0;font-weight:700;white-space:nowrap;color:#334155;">Format</th>
+									<th style="text-align:left;padding:3px 0;font-weight:700;color:#334155;">Sintaks</th>
+								</tr></thead>
+								<tbody>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Tarikh tunggal (Masihi)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">DD-MM-YYYY|type|notes</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Range Masihi</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">tahun?|bulan|type|hari|flag|catatan</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Hijri</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">hijri|tahun|bulan|hari|type|flag|catatan</td></tr>
+									<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">+ Pengumuman (Hijri)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">…|1|tajuk|tempat|jemputan</td></tr>
+								</tbody>
+							</table>
+							<p style="margin:8px 0 0;"><span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">type</span> — <code>ks</code> · <code>km</code> · <code>kd</code> · <code>kk</code> &nbsp;|&nbsp; <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">flag ganti=1</span> slot diganti catatan &nbsp;|&nbsp; <span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">tahun kosong</span> = tahun semasa</p>
+						</div>
+					</div>
+					<style>.ko-hidden{display:none!important}</style>
+					<!-- Button Group Above Table -->
+					<div class="flex justify-end gap-2 mb-3">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Rekod Override">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+								</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadTable('kuliah-override')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="kuliah-override-table" class="data-table">
+							<thead id="kuliah-override-thead"></thead>
+							<tbody id="kuliah-override-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Images Tab (Gallery Grid) -->
+			<div id="images-tab" class="tab-content">
+				<div class="content-card">
+					<!-- Button Group -->
+					<div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Image">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+							</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadGallery()" title="Reload Galeri">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+							</svg></span>
+						</button>
+					</div>
+					<!-- Gallery grid container -->
+					<div class="gallery-container">
+						<div id="gallery-grid" class="gallery-grid"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Announcements Tab -->
+            <div id="announcements-tab" class="tab-content">
+                <div class="content-card">
+                    <!-- Button Group Above Table -->
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Pengumuman">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+								</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadTable('announcements')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="announcements-table" class="data-table">
+							<thead id="announcements-thead"></thead>
+							<tbody id="announcements-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Hebahan Tab -->
+            <div id="hebahan-tab" class="tab-content">
+                <div class="content-card">
+                    <!-- Button Group Above Table -->
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Hebahan">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+								</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadTable('hebahan')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="hebahan-table" class="data-table">
+							<thead id="hebahan-thead"></thead>
+							<tbody id="hebahan-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Countdowns Tab -->
+            <div id="countdowns-tab" class="tab-content">
+                <div class="content-card">
+                    <div class="flex justify-end gap-2 mb-3" style="flex-shrink: 0;">
+						<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Countdown">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+								</svg></span>
+						</button>
+						<button class="btn-icon btn-reload" onclick="loadTable('countdowns')" title="Reload Data">
+							<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+									stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+								</svg></span>
+						</button>
+					</div>
+					<div class="table-container">
+						<table id="countdowns-table" class="data-table">
+							<thead id="countdowns-thead"></thead>
+							<tbody id="countdowns-tbody"></tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Takwim Tab -->
+			<div id="takwim-tab" class="tab-content">
+				<div class="content-card">
+					<div id="takwim-table-container"></div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+
+	<!-- Mobile Sidebar Toggle -->
+	<button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+	<!-- Notification Toast -->
+	<div id="notification"
+		class="fixed top-4 right-4 max-w-md transform translate-x-[500px] transition-all duration-300 z-50"></div>
+
+	<!-- Edit Dialog -->
+	<div id="edit-dialog" class="fixed inset-0 z-50 p-4" style="display: none;">
+		<div>
+			<!-- Dialog Header -->
+			<div class="bg-gradient-to-r flex justify-between items-center">
+				<h3 id="dialog-title">Edit Row</h3>
+				<button onclick="closeDialog()" aria-label="Close dialog">
+					&times;
+				</button>
+			</div>
+
+			<!-- Dialog Body -->
+			<div class="flex-1 overflow-y-auto">
+				<form id="edit-form"></form>
+			</div>
+
+			<!-- Dialog Footer -->
+			<div class="border-t flex gap-3">
+				<button class="btn-cancel" onclick="closeDialog()">
+					Batal
+				</button>
+				<button class="btn-save" onclick="saveRow()">
+					Simpan
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+	<script src="js/socket.io.min.js"></script>
+	<!-- Load utility scripts first -->
+	<script src="js/dateUtils.js"></script>
+
+	<!-- Load modular scripts -->
+	<script type="module" src="js/config.js"></script>
+	<script type="module" src="js/state.js"></script>
+	<script type="module" src="js/notification.js"></script>
+	<script type="module" src="js/socket.js"></script>
+	<script type="module" src="js/api.js"></script>
+	<script type="module" src="js/dialog.js"></script>
+	<script type="module" src="js/gallery.js"></script>
+	<script type="module" src="js/table.js"></script>
+	<script type="module" src="js/config-tabs.js"></script>
+	<script type="module" src="js/wifi.js"></script>
+	<script type="module" src="js/main.js"></script>
+
+	<script>
+		// Icon Helper - Framework-like SVG icons
+		const Icons = {
+			plus: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>`,
+			refresh: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>`,
+			refreshPage: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>`,
+			pencil: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>`,
+			trash: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>`
+		};
+
+		// Sidebar toggle untuk mobile
+		function toggleSidebar() {
+			const sidebar = document.getElementById('sidebar');
+			if (sidebar) {
+				sidebar.classList.toggle('open');
+			}
+		}
+
+		// Config Form Functions
+		let configData = {};
+
+		// Get dynamic API URL from Config
+		const getApiUrl = () => window.Config?.API_URL || 'http://localhost:3001/api';
+
+		// Load config data
+		async function loadConfigData() {
+			try {
+				const response = await fetch(`${getApiUrl()}/data/config`);
+				const result = await response.json();
+
+				// API returns {data: [...], columns: [...]} format
+				if (result.data && Array.isArray(result.data)) {
+					configData = {};
+					result.data.forEach(row => {
+						if (row.key && row.value) {
+							configData[row.key] = row.value;
+						}
+					});
+				// Default untuk Marquee jika tiada dalam config
+				if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
+				if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
+
+					// Populate form fields
+					Object.keys(configData).forEach(key => {
+						const input = document.getElementById(key);
+
+						if (input) {
+							const rawValue = configData[key];
+							let displayValue = rawValue;
+
+							// HOLD_DURATION & BLINK_DURATION: simpan dalam ms, paparkan dalam saat (s) di UI
+							if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
+								const ms = parseFloat(rawValue);
+								if (!isNaN(ms)) {
+									displayValue = String(ms / 1000);
+								}
+							}
+
+							if (input.type === 'checkbox') {
+								input.checked = displayValue === 'true' || displayValue === '1';
+							} else {
+								input.value = displayValue;
+							}
+
+							// For color inputs, sync with text input
+							if (input.type === 'color') {
+								const textInput = document.getElementById(key + '_text');
+								if (textInput) {
+									textInput.value = displayValue;
+								}
+							}
+						}
+					});
+
+			}
+		} catch (error) {
+			console.error('Ralat memuat konfigurasi:', error);
+			if (window.NotificationUtils) {
+				window.NotificationUtils.showNotification('Ralat memuat konfigurasi: ' + error.message, 'error');
+			}
+		}
+	}
+
+		// Save individual config item
+		async function saveConfigItem(key) {
+			try {
+				const input = document.getElementById(key);
+				if (!input) return;
+
+				const value = input.type === 'checkbox' ? (input.checked ? 'true' : 'false') : input.value;
+				let saveValue = value;
+
+				// HOLD_DURATION & BLINK_DURATION: UI dalam saat (s), simpan sebagai ms dalam config.txt
+				if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
+					const seconds = parseFloat(value);
+					if (!isNaN(seconds)) {
+						saveValue = String(Math.round(seconds * 1000));
+					}
+				}
+				// MARQUEE_DURATION: pastikan dalam julat 5–120
+				if (key === 'MARQUEE_DURATION') {
+					const n = parseInt(value, 10);
+					if (!isNaN(n)) saveValue = String(Math.max(5, Math.min(120, n)));
+				}
+
+				const response = await fetch(`${getApiUrl()}/data/config`);
+				const result = await response.json();
+
+				if (result.data && Array.isArray(result.data)) {
+					const rowData = result.data.find(r => r.key === key);
+					const formattedRow = `${key}|${saveValue}`;
+
+					if (rowData && rowData.id) {
+						// Update existing row
+						const updateResponse = await fetch(`${getApiUrl()}/data/config/${rowData.id}`, {
+							method: 'PUT',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ row: formattedRow })
+						});
+
+						if (updateResponse.ok) {
+							configData[key] = saveValue;
+							if (window.NotificationUtils) {
+								window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+							}
+						}
+					} else {
+						// Baris baru: insert
+						const insertResponse = await fetch(`${getApiUrl()}/data/config/insert`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ row: formattedRow })
+						});
+
+						if (insertResponse.ok) {
+							configData[key] = saveValue;
+							if (window.NotificationUtils) {
+								window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+							}
+						}
+					}
+				}
+			} catch (error) {
+				console.error('Error saving config:', error);
+				if (window.NotificationUtils) {
+					window.NotificationUtils.showNotification('Error saving: ' + error.message, 'error');
+				}
+			}
+		}
+
+		// Update masa sistem (Raspberry Pi) - sudo date -s "..."
+		async function setSystemTime() {
+			const input = document.getElementById('system-datetime');
+			const value = input && input.value ? input.value.trim() : '';
+			const statusEl = document.getElementById('time-set-status');
+			if (!value) {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sila pilih tarikh dan masa', 'error');
+				return;
+			}
+			const d = new Date(value);
+			if (Number.isNaN(d.getTime())) {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Format tarikh/masa tidak sah', 'error');
+				return;
+			}
+			const dateTimeStr = d.getFullYear() + '-' +
+				String(d.getMonth() + 1).padStart(2, '0') + '-' +
+				String(d.getDate()).padStart(2, '0') + ' ' +
+				String(d.getHours()).padStart(2, '0') + ':' +
+				String(d.getMinutes()).padStart(2, '0') + ':' +
+				String(d.getSeconds()).padStart(2, '0');
+			const apiBase = (getApiUrl() || '').replace(/\/api\/?$/, '');
+			try {
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Sedang set masa mesin...'; }
+				const response = await fetch(apiBase + '/api/time/set', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ dateTime: dateTimeStr })
+				});
+				const data = await response.json().catch(() => ({}));
+				if (!response.ok) throw new Error(data.error || 'Gagal set masa mesin');
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Masa mesin berjaya dikemas kini. Paparan akan dimuat semula.', 'success');
+				if (input) input.value = '';
+				if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Berjaya. Paparan akan dimuat semula.'; }
+			} catch (err) {
+				console.error('Error setting system time:', err);
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Gagal set masa mesin: ' + err.message, 'error');
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#dc2626'; statusEl.textContent = '✗ ' + err.message; }
+			}
+		}
+
+		async function syncTimeWithInternet() {
+			const statusEl = document.getElementById('time-set-status');
+			const apiBase = (getApiUrl() || '').replace(/\/api\/?$/, '');
+			try {
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Sedang sync dengan internet (NTP)...'; }
+				const response = await fetch(apiBase + '/api/time/sync');
+				if (!response.ok) throw new Error('Sync gagal');
+				const result = await response.json();
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync berjaya! Masa kini menggunakan Internet (NTP).', 'success');
+				if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Sync berjaya.'; }
+			} catch (err) {
+				console.error('Error syncing time:', err);
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync gagal. Pastikan ada sambungan internet.', 'error');
+				if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#dc2626'; statusEl.textContent = '✗ ' + (err.message || 'Sync gagal'); }
+			}
+		}
+
+		// Handle Kiosk Reboot
+		function handleRebootKiosk() {
+			// Confirmation dialog
+			// const confirmed = confirm(
+			//     '⚠️ Reboot Kiosk Device\n\n' +
+			//     'This will reload the React app window, then restart the system.\n\n' +
+			//     'Are you sure you want to reboot now?'
+			// );
+
+			// if (!confirmed) return;
+
+			// Get socket instance
+			const socket = window.AppState?.getSocket();
+
+			if (!socket || !socket.connected) {
+				if (window.NotificationUtils) {
+					window.NotificationUtils.showNotification('Socket not connected. Please wait and try again.', 'error');
+				}
+				return;
+			}
+
+			// Emit reboot event via socket (simple - server will broadcast to React)
+			socket.emit('reboot');
+		}
+
+		// Handle Test Sound
+		function handleTestSound() {
+			const socket = window.AppState?.getSocket();
+
+			if (!socket || !socket.connected) {
+				if (window.NotificationUtils) {
+					window.NotificationUtils.showNotification('Socket not connected. Please wait and try again.', 'error');
+				}
+				return;
+			}
+
+			socket.emit('test-sound');
+			if (window.NotificationUtils) {
+				window.NotificationUtils.showNotification('Test sound sent to kiosk display.', 'success');
+			}
+		}
+
+		// Sync color picker with text input
+		document.addEventListener('DOMContentLoaded', function () {
+			// Default system-datetime to now (for Set Masa Mesin)
+			const systemDatetimeInput = document.getElementById('system-datetime');
+			if (systemDatetimeInput) {
+				const now = new Date();
+				const pad = (n) => String(n).padStart(2, '0');
+				systemDatetimeInput.value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+			}
+			// Color picker sync
+			['COLOR_DEFAULT', 'COLOR_NEXT_PRAYER', 'COLOR_WARNING_PRAYER'].forEach(key => {
+				const colorInput = document.getElementById(key);
+				const textInput = document.getElementById(key + '_text');
+
+				if (colorInput && textInput) {
+					// Color picker -> text input
+					colorInput.addEventListener('input', (e) => {
+						textInput.value = e.target.value;
+					});
+
+					// Text input -> color picker
+					textInput.addEventListener('input', (e) => {
+						if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+							colorInput.value = e.target.value;
+						}
+					});
+				}
+			});
+
+			// Load config data on page load
+			const activeTab = document.querySelector('.tab-content.active');
+			if (activeTab && activeTab.id === 'config-tab') {
+				loadConfigData();
+			}
+		});
+
+		// Sidebar toggle untuk mobile
+		function toggleSidebar() {
+			const sidebar = document.getElementById('sidebar');
+			if (sidebar) {
+				sidebar.classList.toggle('open');
+			}
+		}
+
+		// Expose functions globally
+		window.loadConfigData = loadConfigData;
+		window.saveConfigItem = saveConfigItem;
+		window.handleRebootKiosk = handleRebootKiosk;
+		window.toggleSidebar = toggleSidebar;
+
+		// WiFi functions (from wifi.js module)
+		window.scanWiFi = () => window.WiFiUtils?.scanWiFi();
+		window.configureWiFi = () => window.WiFiUtils?.configureWiFi();
+		window.refreshWiFiStatus = () => window.WiFiUtils?.refreshWiFiStatus();
+		window.enableHotspot = () => window.WiFiUtils?.enableHotspot();
+		window.disableHotspot = () => window.WiFiUtils?.disableHotspot();
+		window.refreshHotspotStatus = () => window.WiFiUtils?.refreshHotspotStatus();
+	</script>
+</body>
+
+</html>
