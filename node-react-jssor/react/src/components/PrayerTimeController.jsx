@@ -1,30 +1,25 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
-import audioService from '../services/audioService';
 import { TIME_EVENTS } from '../utils/timeEvents';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 
 /**
- * Listen prayer-time event: beep dan navigate ke halaman solat (azan → iqamah → solat → slide).
- * Listen syuruk-time: beep sahaja, tiada warning sebelum dan tiada navigate ke PrayerSequencePage.
+ * Listen prayer-warning event: beep dan navigate ke PrayerSequencePage.
+ * Listen syuruk-time: beep sahaja, tiada navigate.
  */
-export default function PrayerTimeController({ setCurrentView }) {
+export default function PrayerTimeController({ setCurrentView, setPrayerName, setPrayerTimeStr }) {
   const { PRAYER_TIME_CONFIG } = useData();
 
   useEffect(() => {
     if (typeof setCurrentView !== 'function') return;
 
-    const prayerHandler = (e) => {
+    const prayerWarningHandler = (e) => {
       const prayerName = e.detail?.prayerName;
       if (!prayerName || !ACTIVE_PRAYERS.includes(prayerName)) return;
 
-      const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 5;
-      if (beepCount > 0) {
-        if (audioService.getIsPlaying()) audioService.stop();
-        audioService.play({ volume: 1, playCount: beepCount }).catch(() => {});
-      }
-
+      if (typeof setPrayerName === 'function') setPrayerName(prayerName);
+      if (typeof setPrayerTimeStr === 'function') setPrayerTimeStr(e.detail?.prayerTimeStr ?? null);
       setCurrentView('prayer');
     };
 
@@ -36,13 +31,13 @@ export default function PrayerTimeController({ setCurrentView }) {
       }
     };
 
-    window.addEventListener(TIME_EVENTS.PRAYER_TIME, prayerHandler);
+    window.addEventListener(TIME_EVENTS.PRAYER_WARNING, prayerWarningHandler);
     window.addEventListener(TIME_EVENTS.SYURUK_TIME, syurukHandler);
     return () => {
-      window.removeEventListener(TIME_EVENTS.PRAYER_TIME, prayerHandler);
+      window.removeEventListener(TIME_EVENTS.PRAYER_WARNING, prayerWarningHandler);
       window.removeEventListener(TIME_EVENTS.SYURUK_TIME, syurukHandler);
     };
-  }, [setCurrentView, PRAYER_TIME_CONFIG]);
+  }, [setCurrentView, setPrayerName, setPrayerTimeStr, PRAYER_TIME_CONFIG]);
 
   return null;
 }

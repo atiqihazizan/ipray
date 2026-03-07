@@ -15,6 +15,11 @@ const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 export const LS_PRAYER_TIMES_KEY = 'ipray-prayer-times';
 export const LS_CURRENT_TIME_KEY = 'ipray-current-time';
 
+// ─── TEST CONFIG — tukar ke true untuk test. Pastikan false semula sebelum production. ───
+const TEST_PRAYER = false; // test waktu solat (semua 5 waktu) — trigger pada masa sekarang + 1 minit
+const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang + 1 minit
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
 /**
  * Hook untuk driver masa — satu interval sahaja, fokus pada time.
  * Setiap tick: update time, dispatch time-update (flag/data pada window event), dan dispatch event lain (hijri, prayer, midnight).
@@ -24,9 +29,9 @@ export const LS_CURRENT_TIME_KEY = 'ipray-current-time';
 export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
   const { timeService, PRAYER_TIME_CONFIG } = useData();
-  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 30;
   const [time, setTime] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
+  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 15;
   const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
@@ -38,6 +43,10 @@ export function useTimeDriver() {
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
+
+    const _testTimeStr = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()+1).padStart(2,'0')}`; })();
+    const testPrayerStr = TEST_PRAYER ? _testTimeStr : null;
+    const testSyurukStr = TEST_SYURUK ? _testTimeStr : null;
 
     const update = () => {
       try {
@@ -96,49 +105,36 @@ export function useTimeDriver() {
         const prayerTimes = prayer?.times;
         if (prayerTimes) {
           for (const name of ACTIVE_PRAYERS) {
-            const timeStr = prayerTimes[name];
+            const timeStr = testPrayerStr || prayerTimes[name];
             if (!timeStr) continue;
             const [ph, pm] = timeStr.split(':').map(Number);
             const prayerTotalSeconds = ph * 3600 + pm * 60;
 
-            if (currentTotalSeconds === prayerTotalSeconds - warningSeconds) {
-              const warnKey = `${name}-${todayStr}-warn`;
+            const warnTrigger = prayerTotalSeconds - warningSeconds;
+            const warnKey = `${name}-${todayStr}-warn`;
+            if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < warnTrigger + 60) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                dispatchPrayerWarning(name);
+                dispatchPrayerWarning(name, timeStr);
               }
-            } else if (currentTotalSeconds > prayerTotalSeconds - warningSeconds + 60) {
-              delete prayerWarningTriggeredRef.current[`${name}-${todayStr}-warn`];
-            }
-
-            if (currentSeconds === 0 && t.hours === ph && t.minutes === pm) {
-              const todayKey = `${name}-${new Date().toDateString()}`;
-              if (!prayerTriggeredRef.current[todayKey]) {
-                prayerTriggeredRef.current[todayKey] = true;
-                dispatchPrayerTime(name);
-              }
-            } else {
-              const currentMinutes = t.hours * 60 + t.minutes;
-              const ptMinutes = ph * 60 + pm;
-              if (currentMinutes > ptMinutes + 1) {
-                delete prayerTriggeredRef.current[`${name}-${new Date().toDateString()}`];
-              }
+            } else if (currentTotalSeconds > warnTrigger + 60) {
+              delete prayerWarningTriggeredRef.current[warnKey];
             }
           }
 
-          const syurukStr = prayerTimes.Syuruk;
+          const syurukStr = testSyurukStr || prayerTimes.Syuruk;
           if (syurukStr) {
             const [sh, sm] = syurukStr.split(':').map(Number);
-            if (currentSeconds === 0 && t.hours === sh && t.minutes === sm) {
+            const currentMinutes = t.hours * 60 + t.minutes;
+            const syurukMinutes = sh * 60 + sm;
+            if (currentMinutes === syurukMinutes) {
               const syurukKey = `Syuruk-${new Date().toDateString()}`;
               if (!syurukTriggeredRef.current[syurukKey]) {
                 syurukTriggeredRef.current[syurukKey] = true;
                 dispatchSyurukTime();
               }
-            } else {
-              const currentMinutes = t.hours * 60 + t.minutes;
-              const syurukMinutes = sh * 60 + sm;
-              if (currentMinutes > syurukMinutes + 1) delete syurukTriggeredRef.current[`Syuruk-${new Date().toDateString()}`];
+            } else if (currentMinutes > syurukMinutes + 1) {
+              delete syurukTriggeredRef.current[`Syuruk-${new Date().toDateString()}`];
             }
           }
         }

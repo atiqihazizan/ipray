@@ -19,6 +19,8 @@ const AppContent = () => {
   } = useData()
   const [sliderReady, setSliderReady] = useState(false)
   const [currentView, setCurrentView] = useState('slide')
+  const [currentPrayerName, setCurrentPrayerName] = useState(null)
+  const [currentPrayerTimeStr, setCurrentPrayerTimeStr] = useState(null)
 
   if (socketReady && !socketConnected) {
     return (
@@ -31,15 +33,14 @@ const AppContent = () => {
       </div>
     )
   }
-
   if (!socketConnected) return <LoadingPage />
-  if (currentView === 'prayer') return <PrayerSequencePage onComplete={() => setCurrentView('slide')} />
+  if (currentView === 'prayer') return <PrayerSequencePage prayerName={currentPrayerName} prayerTimeStr={currentPrayerTimeStr} onComplete={() => setCurrentView('slide')} />
 
   const hasDeathAnnouncement = deathAnnouncementData?.active
 
   return (
     <>
-      <PrayerTimeController setCurrentView={setCurrentView} />
+      <PrayerTimeController setCurrentView={setCurrentView} setPrayerName={setCurrentPrayerName} setPrayerTimeStr={setCurrentPrayerTimeStr} />
       {midnightReloadMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <p className="text-white text-2xl font-bold">{midnightReloadMessage}</p>

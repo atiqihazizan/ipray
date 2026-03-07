@@ -1,0 +1,46 @@
+<div class="config-group">
+	<h3 class="config-group-title">Tetapan Marquee</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label for="MARQUEE_ENABLED">Aktif</label>
+			<div class="config-item-control">
+				<input type="checkbox" id="MARQUEE_ENABLED" name="MARQUEE_ENABLED" />
+				<button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('MARQUEE_ENABLED')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="MARQUEE_DURATION">Kelajuan (saat per pusingan)</label>
+			<div class="config-item-control">
+				<input type="number" id="MARQUEE_DURATION" name="MARQUEE_DURATION" placeholder="25" min="5" max="120" />
+				<span class="config-unit">s</span>
+				<button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('MARQUEE_DURATION')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group config-group--with-table" style="margin-top: 24px;">
+	<div class="config-group-header">
+		<h3 class="config-group-header-title">Data Hebahan</h3>
+		<div class="config-group-header-actions">
+			<button type="button" class="btn-icon btn-capsule btn-add" onclick="openAddDialog()" title="Tambah Hebahan">
+				<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+			</button>
+			<button type="button" class="btn-icon btn-capsule btn-reload" onclick="loadTable('hebahan')" title="Muat Semula">
+				<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></span>
+			</button>
+		</div>
+	</div>
+	<div class="config-table-wrap">
+		<div class="table-container table-container--no-border">
+			<table id="hebahan-table" class="data-table data-table--compact">
+				<thead id="hebahan-thead"></thead>
+				<tbody id="hebahan-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+</div>

@@ -25,9 +25,9 @@ export function dispatchHijriDateChanged(hijri) {
   }
 }
 
-export function dispatchPrayerWarning(prayerName) {
+export function dispatchPrayerWarning(prayerName, prayerTimeStr) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_WARNING, { detail: { prayerName, in30Seconds: true } }));
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_WARNING, { detail: { prayerName, prayerTimeStr } }));
   }
 }
 
