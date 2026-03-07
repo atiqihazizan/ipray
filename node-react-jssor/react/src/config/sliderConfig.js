@@ -26,6 +26,7 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
   } = homeTitleConfig;
 
   return {
+    type: 'home',
     duration: 1000,
     transitionType: 'auto',
     image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
@@ -135,6 +136,7 @@ export const sliderConfig = {
 export const slidesTemplate = {
   // Home slide - HARDCODED untuk protect dari cetak rompak
   home: {
+    type: 'home',
     duration: 1000,
     transitionType: 'auto',
     image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
@@ -153,6 +155,7 @@ export const slidesTemplate = {
     datetime: ['date', 'solat-time']
   },
   announce: {
+    type: 'announce',
     transitionType: 'auto',
     datetime: [],
     image: { src: "/images/slides/picture4.jpg", alt: "Slide 2" },
@@ -207,6 +210,7 @@ export const slidesTemplate = {
     ]
   },
   countDown: {
+    type: 'countDown',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
     image: null,
@@ -229,6 +233,7 @@ export const slidesTemplate = {
     ]
   },
   kuliahHari: {
+    type: 'kuliahHari',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Harian" },
@@ -262,6 +267,7 @@ export const slidesTemplate = {
     ]
   },
   kuliahWeekly: {
+    type: 'kuliahWeekly',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Mingguan" },
@@ -293,6 +299,7 @@ export const slidesTemplate = {
     ]
   },
   kuliahBulanan: {
+    type: 'kuliahBulanan',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
     image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Bulanan" },
@@ -320,6 +327,7 @@ export const slidesTemplate = {
   },
   // Slideshow: satu slide, captions = array imej (FADE berurutan). Data dari slideshow.txt / default public/img/slideshow
   slideshow: {
+    type: 'slideshow',
     transitionType: 'auto',
     datetime: [],
     image: { src: "/img/slideshow/mountant0.jpeg", alt: "Slideshow" },

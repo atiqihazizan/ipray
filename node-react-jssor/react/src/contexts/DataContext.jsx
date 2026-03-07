@@ -40,6 +40,10 @@ const DEFAULT_HOME_TITLE_CONFIG = {
   TITLE2_COLOR: '#00FFFF'
 };
 
+const DEFAULT_SLIDES_CONFIG = {
+  ORDER: 'A'
+};
+
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
 const RELOAD_DELAY_MS = 15000;
 
@@ -386,6 +390,7 @@ export const DataProvider = ({ children }) => {
     COLOR_CONFIG: configData.COLOR_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
     HOME_TITLE_CONFIG: configData.HOME_TITLE_CONFIG ?? DEFAULT_HOME_TITLE_CONFIG,
+    SLIDES_CONFIG: configData.SLIDES_CONFIG ?? DEFAULT_SLIDES_CONFIG,
     timeService: timeServiceStub
   };
 

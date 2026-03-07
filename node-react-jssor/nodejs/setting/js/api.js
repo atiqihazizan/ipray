@@ -375,50 +375,50 @@ export async function saveRow() {
     if (addMode) {
       // Untuk add mode, row baru akan berada di akhir
       // Kita akan scroll ke akhir selepas reload
-      setLastEditedRowId(null);
-      setTimeout(() => {
-        loadTable(currentFileName);
+      // setLastEditedRowId(null);
+      // setTimeout(() => {
+        // loadTable(currentFileName);
         // Scroll ke akhir selepas table reload
-        setTimeout(() => {
-          const tbody = document.getElementById(`${currentFileName}-tbody`);
-          const tableContainer = tbody?.closest(".table-container");
-          if (tableContainer && tbody) {
-            const rows = tbody.querySelectorAll("tr[data-row-id]");
-            if (rows.length > 0) {
-              const lastRow = rows[rows.length - 1];
-              const lastRowId = lastRow.getAttribute("data-row-id");
+        // setTimeout(() => {
+        //   const tbody = document.getElementById(`${currentFileName}-tbody`);
+        //   const tableContainer = tbody?.closest(".table-container");
+        //   if (tableContainer && tbody) {
+        //     const rows = tbody.querySelectorAll("tr[data-row-id]");
+        //     if (rows.length > 0) {
+        //       const lastRow = rows[rows.length - 1];
+        //       const lastRowId = lastRow.getAttribute("data-row-id");
 
-              // Scroll ke row terakhir
-              const containerRect = tableContainer.getBoundingClientRect();
-              const rowRect = lastRow.getBoundingClientRect();
-              const scrollTop = tableContainer.scrollTop;
-              const rowOffset = rowRect.top - containerRect.top + scrollTop;
-              const targetScroll =
-                rowOffset - containerRect.height / 2 + rowRect.height / 2;
+        //       // Scroll ke row terakhir
+        //       const containerRect = tableContainer.getBoundingClientRect();
+        //       const rowRect = lastRow.getBoundingClientRect();
+        //       const scrollTop = tableContainer.scrollTop;
+        //       const rowOffset = rowRect.top - containerRect.top + scrollTop;
+        //       const targetScroll =
+        //         rowOffset - containerRect.height / 2 + rowRect.height / 2;
 
-              tableContainer.scrollTo({
-                top: targetScroll,
-                behavior: "smooth",
-              });
+        //       tableContainer.scrollTo({
+        //         top: targetScroll,
+        //         behavior: "smooth",
+        //       });
 
-              // Highlight row terakhir
-              lastRow.classList.add("row-highlight");
-              lastRow.style.backgroundColor = "#fef3c7";
-              setTimeout(() => {
-                lastRow.classList.remove("row-highlight");
-                lastRow.style.backgroundColor = "";
-              }, 3000);
-            }
-          }
-        }, 200);
-      }, 500);
+        //       // Highlight row terakhir
+        //       lastRow.classList.add("row-highlight");
+        //       lastRow.style.backgroundColor = "#fef3c7";
+        //       setTimeout(() => {
+        //         lastRow.classList.remove("row-highlight");
+        //         lastRow.style.backgroundColor = "";
+        //       }, 3000);
+        //     }
+        //   }
+        // }, 200);
+      // }, 500);
     } else {
       // Edit mode - scroll ke row yang dikemaskini
       if (editingRowId) {
-        setLastEditedRowId(editingRowId);
-        setTimeout(() => {
-          loadTable(currentFileName, editingRowId);
-        }, 500);
+        // setLastEditedRowId(editingRowId);
+        // setTimeout(() => {
+        //   loadTable(currentFileName, editingRowId);
+        // }, 500);
       }
     }
   } catch (error) {
@@ -480,7 +480,7 @@ export async function toggleSlideHide(rowId) {
     );
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     await response.json();
-    if (typeof window.loadTable === "function") window.loadTable("slides");
+    // if (typeof window.loadTable === "function") window.loadTable("slides");
   } catch (error) {
     console.error("Error toggling slide hide:", error);
     showNotification("✗ Gagal kemaskini", "error");

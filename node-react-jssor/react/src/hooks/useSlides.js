@@ -33,6 +33,7 @@ export const useSlides = () => {
     slidesConfigData,
     slideshowData,
     HOME_TITLE_CONFIG,
+    SLIDES_CONFIG,
     loading: dataLoading,
     isReloading,
     reloadCounter
@@ -68,15 +69,37 @@ export const useSlides = () => {
     const kuliahBulananSlides = processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, applyConfig);
     const slideshowSlides = processSlideshow(slideshowData, slidesConfigData, applyConfig);
 
-    const slides = [
-      ...(!slidesConfigData?.home?.hide ? [homeSlide] : []),
-      ...(!slidesConfigData?.announce?.hide ? announceSlides : []),
-      ...(!slidesConfigData?.countDown?.hide ? countDownSlides : []),
-      ...(!slidesConfigData?.kuliahHari?.hide ? kuliahHariSlides : []),
-      ...(!slidesConfigData?.kuliahWeekly?.hide ? kuliahMigguanSlides : []),
-      ...(!slidesConfigData?.kuliahBulanan?.hide ? kuliahBulananSlides : []),
-      ...(!slidesConfigData?.slideshow?.hide ? slideshowSlides : [])
-    ];
+    const homeGroup    = !slidesConfigData?.home?.hide        ? [homeSlide]          : [];
+    const announceGroup  = !slidesConfigData?.announce?.hide    ? announceSlides        : [];
+    const countDownGroup = !slidesConfigData?.countDown?.hide   ? countDownSlides       : [];
+    const kuliahHariGroup  = !slidesConfigData?.kuliahHari?.hide  ? kuliahHariSlides      : [];
+    const kuliahWeeklyGroup = !slidesConfigData?.kuliahWeekly?.hide ? kuliahMigguanSlides  : [];
+    const kuliahBulananGroup = !slidesConfigData?.kuliahBulanan?.hide ? kuliahBulananSlides : [];
+    const slideshowGroup = !slidesConfigData?.slideshow?.hide   ? slideshowSlides       : [];
+
+    const nonHomeGroups = [
+      announceGroup, countDownGroup, kuliahHariGroup,
+      kuliahWeeklyGroup, kuliahBulananGroup, slideshowGroup
+    ].filter(g => g.length > 0);
+
+    const shuffleArray = (arr) => {
+      const result = [...arr];
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    };
+
+    const slidesOrder = SLIDES_CONFIG?.ORDER || 'A';
+    let slides;
+    if (slidesOrder === 'B') {
+      slides = [...homeGroup, ...shuffleArray(nonHomeGroups).flat()];
+    } else if (slidesOrder === 'C') {
+      slides = [...homeGroup, ...shuffleArray(nonHomeGroups.flat())];
+    } else {
+      slides = [...homeGroup, ...nonHomeGroups.flat()];
+    }
 
     if (!DEBUG_SLIDES) return slides;
     if (Array.isArray(DEBUG_SLIDES) && DEBUG_SLIDES.length > 0) {
@@ -86,7 +109,7 @@ export const useSlides = () => {
       return slides.slice(0, DEBUG_SLIDES);
     }
     return slides;
-  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, dataLoading, isReloading, reloadCounter]);
+  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, SLIDES_CONFIG, dataLoading, isReloading, reloadCounter]);
 
   useEffect(() => {
     if (dataLoading) {

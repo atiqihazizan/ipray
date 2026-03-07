@@ -4,4 +4,4 @@ countDown|picture3|3000|solat-time-small|0
 kuliahHari|picture1b|3000|date,solat-time-small|0
 kuliahWeekly|picture1b|3000|date,solat-time-small|0
 kuliahBulanan|picture4e|10000|date,solat-time-small|0
-slideshow|bg-mta|3000|solat-time-small|0
+slideshow|bg-mta|3000|solat-time-small|1

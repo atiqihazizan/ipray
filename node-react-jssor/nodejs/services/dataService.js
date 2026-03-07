@@ -1194,6 +1194,9 @@ class DataService {
         TITLE2_TOP: 250,
         TITLE2_SIZE: 88,
         TITLE2_COLOR: '#00FFFF'
+      },
+      SLIDES_CONFIG: {
+        ORDER: 'A'
       }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
@@ -1225,6 +1228,7 @@ class DataService {
       else if (key === 'HOME_TITLE2_TOP') parsed.HOME_TITLE_CONFIG.TITLE2_TOP = parseInt(value, 10) || 250;
       else if (key === 'HOME_TITLE2_SIZE') parsed.HOME_TITLE_CONFIG.TITLE2_SIZE = parseInt(value, 10) || 88;
       else if (key === 'HOME_TITLE2_COLOR') parsed.HOME_TITLE_CONFIG.TITLE2_COLOR = value;
+      else if (key === 'SLIDES_ORDER') parsed.SLIDES_CONFIG.ORDER = ['A', 'B', 'C'].includes(value.toUpperCase()) ? value.toUpperCase() : 'A';
     });
     return parsed;
   }

@@ -41,25 +41,28 @@
 				});
 				if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
 				if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
-				Object.keys(configData).forEach(key => {
-					const input = document.getElementById(key);
-					if (input) {
-						let displayValue = configData[key];
-						if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
-							const ms = parseFloat(configData[key]);
-							if (!isNaN(ms)) displayValue = String(ms / 1000);
-						}
-						if (input.type === 'checkbox') {
-							input.checked = displayValue === 'true' || displayValue === '1';
-						} else {
-							input.value = displayValue;
-						}
-						if (input.type === 'color') {
-							const textInput = document.getElementById(key + '_text');
-							if (textInput) textInput.value = displayValue;
-						}
+			Object.keys(configData).forEach(key => {
+				const input = document.getElementById(key);
+				if (input) {
+					let displayValue = configData[key];
+					if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
+						const ms = parseFloat(configData[key]);
+						if (!isNaN(ms)) displayValue = String(ms / 1000);
 					}
-				});
+					if (input.type === 'checkbox') {
+						input.checked = displayValue === 'true' || displayValue === '1';
+					} else {
+						input.value = displayValue;
+					}
+					if (input.type === 'color') {
+						const textInput = document.getElementById(key + '_text');
+						if (textInput) textInput.value = displayValue;
+					}
+				} else {
+					const radio = document.querySelector(`input[name="${key}"][value="${configData[key]}"]`);
+					if (radio) radio.checked = true;
+				}
+			});
 			}
 		} catch (error) {
 			console.error('Ralat memuat konfigurasi:', error);
@@ -69,7 +72,7 @@
 
 	async function saveConfigItem(key) {
 		try {
-			const input = document.getElementById(key);
+			const input = document.getElementById(key) || document.querySelector(`input[name="${key}"]:checked`);
 			if (!input) return;
 			const value = input.type === 'checkbox' ? (input.checked ? 'true' : 'false') : input.value;
 			let saveValue = value;
@@ -319,9 +322,31 @@
 		initColorPickerSync();
 	});
 
+	function initSlidesOrderBtns() {
+		const val = (configData && configData['SLIDES_ORDER']) ? configData['SLIDES_ORDER'] : 'A';
+		const hidden = document.getElementById('SLIDES_ORDER');
+		if (hidden) hidden.value = val;
+		['A', 'B', 'C'].forEach(v => {
+			const btn = document.getElementById('slides-order-btn-' + v);
+			if (btn) btn.classList.toggle('active', v === val);
+		});
+	}
+
+	async function selectSlidesOrder(val) {
+		const hidden = document.getElementById('SLIDES_ORDER');
+		if (hidden) hidden.value = val;
+		['A', 'B', 'C'].forEach(v => {
+			const btn = document.getElementById('slides-order-btn-' + v);
+			if (btn) btn.classList.toggle('active', v === val);
+		});
+		await saveConfigItem('SLIDES_ORDER');
+	}
+
 	window.Icons = Icons;
 	window.loadConfigData = loadConfigData;
 	window.saveConfigItem = saveConfigItem;
+	window.initSlidesOrderBtns = initSlidesOrderBtns;
+	window.selectSlidesOrder = selectSlidesOrder;
 	window.handleRebootKiosk = handleRebootKiosk;
 	window.toggleSidebar = toggleSidebar;
 	window.handleKematianPublish = handleKematianPublish;

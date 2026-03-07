@@ -72,7 +72,7 @@ export function initSocket() {
       // Auto reload current table after 1 second
       setTimeout(() => {
         loadTable(currentFileName);
-      }, 1000);
+      }, 500);
     }
   });
 

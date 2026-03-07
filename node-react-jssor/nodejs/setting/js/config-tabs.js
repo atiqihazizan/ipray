@@ -6,6 +6,7 @@ const CONFIG_SUB_TABS = [
 	{ id: 'hebahan', label: 'Hebahan', file: 'config-tabs/hebahan.html' },
 	{ id: 'takwim', label: 'Takwim', file: 'config-tabs/takwim.html' },
 	{ id: 'title-home', label: 'Title Home', file: 'config-tabs/title-home.html' },
+	{ id: 'slides', label: 'Slides', file: 'config-tabs/slides.html' },
 	{ id: 'masa-sistem', label: 'Masa Sistem', file: 'config-tabs/masa-sistem.html' },
 	{ id: 'wifi', label: 'WiFi', file: 'config-tabs/wifi.html' },
 	{ id: 'hotspot', label: 'Hotspot', file: 'config-tabs/hotspot.html' },
@@ -44,6 +45,9 @@ export async function showConfigSubTab(tabId) {
 		}
 		if (typeof window.loadConfigData === 'function') {
 			window.loadConfigData();
+		}
+		if (tabId === 'slides' && typeof window.initSlidesOrderBtns === 'function') {
+			window.initSlidesOrderBtns();
 		}
 		if (tabId === 'hebahan' && typeof window.loadTable === 'function') {
 			window.loadTable('hebahan');
