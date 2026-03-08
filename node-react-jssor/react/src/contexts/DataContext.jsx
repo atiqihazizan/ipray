@@ -7,12 +7,8 @@ import timeServiceStub from '../services/timeServiceStub';
  * Default constants untuk timing configuration (fallback jika file config.txt tidak wujud)
  */
 const DEFAULT_PRAYER_TIME_CONFIG = {
-  HOLD_DURATION: 60000,
-  BLINK_DURATION: 15000,
   BEEP_COUNT: 5,
-  WARNING_START_SECONDS: 30,
-  WARNING_BEEP_COUNT: 0,
-  AZAN_DURATION_MIN: 0.5,
+  WARNING_START_MINUTES: 0.5,
   IQAMAH_DURATION_MIN: 2,
   SOLAT_DURATION_MIN: 3,
 };
@@ -21,6 +17,7 @@ const DEFAULT_PRAYER_TIME_CONFIG = {
  * Default constants untuk warna (fallback jika file config.txt tidak wujud)
  */
 const DEFAULT_COLOR_CONFIG = {
+  CURRENT_TIME: '#FFFF00',
   DEFAULT: '#FFFF00',
   NEXT_PRAYER: '#90EE90',
   WARNING_PRAYER: '#FF0000',
@@ -29,13 +26,18 @@ const DEFAULT_COLOR_CONFIG = {
 const DEFAULT_MARQUEE_CONFIG = {
   ENABLED: true,
   DURATION: 25,
+  SEPARATOR: ' • ',
 };
 
 const DEFAULT_HOME_TITLE_CONFIG = {
   TITLE1_TOP: 120,
+  TITLE_LEFT: 0,
+  TITLE_RIGHT: 0,
+  TITLE_BG: 'transparent',
+  TITLE_GAP: 30,
+  TITLE_ALIGN: 'center',
   TITLE1_SIZE: 88,
   TITLE1_COLOR: '#00FFFF',
-  TITLE2_TOP: 250,
   TITLE2_SIZE: 88,
   TITLE2_COLOR: '#00FFFF'
 };
@@ -176,10 +178,6 @@ export const DataProvider = ({ children }) => {
     return () => { timeServiceStub.cleanup(); };
   }, []);
 
-  /**
-   * Reload tengah malam: dipanggil oleh MidnightReloadListener bila dapat event date-changed dari driver masa (useTimeDriver).
-   * Tiada setInterval di sini — driver masa dispatch date-changed bila tarikh bertukar.
-   */
   const checkMidnight = useCallback((todayStr) => {
     const lastLoad = dataLoadDateRef.current ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null) ?? '';
     if (lastLoad && todayStr !== lastLoad) {
@@ -285,6 +283,28 @@ export const DataProvider = ({ children }) => {
       if (isMounted && socketConnected) debouncedLoadTakwimOnly();
     });
 
+    // Home title config - update state sahaja tanpa reload
+    const unsubscribeHomeTitleUpdated = socketService.on('home-title:updated', (data) => {
+      console.log(data.homeTitleConfig);
+      if (isMounted && data?.homeTitleConfig) {
+        setConfigData(prev => ({ ...prev, HOME_TITLE_CONFIG: data.homeTitleConfig }));
+      }
+    });
+
+    // Marquee config - update state terus tanpa reload
+    const unsubscribeMarqueeConfigUpdated = socketService.on('marquee-config:updated', (data) => {
+      if (isMounted && data?.marqueeConfig) {
+        setConfigData(prev => ({ ...prev, MARQUEE_CONFIG: data.marqueeConfig }));
+      }
+    });
+
+    // Hebahan - update state terus tanpa reload
+    const unsubscribeHebahanUpdated = socketService.on('hebahan:updated', (data) => {
+      if (isMounted && Array.isArray(data?.hebahan)) {
+        setHebahanData(data.hebahan);
+      }
+    });
+
     // Data lain (announcements, kuliah, images, slides, config) - reload page supaya tiada slider stuck
     const unsubscribeDataUpdated = socketService.on('data:updated', () => {
       window.location.reload();
@@ -353,6 +373,9 @@ export const DataProvider = ({ children }) => {
       unsubscribeDisconnect();
       unsubscribeError();
       unsubscribeTakwimRefresh();
+      unsubscribeHomeTitleUpdated();
+      unsubscribeMarqueeConfigUpdated();
+      unsubscribeHebahanUpdated();
       unsubscribeDataUpdated();
       unsubscribeReboot();
       unsubscribeKematianUpdated();

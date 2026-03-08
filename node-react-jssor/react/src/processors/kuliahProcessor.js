@@ -117,7 +117,7 @@ export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, a
             ? `font-size:${fs}px;text-decoration:line-through;opacity:0.6;`
             : `font-size:${fs}px;`;
           const rowGapTop = rowIndex === 0 ? '0' : '1px';
-          const rowHeight = isSingleRekod ? 'auto' : '40px';
+          const rowHeight = isSingleRekod ? 'auto' : '38px';
           const wordBreakStyle = isSingleRekod ? 'word-break:break-word;' : 'word-break:break-all;';
 
           if (isSingleRekod) {

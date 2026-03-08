@@ -6,7 +6,7 @@ const Marquee = ({ text = 'Selamat datang • Maklumat masjid • ', duration = 
   return (
     <div className={`overflow-hidden pointer-events-none ${MARQUEE_STANDARD_CLASS} ${className}`.trim()} aria-hidden="true">
       <div
-        className="inline-flex whitespace-nowrap will-change-transform"
+        className="inline-flex whitespace-nowrap will-change-transform py-1"
         style={{ animation: `marquee-from-right ${durationSec}s linear infinite` }}
       >
         <span className="text-5xl">{text}</span>

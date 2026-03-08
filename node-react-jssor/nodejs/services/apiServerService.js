@@ -474,6 +474,18 @@ class ApiServerService {
         if (this.socketServerService) {
           if (filename === 'takwim') {
             this.socketServerService.broadcastTakwimRefresh();
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('HOME_TITLE')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('MARQUEE')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastMarqueeConfigUpdate(parsed.MARQUEE_CONFIG);
+          } else if (filename === 'hebahan') {
+            const hebahanContent = await this.dataService.readFile('hebahan').catch(() => '');
+            const hebahan = this.dataService.parseHebahan(hebahanContent);
+            this.socketServerService.broadcastHebahanUpdate(hebahan);
           } else {
             this.socketServerService.broadcastDataUpdate(filename, { action: 'row:update', rowId: id, row });
           }
@@ -501,6 +513,18 @@ class ApiServerService {
         if (this.socketServerService) {
           if (filename === 'takwim') {
             this.socketServerService.broadcastTakwimRefresh();
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('HOME_TITLE')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('MARQUEE')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastMarqueeConfigUpdate(parsed.MARQUEE_CONFIG);
+          } else if (filename === 'hebahan') {
+            const hebahanContent = await this.dataService.readFile('hebahan').catch(() => '');
+            const hebahan = this.dataService.parseHebahan(hebahanContent);
+            this.socketServerService.broadcastHebahanUpdate(hebahan);
           } else {
             this.socketServerService.broadcastDataUpdate(filename, { action: 'row:insert' });
           }
@@ -527,6 +551,10 @@ class ApiServerService {
         if (this.socketServerService) {
           if (filename === 'takwim') {
             this.socketServerService.broadcastTakwimRefresh();
+          } else if (filename === 'hebahan') {
+            const hebahanContent = await this.dataService.readFile('hebahan').catch(() => '');
+            const hebahan = this.dataService.parseHebahan(hebahanContent);
+            this.socketServerService.broadcastHebahanUpdate(hebahan);
           } else {
             this.socketServerService.broadcastDataUpdate(filename, { action: 'row:delete', rowId: id });
           }

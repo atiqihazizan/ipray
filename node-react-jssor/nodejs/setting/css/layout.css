@@ -525,8 +525,8 @@
 .config-group-items {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
-	padding: 16px 20px;
+	/* gap: 16px; */
+	padding: 0px;
 }
 
 .config-item {
@@ -596,4 +596,38 @@
 
 .config-file-input::file-selector-button:hover {
 	background: #e5e7eb;
+}
+
+/* ── Toggle button ─────────────────────────────────────────────── */
+.btn-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 18px;
+	border-radius: 999px;
+	border: none;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+	min-width: 110px;
+}
+
+.btn-toggle--on {
+	background: #6366f1;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.btn-toggle--on:hover {
+	background: #4f46e5;
+}
+
+.btn-toggle--off {
+	background: #e5e7eb;
+	color: #6b7280;
+}
+
+.btn-toggle--off:hover {
+	background: #d1d5db;
 }

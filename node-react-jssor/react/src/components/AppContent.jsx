@@ -7,8 +7,10 @@ import DeathAnnouncementOverlay from './DeathAnnouncementOverlay'
 import LiveStreamOverlay from './LiveStreamOverlay'
 import PrayerTimeController from './PrayerTimeController'
 import { useData } from '../contexts/DataContext'
+import { useTimeDriver } from '../hooks/useTimeDriver'
 
 const AppContent = () => {
+  useTimeDriver() // Driver masa — interval, dispatch time-update, prayer-warning, dll
   const {
     loading: dataLoading,
     socketConnected,
@@ -33,8 +35,20 @@ const AppContent = () => {
       </div>
     )
   }
+  
   if (!socketConnected) return <LoadingPage />
-  if (currentView === 'prayer') return <PrayerSequencePage prayerName={currentPrayerName} prayerTimeStr={currentPrayerTimeStr} onComplete={() => setCurrentView('slide')} />
+
+  if (currentView === 'prayer') {
+    return (
+      <PrayerSequencePage
+        key={`${currentPrayerName}-${currentPrayerTimeStr}`}
+        prayerName={currentPrayerName}
+        prayerTimeStr={currentPrayerTimeStr}
+        onComplete={() => setCurrentView('slide')}
+        overlayOverride={{ showDate: true, showSmallTime: false, showMarquee: true, showTimeSmallClock: true }}
+      />
+    )
+  }
 
   const hasDeathAnnouncement = deathAnnouncementData?.active
 

@@ -115,7 +115,7 @@
 
 /* ── Gallery template-style (seperti template, tiada meta) ───────────────────── */
 .gallery-grid--template-style {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     gap: 20px;
 }
 
@@ -177,7 +177,7 @@
 
 /* ── Template page card (style baru) ───────────────────── */
 .slides-gallery-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
     gap: 20px;
 }
 
@@ -268,7 +268,7 @@
     gap: 2px;
     flex: 1;
     min-width: 0;
-    padding: 24px;
+    padding: 10px 10px;
     border-bottom: 1px solid #f3f4f6;
 }
 

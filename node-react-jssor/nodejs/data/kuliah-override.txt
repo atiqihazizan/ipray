@@ -1,5 +1,5 @@
 weekly|4|km|1|Majlis Bacaan Yassin
 hijri||8|15|km|1|Malam Nisfu Sya`ban
 hijri||9|1-30|km|1|Solat Sunat Tarawih
-hijri||10|1-7|ks,kd,km|1|Hari Raya Aidilfitri
+hijri||10|1,2,3|ks,kd,km|1|Hari Raya Aidilfitri
 hijri||12|10-13|kd,ks|1|Hari Raya Adha/Qurban

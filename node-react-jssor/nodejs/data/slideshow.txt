@@ -1,7 +1,5 @@
-Niat I'tikaf|/images/slideshow/slide01.jpg||
-Baca Alquran|/images/slideshow/slide03.jpg
-Ingat Kematian|/images/slideshow/slide07.jpg
-Berpegang tali agama|/images/slideshow/slide02.jpg
-Sentiasa berselawat|/images/slideshow/slide04.jpg
-Banyak bersedekah|/images/slideshow/slide06.jpg
-Buy Muslim First|/images/slideshow/slide05.jpg
+nuzul quran|/images/slideshow/nuzul-quran.png||
+iktikaf 10 malam ramadan|/images/slideshow/iktikaf-10-malam-ramadan.jpeg||
+wakaf|/images/slideshow/taabbud-wakaf.jpeg||
+infaq bumbung MTA|/images/slideshow/infaq-bumbung.jpeg||
+ihya|/images/slideshow/ihya.jpg||

@@ -48,7 +48,8 @@
 
 	<!-- Edit Dialog -->
 	<div id="edit-dialog" class="fixed inset-0 z-50 p-4" style="display: none;">
-		<div>
+		<div id="edit-dialog-backdrop" onclick="closeDialog()" style="position:absolute;inset:0;cursor:pointer" aria-label="Tutup dialog"></div>
+		<div class="edit-dialog-content" style="position:relative;z-index:1;">
 			<!-- Dialog Header -->
 			<div class="bg-gradient-to-r flex justify-between items-center">
 				<h3 id="dialog-title">Edit Row</h3>

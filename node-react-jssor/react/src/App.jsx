@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { DataProvider } from './contexts/DataContext'
-import TimeDriver from './components/TimeDriver'
 import MidnightReloadListener from './components/MidnightReloadListener'
 import AppContent from './components/AppContent'
 import audioService from './services/audioService.js'
@@ -16,7 +15,6 @@ function App() {
   return (
     <DataProvider>
       <MidnightReloadListener />
-      <TimeDriver />
       <AppContent />
     </DataProvider>
   )

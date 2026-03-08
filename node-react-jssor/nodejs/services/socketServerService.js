@@ -107,6 +107,12 @@ class SocketServerService {
         const fileName = data.fileName || data.filename;
         if (fileName === 'takwim') {
           this.io.emit('takwim:refresh', { fileName, timestamp: Date.now() });
+        } else if (fileName === 'hebahan') {
+          // Hebahan: broadcast terus dengan data yang dihantar tanpa reload
+          socket.broadcast.emit('hebahan:updated', {
+            hebahan: data.hebahan ?? [],
+            timestamp: data.timestamp || Date.now()
+          });
         } else {
           socket.broadcast.emit('data:updated', {
             fileName: data.fileName,
@@ -214,6 +220,57 @@ class SocketServerService {
     });
 
     console.log(`📡 Broadcast data update: ${fileName}`);
+  }
+
+  /**
+   * Broadcast home title config update - React update state tanpa reload
+   */
+  broadcastHomeTitleUpdate(homeTitleConfig) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit('home-title:updated', {
+      homeTitleConfig,
+      timestamp: Date.now()
+    });
+
+    console.log('📡 Broadcast home-title:updated');
+  }
+
+  /**
+   * Broadcast marquee config update - React update MARQUEE_CONFIG state tanpa reload
+   */
+  broadcastMarqueeConfigUpdate(marqueeConfig) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit('marquee-config:updated', {
+      marqueeConfig,
+      timestamp: Date.now()
+    });
+
+    console.log('📡 Broadcast marquee-config:updated');
+  }
+
+  /**
+   * Broadcast hebahan update - React update hebahanData state tanpa reload
+   */
+  broadcastHebahanUpdate(hebahanArray) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit('hebahan:updated', {
+      hebahan: hebahanArray,
+      timestamp: Date.now()
+    });
+
+    console.log('📡 Broadcast hebahan:updated');
   }
 
   /**

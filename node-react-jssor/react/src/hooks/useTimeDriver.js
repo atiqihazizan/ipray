@@ -31,7 +31,7 @@ export function useTimeDriver() {
   const { timeService, PRAYER_TIME_CONFIG } = useData();
   const [time, setTime] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
-  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 15;
+  const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 0.5) * 60);
   const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
@@ -44,7 +44,14 @@ export function useTimeDriver() {
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
 
-    const _testTimeStr = (() => { const n = new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()+1).padStart(2,'0')}`; })();
+    // Test: masa solat = now + max(60, warningSeconds+15) supaya cukup runway bila warningSeconds > 60
+    const _testTimeStr = (() => {
+      const n = new Date();
+      const offsetSec = Math.max(60, warningSeconds + 15);
+      const t = new Date(n.getTime() + offsetSec * 1000);
+      const h = t.getHours(), m = t.getMinutes(), s = t.getSeconds();
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    })();
     const testPrayerStr = TEST_PRAYER ? _testTimeStr : null;
     const testSyurukStr = TEST_SYURUK ? _testTimeStr : null;
 
@@ -104,20 +111,30 @@ export function useTimeDriver() {
 
         const prayerTimes = prayer?.times;
         if (prayerTimes) {
+          // Bila TEST_PRAYER: semua 5 guna masa sama — gunakan prayer.next untuk nama betul (elak sentiasa Isyak)
+          const nextPrayerDisplay = prayer?.next
+            ? (prayer.next.charAt(0).toUpperCase() + prayer.next.slice(1).toLowerCase())
+            : null;
+          const resolvedNextPrayer = nextPrayerDisplay && ACTIVE_PRAYERS.includes(nextPrayerDisplay) ? nextPrayerDisplay : null;
+
           for (const name of ACTIVE_PRAYERS) {
             const timeStr = testPrayerStr || prayerTimes[name];
             if (!timeStr) continue;
-            const [ph, pm] = timeStr.split(':').map(Number);
-            const prayerTotalSeconds = ph * 3600 + pm * 60;
+            const parts = timeStr.split(':').map(Number);
+            const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
+            const prayerTotalSeconds = ph * 3600 + pm * 60 + ps;
 
+            // Trigger HANYA bila kita masih SEBELUM waktu solat (elak beep serta-merta bila tick terlepas)
             const warnTrigger = prayerTotalSeconds - warningSeconds;
-            const warnKey = `${name}-${todayStr}-warn`;
-            if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < warnTrigger + 60) {
+            const warnKey = testPrayerStr ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
+            if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                dispatchPrayerWarning(name, timeStr);
+                const displayName = (testPrayerStr && resolvedNextPrayer) ? resolvedNextPrayer : name;
+                dispatchPrayerWarning(displayName, timeStr);
               }
-            } else if (currentTotalSeconds > warnTrigger + 60) {
+              if (testPrayerStr) break; // Test mode: satu dispatch sahaja
+            } else if (currentTotalSeconds >= prayerTotalSeconds) {
               delete prayerWarningTriggeredRef.current[warnKey];
             }
           }
@@ -146,7 +163,7 @@ export function useTimeDriver() {
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [takwimParsed, timeService, warningSeconds]);
+  }, [takwimParsed, timeService, PRAYER_TIME_CONFIG]);
 
   return {
     time,

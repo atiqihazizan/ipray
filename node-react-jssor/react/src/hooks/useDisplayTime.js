@@ -20,7 +20,7 @@ function getCachedCurrentTime() {
 
 /**
  * Hook untuk DisplayTime component.
- * Masa dan format dari useIslamicTime. Tempoh amaran sebelum waktu (kelip) dari config WARNING_START_SECONDS.
+ * Masa dan format dari useIslamicTime. Tempoh amaran sebelum waktu (kelip) dari config WARNING_START_MINUTES.
  */
 export const useDisplayTime = ({
   format = '24h',
@@ -34,7 +34,7 @@ export const useDisplayTime = ({
   const { islamicTime, loading } = useIslamicTime();
   const { PRAYER_TIME_CONFIG } = useData();
   const [blink, setBlink] = useState(true);
-  const warningSeconds = PRAYER_TIME_CONFIG?.WARNING_START_SECONDS ?? 30;
+  const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 0.5) * 60);
   const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 10;
 
   const liveTimes = islamicTime?.prayer?.times;

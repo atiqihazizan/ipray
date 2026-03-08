@@ -13,6 +13,7 @@ w2|h0|km|Ust Qutub|qutub|Penawar Bagi Hati
 w2|h1|km|Ust Muhd Hanif Yusof|hanif|Hidayatul Sobiyan
 w2|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
 w2|h3|km|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
+w2|h3|kd|Ust Hafezol Saad|hafezol|Misbahul Munir
 w2|h4|kd|Ustazah Siti Hajar Ghazali|siti-hajar|Kitab Al-Hikam
 w2|h6|ks|Ust Hafezol Saad|hafezol|Misbahul Munir
 w2|h6|km|Ust Shukor Salleh|shukor|Tafsir Juz Amma
@@ -32,7 +33,9 @@ w4|h0|km|Ust Ridhoudin|ridhoudin|Hidayatul Mutafakirin
 w4|h1|km|Ust Uzair Abd Hani Albanjari|uzair|Anak Kunci Syurga
 w4|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
 w4|h3|km|Ust Hassan Hj Hashim|hassan_hashim|Wi Shahul Afrah Wa Isbahul Falah
-w4|h4|kd|Ustazah Maridhah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
+w4|h4|kd|Ustazah Mardiah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
 w4|h5|km|Ust Mohamad Shakir|shakir|Ummul Amrad
 w4|h6|ks|Ust Shukor Salleh|shukor|Kasyful Ghaibiyyah
 w4|h6|km|Ust Syamsuri Hassan|syamsuri|Tajul Arus
+
+w5|h0|ks|Ust Hafezol Saad|hafezol|Misbahul Munir

@@ -109,7 +109,7 @@ export const useSlides = () => {
       return slides.slice(0, DEBUG_SLIDES);
     }
     return slides;
-  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, SLIDES_CONFIG, dataLoading, isReloading, reloadCounter]);
+  }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, HOME_TITLE_CONFIG, SLIDES_CONFIG, dataLoading, isReloading, reloadCounter]);
 
   useEffect(() => {
     if (dataLoading) {

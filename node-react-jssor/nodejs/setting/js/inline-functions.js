@@ -39,16 +39,26 @@
 				result.data.forEach(row => {
 					if (row.key && row.value) configData[row.key] = row.value;
 				});
-				if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
-				if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
+			if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
+			if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
+			if (configData.MARQUEE_SEPARATOR === undefined) configData.MARQUEE_SEPARATOR = '•';
+			if (configData.COLOR_CURRENT_TIME === undefined) configData.COLOR_CURRENT_TIME = '#FFFF00';
+			if (configData.COLOR_DEFAULT === undefined) configData.COLOR_DEFAULT = '#FFFF00';
+			if (configData.WARNING_START_MINUTES === undefined && configData.WARNING_START_SECONDS !== undefined) {
+				configData.WARNING_START_MINUTES = (parseInt(configData.WARNING_START_SECONDS, 10) || 30) / 60;
+			}
+			if (configData.WARNING_START_MINUTES === undefined) configData.WARNING_START_MINUTES = '0.5';
+			const sepBtn = document.getElementById('MARQUEE_SEPARATOR_btn');
+			if (sepBtn) sepBtn.textContent = configData.MARQUEE_SEPARATOR;
 			Object.keys(configData).forEach(key => {
+				const toggleBtn = document.getElementById(key + '_toggle');
+				if (toggleBtn) {
+					updateToggleButton(toggleBtn, configData[key] === 'true' || configData[key] === '1');
+					return;
+				}
 				const input = document.getElementById(key);
 				if (input) {
-					let displayValue = configData[key];
-					if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
-						const ms = parseFloat(configData[key]);
-						if (!isNaN(ms)) displayValue = String(ms / 1000);
-					}
+					const displayValue = configData[key];
 					if (input.type === 'checkbox') {
 						input.checked = displayValue === 'true' || displayValue === '1';
 					} else {
@@ -70,19 +80,20 @@
 		}
 	}
 
-	async function saveConfigItem(key) {
+	async function saveConfigItem(key, valueOverride = null) {
 		try {
-			const input = document.getElementById(key) || document.querySelector(`input[name="${key}"]:checked`);
-			if (!input) return;
-			const value = input.type === 'checkbox' ? (input.checked ? 'true' : 'false') : input.value;
-			let saveValue = value;
-			if (key === 'HOLD_DURATION' || key === 'BLINK_DURATION') {
-				const seconds = parseFloat(value);
-				if (!isNaN(seconds)) saveValue = String(Math.round(seconds * 1000));
-			}
-			if (key === 'MARQUEE_DURATION') {
-				const n = parseInt(value, 10);
-				if (!isNaN(n)) saveValue = String(Math.max(5, Math.min(120, n)));
+			let saveValue;
+			if (valueOverride !== null) {
+				saveValue = valueOverride;
+			} else {
+				const input = document.getElementById(key) || document.querySelector(`input[name="${key}"]:checked`);
+				if (!input) return;
+				const value = input.type === 'checkbox' ? (input.checked ? 'true' : 'false') : input.value;
+				saveValue = value;
+				if (key === 'MARQUEE_DURATION') {
+					const n = parseInt(value, 10);
+					if (!isNaN(n)) saveValue = String(Math.max(5, Math.min(120, n)));
+				}
 			}
 			const response = await fetch(`${getApiUrl()}/data/config`);
 			const result = await response.json();
@@ -113,6 +124,58 @@
 			}
 		} catch (error) {
 			console.error('Error saving config:', error);
+			if (window.NotificationUtils) window.NotificationUtils.showNotification('Gagal menyimpan: ' + error.message, 'error');
+		}
+	}
+
+	function updateToggleButton(btn, isActive) {
+		if (isActive) {
+			btn.textContent = 'Aktif';
+			btn.classList.add('btn-toggle--on');
+			btn.classList.remove('btn-toggle--off');
+		} else {
+			btn.textContent = 'Tidak Aktif';
+			btn.classList.add('btn-toggle--off');
+			btn.classList.remove('btn-toggle--on');
+		}
+	}
+
+	async function toggleConfigBool(key) {
+		try {
+			const btn = document.getElementById(key + '_toggle');
+			const current = configData[key] === 'true' || configData[key] === '1';
+			const newValue = current ? 'false' : 'true';
+			const response = await fetch(`${getApiUrl()}/data/config`);
+			const result = await response.json();
+			if (result.data && Array.isArray(result.data)) {
+				const rowData = result.data.find(r => r.key === key);
+				const formattedRow = `${key}|${newValue}`;
+				if (rowData && rowData.id) {
+					const updateResponse = await fetch(`${getApiUrl()}/data/config/${rowData.id}`, {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ row: formattedRow })
+					});
+					if (updateResponse.ok) {
+						configData[key] = newValue;
+						if (btn) updateToggleButton(btn, newValue === 'true');
+						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+					}
+				} else {
+					const insertResponse = await fetch(`${getApiUrl()}/data/config/insert`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ row: formattedRow })
+					});
+					if (insertResponse.ok) {
+						configData[key] = newValue;
+						if (btn) updateToggleButton(btn, newValue === 'true');
+						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error toggling config:', error);
 			if (window.NotificationUtils) window.NotificationUtils.showNotification('Gagal menyimpan: ' + error.message, 'error');
 		}
 	}
@@ -345,6 +408,7 @@
 	window.Icons = Icons;
 	window.loadConfigData = loadConfigData;
 	window.saveConfigItem = saveConfigItem;
+	window.toggleConfigBool = toggleConfigBool;
 	window.initSlidesOrderBtns = initSlidesOrderBtns;
 	window.selectSlidesOrder = selectSlidesOrder;
 	window.handleRebootKiosk = handleRebootKiosk;
@@ -365,4 +429,22 @@
 	window.enableHotspot = () => window.WiFiUtils?.enableHotspot();
 	window.disableHotspot = () => window.WiFiUtils?.disableHotspot();
 	window.refreshHotspotStatus = () => window.WiFiUtils?.refreshHotspotStatus();
+
+	function openSeparatorPicker() {
+		const dialog = document.getElementById('sep-picker-dialog');
+		if (dialog) dialog.showModal();
+	}
+
+	function pickSeparator(val) {
+		const input = document.getElementById('MARQUEE_SEPARATOR');
+		if (input) input.value = val;
+		const btn = document.getElementById('MARQUEE_SEPARATOR_btn');
+		if (btn) btn.textContent = val;
+		saveConfigItem('MARQUEE_SEPARATOR', val);
+		const dialog = document.getElementById('sep-picker-dialog');
+		if (dialog) dialog.close();
+	}
+
+	window.openSeparatorPicker = openSeparatorPicker;
+	window.pickSeparator = pickSeparator;
 })();

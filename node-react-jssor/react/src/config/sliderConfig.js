@@ -5,6 +5,7 @@
 import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils';
 // Import build functions dan constants dari slideBuilders
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
+import { MOSQUE_NAME, MOSQUE_LOCATION } from './mosqueInfo';
 
 // ============================================================================
 // HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
@@ -18,12 +19,18 @@ import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 export const buildHomeTemplate = (homeTitleConfig = {}) => {
   const {
     TITLE1_TOP = 120,
+    TITLE_LEFT = 0,
+    TITLE_RIGHT = 0,
+    TITLE_BG = 'transparent',
+    TITLE_GAP = 30,
+    TITLE_ALIGN = 'center',
     TITLE1_SIZE = 88,
     TITLE1_COLOR = '#00FFFF',
-    TITLE2_TOP = 250,
     TITLE2_SIZE = 88,
     TITLE2_COLOR = '#00FFFF'
   } = homeTitleConfig;
+
+  const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
 
   return {
     type: 'home',
@@ -34,22 +41,19 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
       {
         type: "div", transition: "CLIP|LR", duration: 1500,
         style: { 
-          left: 0, right: 0, top: top(TITLE1_TOP), width: sz().width, height: 70, 
-          textAlign: 'center', fontSize: TITLE1_SIZE, color: TITLE1_COLOR, 
+          left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP), //width: sz().width,
           textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
-          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' 
+          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px',
+          backgroundColor: TITLE_BG,
+          // '-webkit-text-stroke': '1px red',
+          // webkitTextStrokeColor: 'red',
+          // webkittextstrokewidth: '1px',
+          clip: 'auto'
         },
-        content: "MASJID TUAN ABDULLAH" // HARDCODED - tidak boleh diubah dari setting
-      },
-      {
-        type: "div", transition: "CLIP|LR", duration: 1500, delay: 700,
-        style: { 
-          left: 0, right: 0, top: top(TITLE2_TOP), width: sz().width, height: 70, 
-          textAlign: 'center', fontSize: TITLE2_SIZE, color: TITLE2_COLOR, 
-          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
-          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' 
-        },
-        content: "TANAH LIAT" // HARDCODED - tidak boleh diubah dari setting
+        content: `<div style="display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
+        <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>
+        <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
+        </div>`
       },
     ],
     datetime: ['date', 'solat-time']
@@ -114,16 +118,6 @@ export const sliderConfig = {
     playOrientation: 1,
     dragOrientation: 0
   },
-  // masa: {
-  //   enabled: true,
-  //   position: { bottom: 0, right: 20 },
-  //   size: 72,
-  //   format: '12h',
-  //   showSeconds: false,
-  //   showAmPm: false,
-  //   isCurrentTime: true,
-  //   color: '#FFD700'
-  // },
   loading: {
     enabled: true,
     image: "/img/loading.gif"
@@ -144,13 +138,13 @@ export const slidesTemplate = {
       {
         type: "div", transition: "CLIP|LR", duration: 1500,
         style: { left: 0, right: 0, top: top(120), width: sz().width, height: 70, textAlign: 'center', fontSize: 88, color: '#00FFFF', textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' },
-        content: "MASJID TUAN ABDULLAH"
+        content: MOSQUE_NAME
       },
-      {
-        type: "div", transition: "CLIP|LR", duration: 1500, delay: 700,
-        style: { left: 0, right: 0, top: top(120 + 70 + 60), width: sz().width, height: 70, textAlign: 'center', fontSize: 88, color: '#00FFFF', textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' },
-        content: "TANAH LIAT"
-      },
+      // {
+      //   type: "div", transition: "CLIP|LR", duration: 1500, delay: 700,
+      //   style: { left: 0, right: 0, top: top(120 + 70 + 60), width: sz().width, height: 70, textAlign: 'center', fontSize: 88, color: '#00FFFF', textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px' },
+      //   content: MOSQUE_LOCATION
+      // },
     ],
     datetime: ['date', 'solat-time']
   },

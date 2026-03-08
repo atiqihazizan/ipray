@@ -3,16 +3,13 @@ const path = require('path');
 
 /** Default config (fallback bila config.txt kosong atau tiada) */
 const DEFAULT_PRAYER_TIME_CONFIG = {
-  HOLD_DURATION: 60000,
-  BLINK_DURATION: 15000,
   BEEP_COUNT: 5,
-  WARNING_START_SECONDS: 30,
-  WARNING_BEEP_COUNT: 0,
-  AZAN_DURATION_MIN: 0.5,
+  WARNING_START_MINUTES: 0.5,
   IQAMAH_DURATION_MIN: 2,
   SOLAT_DURATION_MIN: 3,
 };
 const DEFAULT_COLOR_CONFIG = {
+  CURRENT_TIME: '#FFFF00',
   DEFAULT: '#FFFF00',
   NEXT_PRAYER: '#90EE90',
   WARNING_PRAYER: '#FF0000',
@@ -1185,13 +1182,18 @@ class DataService {
       },
       MARQUEE_CONFIG: {
         ENABLED: true,
-        DURATION: 25
+        DURATION: 25,
+        SEPARATOR: '•'
       },
       HOME_TITLE_CONFIG: {
         TITLE1_TOP: 120,
+        TITLE_LEFT: 0,
+        TITLE_RIGHT: 0,
+        TITLE_BG: 'transparent',
+        TITLE_GAP: 30,
+        TITLE_ALIGN: 'center',
         TITLE1_SIZE: 88,
         TITLE1_COLOR: '#00FFFF',
-        TITLE2_TOP: 250,
         TITLE2_SIZE: 88,
         TITLE2_COLOR: '#00FFFF'
       },
@@ -1205,14 +1207,12 @@ class DataService {
       const key = parts[0];
       const value = parts[1];
       if (!key || !value) return;
-      if (key === 'HOLD_DURATION') parsed.PRAYER_TIME_CONFIG.HOLD_DURATION = parseInt(value, 10);
-      else if (key === 'BLINK_DURATION') parsed.PRAYER_TIME_CONFIG.BLINK_DURATION = parseInt(value, 10);
-      else if (key === 'BEEP_COUNT') parsed.PRAYER_TIME_CONFIG.BEEP_COUNT = parseInt(value, 10);
-      else if (key === 'WARNING_START_SECONDS') parsed.PRAYER_TIME_CONFIG.WARNING_START_SECONDS = parseInt(value, 10);
-      else if (key === 'WARNING_BEEP_COUNT') parsed.PRAYER_TIME_CONFIG.WARNING_BEEP_COUNT = parseInt(value, 10);
-      else if (key === 'AZAN_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.AZAN_DURATION_MIN = parseFloat(value) || 0.5;
+      if (key === 'BEEP_COUNT') parsed.PRAYER_TIME_CONFIG.BEEP_COUNT = parseInt(value, 10);
+      else if (key === 'WARNING_START_MINUTES') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = parseFloat(value) || 0.5;
+      else if (key === 'WARNING_START_SECONDS') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = (parseInt(value, 10) || 30) / 60;
       else if (key === 'IQAMAH_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.IQAMAH_DURATION_MIN = parseFloat(value) || 2;
       else if (key === 'SOLAT_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.SOLAT_DURATION_MIN = parseInt(value, 10);
+      else if (key === 'COLOR_CURRENT_TIME') parsed.COLOR_CONFIG.CURRENT_TIME = value;
       else if (key === 'COLOR_DEFAULT') parsed.COLOR_CONFIG.DEFAULT = value;
       else if (key === 'COLOR_NEXT_PRAYER') parsed.COLOR_CONFIG.NEXT_PRAYER = value;
       else if (key === 'COLOR_WARNING_PRAYER') parsed.COLOR_CONFIG.WARNING_PRAYER = value;
@@ -1222,10 +1222,15 @@ class DataService {
       else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
       else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
       else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
+      else if (key === 'MARQUEE_SEPARATOR') parsed.MARQUEE_CONFIG.SEPARATOR = value;
       else if (key === 'HOME_TITLE1_TOP') parsed.HOME_TITLE_CONFIG.TITLE1_TOP = parseInt(value, 10) || 120;
+      else if (key === 'HOME_TITLE_LEFT') parsed.HOME_TITLE_CONFIG.TITLE_LEFT = parseInt(value, 10) || 0;
+      else if (key === 'HOME_TITLE_RIGHT') parsed.HOME_TITLE_CONFIG.TITLE_RIGHT = parseInt(value, 10) || 0;
+      else if (key === 'HOME_TITLE_BG') parsed.HOME_TITLE_CONFIG.TITLE_BG = value;
+      else if (key === 'HOME_TITLE_GAP') parsed.HOME_TITLE_CONFIG.TITLE_GAP = parseInt(value, 10) || 30;
+      else if (key === 'HOME_TITLE_ALIGN') parsed.HOME_TITLE_CONFIG.TITLE_ALIGN = ['left', 'center', 'right'].includes(value) ? value : 'center';
       else if (key === 'HOME_TITLE1_SIZE') parsed.HOME_TITLE_CONFIG.TITLE1_SIZE = parseInt(value, 10) || 88;
       else if (key === 'HOME_TITLE1_COLOR') parsed.HOME_TITLE_CONFIG.TITLE1_COLOR = value;
-      else if (key === 'HOME_TITLE2_TOP') parsed.HOME_TITLE_CONFIG.TITLE2_TOP = parseInt(value, 10) || 250;
       else if (key === 'HOME_TITLE2_SIZE') parsed.HOME_TITLE_CONFIG.TITLE2_SIZE = parseInt(value, 10) || 88;
       else if (key === 'HOME_TITLE2_COLOR') parsed.HOME_TITLE_CONFIG.TITLE2_COLOR = value;
       else if (key === 'SLIDES_ORDER') parsed.SLIDES_CONFIG.ORDER = ['A', 'B', 'C'].includes(value.toUpperCase()) ? value.toUpperCase() : 'A';

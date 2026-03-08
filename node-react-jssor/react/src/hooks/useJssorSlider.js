@@ -13,11 +13,16 @@ const createDataHash = (slides) => {
     const captions = slide.captions || [];
     const captionStructure = captions.map(cap => {
       const children = cap.children || [];
-      // Include content dari first 3 children untuk detect content changes
       const childContent = children.slice(0, 3).map(child => 
         `${child.type}:${String(child.content || '').substring(0, 30)}`
       ).join('|');
-      return `${cap.type}|${cap.transition}|${cap.transition2}|childCount:${children.length}|content:${childContent}`;
+      // Sertakan cap.content (string HTML terus, contoh home title) supaya hash berubah bila config berubah
+      const capContentStr = String(cap.content || '');
+      const capContentHash = capContentStr.length > 0
+        ? `${capContentStr.length}:${capContentStr.substring(0, 200)}`
+        : '';
+      //return `${cap.type}|${cap.transition}|${cap.transition2}|childCount:${children.length}|content:${childContent}`;
+      return `${cap.type}|${cap.transition}|${cap.transition2}|childCount:${children.length}|content:${childContent}|capContent:${capContentHash}`;
     }).join(';') || 'nocaptions';
 
     return `${slide.transitionType}|${slide.duration}|${slide.image?.src || 'noimg'}|capCount:${captions.length}|${captionStructure}`;

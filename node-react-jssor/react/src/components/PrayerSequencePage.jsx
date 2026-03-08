@@ -5,6 +5,7 @@ import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
 import AzanScreen from './prayer-screens/AzanScreen';
 import IqamahScreen from './prayer-screens/IqamahScreen';
 import SolatScreen from './prayer-screens/SolatScreen';
+import DateTimeOverlay from './DateTimeOverlay';
 import { bgSolatStyle } from './prayer-screens/styles';
 
 const PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -84,10 +85,11 @@ function safeReload(prayerName, prayerTimeStr) {
  * Urutan waktu solat: azan countdown → (countdown=0: play beep, tunggu beep habis) → iqamah → solat → reload.
  * Sentiasa mulakan dari screen azan tanpa mengira warningSeconds.
  */
-export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComplete }) {
+export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComplete, overlayOverride = null }) {
   const { PRAYER_TIME_CONFIG } = useData();
 
-  const [screen, setScreen] = useState(null);
+  // const [screen, setScreen] = useState(null);
+  const [screen, setScreen] = useState('azan');
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef(null);
   const beepCleanupRef = useRef(null);
@@ -115,8 +117,9 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
 
     const tick = () => {
       if (!prayerTimeStr) return;
-      const [ph, pm] = prayerTimeStr.split(':').map(Number);
-      const ptTotalSeconds = ph * 3600 + pm * 60;
+      const parts = prayerTimeStr.split(':').map(Number);
+      const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
+      const ptTotalSeconds = ph * 3600 + pm * 60 + ps;
       const now = new Date();
       const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
       const remaining = ptTotalSeconds - currentTotalSeconds;
@@ -176,7 +179,15 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
 
   if (!screen) return <div style={bgSolatStyle} />;
 
-  if (screen === 'azan') return <AzanScreen prayerName={prayerName} countdown={formatCountdown(countdown)} />;
-  if (screen === 'iqamah') return <IqamahScreen countdown={formatCountdown(countdown)} />;
-  return <SolatScreen countdown={formatCountdown(countdown)} />;
+  let content;
+  if (screen === 'azan') content = <AzanScreen prayerName={prayerName} countdown={formatCountdown(countdown)} />;
+  else if (screen === 'iqamah') content = <IqamahScreen countdown={formatCountdown(countdown)} />;
+  else content = <SolatScreen countdown={formatCountdown(countdown)} />;
+
+  return (
+    <>
+      {content}
+      {overlayOverride && <DateTimeOverlay overlayOverride={overlayOverride} />}
+    </>
+  );
 }

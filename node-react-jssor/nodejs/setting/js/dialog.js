@@ -403,6 +403,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         { value: "w2", label: "Minggu 2" },
         { value: "w3", label: "Minggu 3" },
         { value: "w4", label: "Minggu 4" },
+        { value: "w5", label: "Minggu 5" },
       ];
 
       const currentVal =
@@ -425,6 +426,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         wrap.style.alignItems = "center";
         wrap.style.gap = "6px";
         wrap.style.cursor = "pointer";
+        wrap.style.textWrap = "nowrap";
 
         const rb = document.createElement("input");
         rb.type = "radio";
@@ -1573,21 +1575,22 @@ function createFormFields(form, row, isAdd, options = {}) {
 /**
  * Open add dialog (untuk tambah entry baru)
  */
-export function openAddDialog() {
+export async function openAddDialog() {
   const currentFileName = getCurrentFileName();
   const currentColumns = getCurrentColumns();
 
-  // Allow add untuk announcements, countdowns, images, slideshow, hebahan, dan kuliah-override
+  // Allow add untuk announcements, countdowns, images, slideshow, hebahan, kuliah, kuliah-override, livestream
   if (
     currentFileName !== "announcements" &&
     currentFileName !== "countdowns" &&
     currentFileName !== "images" &&
     currentFileName !== "slideshow" &&
     currentFileName !== "hebahan" &&
+    currentFileName !== "kuliah" &&
     currentFileName !== "kuliah-override" &&
     currentFileName !== "livestream"
   ) {
-    showNotification("✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, Override Kuliah, dan Siaran Langsung","error");
+    showNotification("✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, Kuliah, Override Kuliah, dan Siaran Langsung","error");
     return;
   }
 
@@ -1599,6 +1602,23 @@ export function openAddDialog() {
 
   setAddMode(true);
   setEditingRowId(null);
+
+  // Load imagesList untuk kuliah (gambar penceramah)
+  let imagesList = [];
+  if (currentFileName === "kuliah") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const res = await fetch(`${API_URL}/data/images`);
+      if (res.ok) {
+        const data = await res.json();
+        imagesList = (data.data || []).filter((im) =>
+          (im.imagePath || "").includes("/penceramah/"),
+        );
+      }
+    } catch (e) {
+      console.warn("Could not load penceramah images:", e);
+    }
+  }
 
   const dialog = document.getElementById("edit-dialog");
   const form = document.getElementById("edit-form");
@@ -1615,13 +1635,15 @@ export function openAddDialog() {
     title.textContent = "Tambah Slideshow Baru";
   } else if (currentFileName === "hebahan") {
     title.textContent = "Tambah Hebahan Baru";
+  } else if (currentFileName === "kuliah") {
+    title.textContent = "Tambah Kuliah Baru";
   } else if (currentFileName === "kuliah-override") {
     title.textContent = "Tambah Rekod Override Kuliah";
   }
 
   form.innerHTML = "";
 
-  createFormFields(form, null, true);
+  createFormFields(form, null, true, { imagesList });
 
   dialog.style.display = "flex";
   dialog.classList.remove("hidden");

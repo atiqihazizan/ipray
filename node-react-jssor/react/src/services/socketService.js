@@ -131,6 +131,21 @@ class SocketService {
       audioService.play({ sound: 'beep_once', playCount: 3, volume: 1 }).catch(() => {});
     });
 
+    // Listen for home title config update (tanpa reload)
+    this.socket.on('home-title:updated', (data) => {
+      this.notifyListeners('home-title:updated', data);
+    });
+
+    // Listen for marquee config update (tanpa reload)
+    this.socket.on('marquee-config:updated', (data) => {
+      this.notifyListeners('marquee-config:updated', data);
+    });
+
+    // Listen for hebahan update (tanpa reload)
+    this.socket.on('hebahan:updated', (data) => {
+      this.notifyListeners('hebahan:updated', data);
+    });
+
     // Listen for kematian announcement
     this.socket.on('kematian:updated', (data) => {
       this.notifyListeners('kematian:updated', data);

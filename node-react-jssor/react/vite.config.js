@@ -8,6 +8,16 @@ export default defineConfig({
   build: {
     outDir: '../nodejs/public',
     emptyOutDir: true, // Clear folder sebelum build
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-socket': ['socket.io-client'],
+          'vendor-hls': ['hls.js'],
+        },
+      },
+    },
   },
   server: {
     port: 5173, // Vite dev server port
