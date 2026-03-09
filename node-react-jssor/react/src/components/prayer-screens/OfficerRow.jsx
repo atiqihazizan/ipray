@@ -24,7 +24,7 @@ export function OfficerRow({ imageSrc = '/img/Random_user.svg', label, name }) {
         </td>
       </tr>
       <tr>
-        <td colspan="3" style={{ height: "10px" }}></td>
+        <td colSpan="3" style={{ height: "10px" }}></td>
       </tr>
     </>
   );
@@ -32,8 +32,8 @@ export function OfficerRow({ imageSrc = '/img/Random_user.svg', label, name }) {
 
 /** Senarai pegawai default — kongsi kedua skrin */
 export const PEGAWAI_LIST = [
-  { label: 'BILAL', name: 'Nama 1' },
-  { label: 'IMAM', name: 'Nama 2' },
+  { label: 'BILAL', name: '' },
+  { label: 'IMAM', name: '' },
 ];
 
 /**

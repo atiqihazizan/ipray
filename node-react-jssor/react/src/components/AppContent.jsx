@@ -63,7 +63,7 @@ const AppContent = () => {
         prayerName={currentPrayerName}
         prayerTimeStr={currentPrayerTimeStr}
         onComplete={() => setCurrentView('slide')}
-        overlayOverride={{ showDate: true, showSmallTime: false, showMarquee: true, showTimeSmallClock: true }}
+        overlayOverride={{ showDate: true, showSmallTime: true, showMarquee: true, showTimeSmallClock: false }}
       />
     )
   }

@@ -92,6 +92,7 @@ export const DataProvider = ({ children }) => {
   const [reloadCounter, setReloadCounter] = useState(0);
   const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
   const [liveStreamData, setLiveStreamData] = useState(null);
+  const [petugasData, setPetugasData] = useState([]);
   const kematianTimerRef = useRef(null);
 
   /**
@@ -123,6 +124,7 @@ export const DataProvider = ({ children }) => {
       setImagesData(data.images ?? {});
       setSlidesConfigData(data.slidesConfig ?? {});
       setSlideshowData(data.slideshow ?? []);
+      setPetugasData(data.petugasData ?? []);
       setConfigData(data.config ?? {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
         COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
@@ -407,6 +409,7 @@ export const DataProvider = ({ children }) => {
     reloadCounter,
     deathAnnouncementData,
     liveStreamData,
+    petugasData,
     refresh: loadAllData,
     checkMidnight,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,

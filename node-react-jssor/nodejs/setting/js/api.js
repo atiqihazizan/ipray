@@ -9,6 +9,7 @@ import {
   isAddMode,
   getCurrentColumns,
   setLastEditedRowId,
+  findRowById,
 } from "./state.js";
 import { showNotification } from "./notification.js";
 import { loadTable } from "./table.js";
@@ -100,6 +101,12 @@ function reconstructRawLine(fileName, rowData) {
     return `${rowData.text || ""}|${rowData.startDate || ""}|${rowData.endDate || ""}`;
   } else if (fileName === "livestream") {
     return `${rowData.tajuk || ""}|${rowData.url || ""}|${rowData.jenis || ""}`;
+  } else if (fileName === "petugas") {
+    return `${rowData.kod || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|${rowData.imageCode || ""}`;
+  } else if (fileName === "jadual-petugas") {
+    return `${rowData.week || ""}|${rowData.day || ""}|${rowData.role || ""}|${rowData.officerCode || ""}`;
+  } else if (fileName === "penceramah") {
+    return `${rowData.kod || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.imageCode || ""}|${rowData.kitab || ""}`;
   }
   return "";
 }
@@ -141,6 +148,32 @@ export async function saveRow() {
     const field = document.getElementById(`field-${col}`);
     rowData[col] = field ? field.value.trim() : "";
   });
+
+  // Kuliah: resolve speakerId dari penceramah (image diurus dalam Penceramah)
+  if (currentFileName === "kuliah") {
+    const speakerKod = (rowData.speaker || "").trim();
+    let speakerIdResolved = "";
+    try {
+      const API_URL = window.Config?.API_URL;
+      if (API_URL && speakerKod) {
+        const res = await fetch(`${API_URL}/data/penceramah`);
+        if (res.ok) {
+          const penceramahData = await res.json();
+          const list = penceramahData.data || [];
+          const found = list.find((p) => (p.kod || "").trim() === speakerKod);
+          if (found) {
+            speakerIdResolved = (found.imageCode || "").trim();
+          } else if (!addMode && editingRowId) {
+            const existingRow = findRowById(editingRowId);
+            if (existingRow?.speakerId) speakerIdResolved = String(existingRow.speakerId).trim();
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not resolve speakerId from penceramah:", e);
+    }
+    rowData.speakerId = speakerIdResolved;
+  }
 
   // Convert datetime-local format (YYYY-MM-DDTHH:MM) to storage format (YYYY-MM-DD HH:MM)
   if (currentFileName === "announcements" && rowData.datetime) {

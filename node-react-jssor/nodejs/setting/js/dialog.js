@@ -109,12 +109,14 @@ export async function downloadImageFromUrl(
  * @param {HTMLElement} form - Form element
  * @param {object} row - Data row (null untuk add mode)
  * @param {boolean} isAdd - Mode add atau edit
- * @param {{ imagesList?: Array<{imageCode:string, imagePath:string}> }} options - Optional; imagesList untuk dropdown slides
+ * @param {{ imagesList?: Array, penceramahList?: Array, petugasList?: Array }} options - Optional; penceramahList untuk kuliah, petugasList untuk jadual-petugas
  */
 function createFormFields(form, row, isAdd, options = {}) {
   const currentFileName = getCurrentFileName();
   const currentColumns = getCurrentColumns();
   const imagesList = options.imagesList || [];
+  const penceramahList = options.penceramahList || [];
+  const petugasList = options.petugasList || [];
   const API_URL =
     typeof window !== "undefined" && window.Config ? window.Config.API_URL : "";
   const BASE_URL =
@@ -144,9 +146,7 @@ function createFormFields(form, row, isAdd, options = {}) {
     if (currentFileName === "kuliah" && col === "speaker") {
       label.textContent = "Penceramah";
     }
-    if (currentFileName === "kuliah" && col === "speakerId") {
-      label.textContent = "Gambar Penceramah";
-    }
+    // Kuliah speakerId tiada dalam dialog - image diurus dalam Penceramah
     if (currentFileName === "kuliah" && col === "title") {
       label.textContent = "Nama Kitab / Tajuk Kuliah";
     }
@@ -198,6 +198,236 @@ function createFormFields(form, row, isAdd, options = {}) {
         jenis: "Jenis Siaran",
       };
       if (lsLabels[col]) label.textContent = lsLabels[col];
+    }
+
+    // Petugas: label mesra pengguna
+    if (currentFileName === "petugas") {
+      const petugasLabels = { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", imageCode: "Gambar" };
+      if (petugasLabels[col]) label.textContent = petugasLabels[col];
+    }
+    // Jadual petugas: label
+    if (currentFileName === "jadual-petugas") {
+      const jpLabels = { week: "Minggu", day: "Hari", role: "Peranan", officerCode: "Petugas" };
+      if (jpLabels[col]) label.textContent = jpLabels[col];
+    }
+    // Penceramah: label
+    if (currentFileName === "penceramah") {
+      const pLabels = { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", imageCode: "Gambar", kitab: "Kitab (comma-separated)" };
+      if (pLabels[col]) label.textContent = pLabels[col];
+    }
+
+    // Penceramah: imageCode dropdown (gambar dari Galeri)
+    if (currentFileName === "penceramah" && col === "imageCode") {
+      const select = document.createElement("select");
+      select.id = `field-${col}`;
+      select.name = col;
+      select.className = "form-control";
+      const emptyOpt = document.createElement("option");
+      emptyOpt.value = "";
+      emptyOpt.textContent = "-- Pilih gambar (pilihan) --";
+      select.appendChild(emptyOpt);
+      const currentVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
+      (imagesList || []).forEach((im) => {
+        const code = (im.imageCode || "").trim();
+        if (!code) return;
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = code;
+        if (currentVal === code) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if (currentVal && !(imagesList || []).some((im) => (im.imageCode || "").trim() === currentVal)) {
+        const opt = document.createElement("option");
+        opt.value = currentVal;
+        opt.textContent = currentVal + " (tiada dalam Galeri)";
+        opt.selected = true;
+        select.appendChild(opt);
+      }
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+
+    // Petugas: role dropdown (BILAL/IMAM)
+    if (currentFileName === "petugas" && col === "role") {
+      const select = document.createElement("select");
+      select.id = `field-${col}`;
+      select.name = col;
+      select.className = "form-control";
+      const currentVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
+      [{ value: "BILAL", label: "BILAL" }, { value: "IMAM", label: "IMAM" }].forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (currentVal === opt.value) o.selected = true;
+        select.appendChild(o);
+      });
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+
+    // Petugas: imageCode dropdown (gambar penceramah)
+    if (currentFileName === "petugas" && col === "imageCode") {
+      const select = document.createElement("select");
+      select.id = `field-${col}`;
+      select.name = col;
+      select.className = "form-control";
+      const emptyOpt = document.createElement("option");
+      emptyOpt.value = "";
+      emptyOpt.textContent = "-- Pilih gambar (pilihan) --";
+      select.appendChild(emptyOpt);
+      const currentVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
+      (imagesList || []).forEach((im) => {
+        const code = (im.imageCode || "").trim();
+        if (!code) return;
+        const opt = document.createElement("option");
+        opt.value = code;
+        opt.textContent = code;
+        if (currentVal === code) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if (currentVal && !(imagesList || []).some((im) => (im.imageCode || "").trim() === currentVal)) {
+        const opt = document.createElement("option");
+        opt.value = currentVal;
+        opt.textContent = currentVal + " (tiada dalam Galeri)";
+        opt.selected = true;
+        select.appendChild(opt);
+      }
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+
+    // Jadual-petugas: week, day (radio), role (dropdown), officerCode (dropdown dari petugas)
+    if (currentFileName === "jadual-petugas" && col === "week") {
+      label.textContent = "Minggu";
+      const WEEK_OPTIONS = [{ value: "w1", label: "Minggu 1" }, { value: "w2", label: "Minggu 2" }, { value: "w3", label: "Minggu 3" }, { value: "w4", label: "Minggu 4" }, { value: "w5", label: "Minggu 5" }];
+      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px 16px";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal || "w1";
+      WEEK_OPTIONS.forEach((opt) => {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const rb = document.createElement("input");
+        rb.type = "radio";
+        rb.name = "jadual-petugas-week";
+        rb.value = opt.value;
+        rb.checked = (currentVal || "w1") === opt.value;
+        rb.addEventListener("change", () => { hiddenInput.value = opt.value; });
+        wrap.appendChild(rb);
+        wrap.appendChild(document.createTextNode(opt.label));
+        container.appendChild(wrap);
+      });
+      group.appendChild(label);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "day") {
+      label.textContent = "Hari";
+      const DAY_OPTIONS = [{ value: "h0", label: "Ahad" }, { value: "h1", label: "Isnin" }, { value: "h2", label: "Selasa" }, { value: "h3", label: "Rabu" }, { value: "h4", label: "Khamis" }, { value: "h5", label: "Jumaat" }, { value: "h6", label: "Sabtu" }];
+      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px 16px";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal || "h0";
+      DAY_OPTIONS.forEach((opt) => {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const rb = document.createElement("input");
+        rb.type = "radio";
+        rb.name = "jadual-petugas-day";
+        rb.value = opt.value;
+        rb.checked = (currentVal || "h0") === opt.value;
+        rb.addEventListener("change", () => { hiddenInput.value = opt.value; });
+        wrap.appendChild(rb);
+        wrap.appendChild(document.createTextNode(opt.label));
+        container.appendChild(wrap);
+      });
+      group.appendChild(label);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "role") {
+      const select = document.createElement("select");
+      select.id = `field-${col}`;
+      select.name = col;
+      select.className = "form-control";
+      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+      [{ value: "BILAL", label: "BILAL" }, { value: "IMAM", label: "IMAM" }].forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (currentVal === opt.value) o.selected = true;
+        select.appendChild(o);
+      });
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "officerCode") {
+      const roleVal = !isAdd && row && row.role ? String(row.role).trim() : (form.querySelector("#field-role")?.value || "BILAL");
+      const filtered = petugasList.filter((p) => (p.role || "").trim().toUpperCase() === roleVal.toUpperCase());
+      const select = document.createElement("select");
+      select.id = `field-${col}`;
+      select.name = col;
+      select.className = "form-control";
+      const emptyOpt = document.createElement("option");
+      emptyOpt.value = "";
+      emptyOpt.textContent = "-- Pilih petugas --";
+      select.appendChild(emptyOpt);
+      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+      filtered.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.kod || "";
+        opt.textContent = p.namaPenuh || p.kod || "";
+        if (currentVal === (p.kod || "")) opt.selected = true;
+        select.appendChild(opt);
+      });
+      const roleField = form.querySelector("#field-role");
+      if (roleField) {
+        roleField.addEventListener("change", () => {
+          const rv = roleField.value || "BILAL";
+          select.innerHTML = "";
+          select.appendChild(emptyOpt.cloneNode(true));
+          petugasList.filter((p) => (p.role || "").trim().toUpperCase() === rv.toUpperCase()).forEach((p) => {
+            const opt = document.createElement("option");
+            opt.value = p.kod || "";
+            opt.textContent = p.namaPenuh || p.kod || "";
+            select.appendChild(opt);
+          });
+        });
+      }
+      group.appendChild(label);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
     }
 
     // Siaran langsung: jenis sebagai dropdown
@@ -321,75 +551,149 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Special handling untuk speakerId dalam kuliah table: dropdown pilih image code + preview
-    if (currentFileName === "kuliah" && col === "speakerId") {
-      const wrap = document.createElement("div");
-      const previewContainer = document.createElement("div");
-      previewContainer.className = "image-preview-container";
-      previewContainer.style.marginBottom = "12px";
-      const previewImg = document.createElement("img");
-      previewImg.id = `speakerId-image-preview-${col}`;
-      previewImg.className = "image-preview";
-      previewImg.style.maxWidth = "200px";
-      previewImg.style.maxHeight = "200px";
-      previewImg.style.borderRadius = "8px";
-      previewImg.style.border = "1px solid #e5e7eb";
-      previewImg.style.objectFit = "cover";
-      previewImg.style.display = "none";
-      previewImg.alt = "Preview";
-      previewContainer.appendChild(previewImg);
-
+    // Special handling untuk speaker dalam kuliah table: dropdown penceramah (full name)
+    if (currentFileName === "kuliah" && col === "speaker") {
       const select = document.createElement("select");
       select.id = `field-${col}`;
       select.name = col;
       select.className = "form-control";
       const emptyOpt = document.createElement("option");
       emptyOpt.value = "";
-      emptyOpt.textContent = "-- Pilih image code --";
+      emptyOpt.textContent = "-- Pilih penceramah --";
       select.appendChild(emptyOpt);
-      const currentVal = !isAdd && row[col] ? (row[col] || "").trim() : "";
-      const codesAdded = new Set([""]);
-      imagesList.forEach((im) => {
-        const code = (im.imageCode || "").trim();
-        if (codesAdded.has(code)) return;
-        codesAdded.add(code);
+      const currentSpeakerVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
+      penceramahList.forEach((p) => {
         const opt = document.createElement("option");
-        opt.value = code;
-        opt.textContent = code;
-        if (currentVal === code) opt.selected = true;
+        opt.value = p.kod || "";
+        opt.textContent = p.namaPenuh || p.kod || "";
+        opt.dataset.imageCode = p.imageCode || "";
+        opt.dataset.kitab = p.kitab || "";
+        if (currentSpeakerVal === (p.kod || "") || currentSpeakerVal === (p.namaPenuh || "")) {
+          opt.selected = true;
+        }
         select.appendChild(opt);
       });
-      if (currentVal && !codesAdded.has(currentVal)) {
+      if (currentSpeakerVal && !penceramahList.some((p) => (p.kod || "") === currentSpeakerVal || (p.namaPenuh || "") === currentSpeakerVal)) {
         const opt = document.createElement("option");
-        opt.value = currentVal;
-        opt.textContent = currentVal + " (tiada dalam Images)";
+        opt.value = currentSpeakerVal;
+        opt.textContent = currentSpeakerVal + " (legacy)";
         opt.selected = true;
+        opt.dataset.imageCode = "";
+        opt.dataset.kitab = "";
         select.appendChild(opt);
       }
-      const updatePreview = () => {
-        const code = select.value.trim();
-        const found = imagesList.find(
-          (r) => (r.imageCode || "").trim() === code,
-        );
-        if (found && found.imagePath) {
-          const path = found.imagePath;
-          const url = path.startsWith("/")
-            ? `${BASE_URL}${path}`
-            : `${BASE_URL}${path}`;
-          previewImg.src = url;
-          previewImg.style.display = "block";
-        } else {
-          previewImg.removeAttribute("src");
-          previewImg.style.display = "none";
+      select.addEventListener("change", () => {
+        const sel = select.options[select.selectedIndex];
+        const kitabStr = sel?.dataset?.kitab || "";
+        const titleContainer = form.querySelector("#kuliah-title-checkbox-container");
+        if (titleContainer) {
+          titleContainer.innerHTML = "";
+          const hiddenTitle = form.querySelector("#field-title");
+          if (hiddenTitle) hiddenTitle.value = "";
+          if (kitabStr) {
+            const kitabArr = kitabStr.split(",").map((s) => s.trim()).filter(Boolean);
+            const updateTitleHidden = () => {
+              const checked = titleContainer.querySelectorAll('input[type="checkbox"]:checked');
+              hiddenTitle.value = Array.from(checked).map((cb) => cb.value).join(",");
+            };
+            kitabArr.forEach((k) => {
+              const labelWrap = document.createElement("label");
+              labelWrap.style.display = "flex";
+              labelWrap.style.alignItems = "center";
+              labelWrap.style.gap = "6px";
+              labelWrap.style.cursor = "pointer";
+              labelWrap.style.marginRight = "12px";
+              const cb = document.createElement("input");
+              cb.type = "checkbox";
+              cb.value = k;
+              cb.addEventListener("change", updateTitleHidden);
+              const span = document.createElement("span");
+              span.textContent = k;
+              labelWrap.appendChild(cb);
+              labelWrap.appendChild(span);
+              titleContainer.appendChild(labelWrap);
+            });
+          }
         }
-      };
-      select.addEventListener("change", updatePreview);
-      updatePreview();
-
-      wrap.appendChild(previewContainer);
-      wrap.appendChild(select);
+      });
       group.appendChild(label);
-      group.appendChild(wrap);
+      group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+
+    // Kuliah speakerId: tiada dalam dialog - image diurus dalam Penceramah (auto dari speaker terpilih)
+    if (currentFileName === "kuliah" && col === "speakerId") {
+      return; // Skip - tiada input image; speakerId di-resolve dari penceramah semasa save
+    }
+
+    // Special handling untuk title (kitab) dalam kuliah table: checkbox array
+    if (currentFileName === "kuliah" && col === "title") {
+      label.textContent = "Nama Kitab / Tajuk Kuliah";
+      const currentTitleVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
+      const selectedKitab = new Set(currentTitleVal ? currentTitleVal.split(",").map((s) => s.trim()).filter(Boolean) : []);
+      const titleContainer = document.createElement("div");
+      titleContainer.id = "kuliah-title-checkbox-container";
+      titleContainer.style.display = "flex";
+      titleContainer.style.flexWrap = "wrap";
+      titleContainer.style.gap = "8px 16px";
+      titleContainer.style.alignItems = "center";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentTitleVal;
+      const currentSpeakerField = form.querySelector("#field-speaker");
+      let hasCheckboxes = false;
+      if (currentSpeakerField) {
+        const selOpt = currentSpeakerField.options[currentSpeakerField.selectedIndex];
+        const kitabStr = selOpt?.dataset?.kitab || "";
+        if (kitabStr) {
+          const kitabArr = kitabStr.split(",").map((s) => s.trim()).filter(Boolean);
+          kitabArr.forEach((k) => {
+            hasCheckboxes = true;
+            const labelWrap = document.createElement("label");
+            labelWrap.style.display = "flex";
+            labelWrap.style.alignItems = "center";
+            labelWrap.style.gap = "6px";
+            labelWrap.style.cursor = "pointer";
+            labelWrap.style.marginRight = "12px";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.value = k;
+            cb.checked = selectedKitab.has(k);
+            cb.addEventListener("change", () => {
+              const checked = titleContainer.querySelectorAll('input[type="checkbox"]:checked');
+              hiddenInput.value = Array.from(checked).map((c) => c.value).join(",");
+            });
+            const span = document.createElement("span");
+            span.textContent = k;
+            labelWrap.appendChild(cb);
+            labelWrap.appendChild(span);
+            titleContainer.appendChild(labelWrap);
+          });
+        }
+      }
+      if (!hasCheckboxes && currentTitleVal) {
+        const legacyInput = document.createElement("input");
+        legacyInput.type = "text";
+        legacyInput.className = "form-control";
+        legacyInput.value = currentTitleVal;
+        legacyInput.placeholder = "Tajuk / Kitab (legacy)";
+        legacyInput.style.marginTop = "8px";
+        legacyInput.addEventListener("input", () => { hiddenInput.value = legacyInput.value; });
+        titleContainer.appendChild(legacyInput);
+      }
+      if (titleContainer.children.length === 0) {
+        const placeholder = document.createElement("span");
+        placeholder.textContent = "Pilih penceramah terlebih dahulu";
+        placeholder.style.color = "#6b7280";
+        placeholder.style.fontSize = "14px";
+        titleContainer.appendChild(placeholder);
+      }
+      group.appendChild(label);
+      group.appendChild(titleContainer);
+      group.appendChild(hiddenInput);
       form.appendChild(group);
       return;
     }
@@ -1579,7 +1883,7 @@ export async function openAddDialog() {
   const currentFileName = getCurrentFileName();
   const currentColumns = getCurrentColumns();
 
-  // Allow add untuk announcements, countdowns, images, slideshow, hebahan, kuliah, kuliah-override, livestream
+  // Allow add untuk announcements, countdowns, images, slideshow, hebahan, kuliah, kuliah-override, livestream, penceramah, petugas, jadual-petugas
   if (
     currentFileName !== "announcements" &&
     currentFileName !== "countdowns" &&
@@ -1588,9 +1892,12 @@ export async function openAddDialog() {
     currentFileName !== "hebahan" &&
     currentFileName !== "kuliah" &&
     currentFileName !== "kuliah-override" &&
-    currentFileName !== "livestream"
+    currentFileName !== "livestream" &&
+    currentFileName !== "penceramah" &&
+    currentFileName !== "petugas" &&
+    currentFileName !== "jadual-petugas"
   ) {
-    showNotification("✗ Fungsi tambah hanya untuk Pengumuman, Countdown, Images, Slideshow, Hebahan, Kuliah, Override Kuliah, dan Siaran Langsung","error");
+    showNotification("✗ Fungsi tambah tidak tersedia untuk tab ini","error");
     return;
   }
 
@@ -1603,9 +1910,22 @@ export async function openAddDialog() {
   setAddMode(true);
   setEditingRowId(null);
 
-  // Load imagesList untuk kuliah (gambar penceramah)
+  // Load imagesList dan penceramahList untuk kuliah; imagesList untuk petugas
   let imagesList = [];
+  let penceramahList = [];
   if (currentFileName === "kuliah") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const penceramahRes = await fetch(`${API_URL}/data/penceramah`);
+      if (penceramahRes.ok) {
+        const data = await penceramahRes.json();
+        penceramahList = data.data || [];
+      }
+    } catch (e) {
+      console.warn("Could not load kuliah data:", e);
+    }
+  }
+  if (currentFileName === "petugas" || currentFileName === "penceramah") {
     try {
       const API_URL = window.Config.API_URL;
       const res = await fetch(`${API_URL}/data/images`);
@@ -1616,7 +1936,20 @@ export async function openAddDialog() {
         );
       }
     } catch (e) {
-      console.warn("Could not load penceramah images:", e);
+      console.warn("Could not load images for " + currentFileName + ":", e);
+    }
+  }
+  let petugasList = [];
+  if (currentFileName === "jadual-petugas") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const res = await fetch(`${API_URL}/data/petugas`);
+      if (res.ok) {
+        const data = await res.json();
+        petugasList = data.data || [];
+      }
+    } catch (e) {
+      console.warn("Could not load petugas for jadual:", e);
     }
   }
 
@@ -1639,11 +1972,17 @@ export async function openAddDialog() {
     title.textContent = "Tambah Kuliah Baru";
   } else if (currentFileName === "kuliah-override") {
     title.textContent = "Tambah Rekod Override Kuliah";
+  } else if (currentFileName === "penceramah") {
+    title.textContent = "Tambah Penceramah";
+  } else if (currentFileName === "petugas") {
+    title.textContent = "Tambah Petugas";
+  } else if (currentFileName === "jadual-petugas") {
+    title.textContent = "Tambah Jadual Petugas";
   }
 
   form.innerHTML = "";
 
-  createFormFields(form, null, true, { imagesList });
+  createFormFields(form, null, true, { imagesList, penceramahList, petugasList });
 
   dialog.style.display = "flex";
   dialog.classList.remove("hidden");
@@ -1666,16 +2005,18 @@ export async function openEditDialog(rowId) {
 
   const currentFileName = getCurrentFileName();
   let imagesList = [];
-  if (currentFileName === "slides" || currentFileName === "kuliah") {
+  let penceramahList = [];
+  let petugasList = [];
+  if (currentFileName === "slides" || currentFileName === "penceramah" || currentFileName === "petugas") {
     try {
       const API_URL = window.Config.API_URL;
-      const res = await fetch(`${API_URL}/data/images`);
-      if (res.ok) {
-        const data = await res.json();
+      const imgRes = await fetch(`${API_URL}/data/images`);
+      if (imgRes.ok) {
+        const data = await imgRes.json();
         let list = data.data || [];
         if (currentFileName === "slides") {
           list = list.filter((im) => (im.imagePath || "").includes("/slides/"));
-        } else if (currentFileName === "kuliah") {
+        } else if (currentFileName === "penceramah" || currentFileName === "petugas") {
           list = list.filter((im) =>
             (im.imagePath || "").includes("/penceramah/"),
           );
@@ -1683,7 +2024,31 @@ export async function openEditDialog(rowId) {
         imagesList = list;
       }
     } catch (e) {
-      console.warn(`Could not load images for ${currentFileName} dropdown:`, e);
+      console.warn(`Could not load data for ${currentFileName}:`, e);
+    }
+  }
+  if (currentFileName === "kuliah") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const penceramahRes = await fetch(`${API_URL}/data/penceramah`);
+      if (penceramahRes.ok) {
+        const data = await penceramahRes.json();
+        penceramahList = data.data || [];
+      }
+    } catch (e) {
+      console.warn("Could not load penceramah for kuliah:", e);
+    }
+  }
+  if (currentFileName === "jadual-petugas") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const res = await fetch(`${API_URL}/data/petugas`);
+      if (res.ok) {
+        const data = await res.json();
+        petugasList = data.data || [];
+      }
+    } catch (e) {
+      console.warn("Could not load petugas for jadual:", e);
     }
   }
 
@@ -1701,7 +2066,7 @@ export async function openEditDialog(rowId) {
   }
   form.innerHTML = "";
 
-  createFormFields(form, row, false, { imagesList });
+  createFormFields(form, row, false, { imagesList, penceramahList, petugasList });
 
   dialog.style.display = "flex";
   dialog.classList.remove("hidden");

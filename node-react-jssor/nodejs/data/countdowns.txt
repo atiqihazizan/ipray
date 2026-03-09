@@ -8,4 +8,4 @@ COUNTDOWN_MASIHI|8|31|HARI KEMERDEKAAN MALAYSIA|30
 # Contoh tarikh tetap (sekali sahaja). windowDays 90 = papar hanya bila 90 hari atau kurang lagi
 COUNTDOWN|2027-01-01 00:00|TAHUN BARU 2027|90
 
-COUNTDOWN_HIJRI||12|10|Hari Raya Aidiladha|
+COUNTDOWN_HIJRI||12|10|Hari Raya Aidiladha|30

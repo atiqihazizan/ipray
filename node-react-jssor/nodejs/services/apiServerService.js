@@ -7,6 +7,7 @@ const http = require('http');
 const { URL } = require('url');
 const { parseKuliahOverride } = require('./kuliahOverrideParser');
 const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require('./kuliahProcessor');
+const { getWeekCode, getDayCode } = require('./kuliahDateUtils');
 
 /**
  * API Server Service
@@ -338,17 +339,87 @@ class ApiServerService {
           });
         }
         const kuliahLines = this.dataService.parseKuliah(kuliahContent);
+        let penceramahMap = {};
+        try {
+          const penceramahContent = await this.dataService.readFile('penceramah');
+          const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
+          penceramahParsed.forEach((p) => {
+            if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.imageCode || '' };
+          });
+        } catch (e) {
+          console.warn('Could not load penceramah for app:', e);
+        }
+        const resolveKuliahLine = (line) => {
+          const parts = line.split('|');
+          if (parts.length >= 5) {
+            const speakerVal = (parts[3] || '').trim();
+            const match = penceramahMap[speakerVal];
+            if (match) {
+              parts[3] = match.namaPenuh;
+              if (match.imageCode && (!parts[4] || !parts[4].trim())) parts[4] = match.imageCode;
+            }
+          }
+          return parts.join('|');
+        };
         const kuliahHariResult = processKuliahHari(kuliahLines, batalOptions, today);
-        const kuliahHariProcessed = kuliahHariResult.lines || [];
+        const kuliahHariProcessed = (kuliahHariResult.lines || []).map(resolveKuliahLine);
         const kuliahHariReplacements = kuliahHariResult.replacements || [];
-        const kuliahMingguProcessed = processKuliahMinggu(kuliahLines, batalOptions, today);
-        const kuliahBulananProcessed = processKuliahBulanan(kuliahLines, batalOptions, today);
+        const kuliahMingguProcessed = (processKuliahMinggu(kuliahLines, batalOptions, today) || []).map(resolveKuliahLine);
+        let kuliahBulananProcessed = processKuliahBulanan(kuliahLines, batalOptions, today);
+        if (Object.keys(penceramahMap).length > 0) {
+          kuliahBulananProcessed = kuliahBulananProcessed.map((day) => ({
+            ...day,
+            entries: (day.entries || []).map((e) => {
+              if (!e.penceramah) return e;
+              const match = penceramahMap[(e.penceramah || '').trim()];
+              if (match) return { ...e, penceramah: match.namaPenuh };
+              return e;
+            })
+          }));
+        }
         const images = this.dataService.parseImages(imagesContent);
         const slidesConfig = this.dataService.parseSlidesConfig(slidesContent);
         const config = this.dataService.parseConfig(configContent);
         const slideshowParsed = this.dataService.parseSlideshow(slideshowContent);
         const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date());
         const hebahan = this.dataService.parseHebahan(hebahanContent);
+
+        // Petugas untuk hari ini (dari jadual-petugas)
+        let petugasData = [];
+        try {
+          const [petugasContent, jadualContent] = await Promise.all([
+            this.dataService.readFile('petugas').catch(() => ''),
+            this.dataService.readFile('jadual-petugas').catch(() => '')
+          ]);
+          const petugasParsed = this.dataService.parseFileContent('petugas', petugasContent);
+          const jadualParsed = this.dataService.parseFileContent('jadual-petugas', jadualContent);
+          const week = getWeekCode(today);
+          const day = getDayCode(today);
+          const petugasMap = {};
+          petugasParsed.forEach((p) => { if (p.kod) petugasMap[p.kod] = p; });
+          const jadualToday = (jadualParsed || []).filter((j) => (j.week || '').trim() === week && (j.day || '').trim() === day);
+          const roleOrder = ['BILAL', 'IMAM'];
+          jadualToday.forEach((j) => {
+            const officerCode = (j.officerCode || '').trim();
+            const role = (j.role || '').trim().toUpperCase() || 'BILAL';
+            const officer = officerCode ? petugasMap[officerCode] : null;
+            const name = officer ? (officer.namaPenuh || officer.kod || '') : '';
+            let imageSrc = '';
+            if (officer && officer.imageCode && images && typeof images === 'object') {
+              const path = images[(officer.imageCode || '').trim()];
+              if (path) imageSrc = path.startsWith('/') ? path : `/${path}`;
+            }
+            if (!imageSrc) imageSrc = '/img/Random_user.svg';
+            petugasData.push({ label: role || 'PETUGAS', name, imageSrc });
+          });
+          if (petugasData.length === 0) {
+            roleOrder.forEach((r) => petugasData.push({ label: r, name: '', imageSrc: '/img/Random_user.svg' }));
+          }
+        } catch (e) {
+          console.warn('Could not load petugas for app:', e);
+          petugasData = [{ label: 'BILAL', name: '', imageSrc: '/img/Random_user.svg' }, { label: 'IMAM', name: '', imageSrc: '/img/Random_user.svg' }];
+        }
+
         res.json({
           takwim,
           announcements,
@@ -361,7 +432,8 @@ class ApiServerService {
           slidesConfig,
           config,
           slideshow,
-          hebahan
+          hebahan,
+          petugasData
         });
       } catch (error) {
         console.error('Error loading app data:', error);
@@ -413,9 +485,33 @@ class ApiServerService {
       try {
         const filename = req.params.filename;
         const content = await this.dataService.readFile(filename);
-        const parsed = this.dataService.parseFileContent(filename, content);
+        let parsed = this.dataService.parseFileContent(filename, content);
         const columns = this.dataService.getColumns(filename);
-        
+
+        // Kuliah: resolve speakerCode ke nama penuh untuk table setting (format output kekal sama)
+        if (filename === 'kuliah') {
+          let penceramahMap = {};
+          try {
+            const penceramahContent = await this.dataService.readFile('penceramah');
+            const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
+            penceramahParsed.forEach((p) => {
+              if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.imageCode };
+            });
+          } catch (e) {
+            console.warn('Could not load penceramah for kuliah resolve:', e);
+          }
+          parsed = parsed.map((row) => {
+            const resolved = { ...row };
+            const speakerVal = (row.speaker || '').trim();
+            const match = penceramahMap[speakerVal];
+            if (match) {
+              resolved.speaker = match.namaPenuh;
+              if (match.imageCode && !resolved.speakerId) resolved.speakerId = match.imageCode;
+            }
+            return resolved;
+          });
+        }
+
         res.json({ data: parsed, columns });
       } catch (error) {
         console.error('Error reading file:', error);
@@ -848,7 +944,7 @@ class ApiServerService {
     this.app.post('/api/system/reload-react', async (req, res) => {
       try {
         // Broadcast data:updated untuk semua data types untuk trigger React reload
-        const dataTypes = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config'];
+        const dataTypes = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'petugas', 'jadual-petugas'];
         
         dataTypes.forEach(filename => {
           this.socketServerService.broadcastDataUpdate(filename, { action: 'reload:react' });

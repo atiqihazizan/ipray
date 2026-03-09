@@ -26,7 +26,7 @@ const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 class DataService {
   constructor(dataPath) {
     this.dataPath = dataPath;
-    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan', 'livestream'];
+    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan', 'livestream', 'penceramah', 'petugas', 'jadual-petugas'];
     this.filenameAliases = {
       announcement: 'announcements',
       announcements: 'announcements',
@@ -34,7 +34,6 @@ class DataService {
       countdowns: 'countdowns',
       image: 'images',
       images: 'images',
-      penceramah: 'images',
       slide: 'slides',
       slides: 'slides',
       takwim: 'takwim',
@@ -44,7 +43,10 @@ class DataService {
       config: 'config',
       slideshow: 'slideshow',
       hebahan: 'hebahan',
-      livestream: 'livestream'
+      livestream: 'livestream',
+      penceramah: 'penceramah',
+      petugas: 'petugas',
+      'jadual-petugas': 'jadual-petugas'
     };
   }
 
@@ -400,6 +402,38 @@ class DataService {
           jenis: parts[2] || '',
           raw: line
         });
+      } else if (normalized === 'penceramah') {
+        // Penceramah format: kod|nama_penuh|shortname|imageCode|kitab1,kitab2,kitabN
+        parsed.push({
+          id: index + 1,
+          kod: parts[0] || '',
+          namaPenuh: parts[1] || '',
+          shortname: parts[2] || '',
+          imageCode: parts[3] || '',
+          kitab: parts[4] || '',
+          raw: line
+        });
+      } else if (normalized === 'petugas') {
+        // Petugas format: kod|nama_penuh|shortname|role|imageCode
+        parsed.push({
+          id: index + 1,
+          kod: parts[0] || '',
+          namaPenuh: parts[1] || '',
+          shortname: parts[2] || '',
+          role: parts[3] || '',
+          imageCode: parts[4] || '',
+          raw: line
+        });
+      } else if (normalized === 'jadual-petugas') {
+        // Jadual petugas format: week|day|role|officerCode
+        parsed.push({
+          id: index + 1,
+          week: parts[0] || '',
+          day: parts[1] || '',
+          role: parts[2] || '',
+          officerCode: parts[3] || '',
+          raw: line
+        });
       }
     });
     
@@ -422,7 +456,10 @@ class DataService {
       'config': ['key', 'value'],
       'slideshow': ['caption', 'image', 'validFrom', 'validTo'],
       'hebahan': ['text', 'startDate', 'endDate'],
-      'livestream': ['tajuk', 'url', 'jenis']
+      'livestream': ['tajuk', 'url', 'jenis'],
+      'penceramah': ['kod', 'namaPenuh', 'shortname', 'imageCode', 'kitab'],
+      'petugas': ['kod', 'namaPenuh', 'shortname', 'role', 'imageCode'],
+      'jadual-petugas': ['week', 'day', 'role', 'officerCode']
     };
     return columnMap[normalized] || [];
   }

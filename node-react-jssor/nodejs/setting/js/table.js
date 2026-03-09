@@ -340,15 +340,23 @@ export async function loadTable(fileName, scrollToRowId = null) {
     return loadSlidesAsCards();
   }
 
-  // Handle kuliah-override table IDs
+  // Handle kuliah-override, penceramah, petugas, jadual-petugas table IDs
   const theadId =
     fileName === "kuliah-override"
       ? "kuliah-override-thead"
-      : `${fileName}-thead`;
+      : fileName === "penceramah"
+        ? "penceramah-thead"
+        : fileName === "jadual-petugas"
+          ? "jadual-petugas-thead"
+          : `${fileName}-thead`;
   const tbodyId =
     fileName === "kuliah-override"
       ? "kuliah-override-tbody"
-      : `${fileName}-tbody`;
+      : fileName === "penceramah"
+        ? "penceramah-tbody"
+        : fileName === "jadual-petugas"
+          ? "jadual-petugas-tbody"
+          : `${fileName}-tbody`;
   const thead = document.getElementById(theadId);
   const tbody = document.getElementById(tbodyId);
   const tableContainer = tbody?.closest(".table-container");
@@ -370,7 +378,7 @@ export async function loadTable(fileName, scrollToRowId = null) {
     const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
     // Untuk slides dan kuliah, muat images sekali gus untuk resolve image code → path
     let imagesList = [];
-    if (fileName === "slides" || fileName === "kuliah") {
+    if (fileName === "slides" || fileName === "kuliah" || fileName === "penceramah" || fileName === "petugas") {
       try {
         const imgRes = await fetch(`${API_URL}/data/images`);
         if (imgRes.ok) {
@@ -480,6 +488,26 @@ export async function loadTable(fileName, scrollToRowId = null) {
         endDate: "Tarikh Akhir",
       },
       livestream: { tajuk: "Tajuk", url: "URL / IP", jenis: "Jenis" },
+      petugas: {
+        kod: "Kod",
+        namaPenuh: "Nama Penuh",
+        shortname: "Shortname",
+        role: "Peranan",
+        imageCode: "Gambar",
+      },
+      "jadual-petugas": {
+        week: "Minggu",
+        day: "Hari",
+        role: "Peranan",
+        officerCode: "Petugas",
+      },
+      penceramah: {
+        kod: "Kod",
+        namaPenuh: "Nama Penuh",
+        shortname: "Shortname",
+        imageCode: "Gambar",
+        kitab: "Kitab",
+      },
     };
     const labels = colLabelMap[fileName] || {};
     currentColumns.forEach((col) => {
@@ -570,6 +598,11 @@ export async function loadTable(fileName, scrollToRowId = null) {
               value = "–";
           }
 
+          // Kuliah: papar hari sebagai AHAD-SABTU (bukan h0-h6)
+          if (fileName === "kuliah" && col === "day") {
+            const dayMap = { h0: "AHAD", h1: "ISNIN", h2: "SELASA", h3: "RABU", h4: "KHAMIS", h5: "JUMAAT", h6: "SABTU" };
+            value = dayMap[(value || "").trim().toLowerCase()] || value || "";
+          }
           // Special handling untuk speakerId dalam kuliah table: papar image thumbnail
           if (fileName === "kuliah" && col === "speakerId") {
             td.style.padding = "8px";
@@ -639,6 +672,70 @@ export async function loadTable(fileName, scrollToRowId = null) {
             codeText.style.wordBreak = "break-all";
             codeText.style.lineHeight = "1.4";
 
+            imgContainer.appendChild(codeText);
+            td.appendChild(imgContainer);
+          } else if (fileName === "penceramah" && col === "imageCode") {
+            td.style.padding = "8px";
+            td.style.verticalAlign = "middle";
+            const imgContainer = document.createElement("div");
+            imgContainer.style.display = "flex";
+            imgContainer.style.alignItems = "center";
+            imgContainer.style.gap = "12px";
+            const img = document.createElement("img");
+            img.style.width = "60px";
+            img.style.height = "60px";
+            img.style.objectFit = "cover";
+            img.style.borderRadius = "6px";
+            img.style.border = "1px solid #e5e7eb";
+            img.style.flexShrink = "0";
+            img.loading = "lazy";
+            const resolvePath = (code) => {
+              const found = imagesList.find((r) => (r.imageCode || "").trim() === (code || "").trim());
+              return found ? found.imagePath || "" : null;
+            };
+            const path = resolvePath(value);
+            img.src = path ? (path.startsWith("/") ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`) : `${BASE_URL}/images/penceramah/Random_user.svg`;
+            img.onerror = function () {
+              this.src = `${BASE_URL}/images/penceramah/Random_user.svg`;
+              this.onerror = null;
+            };
+            imgContainer.appendChild(img);
+            const codeText = document.createElement("span");
+            codeText.textContent = value || "—";
+            codeText.style.fontSize = "13px";
+            codeText.style.color = "#374151";
+            imgContainer.appendChild(codeText);
+            td.appendChild(imgContainer);
+          } else if (fileName === "petugas" && col === "imageCode") {
+            td.style.padding = "8px";
+            td.style.verticalAlign = "middle";
+            const imgContainer = document.createElement("div");
+            imgContainer.style.display = "flex";
+            imgContainer.style.alignItems = "center";
+            imgContainer.style.gap = "12px";
+            const img = document.createElement("img");
+            img.style.width = "60px";
+            img.style.height = "60px";
+            img.style.objectFit = "cover";
+            img.style.borderRadius = "6px";
+            img.style.border = "1px solid #e5e7eb";
+            img.style.flexShrink = "0";
+            img.loading = "lazy";
+            const resolvePath = (code) => {
+              const found = imagesList.find((r) => (r.imageCode || "").trim() === (code || "").trim());
+              return found ? found.imagePath || "" : null;
+            };
+            const path = resolvePath(value);
+            img.src = path ? (path.startsWith("/") ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`) : `${BASE_URL}/images/penceramah/Random_user.svg`;
+            img.onerror = function () {
+              this.src = `${BASE_URL}/images/penceramah/Random_user.svg`;
+              this.onerror = null;
+            };
+            imgContainer.appendChild(img);
+            const codeText = document.createElement("span");
+            codeText.textContent = value || "—";
+            codeText.style.fontSize = "13px";
+            codeText.style.color = "#374151";
             imgContainer.appendChild(codeText);
             td.appendChild(imgContainer);
           } else if (fileName === "slides" && col === "image") {
@@ -958,6 +1055,21 @@ export async function loadTable(fileName, scrollToRowId = null) {
           deleteBtn.title = "Delete";
           deleteBtn.onclick = () => deleteRow(row.id);
           actionTd.appendChild(deleteBtn);
+        } else if (fileName === "penceramah" || fileName === "petugas" || fileName === "jadual-petugas") {
+          // Penceramah, Petugas & Jadual Petugas: Edit + Delete
+          const editBtn = document.createElement("button");
+          editBtn.className = "btn-icon btn-edit";
+          editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
+          editBtn.title = "Edit";
+          editBtn.onclick = () => openEditDialog(row.id);
+          actionTd.appendChild(editBtn);
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn-icon btn-delete";
+          deleteBtn.innerHTML = `<span>${Icons.trash}</span>`;
+          deleteBtn.title = "Padam";
+          deleteBtn.onclick = () => deleteRow(row.id);
+          actionTd.appendChild(deleteBtn);
         } else if (fileName === "livestream") {
           const liveBtn = document.createElement("button");
           liveBtn.className = "btn-icon btn-play";
@@ -1124,6 +1236,9 @@ export async function showTab(tabName, updateHash = true) {
     takwim: { icon: "📅", name: "Takwim" },
     kematian: { icon: "🕌", name: "Kematian" },
     livestream: { icon: "📹", name: "Siaran Langsung" },
+    penceramah: { icon: "🎤", name: "Penceramah" },
+    petugas: { icon: "👥", name: "Petugas" },
+    "jadual-petugas": { icon: "📅", name: "Jadual Petugas" },
   };
 
   const pageInfo = pageTitles[tabName];

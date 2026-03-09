@@ -4,6 +4,7 @@
 
 const TAB_FILES = [
 	'config', 'slides', 'slideshow', 'kuliah', 'kuliah-override',
+	'penceramah', 'petugas', 'jadual-petugas',
 	'images', 'announcements', 'hebahan', 'countdowns', 'takwim',
 	'kematian', 'livestream'
 ];

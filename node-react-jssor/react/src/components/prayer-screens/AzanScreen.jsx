@@ -1,5 +1,6 @@
 import { textSize } from '../../utils/screenUtils';
-import { PegawaiTable } from './OfficerRow';
+import { useData } from '../../contexts/DataContext';
+import { PegawaiTable, PEGAWAI_LIST } from './OfficerRow';
 import {
   countdownStyleIqamah,
   gridScreenStyle,
@@ -35,13 +36,17 @@ function getAzanJawiText(prayerName) {
  * @param {string} countdown - Countdown dalam format 'MM:SS'
  */
 export default function AzanScreen({ prayerName, countdown }) {
+  const { petugasData } = useData();
+  const pegawaiList = (petugasData && petugasData.length > 0)
+    ? petugasData.map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
+    : PEGAWAI_LIST;
   return (
     <div style={gridScreenStyle}>
       <div style={leftColumnPegawaiStyle}>
         <h2 style={pegawaiTitleStyle()}>PEGAWAI BERTUGAS</h2>
         <small style={pegawaiSmallStyle}>(Tertakluk kepada perubahan)</small>
         <br />
-        <PegawaiTable />
+        <PegawaiTable list={pegawaiList} />
       </div>
       <div style={{...rightColumnCenterStyle, gap: `${textSize(56)}px`}}>
         <h1 style={jawiTitleStyleAzan()}>{getAzanJawiText(prayerName)}</h1>

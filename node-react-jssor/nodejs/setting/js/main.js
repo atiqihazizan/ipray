@@ -40,6 +40,7 @@ const VALID_TABS = [
   "slideshow",
   "kuliah",
   "kuliah-override",
+  "penceramah",
   "images",
   "announcements",
   "hebahan",
@@ -47,6 +48,8 @@ const VALID_TABS = [
   "takwim",
   "kematian",
   "livestream",
+  "petugas",
+  "jadual-petugas",
 ];
 
 /**
