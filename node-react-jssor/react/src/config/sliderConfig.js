@@ -216,7 +216,9 @@ export const slidesTemplate = {
         children: [
           {
             type: "div", transition: "CLIP|LR", duration: 1000, content: "",
-            style: { position: 'absolute', left: 0, right: 0, top: `${top(25)}%`, width: sz().width, height: height(200), textAlign: 'center', fontSize: 200, color: '#FFFFFF', fontFamily: "'SairaCondensed', sans-serif", fontWeight: 'bold', lineHeight: 1.2, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }
+            // style: { position: 'absolute', left: 0, right: 0, top: `${top(30)}%`, width: sz().width, height: height(200), textAlign: 'center', fontSize: 200, color: '#FFFFFF', fontFamily: "'SairaCondensed', sans-serif", fontWeight: 'bold', lineHeight: 1.2, margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',clip:'auto' }
+            style: { position: 'absolute', left: 0, right: 0, top: `${top(30)}%`, width: sz().width, textAlign: 'center', fontSize: 200, 
+            color: '#FFFFFF', fontFamily: "'SairaCondensed', sans-serif", fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',clip:'auto' }
           },
           {
             type: "div", transition: "CLIP|LR", duration: 1000, content: "",

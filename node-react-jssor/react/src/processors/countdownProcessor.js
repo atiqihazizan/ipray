@@ -65,6 +65,10 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig)
       if (i > 0) parent.transition = null;
       parent.transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
       parent.children[0].content = item.event;
+      parent.children[0].style = {
+        ...parent.children[0].style,
+        clip: 'auto',
+      }
       parent.children[1].content = item.countdownText;
       if (i > 0) parent.children[0].transition = null;
       parent.children[0].transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
