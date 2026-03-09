@@ -221,10 +221,10 @@ export const calculateHijri = ({ hdata, daysm, maghrib = 0, currentMinutes = 0 }
 
 /**
  * Dapatkan maklumat tarikh dan waktu semasa lengkap
- * @param {Object} params - { hdata, wdata, timeService }
+ * @param {Object} params - { hdata, wdata, timeService, nextPrayerDelayMinutes }
  * @returns {Object} Maklumat lengkap tarikh, waktu, dan waktu solat
  */
-export const getCurrentIslamicTime = ({ hdata, wdata, timeService }) => {
+export const getCurrentIslamicTime = ({ hdata, wdata, timeService, nextPrayerDelayMinutes }) => {
   const timestamp = Date.now();
   const now = new Date(timestamp);
   const year = now.getFullYear();
@@ -262,7 +262,7 @@ export const getCurrentIslamicTime = ({ hdata, wdata, timeService }) => {
   });
   
   // Tentukan waktu solat semasa dan seterusnya
-  const prayerInfo = getCurrentPrayerInfo({ wdata, days, currentMinutes });
+  const prayerInfo = getCurrentPrayerInfo({ wdata, days, currentMinutes, nextPrayerDelayMinutes });
   
   return {
     // Tarikh Masehi
@@ -356,10 +356,10 @@ const getPrayerTimes = (prayerData) => {
 
 /**
  * Dapatkan maklumat waktu solat semasa dan seterusnya
- * @param {Object} params - { wdata, days, currentMinutes }
+ * @param {Object} params - { wdata, days, currentMinutes, nextPrayerDelayMinutes } nextPrayerDelayMinutes = jarak dari masuk waktu hingga estimate selesai solat (iqamah + solat duration)
  * @returns {Object} Info waktu solat
  */
-const getCurrentPrayerInfo = ({ wdata, days, currentMinutes }) => {
+const getCurrentPrayerInfo = ({ wdata, days, currentMinutes, nextPrayerDelayMinutes }) => {
   const todayPrayer = wdata[days] || [];
   const tomorrowPrayer = wdata[days + 1] || todayPrayer;
   
@@ -398,15 +398,12 @@ const getCurrentPrayerInfo = ({ wdata, days, currentMinutes }) => {
     currentPrayerIndex = 6;
   }
   
-  // Check jika sedang dalam minit pertama waktu solat semasa
-  // Jika ya, nextPrayer akan tunjuk waktu solat semasa (delay 1 minit)
+  // Jarak dari masuk waktu solat hingga estimate selesai solat (iqamah + solat duration): nextPrayer tunjuk solat semasa
+  const delayMin = Math.max(1, nextPrayerDelayMinutes ?? 1);
   if (currentPrayer && currentPrayerIndex) {
     const currentPrayerTime = todayPrayer[currentPrayerIndex];
     const currentPrayerMinutes = timeToMinutes(currentPrayerTime);
-    
-    // Jika currentMinutes sama dengan currentPrayerMinutes (dalam minit pertama)
-    if (currentMinutes === currentPrayerMinutes) {
-      // Delay nextPrayer - tunjuk current prayer
+    if (currentMinutes >= currentPrayerMinutes && currentMinutes < currentPrayerMinutes + delayMin) {
       nextPrayer = currentPrayer;
       nextTime = currentPrayerTime;
       timeToNext = 0; // Sudah masuk waktu

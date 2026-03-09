@@ -31,7 +31,7 @@ export function useTimeDriver() {
   const { timeService, PRAYER_TIME_CONFIG } = useData();
   const [time, setTime] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
-  const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 0.5) * 60);
+  const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
   const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
@@ -57,10 +57,12 @@ export function useTimeDriver() {
 
     const update = () => {
       try {
+        const nextPrayerDelayMinutes = (PRAYER_TIME_CONFIG?.IQAMAH_DURATION_MIN ?? 10) + (PRAYER_TIME_CONFIG?.SOLAT_DURATION_MIN ?? 10);
         const islamicTime = getCurrentIslamicTime({
           hdata: takwimParsed.hdata,
           wdata: takwimParsed.wdata,
-          timeService
+          timeService,
+          nextPrayerDelayMinutes
         });
         if (!islamicTime) return;
 
