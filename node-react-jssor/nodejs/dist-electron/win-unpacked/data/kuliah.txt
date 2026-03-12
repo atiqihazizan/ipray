@@ -1,38 +1,41 @@
-w1|h0|ks|Ust Suhaimi Abd Jalil|suhaimi|Sirah Nabawiah
-w1|h0|km|Ust Badrol|badrol|Hikam (Tok Ku Pulau Manis)
-w1|h1|km|Ust Hj Omar Ibrahim Khalid|omar|Strategi Musuh Menentang Islam
-w1|h2|km|Ust Mohd Yusoff Abdullah|yusoff|Bahrul Mazi
-w1|h3|km|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
-w1|h4|kd|Ustazah Nor Bee Aziz|nor-bee|Bidayatul Hidayah
-w1|h5|km|Ust Dato Hj Hassan Ahmad|dato-hassan|Mat La’al Badrain
-w1|h6|ks|Ust Muhd Hanif Yusof|hanif|Kitab Tazkirah
-w1|h6|km|Ust Sallehuddin|sallehuddin|Hadis 40
+w1|h0|ks|ust-suhaimi-abd-jalil|Sirah Nabawiah
+w1|h0|km|ust-badrol|Hikam (Tok Ku Pulau Manis)
+w1|h1|km|ust-hj-omar-ibrahim-khalid|Strategi Musuh Menentang Islam
+w1|h2|km|ust-mohd-yusoff-abdullah|Bahrul Mazi
+w1|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah
+w1|h4|kd|ustazah-nor-bee-aziz|Bidayatul Hidayah
+w1|h5|km|ust-dato-hj-hassan-ahmad|Mat La'al Badrain
+w1|h6|ks|ust-muhd-hanif-yusof|Kitab Tazkirah
+w1|h6|km|ust-sallehuddin|Hadis 40
 
-w2|h0|ks|Ust Mohd Nasir Abd Rahim|nasir|Tafsir Nurul Ehsan (Surah Al-Kahfi)
-w2|h0|km|Ust Qutub|qutub|Penawar Bagi Hati
-w2|h1|km|Ust Muhd Hanif Yusof|hanif|Hidayatul Sobiyan
-w2|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
-w2|h3|km|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
-w2|h4|kd|Ustazah Siti Hajar Ghazali|siti-hajar|Kitab Al-Hikam
-w2|h6|ks|Ust Hafezol Saad|hafezol|Misbahul Munir
-w2|h6|km|Ust Shukor Salleh|shukor|Tafsir Juz Amma
+w2|h0|ks|ust-mohd-nasir-abd-rahim|Tafsir Nurul Ehsan (Surah Al-Kahfi)
+w2|h0|km|ust-qutub|Penawar Bagi Hati
+w2|h1|km|ust-muhd-hanif-yusof|Hidayatul Sobiyan
+w2|h2|km|ust-dato-hj-elias-zakaria|Nasihat Bimbingan Hadis Qudsi
+w2|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah
+w2|h3|kd|ust-hafezol-saad|Misbahul Munir
+w2|h4|kd|ustazah-siti-hajar-ghazali|Kitab Al-Hikam
+w2|h6|ks|ust-hafezol-saad|Misbahul Munir
+w2|h6|km|ust-shukor-salleh|Tafsir Juz Amma
 
-w3|h0|ks|Ust Aiman Subri|aiman|As-Syamail Al-Muhammadiyah
-w3|h0|km|Ust Hassan Abd Latif|hassan_latif|Minhajul ‘Abidin
-w3|h1|km|Ust Rahimi Rahman|rahimi|Keperibadian Seorang Muslim Menurut Al-Quran & Hadis
-w3|h2|km|Ust Mohd Yusoff Abdullah|yusoff|Bahrul Mazi
-w3|h3|km|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
-w3|h4|kd|Ust Uzair Abd Hani Albanjari|uzair|Tafsir Al-Quran
-w3|h5|km|Ust Qutub|qutub|Masalah Munafiq & Masbuq
-w3|h6|ks|Ust Taufik Mohd Husin|taufik|Ayyuhal Walad
-w3|h6|km|Ust Bakar Pelantek|bakar|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)
+w3|h0|ks|ust-aiman-subri|As-Syamail Al-Muhammadiyah
+w3|h0|km|ust-hassan-abd-latif|Minhajul 'Abidin
+w3|h1|km|ust-rahimi-rahman|Keperibadian Seorang Muslim Menurut Al-Quran & Hadis
+w3|h2|km|ust-mohd-yusoff-abdullah|Bahrul Mazi
+w3|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah
+w3|h4|kd|ust-uzair-abd-hani-albanjari|Tafsir Al-Quran
+w3|h5|km|ust-qutub|Masalah Munafiq & Masbuq
+w3|h6|ks|ust-taufik-mohd-husin|Ayyuhal Walad
+w3|h6|km|ust-bakar-pelantek|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)
 
-w4|h0|ks|Ust Hafezol Saad|hafezol|Misbahul Munir
-w4|h0|km|Ust Ridhoudin|ridhoudin|Hidayatul Mutafakirin
-w4|h1|km|Ust Uzair Abd Hani Albanjari|uzair|Anak Kunci Syurga
-w4|h2|km|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
-w4|h3|km|Ust Hassan Hj Hashim|hassan_hashim|Wi Shahul Afrah Wa Isbahul Falah
-w4|h4|kd|Ustazah Maridhah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
-w4|h5|km|Ust Mohamad Shakir|shakir|Ummul Amrad
-w4|h6|ks|Ust Shukor Salleh|shukor|Kasyful Ghaibiyyah
-w4|h6|km|Ust Syamsuri Hassan|syamsuri|Tajul Arus
+w4|h0|ks|ust-hafezol-saad|Misbahul Munir
+w4|h0|km|ust-ridhoudin|Hidayatul Mutafakirin
+w4|h1|km|ust-uzair-abd-hani-albanjari|Anak Kunci Syurga
+w4|h2|km|ust-dato-hj-elias-zakaria|Nasihat Bimbingan Hadis Qudsi
+w4|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah
+w4|h4|kd|ustazah-mardiah-zakaria|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
+w4|h5|km|ust-mohamad-shakir|Ummul Amrad
+w4|h6|ks|ust-shukor-salleh|Kasyful Ghaibiyyah
+w4|h6|km|ust-syamsuri-hassan|Tajul Arus
+
+w5|h0|ks|ust-hafezol-saad|Misbahul Munir

@@ -161,7 +161,7 @@ export const jawiTitleStyle = () => ({
   color: "#239b47",
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(15)))}px #FFFFFF`,
   paintOrder: "stroke fill",
-  fontSize: `${textSize(276)}px`,
+  fontSize: `${textSize(400)}px`,
   fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
   fontWeight: 700,
   textAlign: "center",
@@ -172,12 +172,14 @@ export const jawiTitleStyle = () => ({
 
 /** Subtitle Arab/Jawi — font lebih kecil, guna ratio (base 28px @ 1080p) */
 export const jawiSubtitleStyle = () => ({
+  position: 'absolute',
+  bottom: '330px',
   color: "#FFFFFF",
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(5)))}px #000000`,
   paintOrder: "stroke fill",
   fontSize: `${textSize(100)}px`,
   fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
-  fontWeight: 600,
+  // fontWeight: 600,
   textAlign: "center",
   margin: `${textSize(16)}px 0 0 0`,
   maxWidth: "90vw",
