@@ -4,7 +4,7 @@ import LoadingPage from './LoadingPage'
 import PrayerSequencePage from './PrayerSequencePage'
 
 // Set true untuk debug: papar PrayerSequencePage sahaja
-const DEBUG_SHOW_PRAYER_SEQUENCE_ONLY = true
+const DEBUG_SHOW_PRAYER_SEQUENCE_ONLY = false
 
 import DateTimeOverlay from './DateTimeOverlay'
 import DeathAnnouncementOverlay from './DeathAnnouncementOverlay'
