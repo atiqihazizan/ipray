@@ -3,10 +3,22 @@
  */
 
 const TAB_FILES = [
-	'config', 'slides', 'slideshow', 'kuliah', 'kuliah-override',
-	'penceramah', 'petugas', 'jadual-petugas',
-	'images', 'announcements', 'hebahan', 'countdowns', 'takwim',
-	'kematian', 'livestream'
+	'config',
+	//  'slides',
+	'slideshow',
+	'kuliah',
+	// 'penceramah',
+	//  'petugas',
+	//  'jadual-petugas',
+	'imam-bilal',
+	'background',
+	// 'images',
+	'announcements',
+	// 'hebahan',
+	'countdowns',
+	// 'takwim',
+	'kematian',
+	'livestream'
 ];
 
 const cache = {};

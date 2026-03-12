@@ -68,18 +68,29 @@ export function initSocket() {
     // console.log('📡 Data updated event received:', data);
     const currentFileName = getCurrentFileName();
     if (data.fileName === currentFileName) {
-      // showNotification(`✓ Data dikemaskini oleh sistem`, "info");
-      // Auto reload current table after 1 second
-      setTimeout(() => {
+      // Jika sedang dalam mod Background (images.txt tetapi tab Background),
+      // guna loader khas supaya target ID (background-thead/body) betul.
+      const isBackgroundMode =
+        typeof window !== "undefined" &&
+        window.__BACKGROUND_MODE__ === true &&
+        currentFileName === "images" &&
+        typeof window.loadBackgroundTable === "function";
+
+        console.log('isBackgroundMode', isBackgroundMode);
+
+      if (isBackgroundMode) {
+        window.loadBackgroundTable();
+      } else {
         loadTable(currentFileName);
-      }, 500);
+      }
     }
   });
 
   // Terima ACK dari React — pengesahan paparan telah menerima dan memproses data
   socket.on("data:ack", (data) => {
     const label = data.fileName ? ` (${data.fileName})` : "";
-    showNotification(`✓ Paparan telah dikemas kini${label}`, "success");
+    showNotification(`Paparan telah dikemaskini`, "success");
+    // console.log('data:ack', data);
   });
 
   setSocket(socket);

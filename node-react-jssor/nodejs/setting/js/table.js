@@ -16,8 +16,13 @@ import {
 } from "./state.js";
 import { showNotification } from "./notification.js";
 import { openEditDialog } from "./dialog.js";
-import { deleteRow, toggleSlideHide, reorderSlideshow } from "./api.js";
+import { deleteRow, toggleSlideHide, reorderSlideshow, updateSlideRow } from "./api.js";
 import { loadTabContent } from "./tab-loader.js";
+import { renderSlidesCards } from "./cards/slidesCards.js";
+import { renderKuliahPaparanCards } from "./cards/kuliahPaparanCards.js";
+import { renderSlideshowPaparanCards } from "./cards/slideshowPaparanCards.js";
+import { renderAnnouncementPaparanCards } from "./cards/announcementPaparanCards.js";
+import { renderCountdownPaparanCards } from "./cards/countdownPaparanCards.js";
 
 // Framework-like SVG Icons
 const Icons = {
@@ -120,11 +125,166 @@ function resolveSlideImagePath(imageCode, imagesList, BASE_URL) {
  * Muat tab Template (slides) sebagai grid card seperti galeri.
  * Setiap card tunjuk data column: Jenis, Imej, Tempoh, Papar/Sembunyi, Edit.
  */
-async function loadSlidesAsCards() {
-  const grid = document.getElementById("slides-gallery-grid");
-  const container = document.getElementById("slides-gallery-container");
+// async function loadSlidesAsCards() {
+//   const grid = document.getElementById("slides-gallery-grid");
+//   const container = document.getElementById("slides-gallery-container");
+//   if (!grid || !container) return;
+
+//   setCurrentFileName("slides");
+//   grid.innerHTML = '<div class="gallery-loading">Memuat data...</div>';
+
+//   const API_URL = window.Config.API_URL;
+//   const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
+
+//   let imagesList = [];
+//   try {
+//     const imgRes = await fetch(`${API_URL}/data/images`);
+//     if (imgRes.ok) {
+//       const imgResult = await imgRes.json();
+//       imagesList = imgResult.data || [];
+//     }
+//   } catch (e) {
+//     console.warn("Could not load images for slides:", e);
+//   }
+
+//   try {
+//     const response = await fetch(`${API_URL}/data/slides`);
+//     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+//     const result = await response.json();
+
+//     let data = result.data || [];
+//     const columns = result.columns || [];
+//     data = data.map((row) => {
+//       const newRow = { ...row };
+//       if (newRow.duration != null && newRow.duration !== "") {
+//         const ms = parseFloat(newRow.duration);
+//         if (!isNaN(ms)) newRow.duration = String(ms / 1000);
+//       }
+//       return newRow;
+//     });
+
+//     setCurrentData(data);
+//     setCurrentColumns(columns);
+
+//     if (data.length === 0) {
+//       grid.innerHTML = '<div class="gallery-empty">Tiada data</div>';
+//       return;
+//     }
+
+//     renderSlidesCards({
+//       gridEl: grid,
+//       data,
+//       imagesList,
+//       BASE_URL,
+//       Icons,
+//       resolveSlideImagePath,
+//       toggleSlideHide,
+//       openEditDialog,
+//       showTab,
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     grid.innerHTML =
+//       '<div class="gallery-error">Gagal memuat data. Sila cuba lagi.</div>';
+//   }
+// }
+
+/**
+ * Muat card paparan Kuliah (Harian/Mingguan/Bulanan) yang ditapis dari data slides.
+ * Nota: Ini masih guna sumber `slides` sebab ia mengawal template paparan.
+ * Paparkan semua (harian + mingguan + bulanan) dalam satu grid.
+ */
+async function loadKuliahPaparanAsCards() {
+  const grid = document.getElementById("kuliah-paparan-grid");
+  const container = document.getElementById("kuliah-paparan-container");
   if (!grid || !container) return;
 
+  // Penting untuk edit dialog: rekod ini datang dari /data/slides
+  setCurrentFileName("slides");
+  grid.innerHTML = '<div class="gallery-loading">Memuat data...</div>';
+
+  const API_URL = window.Config.API_URL;
+  const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
+
+  const kuliahTypes = new Set(["kuliahhari", "kuliahweekly", "kuliahbulanan"]);
+
+  let imagesList = [];
+  try {
+    const imgRes = await fetch(`${API_URL}/data/images`);
+    if (imgRes.ok) {
+      const imgResult = await imgRes.json();
+      imagesList = imgResult.data || [];
+    }
+  } catch (e) {
+    console.warn("Could not load images for kuliah paparan cards:", e);
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/data/slides`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+
+    let data = result.data || [];
+    const columns = result.columns || [];
+    data = data
+      .map((row) => {
+        const newRow = { ...row };
+        if (newRow.duration != null && newRow.duration !== "") {
+          const ms = parseFloat(newRow.duration);
+          if (!isNaN(ms)) newRow.duration = String(ms / 1000);
+        }
+        return newRow;
+      })
+      .filter((row) => kuliahTypes.has((row.type || "").trim().toLowerCase()));
+
+    // Susun ikut urutan harian → mingguan → bulanan
+    const typeOrder = { kuliahhari: 1, kuliahweekly: 2, kuliahbulanan: 3 };
+    data.sort((a, b) => {
+      const ta = (a.type || "").trim().toLowerCase();
+      const tb = (b.type || "").trim().toLowerCase();
+      return (typeOrder[ta] || 999) - (typeOrder[tb] || 999);
+    });
+
+    // Simpan state supaya inline update boleh guna findRowById()
+    setCurrentData(data);
+    setCurrentColumns(columns);
+
+    grid.innerHTML = "";
+    if (data.length === 0) {
+      grid.innerHTML = '<div class="gallery-empty">Tiada data</div>';
+      return;
+    }
+
+    if (data.length === 0) {
+      grid.innerHTML = '<div class="gallery-empty">Tiada data</div>';
+      return;
+    }
+
+    renderKuliahPaparanCards({
+      gridEl: grid,
+      data,
+      imagesList,
+      BASE_URL,
+      resolveSlideImagePath,
+      updateSlideRow,
+    });
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML =
+      '<div class="gallery-error">Gagal memuat data. Sila cuba lagi.</div>';
+  }
+}
+
+/**
+ * Muat card paparan untuk semua template jenis slideshow.
+ * Gaya dan inline editor ikut Kuliah → List Paparan, dengan auto-save.
+ */
+async function loadSlideshowPaparanAsCards() {
+  const grid = document.getElementById("slideshow-paparan-grid");
+  const container = document.getElementById("slideshow-paparan-container");
+  if (!grid || !container) return;
+
+  // Rekod datang dari /data/slides (template slideshow)
   setCurrentFileName("slides");
   grid.innerHTML = '<div class="gallery-loading">Memuat data...</div>';
 
@@ -139,7 +299,7 @@ async function loadSlidesAsCards() {
       imagesList = imgResult.data || [];
     }
   } catch (e) {
-    console.warn("Could not load images for slides:", e);
+    console.warn("Could not load images for slideshow paparan cards:", e);
   }
 
   try {
@@ -149,14 +309,18 @@ async function loadSlidesAsCards() {
 
     let data = result.data || [];
     const columns = result.columns || [];
-    data = data.map((row) => {
-      const newRow = { ...row };
-      if (newRow.duration != null && newRow.duration !== "") {
-        const ms = parseFloat(newRow.duration);
-        if (!isNaN(ms)) newRow.duration = String(ms / 1000);
-      }
-      return newRow;
-    });
+    data = data
+      .map((row) => {
+        const newRow = { ...row };
+        if (newRow.duration != null && newRow.duration !== "") {
+          const ms = parseFloat(newRow.duration);
+          if (!isNaN(ms)) newRow.duration = String(ms / 1000);
+        }
+        return newRow;
+      })
+      .filter(
+        (row) => (row.type || "").trim().toLowerCase() === "slideshow",
+      );
 
     setCurrentData(data);
     setCurrentColumns(columns);
@@ -167,150 +331,422 @@ async function loadSlidesAsCards() {
       return;
     }
 
-    const paparanLabels = {
-      date: "Tarikh",
-      "solat-time": "Waktu solat",
-      "solat-time-small": "Masa kecil",
-    };
-
-    data.forEach((row) => {
-      const card = document.createElement("div");
-      card.className = "gallery-card slides-card";
-      card.setAttribute("data-row-id", row.id);
-
-      const imageUrl = resolveSlideImagePath(row.image, imagesList, BASE_URL);
-
-      const imgWrap = document.createElement("div");
-      imgWrap.className = "slides-card-img-wrap";
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      img.alt = row.image || "";
-      img.loading = "lazy";
-      img.onerror = function () {
-        this.src = `${BASE_URL}/images/noimage.png`;
-        this.onerror = null;
-      };
-      imgWrap.appendChild(img);
-
-      const header = document.createElement("div");
-      header.className = "slides-card-header";
-      const headerTitle = document.createElement("span");
-      headerTitle.className = "slides-card-header-title";
-      headerTitle.textContent = row.type || "Template";
-      header.appendChild(headerTitle);
-      const headerMore = document.createElement("span");
-      headerMore.className = "slides-card-header-more";
-      headerMore.textContent = "Tindakan";
-      headerMore.title = "Edit atau navigasi";
-      // header.appendChild(headerMore);
-
-      const footer = document.createElement("div");
-      footer.className = "gallery-footer slides-card-footer";
-
-      const metaWrap = document.createElement("div");
-      metaWrap.className = "slides-card-meta";
-
-      const typeLabel = document.createElement("span");
-      typeLabel.className = "slides-card-type";
-      typeLabel.textContent = row.type || "—";
-      typeLabel.title = "Jenis";
-      metaWrap.appendChild(typeLabel);
-
-      const durationLabel = document.createElement("span");
-      durationLabel.className = "slides-card-duration";
-      const durVal = row.duration != null ? String(row.duration).trim() : "";
-      durationLabel.textContent = durVal ? `${durVal} s` : "—";
-      durationLabel.title = "Tempoh";
-      metaWrap.appendChild(durationLabel);
-
-      const checkboxVal = (row.checkbox || "").trim();
-      const paparanSet = checkboxVal
-        ? new Set(
-            checkboxVal
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean),
-          )
-        : new Set();
-      const paparanRow = document.createElement("div");
-      paparanRow.className = "slides-card-paparan";
-      paparanRow.title = "Paparan overlay";
-      const paparanParts = [];
-      if (paparanSet.has("date")) paparanParts.push(paparanLabels.date);
-      if (paparanSet.has("solat-time"))
-        paparanParts.push(paparanLabels["solat-time"]);
-      if (paparanSet.has("solat-time-small"))
-        paparanParts.push(paparanLabels["solat-time-small"]);
-      paparanRow.textContent = paparanParts.length
-        ? `Paparan: ${paparanParts.join(", ")}`
-        : "Paparan: —";
-      metaWrap.appendChild(paparanRow);
-
-      footer.appendChild(metaWrap);
-
-      const actions = document.createElement("ul");
-      actions.className = "ant-card-actions semantic-mark-actions";
-
-      const slideType = (row.type || "").trim();
-      const targetTab =
-        SLIDE_TYPE_TO_TAB[slideType] ||
-        SLIDE_TYPE_TO_TAB[slideType.toLowerCase()];
-      const navTitles = {
-        announcements: "Pengumuman",
-        countdowns: "Undur Detik",
-        kuliah: "Kuliah",
-        slideshow: "Slideshow",
-      };
-
-      const liStyle = "width: 33.3333%;";
-
-      const liSetting = document.createElement("li");
-      const eyeState = row.hide === "1" ? Icons.eyeOff : Icons.eye;
-      liSetting.setAttribute("style", liStyle);
-      liSetting.title =
-        row.hide === "1" ? "Klik untuk paparkan" : "Klik untuk sembunyikan";
-      liSetting.innerHTML = `<span><span role="img" aria-label="setting" class="anticon anticon-setting">${eyeState}</span></span>`;
-      liSetting.style.cursor = "pointer";
-      liSetting.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggleSlideHide(row.id);
-      });
-      actions.appendChild(liSetting);
-
-      const liEdit = document.createElement("li");
-      liEdit.setAttribute("style", liStyle);
-      liEdit.title = "Edit";
-      liEdit.innerHTML = `<span><span role="img" aria-label="edit" class="anticon anticon-edit">${Icons.editAnt}</span></span>`;
-      liEdit.style.cursor = "pointer";
-      liEdit.addEventListener("click", (e) => {
-        e.stopPropagation();
-        openEditDialog(row.id);
-      });
-      actions.appendChild(liEdit);
-
-      const liEllipsis = document.createElement("li");
-      liEllipsis.setAttribute("style", liStyle);
-      liEllipsis.title = targetTab
-        ? `Pergi ke ${navTitles[targetTab] || targetTab}`
-        : "Lain-lain";
-      liEllipsis.innerHTML = `<span><span role="img" aria-label="ellipsis" class="anticon anticon-ellipsis">${Icons.ellipsis}</span></span>`;
-      liEllipsis.style.cursor = "pointer";
-      liEllipsis.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (targetTab && typeof showTab === "function") showTab(targetTab);
-      });
-      actions.appendChild(liEllipsis);
-
-      footer.appendChild(actions);
-      card.appendChild(header);
-      card.appendChild(imgWrap);
-      card.appendChild(footer);
-      grid.appendChild(card);
+    renderSlideshowPaparanCards({
+      gridEl: grid,
+      data,
+      imagesList,
+      BASE_URL,
+      resolveSlideImagePath,
+      updateSlideRow,
     });
   } catch (err) {
     console.error(err);
     grid.innerHTML =
       '<div class="gallery-error">Gagal memuat data. Sila cuba lagi.</div>';
+  }
+}
+
+/**
+ * Muat card paparan untuk semua template jenis announce (Pengumuman).
+ * Gaya dan inline editor ikut Slideshow → Setting Paparan, dengan auto-save.
+ */
+async function loadAnnouncementsPaparanAsCards() {
+  const grid = document.getElementById("announcements-paparan-grid");
+  const container = document.getElementById("announcements-paparan-container");
+  if (!grid || !container) return;
+
+  // Rekod datang dari /data/slides (template announce)
+  setCurrentFileName("slides");
+  grid.innerHTML = '<div class="gallery-loading">Memuat data...</div>';
+
+  const API_URL = window.Config.API_URL;
+  const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
+
+  let imagesList = [];
+  try {
+    const imgRes = await fetch(`${API_URL}/data/images`);
+    if (imgRes.ok) {
+      const imgResult = await imgRes.json();
+      imagesList = imgResult.data || [];
+    }
+  } catch (e) {
+    console.warn("Could not load images for announcements paparan cards:", e);
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/data/slides`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+
+    let data = result.data || [];
+    const columns = result.columns || [];
+    data = data
+      .map((row) => {
+        const newRow = { ...row };
+        if (newRow.duration != null && newRow.duration !== "") {
+          const ms = parseFloat(newRow.duration);
+          if (!isNaN(ms)) newRow.duration = String(ms / 1000);
+        }
+        return newRow;
+      })
+      .filter(
+        (row) => (row.type || "").trim().toLowerCase() === "announce",
+      );
+
+    setCurrentData(data);
+    setCurrentColumns(columns);
+
+    grid.innerHTML = "";
+    if (data.length === 0) {
+      grid.innerHTML = '<div class="gallery-empty">Tiada data</div>';
+      return;
+    }
+
+    renderAnnouncementPaparanCards({
+      gridEl: grid,
+      data,
+      imagesList,
+      BASE_URL,
+      resolveSlideImagePath,
+      updateSlideRow,
+    });
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML =
+      '<div class="gallery-error">Gagal memuat data. Sila cuba lagi.</div>';
+  }
+}
+
+/**
+ * Muat card paparan untuk semua template jenis countdown (Undur Detik).
+ * Gaya dan inline editor ikut Pengumuman/Slideshow → Setting Paparan, dengan auto-save.
+ */
+async function loadCountdownPaparanAsCards() {
+  const grid = document.getElementById("countdown-paparan-grid");
+  const container = document.getElementById("countdown-paparan-container");
+  if (!grid || !container) return;
+
+  // Rekod datang dari /data/slides (template countdown)
+  setCurrentFileName("slides");
+  grid.innerHTML = '<div class="gallery-loading">Memuat data...</div>';
+
+  const API_URL = window.Config.API_URL;
+  const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
+
+  let imagesList = [];
+  try {
+    const imgRes = await fetch(`${API_URL}/data/images`);
+    if (imgRes.ok) {
+      const imgResult = await imgRes.json();
+      imagesList = imgResult.data || [];
+    }
+  } catch (e) {
+    console.warn("Could not load images for countdown paparan cards:", e);
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/data/slides`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+
+    let data = result.data || [];
+    const columns = result.columns || [];
+    data = data
+      .map((row) => {
+        const newRow = { ...row };
+        if (newRow.duration != null && newRow.duration !== "") {
+          const ms = parseFloat(newRow.duration);
+          if (!isNaN(ms)) newRow.duration = String(ms / 1000);
+        }
+        return newRow;
+      })
+      .filter(
+        (row) => (row.type || "").trim().toLowerCase() === "countdown",
+      );
+
+    setCurrentData(data);
+    setCurrentColumns(columns);
+
+    grid.innerHTML = "";
+    if (data.length === 0) {
+      grid.innerHTML = '<div class="gallery-empty">Tiada data</div>';
+      return;
+    }
+
+    renderCountdownPaparanCards({
+      gridEl: grid,
+      data,
+      imagesList,
+      BASE_URL,
+      resolveSlideImagePath,
+      updateSlideRow,
+    });
+  } catch (err) {
+    console.error(err);
+    grid.innerHTML =
+      '<div class="gallery-error">Gagal memuat data. Sila cuba lagi.</div>';
+  }
+}
+
+/**
+ * Load Background (Slides) table.
+ * - Sumber data: /data/images (images.txt)
+ * - Tapisan: imagePath mesti mengandungi "/slides/"
+ * - DOM target: #background-thead, #background-tbody
+ */
+export async function loadBackgroundTable() {
+  // Background sebenarnya mengurus fail "images" (images.txt) tapi ditapis
+  setCurrentFileName("images");
+  // Flag untuk dialog/images supaya restrict category ke slides sahaja
+  window.__BACKGROUND_MODE__ = true;
+
+  const thead = document.getElementById("background-thead");
+  const tbody = document.getElementById("background-tbody");
+
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = "";
+  tbody.innerHTML =
+    '<tr><td colspan="100" class="text-center py-8 text-gray-500">Memuat data...</td></tr>';
+
+  try {
+    const API_URL = window.Config.API_URL;
+    const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
+
+    const response = await fetch(`${API_URL}/data/images`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const result = await response.json();
+
+    const all = Array.isArray(result.data) ? result.data : [];
+    const filtered = all.filter((row) =>
+      String(row?.imagePath || "").includes("/slides/"),
+    );
+
+    setCurrentData(filtered);
+    setCurrentColumns(["imageCode", "imagePath"]);
+
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = '<th class="w-20">ID</th>';
+
+    const labels = { imageCode: "Nama", imagePath: "Imej" };
+    ["imageCode", "imagePath"].forEach((col) => {
+      const th = document.createElement("th");
+      th.textContent = labels[col] || col;
+      headerRow.appendChild(th);
+    });
+    headerRow.innerHTML += '<th class="w-32" style="width:130px">Tindakan</th>';
+    thead.appendChild(headerRow);
+
+    tbody.innerHTML = "";
+    if (filtered.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="100" class="text-center py-8 text-gray-500">Tiada data background (slides)</td></tr>';
+      return;
+    }
+
+    filtered.forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-row-id", row.id);
+
+      const idTd = document.createElement("td");
+      idTd.textContent = row.id;
+      tr.appendChild(idTd);
+
+      // Nama (imageCode)
+      const nameTd = document.createElement("td");
+      const codeVal = String(row.imageCode || "");
+      nameTd.textContent = codeVal.length > 50 ? codeVal.substring(0, 50) + "..." : codeVal;
+      nameTd.title = codeVal;
+      tr.appendChild(nameTd);
+
+      // Imej (thumbnail + path)
+      const imgTd = document.createElement("td");
+      imgTd.style.padding = "8px";
+      imgTd.style.verticalAlign = "middle";
+
+      const imgContainer = document.createElement("div");
+      imgContainer.style.display = "flex";
+      imgContainer.style.alignItems = "center";
+      imgContainer.style.gap = "12px";
+
+      const img = document.createElement("img");
+      img.style.width = "60px";
+      img.style.height = "60px";
+      img.style.objectFit = "cover";
+      img.style.borderRadius = "6px";
+      img.style.border = "1px solid #e5e7eb";
+      img.style.backgroundColor = "#f9fafb";
+      img.style.flexShrink = "0";
+      img.loading = "lazy";
+
+      const pathVal = String(row.imagePath || "");
+      const imageUrl = pathVal.startsWith("/")
+        ? `${BASE_URL}${pathVal}`
+        : `${BASE_URL}/images/${pathVal}`;
+      img.src = imageUrl;
+      img.onerror = function () {
+        this.src = `${BASE_URL}/images/slides/noimage.png`;
+        this.onerror = null;
+      };
+
+      imgContainer.appendChild(img);
+
+      const pathText = document.createElement("span");
+      pathText.textContent =
+        pathVal.length > 50 ? pathVal.substring(0, 50) + "..." : pathVal;
+      pathText.title = pathVal;
+      pathText.style.fontSize = "13px";
+      pathText.style.color = "#374151";
+      pathText.style.flex = "1";
+      pathText.style.wordBreak = "break-all";
+      pathText.style.lineHeight = "1.4";
+
+      imgContainer.appendChild(pathText);
+      imgTd.appendChild(imgContainer);
+      tr.appendChild(imgTd);
+
+      const actionTd = document.createElement("td");
+      actionTd.className = "action-buttons";
+      actionTd.style.width = "130px";
+
+      const editBtn = document.createElement("button");
+      editBtn.className = "btn-icon btn-edit";
+      editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
+      editBtn.title = "Edit";
+      editBtn.onclick = () => openEditDialog(row.id);
+      actionTd.appendChild(editBtn);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn-icon btn-delete";
+      deleteBtn.innerHTML = `<span>${Icons.trash}</span>`;
+      deleteBtn.title = "Padam";
+      deleteBtn.onclick = () => deleteRow(row.id);
+      actionTd.appendChild(deleteBtn);
+
+      tr.appendChild(actionTd);
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error("Error loading background table:", error);
+    const errorRow = document.createElement("tr");
+    const errorTd = document.createElement("td");
+    errorTd.setAttribute("colspan", "100");
+    errorTd.textContent = `Ralat memuat data: ${error.message}`;
+    errorTd.style.textAlign = "center";
+    errorTd.style.padding = "48px 20px";
+    errorTd.style.color = "#ef4444";
+    errorRow.appendChild(errorTd);
+    tbody.innerHTML = "";
+    tbody.appendChild(errorRow);
+    showNotification("✗ Gagal memuat data background", "error");
+  }
+}
+
+/**
+ * Tukar sub-tab dalam panel Kuliah dan muatkan data berkaitan.
+ * @param {"jadual"|"ganti"|"pengkuliah"|"paparan"} tabId
+ */
+function showKuliahTab(tabId) {
+  const panels = ["jadual", "ganti", "pengkuliah", "paparan"];
+  panels.forEach((id) => {
+    const panel = document.getElementById(`kuliah-panel-${id}`);
+    if (panel) {
+      panel.style.display = id === tabId ? "flex" : "none";
+      panel.style.flexDirection = id === tabId ? "column" : "";
+    }
+    const btn = document.querySelector(`[data-kuliah-tab="${id}"]`);
+    if (btn) btn.classList.toggle("active", id === tabId);
+  });
+
+  if (tabId === "jadual") {
+    loadTable("kuliah");
+    return;
+  }
+  if (tabId === "ganti") {
+    loadTable("kuliah-override");
+    return;
+  }
+  if (tabId === "pengkuliah") {
+    loadTable("penceramah");
+    return;
+  }
+  if (tabId === "paparan") {
+    loadKuliahPaparanAsCards();
+  }
+}
+
+/**
+ * Tukar sub-tab dalam panel Slideshow dan muatkan data berkaitan.
+ * @param {"senarai"|"setting"} tabId
+ */
+function showSlideshowTab(tabId) {
+  const panels = ["senarai", "setting"];
+  panels.forEach((id) => {
+    const panel = document.getElementById(`slideshow-panel-${id}`);
+    if (panel) {
+      panel.style.display = id === tabId ? "flex" : "none";
+      panel.style.flexDirection = id === tabId ? "column" : "";
+    }
+    const btn = document.querySelector(`[data-slideshow-tab="${id}"]`);
+    if (btn) btn.classList.toggle("active", id === tabId);
+  });
+
+  if (tabId === "senarai") {
+    loadTable("slideshow");
+    return;
+  }
+  if (tabId === "setting") {
+    loadSlideshowPaparanAsCards();
+  }
+}
+
+/**
+ * Tukar sub-tab dalam panel Pengumuman dan muatkan data berkaitan.
+ * @param {"senarai"|"setting"} tabId
+ */
+function showAnnouncementsTab(tabId) {
+  const panels = ["senarai", "setting"];
+  panels.forEach((id) => {
+    const panel = document.getElementById(`announcements-panel-${id}`);
+    if (panel) {
+      panel.style.display = id === tabId ? "flex" : "none";
+      panel.style.flexDirection = id === tabId ? "column" : "";
+    }
+    const btn = document.querySelector(`[data-announcements-tab="${id}"]`);
+    if (btn) btn.classList.toggle("active", id === tabId);
+  });
+
+  if (tabId === "senarai") {
+    loadTable("announcements");
+    return;
+  }
+  if (tabId === "setting") {
+    loadAnnouncementsPaparanAsCards();
+  }
+}
+
+/**
+ * Tukar sub-tab dalam panel Countdown dan muatkan data berkaitan.
+ * @param {"senarai"|"setting"} tabId
+ */
+function showCountdownsTab(tabId) {
+  const panels = ["senarai", "setting"];
+  panels.forEach((id) => {
+    const panel = document.getElementById(`countdowns-panel-${id}`);
+    if (panel) {
+      panel.style.display = id === tabId ? "flex" : "none";
+      panel.style.flexDirection = id === tabId ? "column" : "";
+    }
+    const btn = document.querySelector(`[data-countdowns-tab="${id}"]`);
+    if (btn) btn.classList.toggle("active", id === tabId);
+  });
+
+  if (tabId === "senarai") {
+    loadTable("countdowns");
+    return;
+  }
+  if (tabId === "setting") {
+    loadCountdownPaparanAsCards();
   }
 }
 
@@ -321,24 +757,24 @@ async function loadSlidesAsCards() {
  */
 export async function loadTable(fileName, scrollToRowId = null) {
   // Special handling for takwim - use configuration layout
-  if (fileName === "takwim") {
-    return loadTodayTakwim();
-  }
+  // if (fileName === "takwim") {
+  //   return loadTodayTakwim();
+  // }
 
   // Images - guna gallery grid, bukan table
-  if (fileName === "images") {
-    if (typeof window.GalleryUtils?.loadGallery === "function") {
-      return window.GalleryUtils.loadGallery();
-    }
-    return;
-  }
+  // if (fileName === "images") {
+  //   if (typeof window.GalleryUtils?.loadGallery === "function") {
+  //     return window.GalleryUtils.loadGallery();
+  //   }
+  //   return;
+  // }
 
   setCurrentFileName(fileName);
 
   // Slides (Template) - papar sebagai card galeri
-  if (fileName === "slides") {
-    return loadSlidesAsCards();
-  }
+  // if (fileName === "slides") {
+  //   return loadSlidesAsCards();
+  // }
 
   // Handle kuliah-override, penceramah, petugas, jadual-petugas table IDs
   const theadId =
@@ -359,6 +795,14 @@ export async function loadTable(fileName, scrollToRowId = null) {
           : `${fileName}-tbody`;
   const thead = document.getElementById(theadId);
   const tbody = document.getElementById(tbodyId);
+  // Jika struktur table untuk fileName ini belum wujud (dipanggil oleh socket
+  // ketika tab lain aktif), jangan crash – keluar awal sahaja.
+  if (!thead || !tbody) {
+    console.warn(
+      `[Table] Element table tidak dijumpai untuk "${fileName}" (theadId=${theadId}, tbodyId=${tbodyId})`,
+    );
+    return;
+  }
   const tableContainer = tbody?.closest(".table-container");
 
   // Simpan scroll position sebelum reload
@@ -378,7 +822,7 @@ export async function loadTable(fileName, scrollToRowId = null) {
     const BASE_URL = window.Config.BASE_URL || API_URL.replace(/\/api\/?$/, "");
     // Untuk slides dan kuliah, muat images sekali gus untuk resolve image code → path
     let imagesList = [];
-    if (fileName === "slides" || fileName === "kuliah" || fileName === "penceramah" || fileName === "petugas") {
+    if (fileName === "slides" || fileName === "kuliah" || fileName === "penceramah" || fileName === "petugas" || fileName === "jadual-petugas") {
       try {
         const imgRes = await fetch(`${API_URL}/data/images`);
         if (imgRes.ok) {
@@ -387,6 +831,20 @@ export async function loadTable(fileName, scrollToRowId = null) {
         }
       } catch (e) {
         console.warn(`Could not load images for ${fileName} column:`, e);
+      }
+    }
+
+    // Untuk jadual-petugas, muat senarai petugas untuk lookup nama
+    let petugasList = [];
+    if (fileName === "jadual-petugas") {
+      try {
+        const ptRes = await fetch(`${API_URL}/data/petugas`);
+        if (ptRes.ok) {
+          const ptResult = await ptRes.json();
+          petugasList = ptResult.data || [];
+        }
+      } catch (e) {
+        console.warn("Could not load petugas for jadual-petugas lookup:", e);
       }
     }
 
@@ -489,11 +947,11 @@ export async function loadTable(fileName, scrollToRowId = null) {
       },
       livestream: { tajuk: "Tajuk", url: "URL / IP", jenis: "Jenis" },
       petugas: {
-        kod: "Kod",
+        slug: "Slug",
         namaPenuh: "Nama Penuh",
         shortname: "Shortname",
         role: "Peranan",
-        imageCode: "Gambar",
+        gambar: "Gambar",
       },
       "jadual-petugas": {
         week: "Minggu",
@@ -505,12 +963,17 @@ export async function loadTable(fileName, scrollToRowId = null) {
         kod: "Kod",
         namaPenuh: "Nama Penuh",
         shortname: "Shortname",
-        imageCode: "Gambar",
+        gambar: "Gambar",
         kitab: "Kitab",
       },
     };
     const labels = colLabelMap[fileName] || {};
-    currentColumns.forEach((col) => {
+    const displayColumns = fileName === "penceramah"
+      ? [...currentColumns.slice(0, 3), "gambar", ...currentColumns.slice(3)]
+      : fileName === "petugas"
+        ? [...currentColumns, "gambar"]
+        : currentColumns;
+    displayColumns.forEach((col) => {
       const th = document.createElement("th");
       th.textContent =
         labels[col] || col.charAt(0).toUpperCase() + col.slice(1);
@@ -549,9 +1012,12 @@ export async function loadTable(fileName, scrollToRowId = null) {
         idTd.textContent = row.id;
         tr.appendChild(idTd);
 
-        currentColumns.forEach((col) => {
+        const rowColumns = (fileName === "penceramah" || fileName === "petugas") ? displayColumns : currentColumns;
+        rowColumns.forEach((col) => {
           const td = document.createElement("td");
-          let value = row[col] || "";
+          let value = col === "gambar"
+            ? (fileName === "penceramah" ? row.kod : fileName === "petugas" ? row.slug : "")
+            : (row[col] || "");
           // Kuliah-batal: papar Format sebagai Tarikh/Range; kosongkan sel tidak berkenaan
           if (fileName === "kuliah-override") {
             if (col === "format")
@@ -596,6 +1062,54 @@ export async function loadTable(fileName, scrollToRowId = null) {
                 col === "windowDays")
             )
               value = "–";
+          }
+
+          // Jadual-petugas: papar hari sebagai AHAD-SABTU
+          if (fileName === "jadual-petugas" && col === "day") {
+            const dayMap = { h0: "AHAD", h1: "ISNIN", h2: "SELASA", h3: "RABU", h4: "KHAMIS", h5: "JUMAAT", h6: "SABTU" };
+            value = dayMap[(value || "").trim().toLowerCase()] || value || "";
+          }
+
+          // Jadual-petugas: officerCode - papar nama penuh + gambar kecil petugas
+          if (fileName === "jadual-petugas" && col === "officerCode") {
+            td.style.padding = "8px";
+            td.style.verticalAlign = "middle";
+            const slug = (value || "").trim();
+            const petugas = petugasList.find((p) => (p.slug || "").trim() === slug);
+            const namaPenuh = petugas ? (petugas.namaPenuh || slug) : slug;
+            const imgContainer = document.createElement("div");
+            imgContainer.style.display = "flex";
+            imgContainer.style.alignItems = "center";
+            imgContainer.style.gap = "10px";
+            const img = document.createElement("img");
+            img.style.width = "40px";
+            img.style.height = "40px";
+            img.style.objectFit = "cover";
+            img.style.borderRadius = "50%";
+            img.style.border = "1px solid #e5e7eb";
+            img.style.flexShrink = "0";
+            img.loading = "lazy";
+            const resolveOfficerPath = (s) => {
+              const found = imagesList.find((r) => (r.imageCode || "").trim() === (s || "").trim());
+              return found ? found.imagePath || "" : null;
+            };
+            const officerImgPath = resolveOfficerPath(slug);
+            img.src = officerImgPath
+              ? (officerImgPath.startsWith("/") ? `${BASE_URL}${officerImgPath}` : `${BASE_URL}/${officerImgPath}`)
+              : `${BASE_URL}/images/penceramah/Random_user.svg`;
+            img.onerror = function () {
+              this.src = `${BASE_URL}/images/penceramah/Random_user.svg`;
+              this.onerror = null;
+            };
+            imgContainer.appendChild(img);
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = namaPenuh;
+            nameSpan.style.fontSize = "13px";
+            nameSpan.style.color = "#374151";
+            imgContainer.appendChild(nameSpan);
+            td.appendChild(imgContainer);
+            tr.appendChild(td);
+            return;
           }
 
           // Kuliah: papar hari sebagai AHAD-SABTU (bukan h0-h6)
@@ -674,9 +1188,10 @@ export async function loadTable(fileName, scrollToRowId = null) {
 
             imgContainer.appendChild(codeText);
             td.appendChild(imgContainer);
-          } else if (fileName === "penceramah" && col === "imageCode") {
+          } else if (fileName === "penceramah" && col === "gambar") {
             td.style.padding = "8px";
             td.style.verticalAlign = "middle";
+            const code = (row.kod || "").trim();
             const imgContainer = document.createElement("div");
             imgContainer.style.display = "flex";
             imgContainer.style.alignItems = "center";
@@ -689,11 +1204,11 @@ export async function loadTable(fileName, scrollToRowId = null) {
             img.style.border = "1px solid #e5e7eb";
             img.style.flexShrink = "0";
             img.loading = "lazy";
-            const resolvePath = (code) => {
-              const found = imagesList.find((r) => (r.imageCode || "").trim() === (code || "").trim());
+            const resolvePath = (c) => {
+              const found = imagesList.find((r) => (r.imageCode || "").trim() === (c || "").trim());
               return found ? found.imagePath || "" : null;
             };
-            const path = resolvePath(value);
+            const path = resolvePath(code);
             img.src = path ? (path.startsWith("/") ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`) : `${BASE_URL}/images/penceramah/Random_user.svg`;
             img.onerror = function () {
               this.src = `${BASE_URL}/images/penceramah/Random_user.svg`;
@@ -701,14 +1216,15 @@ export async function loadTable(fileName, scrollToRowId = null) {
             };
             imgContainer.appendChild(img);
             const codeText = document.createElement("span");
-            codeText.textContent = value || "—";
+            codeText.textContent = code || "—";
             codeText.style.fontSize = "13px";
             codeText.style.color = "#374151";
             imgContainer.appendChild(codeText);
             td.appendChild(imgContainer);
-          } else if (fileName === "petugas" && col === "imageCode") {
+          } else if (fileName === "petugas" && col === "gambar") {
             td.style.padding = "8px";
             td.style.verticalAlign = "middle";
+            const slug = (row.slug || "").trim();
             const imgContainer = document.createElement("div");
             imgContainer.style.display = "flex";
             imgContainer.style.alignItems = "center";
@@ -721,22 +1237,19 @@ export async function loadTable(fileName, scrollToRowId = null) {
             img.style.border = "1px solid #e5e7eb";
             img.style.flexShrink = "0";
             img.loading = "lazy";
-            const resolvePath = (code) => {
-              const found = imagesList.find((r) => (r.imageCode || "").trim() === (code || "").trim());
+            const resolvePetugasPath = (s) => {
+              const found = imagesList.find((r) => (r.imageCode || "").trim() === (s || "").trim());
               return found ? found.imagePath || "" : null;
             };
-            const path = resolvePath(value);
-            img.src = path ? (path.startsWith("/") ? `${BASE_URL}${path}` : `${BASE_URL}/${path}`) : `${BASE_URL}/images/penceramah/Random_user.svg`;
+            const petugasImgPath = resolvePetugasPath(slug);
+            img.src = petugasImgPath
+              ? (petugasImgPath.startsWith("/") ? `${BASE_URL}${petugasImgPath}` : `${BASE_URL}/${petugasImgPath}`)
+              : `${BASE_URL}/images/penceramah/Random_user.svg`;
             img.onerror = function () {
               this.src = `${BASE_URL}/images/penceramah/Random_user.svg`;
               this.onerror = null;
             };
             imgContainer.appendChild(img);
-            const codeText = document.createElement("span");
-            codeText.textContent = value || "—";
-            codeText.style.fontSize = "13px";
-            codeText.style.color = "#374151";
-            imgContainer.appendChild(codeText);
             td.appendChild(imgContainer);
           } else if (fileName === "slides" && col === "image") {
             td.style.padding = "8px";
@@ -1091,8 +1604,22 @@ export async function loadTable(fileName, scrollToRowId = null) {
           deleteBtn.title = "Padam";
           deleteBtn.onclick = () => deleteRow(row.id);
           actionTd.appendChild(deleteBtn);
+        } else if (fileName === "kuliah") {
+          // Kuliah: Edit + Delete
+          const editBtn = document.createElement("button");
+          editBtn.className = "btn-icon btn-edit";
+          editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
+          editBtn.title = "Edit";
+          editBtn.onclick = () => openEditDialog(row.id);
+          actionTd.appendChild(editBtn);
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn-icon btn-delete";
+          deleteBtn.innerHTML = `<span>${Icons.trash}</span>`;
+          deleteBtn.title = "Padam";
+          deleteBtn.onclick = () => deleteRow(row.id);
+          actionTd.appendChild(deleteBtn);
         } else {
-          // Table lain (kuliah, slides): Edit sahaja, tiada Delete
+          // Table lain (slides dll.): Edit sahaja, tiada Delete
           const editBtn = document.createElement("button");
           editBtn.className = "btn-icon btn-edit";
           editBtn.innerHTML = `<span>${Icons.pencil}</span>`;
@@ -1190,106 +1717,18 @@ export async function loadTable(fileName, scrollToRowId = null) {
   }
 }
 
-/**
- * Switch tabs: load partial HTML into #tab-content-container then run tab-specific init
- * @param {string} tabName - Nama tab untuk ditukar
- * @param {boolean} [updateHash=true] - Kemaskini URL hash (false semasa restore dari hash)
- */
-export async function showTab(tabName, updateHash = true) {
-  if (updateHash) {
-    history.replaceState(null, "", `#${tabName}`);
-  }
-
-  // Remove active class from all menu items (sidebar)
-  document.querySelectorAll(".menu-item").forEach((item) => {
-    item.classList.remove("active");
-  });
-
-  // Load tab HTML into container
-  await loadTabContent(tabName);
-
-  // Load config sub-tab when opening Config tab
-  if (
-    tabName === "config" &&
-    typeof window.loadConfigSubTabIfNeeded === "function"
-  ) {
-    window.loadConfigSubTabIfNeeded();
-  }
-
-  // Add active class to clicked menu item
-  const activeMenuItem = document.querySelector(`[data-tab="${tabName}"]`);
-  if (activeMenuItem) {
-    activeMenuItem.classList.add("active");
-  }
-
-  // Update page title
-  const pageTitles = {
-    config: { icon: "⚙️", name: "Tetapan" },
-    slides: { icon: "🖼️", name: "Template" },
-    slideshow: { icon: "🎬", name: "Slideshow" },
-    kuliah: { icon: "📚", name: "Kuliah" },
-    "kuliah-override": { icon: "📋", name: "Ganti Kuliah" },
-    images: { icon: "🖼️", name: "Galeri" },
-    announcements: { icon: "📢", name: "Pengumuman" },
-    hebahan: { icon: "📰", name: "Hebahan" },
-    countdowns: { icon: "⏳", name: "Undur Detik" },
-    takwim: { icon: "📅", name: "Takwim" },
-    kematian: { icon: "🕌", name: "Kematian" },
-    livestream: { icon: "📹", name: "Siaran Langsung" },
-    penceramah: { icon: "🎤", name: "Penceramah" },
-    petugas: { icon: "👥", name: "Petugas" },
-    "jadual-petugas": { icon: "📅", name: "Jadual Petugas" },
-  };
-
-  const pageInfo = pageTitles[tabName];
-  if (pageInfo) {
-    const pageIcon = document.getElementById("page-icon");
-    const pageName = document.getElementById("page-name");
-    if (pageIcon) pageIcon.textContent = pageInfo.icon;
-    if (pageName) pageName.textContent = pageInfo.name;
-  }
-
-  // Close sidebar on mobile after selection
-  if (window.innerWidth <= 1024) {
-    const sidebar = document.getElementById("sidebar");
-    if (sidebar) {
-      sidebar.classList.remove("open");
-    }
-  }
-
-  // Load data based on tab type
-  if (tabName === "config") {
-    if (typeof window.loadConfigData === "function") {
-      window.loadConfigData();
-    }
-  } else if (tabName === "images") {
-    if (typeof window.GalleryUtils?.loadGallery === "function") {
-      window.GalleryUtils.loadGallery();
-    }
-  } else if (tabName === "kematian") {
-    const now = new Date();
-    const dateEl = document.getElementById("kematian-tarikh");
-    const timeEl = document.getElementById("kematian-masa");
-    if (dateEl && !dateEl.value) {
-      dateEl.value = now.toISOString().slice(0, 10);
-    }
-    if (timeEl && !timeEl.value) {
-      const hh = String(now.getHours()).padStart(2, "0");
-      const mm = String(now.getMinutes()).padStart(2, "0");
-      timeEl.value = `${hh}:${mm}`;
-    }
-  } else {
-    loadTable(tabName);
-  }
-}
-
 // Export untuk browser environment
 if (typeof window !== "undefined") {
   window.TableUtils = {
     loadTable,
-    showTab,
+    loadBackgroundTable,
     loadTodayTakwim,
   };
+  window.loadBackgroundTable = loadBackgroundTable;
+  window.showKuliahTab = showKuliahTab;
+  window.showSlideshowTab = showSlideshowTab;
+  window.showAnnouncementsTab = showAnnouncementsTab;
+   window.showCountdownsTab = showCountdownsTab;
   window.loadZoneDropdown = loadZoneDropdown;
   window.syncJakimYear = syncJakimYear;
   window.uploadTakwimFile = uploadTakwimFile;

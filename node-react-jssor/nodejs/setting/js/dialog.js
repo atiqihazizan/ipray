@@ -18,62 +18,14 @@ import { showNotification } from "./notification.js";
  * @param {string} category - Category (penceramah atau slides)
  * @returns {Promise<object>} Upload result dengan path
  */
-export async function uploadImage(file, category = "penceramah") {
-  if (!file) {
-    throw new Error("Tiada fail dipilih");
-  }
-
-  const formData = new FormData();
-  formData.append("image", file);
-  formData.append("category", category);
-
-  const API_URL = window.Config.API_URL;
-  const url = `${API_URL}/images/upload?category=${encodeURIComponent(category)}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      body: formData,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || `HTTP ${response.status}: Upload gagal`);
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Upload error:", error);
-    if (error.message) {
-      throw error;
-    }
-    throw new Error("Gagal memuat naik image. Sila cuba lagi.");
-  }
-}
+// Upload image kini dibuat semasa proses Save (rujuk setting/js/api.js)
 
 /**
  * Delete image file
  * @param {string} imagePath - Path image untuk dipadam
  * @returns {Promise<object>} Delete result
  */
-export async function deleteImageFile(imagePath) {
-  const API_URL = window.Config.API_URL;
-  const response = await fetch(`${API_URL}/images/delete`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ imagePath }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Delete gagal");
-  }
-
-  return await response.json();
-}
+// Delete image file kini diurus melalui delete row (Delete button pada table)
 
 /**
  * Download image from URL
@@ -82,27 +34,7 @@ export async function deleteImageFile(imagePath) {
  * @param {string} filename - Optional filename
  * @returns {Promise<object>} Download result dengan path
  */
-export async function downloadImageFromUrl(
-  imageUrl,
-  category = "penceramah",
-  filename = null,
-) {
-  const API_URL = window.Config.API_URL;
-  const response = await fetch(`${API_URL}/images/download`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ imageUrl, category, filename }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Download gagal");
-  }
-
-  return await response.json();
-}
+// Download-from-URL tidak lagi digunakan dalam dialog (upload dibuat semasa Save)
 
 /**
  * Create form fields untuk dialog
@@ -202,7 +134,7 @@ function createFormFields(form, row, isAdd, options = {}) {
 
     // Petugas: label mesra pengguna
     if (currentFileName === "petugas") {
-      const petugasLabels = { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", imageCode: "Gambar" };
+      const petugasLabels = { slug: "Slug (jana automatik)", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan" };
       if (petugasLabels[col]) label.textContent = petugasLabels[col];
     }
     // Jadual petugas: label
@@ -210,41 +142,32 @@ function createFormFields(form, row, isAdd, options = {}) {
       const jpLabels = { week: "Minggu", day: "Hari", role: "Peranan", officerCode: "Petugas" };
       if (jpLabels[col]) label.textContent = jpLabels[col];
     }
-    // Penceramah: label
+    // Penceramah: label (kod dijana automatik dari namaPenuh)
     if (currentFileName === "penceramah") {
-      const pLabels = { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", imageCode: "Gambar", kitab: "Kitab (comma-separated)" };
+      const pLabels = { namaPenuh: "Nama Penuh", shortname: "Shortname", kitab: "Kitab (comma-separated)" };
       if (pLabels[col]) label.textContent = pLabels[col];
     }
 
-    // Penceramah: imageCode dropdown (gambar dari Galeri)
-    if (currentFileName === "penceramah" && col === "imageCode") {
-      const select = document.createElement("select");
-      select.id = `field-${col}`;
-      select.name = col;
-      select.className = "form-control";
-      const emptyOpt = document.createElement("option");
-      emptyOpt.value = "";
-      emptyOpt.textContent = "-- Pilih gambar (pilihan) --";
-      select.appendChild(emptyOpt);
-      const currentVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
-      (imagesList || []).forEach((im) => {
-        const code = (im.imageCode || "").trim();
-        if (!code) return;
-        const opt = document.createElement("option");
-        opt.value = code;
-        opt.textContent = code;
-        if (currentVal === code) opt.selected = true;
-        select.appendChild(opt);
-      });
-      if (currentVal && !(imagesList || []).some((im) => (im.imageCode || "").trim() === currentVal)) {
-        const opt = document.createElement("option");
-        opt.value = currentVal;
-        opt.textContent = currentVal + " (tiada dalam Galeri)";
-        opt.selected = true;
-        select.appendChild(opt);
-      }
+    // Penceramah: kolum kod dijana automatik dari namaPenuh (slug), jadi tiada input dalam dialog
+    if (currentFileName === "penceramah" && col === "kod") {
+      return;
+    }
+
+    // Petugas: kolum slug dijana automatik dari namaPenuh, papar sebagai readonly
+    if (currentFileName === "petugas" && col === "slug") {
+      const currentVal = !isAdd && row && row.slug ? String(row.slug).trim() : "";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = "field-slug";
+      input.name = "slug";
+      input.className = "form-control";
+      input.value = currentVal;
+      input.readOnly = true;
+      input.style.background = "#f3f4f6";
+      input.style.color = "#6b7280";
+      input.placeholder = "Jana automatik dari Nama Penuh";
       group.appendChild(label);
-      group.appendChild(select);
+      group.appendChild(input);
       form.appendChild(group);
       return;
     }
@@ -269,38 +192,7 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Petugas: imageCode dropdown (gambar penceramah)
-    if (currentFileName === "petugas" && col === "imageCode") {
-      const select = document.createElement("select");
-      select.id = `field-${col}`;
-      select.name = col;
-      select.className = "form-control";
-      const emptyOpt = document.createElement("option");
-      emptyOpt.value = "";
-      emptyOpt.textContent = "-- Pilih gambar (pilihan) --";
-      select.appendChild(emptyOpt);
-      const currentVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
-      (imagesList || []).forEach((im) => {
-        const code = (im.imageCode || "").trim();
-        if (!code) return;
-        const opt = document.createElement("option");
-        opt.value = code;
-        opt.textContent = code;
-        if (currentVal === code) opt.selected = true;
-        select.appendChild(opt);
-      });
-      if (currentVal && !(imagesList || []).some((im) => (im.imageCode || "").trim() === currentVal)) {
-        const opt = document.createElement("option");
-        opt.value = currentVal;
-        opt.textContent = currentVal + " (tiada dalam Galeri)";
-        opt.selected = true;
-        select.appendChild(opt);
-      }
-      group.appendChild(label);
-      group.appendChild(select);
-      form.appendChild(group);
-      return;
-    }
+    // Petugas: imageCode tidak lagi digunakan (gambar diurus via slug di images.txt)
 
     // Jadual-petugas: week, day (radio), role (dropdown), officerCode (dropdown dari petugas)
     if (currentFileName === "jadual-petugas" && col === "week") {
@@ -405,9 +297,9 @@ function createFormFields(form, row, isAdd, options = {}) {
       const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
       filtered.forEach((p) => {
         const opt = document.createElement("option");
-        opt.value = p.kod || "";
-        opt.textContent = p.namaPenuh || p.kod || "";
-        if (currentVal === (p.kod || "")) opt.selected = true;
+        opt.value = p.slug || "";
+        opt.textContent = p.namaPenuh || p.slug || "";
+        if (currentVal === (p.slug || "")) opt.selected = true;
         select.appendChild(opt);
       });
       const roleField = form.querySelector("#field-role");
@@ -418,8 +310,8 @@ function createFormFields(form, row, isAdd, options = {}) {
           select.appendChild(emptyOpt.cloneNode(true));
           petugasList.filter((p) => (p.role || "").trim().toUpperCase() === rv.toUpperCase()).forEach((p) => {
             const opt = document.createElement("option");
-            opt.value = p.kod || "";
-            opt.textContent = p.namaPenuh || p.kod || "";
+            opt.value = p.slug || "";
+            opt.textContent = p.namaPenuh || p.slug || "";
             select.appendChild(opt);
           });
         });
@@ -566,7 +458,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         const opt = document.createElement("option");
         opt.value = p.kod || "";
         opt.textContent = p.namaPenuh || p.kod || "";
-        opt.dataset.imageCode = p.imageCode || "";
+        opt.dataset.imageCode = p.kod || "";
         opt.dataset.kitab = p.kitab || "";
         if (currentSpeakerVal === (p.kod || "") || currentSpeakerVal === (p.namaPenuh || "")) {
           opt.selected = true;
@@ -1045,9 +937,11 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Special handling untuk column image dalam slideshow table: upload sahaja, category slideshow, wajib upload
+    // Special handling untuk column image dalam slideshow table:
+    // - Dialog hanya pilih file + preview
+    // - Upload dibuat semasa Save (rujuk setting/js/api.js)
     if (currentFileName === "slideshow" && col === "image") {
-      label.textContent = "Image (wajib upload sebelum simpan)";
+      label.textContent = "Image (pilih fail, kemudian klik Save)";
       const uploadContainer = document.createElement("div");
       uploadContainer.className = "image-upload-container";
       const previewContainer = document.createElement("div");
@@ -1062,57 +956,66 @@ function createFormFields(form, row, isAdd, options = {}) {
       previewImg.style.border = "1px solid #e5e7eb";
       previewImg.style.display = "none";
       previewImg.style.objectFit = "cover";
+      const initialPreview = { src: "", visible: false };
       if (!isAdd && row[col]) {
         const imageUrl = row[col].startsWith("/")
           ? `${BASE_URL}${row[col]}`
           : `${BASE_URL}${row[col]}`;
         previewImg.src = imageUrl;
         previewImg.style.display = "block";
+        initialPreview.src = imageUrl;
+        initialPreview.visible = true;
       }
       previewImg.onerror = function () {
         this.style.display = "none";
       };
       previewContainer.appendChild(previewImg);
+      const fileWrapper = document.createElement("div");
+      fileWrapper.style.position = "relative";
+      fileWrapper.style.width = "100%";
       const fileInput = document.createElement("input");
       fileInput.type = "file";
       fileInput.id = `file-${col}`;
       fileInput.accept = "image/*";
       fileInput.className = "form-control";
       fileInput.style.marginBottom = "8px";
-      const uploadBtn = document.createElement("button");
-      uploadBtn.type = "button";
-      uploadBtn.className = "btn-upload";
-      uploadBtn.textContent = "📤 Upload Image";
-      uploadBtn.style.marginBottom = "8px";
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.title = "Kosongkan pilihan fail";
+      clearBtn.innerHTML = "&times;";
+      clearBtn.style.cssText =
+        "position:absolute;right:8px;top:50%;transform:translateY(-70%);background:none;color:#dc2626;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;display:none;align-items:center;justify-content:center;";
+      clearBtn.onclick = () => {
+        fileInput.value = "";
+        clearBtn.style.display = "none";
+        if (initialPreview.visible && initialPreview.src) {
+          previewImg.src = initialPreview.src;
+          previewImg.style.display = "block";
+        } else {
+          previewImg.src = "";
+          previewImg.style.display = "none";
+        }
+      };
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        clearBtn.style.display = file ? "flex" : "none";
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          previewImg.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      });
+      fileWrapper.appendChild(fileInput);
+      fileWrapper.appendChild(clearBtn);
       const hiddenInput = document.createElement("input");
       hiddenInput.type = "hidden";
       hiddenInput.id = `field-${col}`;
       hiddenInput.name = col;
       hiddenInput.value = isAdd ? "" : row[col] || "";
-      uploadBtn.onclick = async () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) {
-          showNotification("✗ Sila pilih fail image", "error");
-          return;
-        }
-        try {
-          uploadBtn.disabled = true;
-          uploadBtn.textContent = "Memuat naik...";
-          const result = await uploadImage(file, "slideshow");
-          hiddenInput.value = result.path || "";
-          previewImg.src = `${BASE_URL}${result.path}`;
-          previewImg.style.display = "block";
-          // showNotification("✓ Image berjaya dimuat naik", "success");
-        } catch (err) {
-          showNotification("✗ " + (err.message || "Upload gagal"), "error");
-        } finally {
-          uploadBtn.disabled = false;
-          uploadBtn.textContent = "📤 Upload Image";
-        }
-      };
       uploadContainer.appendChild(previewContainer);
-      uploadContainer.appendChild(fileInput);
-      uploadContainer.appendChild(uploadBtn);
+      uploadContainer.appendChild(fileWrapper);
       uploadContainer.appendChild(hiddenInput);
       group.appendChild(label);
       group.appendChild(uploadContainer);
@@ -1200,10 +1103,18 @@ function createFormFields(form, row, isAdd, options = {}) {
 
     // Special handling untuk imagePath dalam images table (path diset auto via upload/download)
     if (currentFileName === "images" && col === "imagePath") {
-      label.textContent = "Image";
+      label.textContent = "Imej";
       // Image upload section
       const uploadContainer = document.createElement("div");
       uploadContainer.className = "image-upload-container";
+
+      // Flag ringkas: image changed (untuk edit)
+      const imgChg = document.createElement("input");
+      imgChg.type = "hidden";
+      imgChg.id = "field-imgChg";
+      imgChg.name = "imgChg";
+      imgChg.value = "0";
+      uploadContainer.appendChild(imgChg);
 
       // Image preview
       const previewContainer = document.createElement("div");
@@ -1236,59 +1147,6 @@ function createFormFields(form, row, isAdd, options = {}) {
       previewContainer.appendChild(previewImg);
       uploadContainer.appendChild(previewContainer);
 
-      // Tabs untuk pilih upload method
-      const methodTabs = document.createElement("div");
-      methodTabs.style.display = "flex";
-      methodTabs.style.gap = "8px";
-      methodTabs.style.marginBottom = "12px";
-      methodTabs.style.borderBottom = "2px solid #e5e7eb";
-
-      const localTab = document.createElement("button");
-      localTab.type = "button";
-      localTab.textContent = "📁 Local File";
-      localTab.className = "method-tab active";
-      localTab.style.padding = "8px 16px";
-      localTab.style.border = "none";
-      localTab.style.background = "transparent";
-      localTab.style.cursor = "pointer";
-      localTab.style.borderBottom = "2px solid #6366f1";
-      localTab.style.marginBottom = "-2px";
-
-      const urlTab = document.createElement("button");
-      urlTab.type = "button";
-      urlTab.textContent = "🌐 From URL";
-      urlTab.className = "method-tab";
-      urlTab.style.padding = "8px 16px";
-      urlTab.style.border = "none";
-      urlTab.style.background = "transparent";
-      urlTab.style.cursor = "pointer";
-      urlTab.style.color = "#6b7280";
-
-      // Local file upload section
-      const localSection = document.createElement("div");
-      localSection.id = `local-section-${col}`;
-      localSection.style.display = "block";
-
-      // File input
-      const fileInput = document.createElement("input");
-      fileInput.type = "file";
-      fileInput.id = `file-${col}`;
-      fileInput.accept = "image/*";
-      fileInput.className = "form-control";
-      fileInput.style.marginBottom = "8px";
-
-      // URL input section
-      const urlSection = document.createElement("div");
-      urlSection.id = `url-section-${col}`;
-      urlSection.style.display = "none";
-
-      const urlInput = document.createElement("input");
-      urlInput.type = "url";
-      urlInput.id = `url-${col}`;
-      urlInput.className = "form-control";
-      urlInput.placeholder = "https://example.com/image.jpg";
-      urlInput.style.marginBottom = "8px";
-
       // Category selector untuk upload
       const categorySelect = document.createElement("select");
       categorySelect.id = `category-${col}`;
@@ -1296,7 +1154,8 @@ function createFormFields(form, row, isAdd, options = {}) {
       categorySelect.style.marginBottom = "8px";
 
       // Detect category dari existing path (untuk edit mode)
-      let defaultCategory = "penceramah";
+      const backgroundMode = typeof window !== "undefined" && window.__BACKGROUND_MODE__ === true;
+      let defaultCategory = backgroundMode ? "slides" : "penceramah";
       if (!isAdd && row[col]) {
         if (
           row[col].includes("/images/slides/") ||
@@ -1306,79 +1165,18 @@ function createFormFields(form, row, isAdd, options = {}) {
         }
       }
 
-      categorySelect.innerHTML = `
-                <option value="penceramah" ${defaultCategory === "penceramah" ? "selected" : ""}>Penceramah</option>
-                <option value="slides" ${defaultCategory === "slides" ? "selected" : ""}>Slides</option>
-            `;
-
-      // Update default path bila category berubah (untuk add mode sahaja)
-      if (isAdd) {
-        categorySelect.addEventListener("change", () => {
-          const defaultPath =
-            categorySelect.value === "slides"
-              ? "/images/slides/noimage.png"
-              : "/images/penceramah/Random_user.svg";
-          hiddenInput.value = defaultPath;
-        });
+      if (backgroundMode) {
+        categorySelect.innerHTML = `<option value="slides" selected>Slides</option>`;
+        categorySelect.disabled = true;
+        categorySelect.style.opacity = "0.85";
+        categorySelect.title = "Tab Background hanya guna folder slides";
+        categorySelect.style.display = "none";
+      } else {
+        categorySelect.innerHTML = `
+                  <option value="penceramah" ${defaultCategory === "penceramah" ? "selected" : ""}>Penceramah</option>
+                  <option value="slides" ${defaultCategory === "slides" ? "selected" : ""}>Slides</option>
+              `;
       }
-
-      // Upload button (untuk local file)
-      const uploadBtn = document.createElement("button");
-      uploadBtn.type = "button";
-      uploadBtn.className = "btn-upload";
-      uploadBtn.textContent = "📤 Upload Image";
-      uploadBtn.style.marginRight = "8px";
-      uploadBtn.style.marginBottom = "8px";
-
-      // Download button (untuk URL)
-      const downloadBtn = document.createElement("button");
-      downloadBtn.type = "button";
-      downloadBtn.className = "btn-upload";
-      downloadBtn.textContent = "⬇️ Download from URL";
-      downloadBtn.style.marginRight = "8px";
-      downloadBtn.style.marginBottom = "8px";
-      downloadBtn.style.display = "none";
-
-      // Tab switching
-      localTab.onclick = () => {
-        localTab.classList.add("active");
-        localTab.style.borderBottom = "2px solid #6366f1";
-        localTab.style.color = "#111827";
-        urlTab.classList.remove("active");
-        urlTab.style.borderBottom = "none";
-        urlTab.style.color = "#6b7280";
-        localSection.style.display = "block";
-        urlSection.style.display = "none";
-        uploadBtn.style.display = "inline-block";
-        downloadBtn.style.display = "none";
-      };
-
-      urlTab.onclick = () => {
-        urlTab.classList.add("active");
-        urlTab.style.borderBottom = "2px solid #6366f1";
-        urlTab.style.color = "#111827";
-        localTab.classList.remove("active");
-        localTab.style.borderBottom = "none";
-        localTab.style.color = "#6b7280";
-        localSection.style.display = "none";
-        urlSection.style.display = "block";
-        uploadBtn.style.display = "none";
-        downloadBtn.style.display = "inline-block";
-      };
-
-      localSection.appendChild(fileInput);
-      urlSection.appendChild(urlInput);
-
-      methodTabs.appendChild(localTab);
-      methodTabs.appendChild(urlTab);
-
-      // Remove button (hanya jika ada image)
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "btn-remove";
-      removeBtn.textContent = "🗑️ Remove Image";
-      removeBtn.style.display = !isAdd && row[col] ? "inline-block" : "none";
-      removeBtn.style.marginBottom = "8px";
 
       // Hidden input untuk imagePath value (path diset auto via upload/download, tidak tunjuk kepada user)
       const hiddenInput = document.createElement("input");
@@ -1398,137 +1196,55 @@ function createFormFields(form, row, isAdd, options = {}) {
         hiddenInput.value = row[col] || "";
       }
 
-      // Upload handler (local file)
-      uploadBtn.onclick = async () => {
-        const file = fileInput.files[0];
-        if (!file) {
-          showNotification("✗ Sila pilih fail image", "error");
-          return;
-        }
-
-        uploadBtn.disabled = true;
-        uploadBtn.textContent = "⏳ Uploading...";
-
-        try {
-          const result = await uploadImage(file, categorySelect.value);
-          hiddenInput.value = result.path;
-
-          // Update preview
-          previewImg.src = `${BASE_URL}${result.path}`;
+      // File input + clear (X merah) untuk pilih image (upload dibuat semasa Save)
+      const initialPreview = { src: previewImg.src || "", visible: previewImg.style.display === "block" };
+      const fileWrapper = document.createElement("div");
+      fileWrapper.style.position = "relative";
+      fileWrapper.style.width = "100%";
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.id = `file-${col}`;
+      fileInput.accept = "image/*";
+      fileInput.className = "form-control";
+      fileInput.style.marginBottom = "8px";
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.title = "Kosongkan pilihan fail";
+      clearBtn.innerHTML = "&times;";
+      clearBtn.style.cssText =
+        "position:absolute;right:8px;top:50%;transform:translateY(-70%);background:none;color:#dc2626;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;display:none;align-items:center;justify-content:center;";
+      clearBtn.onclick = () => {
+        fileInput.value = "";
+        clearBtn.style.display = "none";
+        imgChg.value = "0";
+        if (initialPreview.visible && initialPreview.src) {
+          previewImg.src = initialPreview.src;
           previewImg.style.display = "block";
-          removeBtn.style.display = "inline-block";
-
-          // showNotification("✓ Image berjaya dimuat naik", "success");
-        } catch (error) {
-          console.error("Upload error:", error);
-          showNotification(`✗ ${error.message || "Gagal memuat naik image"}`,"error");
-        } finally {
-          uploadBtn.disabled = false;
-          uploadBtn.textContent = "📤 Upload Image";
-          fileInput.value = "";
-        }
-      };
-
-      // Download handler (from URL)
-      downloadBtn.onclick = async () => {
-        const imageUrl = urlInput.value.trim();
-        if (!imageUrl) {
-          showNotification("✗ Sila masukkan URL image", "error");
-          return;
-        }
-
-        // Validate URL format
-        try {
-          new URL(imageUrl);
-        } catch (error) {
-          showNotification("✗ Format URL tidak sah", "error");
-          return;
-        }
-
-        downloadBtn.disabled = true;
-        downloadBtn.textContent = "⏳ Downloading...";
-
-        try {
-          const result = await downloadImageFromUrl(
-            imageUrl,
-            categorySelect.value,
-          );
-          hiddenInput.value = result.path;
-
-          // Update preview
-          previewImg.src = `${BASE_URL}${result.path}`;
-          previewImg.style.display = "block";
-          removeBtn.style.display = "inline-block";
-
-          // showNotification("✓ Image berjaya dimuat turun", "success");
-        } catch (error) {
-          console.error("Download error:", error);
-          showNotification(`✗ ${error.message || "Gagal memuat turun image"}`,"error");
-        } finally {
-          downloadBtn.disabled = false;
-          downloadBtn.textContent = "⬇️ Download from URL";
-          urlInput.value = "";
-        }
-      };
-
-      // Remove handler
-      removeBtn.onclick = async () => {
-        if (!confirm("Adakah anda pasti mahu memadam image ini?")) {
-          return;
-        }
-
-        const imagePath = hiddenInput.value;
-        if (!imagePath) {
-          return;
-        }
-
-        removeBtn.disabled = true;
-        removeBtn.textContent = "⏳ Removing...";
-
-        try {
-          await deleteImageFile(imagePath);
-
-          hiddenInput.value = "";
+        } else {
           previewImg.src = "";
           previewImg.style.display = "none";
-          removeBtn.style.display = "none";
-
-          // showNotification("✓ Image berjaya dipadam", "success");
-        } catch (error) {
-          console.error("Delete error:", error);
-          showNotification(`✗ ${error.message || "Gagal memadam image"}`,"error");
-        } finally {
-          removeBtn.disabled = false;
-          removeBtn.textContent = "🗑️ Remove Image";
         }
       };
-
-      // File change handler untuk preview sebelum upload
       fileInput.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            previewImg.src = event.target.result;
-            previewImg.style.display = "block";
-          };
-          reader.readAsDataURL(file);
+        const file = e.target.files && e.target.files[0];
+        clearBtn.style.display = file ? "flex" : "none";
+        if (!file) {
+          imgChg.value = "0";
+          return;
         }
+        imgChg.value = "1";
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          previewImg.style.display = "block";
+        };
+        reader.readAsDataURL(file);
       });
+      fileWrapper.appendChild(fileInput);
+      fileWrapper.appendChild(clearBtn);
 
-      const buttonContainer = document.createElement("div");
-      buttonContainer.style.display = "flex";
-      buttonContainer.style.gap = "8px";
-      buttonContainer.style.flexWrap = "wrap";
-      buttonContainer.appendChild(categorySelect);
-      buttonContainer.appendChild(uploadBtn);
-      buttonContainer.appendChild(downloadBtn);
-      buttonContainer.appendChild(removeBtn);
-
-      uploadContainer.appendChild(methodTabs);
-      uploadContainer.appendChild(localSection);
-      uploadContainer.appendChild(urlSection);
-      uploadContainer.appendChild(buttonContainer);
+      uploadContainer.appendChild(categorySelect);
+      uploadContainer.appendChild(fileWrapper);
       uploadContainer.appendChild(hiddenInput);
 
       group.appendChild(label);
@@ -1874,6 +1590,185 @@ function createFormFields(form, row, isAdd, options = {}) {
       form.appendChild(group);
     }
   });
+
+  // Petugas: bahagian Gambar pilihan (upload + preview) – guna slug untuk lookup dalam images.txt
+  if (currentFileName === "petugas") {
+    const originalSlug = !isAdd && row && row.slug ? String(row.slug || "").trim() : "";
+    const group = document.createElement("div");
+    group.className = "form-group";
+    const label = document.createElement("label");
+    label.textContent = "Gambar (pilihan)";
+    const changeFlag = document.createElement("input");
+    changeFlag.type = "hidden";
+    changeFlag.id = "field-changeImage";
+    changeFlag.name = "changeImage";
+    changeFlag.value = "0";
+    const uploadContainer = document.createElement("div");
+    uploadContainer.style.display = "flex";
+    uploadContainer.style.flexDirection = "column";
+    uploadContainer.style.gap = "8px";
+    const previewContainer = document.createElement("div");
+    previewContainer.className = "image-preview-container";
+    previewContainer.style.marginTop = "6px";
+    const previewImg = document.createElement("img");
+    previewImg.id = "petugas-image-preview";
+    previewImg.className = "image-preview";
+    previewImg.style.maxWidth = "160px";
+    previewImg.style.maxHeight = "160px";
+    previewImg.style.borderRadius = "8px";
+    previewImg.style.border = "1px solid #e5e7eb";
+    previewImg.style.objectFit = "cover";
+    previewImg.style.display = "none";
+    previewImg.alt = "Preview";
+    const API_URL = typeof window !== "undefined" && window.Config ? window.Config.API_URL : "";
+    const BASE_URL = typeof window !== "undefined" && window.Config ? window.Config.BASE_URL : (API_URL ? API_URL.replace(/\/api\/?$/, "") : "");
+    const updatePreviewFromSlug = (slug) => {
+      const trimmed = (slug || "").trim();
+      if (!trimmed) { previewImg.removeAttribute("src"); previewImg.style.display = "none"; return; }
+      const found = (imagesList || []).find((im) => (im.imageCode || "").trim() === trimmed);
+      const pathVal = found && found.imagePath ? found.imagePath : null;
+      if (pathVal) {
+        const url = pathVal.startsWith("/") ? `${BASE_URL}${pathVal}` : `${BASE_URL}/images/${pathVal}`;
+        previewImg.src = url;
+        previewImg.style.display = "block";
+      } else {
+        previewImg.src = `${BASE_URL}/images/imambilal/Random_user.svg`;
+        previewImg.style.display = "block";
+      }
+    };
+    if (originalSlug) updatePreviewFromSlug(originalSlug);
+    previewContainer.appendChild(previewImg);
+    const fileWrapper = document.createElement("div");
+    fileWrapper.style.position = "relative";
+    fileWrapper.style.width = "100%";
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.id = "file-petugas-gambar";
+    fileInput.accept = "image/*";
+    fileInput.className = "form-control";
+    fileInput.style.marginTop = "4px";
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        changeFlag.value = "0";
+        if (originalSlug) updatePreviewFromSlug(originalSlug);
+        else { previewImg.removeAttribute("src"); previewImg.style.display = "none"; }
+        return;
+      }
+      changeFlag.value = "1";
+      const reader = new FileReader();
+      reader.onload = (ev) => { previewImg.src = ev.target.result; previewImg.style.display = "block"; };
+      reader.readAsDataURL(file);
+    });
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.textContent = "Reset ke gambar asal";
+    resetBtn.className = "btn-cancel";
+    resetBtn.style.marginTop = "4px";
+    resetBtn.style.alignSelf = "flex-start";
+    if (isAdd) resetBtn.style.display = "none";
+    resetBtn.onclick = () => {
+      fileInput.value = "";
+      changeFlag.value = "0";
+      if (originalSlug) updatePreviewFromSlug(originalSlug);
+      else { previewImg.removeAttribute("src"); previewImg.style.display = "none"; }
+    };
+    fileWrapper.appendChild(fileInput);
+    uploadContainer.appendChild(changeFlag);
+    uploadContainer.appendChild(previewContainer);
+    uploadContainer.appendChild(fileWrapper);
+    uploadContainer.appendChild(resetBtn);
+    group.appendChild(label);
+    group.appendChild(uploadContainer);
+    form.appendChild(group);
+  }
+
+  // Penceramah: bahagian Gambar (upload + preview) – tiada kolum imageCode, guna kod untuk lookup
+  if (currentFileName === "penceramah") {
+    const originalCode = !isAdd && row && row.kod ? String(row.kod || "").trim() : "";
+    const group = document.createElement("div");
+    group.className = "form-group";
+    const label = document.createElement("label");
+    label.textContent = "Gambar";
+    const changeFlag = document.createElement("input");
+    changeFlag.type = "hidden";
+    changeFlag.id = "field-changeImage";
+    changeFlag.name = "changeImage";
+    changeFlag.value = "0";
+    const uploadContainer = document.createElement("div");
+    uploadContainer.style.display = "flex";
+    uploadContainer.style.flexDirection = "column";
+    uploadContainer.style.gap = "8px";
+    const previewContainer = document.createElement("div");
+    previewContainer.className = "image-preview-container";
+    previewContainer.style.marginTop = "6px";
+    const previewImg = document.createElement("img");
+    previewImg.id = "penceramah-image-preview";
+    previewImg.className = "image-preview";
+    previewImg.style.maxWidth = "160px";
+    previewImg.style.maxHeight = "160px";
+    previewImg.style.borderRadius = "8px";
+    previewImg.style.border = "1px solid #e5e7eb";
+    previewImg.style.objectFit = "cover";
+    previewImg.style.display = "none";
+    previewImg.alt = "Preview";
+    const API_URL = typeof window !== "undefined" && window.Config ? window.Config.API_URL : "";
+    const BASE_URL = typeof window !== "undefined" && window.Config ? window.Config.BASE_URL : (API_URL ? API_URL.replace(/\/api\/?$/, "") : "");
+    const updatePreviewFromCode = (code) => {
+      const trimmed = (code || "").trim();
+      if (!trimmed) { previewImg.removeAttribute("src"); previewImg.style.display = "none"; return; }
+      const found = (imagesList || []).find((im) => (im.imageCode || "").trim() === trimmed);
+      const pathVal = found && found.imagePath ? found.imagePath : `/images/penceramah/${trimmed}`;
+      const url = pathVal.startsWith("/") ? `${BASE_URL}${pathVal}` : `${BASE_URL}/images/${pathVal}`;
+      previewImg.src = url;
+      previewImg.style.display = "block";
+    };
+    if (originalCode) updatePreviewFromCode(originalCode);
+    previewContainer.appendChild(previewImg);
+    const fileWrapper = document.createElement("div");
+    fileWrapper.style.position = "relative";
+    fileWrapper.style.width = "100%";
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.id = "file-imageCode";
+    fileInput.accept = "image/*";
+    fileInput.className = "form-control";
+    fileInput.style.marginTop = "4px";
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) {
+        changeFlag.value = "0";
+        if (originalCode) updatePreviewFromCode(originalCode);
+        else { previewImg.removeAttribute("src"); previewImg.style.display = "none"; }
+        return;
+      }
+      changeFlag.value = "1";
+      const reader = new FileReader();
+      reader.onload = (ev) => { previewImg.src = ev.target.result; previewImg.style.display = "block"; };
+      reader.readAsDataURL(file);
+    });
+    const resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.textContent = "Reset ke gambar asal";
+    resetBtn.className = "btn-cancel";
+    resetBtn.style.marginTop = "4px";
+    resetBtn.style.alignSelf = "flex-start";
+    if (isAdd) resetBtn.style.display = "none";
+    resetBtn.onclick = () => {
+      fileInput.value = "";
+      changeFlag.value = "0";
+      if (originalCode) updatePreviewFromCode(originalCode);
+      else { previewImg.removeAttribute("src"); previewImg.style.display = "none"; }
+    };
+    fileWrapper.appendChild(fileInput);
+    uploadContainer.appendChild(changeFlag);
+    uploadContainer.appendChild(previewContainer);
+    uploadContainer.appendChild(fileWrapper);
+    uploadContainer.appendChild(resetBtn);
+    group.appendChild(label);
+    group.appendChild(uploadContainer);
+    form.appendChild(group);
+  }
 }
 
 /**
@@ -2089,8 +1984,5 @@ if (typeof window !== "undefined") {
     openAddDialog,
     openEditDialog,
     closeDialog,
-    uploadImage,
-    deleteImageFile,
-    downloadImageFromUrl,
   };
 }

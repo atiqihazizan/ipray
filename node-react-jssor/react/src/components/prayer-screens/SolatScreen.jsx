@@ -17,7 +17,7 @@ export default function SolatScreen({ countdown }) {
     <div style={bgSolatStyle}>
       <h1 style={jawiTitleStyle()}>{JAWI_SEDANG_SOLAT}</h1>
       <p style={jawiSubtitleStyle()}>{JAWI_SUBTITLE}</p>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '154px', gap: '104px' }}>
+      <div style={{ position: 'absolute', bottom: '150px', display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '154px', gap: '104px' }}>
         <img src="/img/mute-phone.png" alt="Senangkan telefon" style={muteIconStyle} />
         <img src="/img/silent.png" alt="Diam" style={muteIconStyle} />
       </div>

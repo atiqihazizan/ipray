@@ -1,9 +1,30 @@
 <div class="content-card">
-	<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink: 0;">
-		<button type="button" class="btn-icon btn-chevron-back" onclick="showTab('slides')" title="Kembali ke Template">
-			<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></span>
+	<nav id="countdowns-subnav" class="config-subnav">
+		<button
+			type="button"
+			class="config-subtab active"
+			data-countdowns-tab="senarai"
+			onclick="showCountdownsTab('senarai')"
+		>
+			Senarai Countdown
 		</button>
-		<div class="flex gap-2">
+		<button
+			type="button"
+			class="config-subtab"
+			data-countdowns-tab="setting"
+			onclick="showCountdownsTab('setting')"
+		>
+			Setting Paparan
+		</button>
+	</nav>
+
+	<!-- Panel: Senarai Countdown -->
+	<div
+		id="countdowns-panel-senarai"
+		class="slideshow-panel"
+		style="flex:1;display:flex;flex-direction:column;min-height:0;"
+	>
+		<div class="flex gap-2" style="margin-bottom:10px; gap:8px;">
 			<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Undur Detik">
 				<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
 			</button>
@@ -13,11 +34,29 @@
 				</svg></span>
 			</button>
 		</div>
+		<div class="table-container">
+			<table id="countdowns-table" class="data-table">
+				<thead id="countdowns-thead"></thead>
+				<tbody id="countdowns-tbody"></tbody>
+			</table>
+		</div>
 	</div>
-	<div class="table-container">
-		<table id="countdowns-table" class="data-table">
-			<thead id="countdowns-thead"></thead>
-			<tbody id="countdowns-tbody"></tbody>
-		</table>
+
+	<!-- Panel: Setting Paparan -->
+	<div
+		id="countdowns-panel-setting"
+		class="slideshow-panel"
+		style="display:none;flex:1;flex-direction:column;min-height:0;"
+	>
+		<div
+			id="countdown-paparan-container"
+			class="gallery-container"
+			style="margin-top:8px;flex:1;min-height:0;"
+		>
+			<div
+				id="countdown-paparan-grid"
+				class="gallery-grid slides-gallery-grid"
+			></div>
+		</div>
 	</div>
 </div>

@@ -1,23 +1,92 @@
 <div class="content-card">
-	<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink: 0; margin-bottom: 10px;">
-		<button type="button" class="btn-icon btn-chevron-back" onclick="showTab('slides')" title="Kembali ke Template">
-			<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></span>
-		</button>
-		<div class="flex gap-2">
-			<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Kuliah">
+	<nav id="kuliah-subnav" class="config-subnav">
+		<button type="button" class="config-subtab active" data-kuliah-tab="jadual" onclick="showKuliahTab('jadual')">Jadual Kuliah</button>
+		<button type="button" class="config-subtab" data-kuliah-tab="ganti" onclick="showKuliahTab('ganti')">Ganti Kuliah</button>
+		<button type="button" class="config-subtab" data-kuliah-tab="pengkuliah" onclick="showKuliahTab('pengkuliah')">Pengkuliah</button>
+		<button type="button" class="config-subtab" data-kuliah-tab="paparan" onclick="showKuliahTab('paparan')">List Paparan</button>
+	</nav>
+
+	<!-- Panel: Jadual Kuliah -->
+	<div id="kuliah-panel-jadual" class="kuliah-panel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Kuliah">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="kuliah-table" class="data-table">
+				<thead id="kuliah-thead"></thead>
+				<tbody id="kuliah-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Panel: Ganti Kuliah (Override) -->
+	<div id="kuliah-panel-ganti" class="kuliah-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div class="flex justify-end gap-2 mb-3">
+			<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Rekod Override">
 				<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
 			</button>
-			<!-- <button class="btn-icon btn-reload" onclick="loadTable('kuliah')" title="Muat Semula">
+			<button class="btn-icon btn-reload" onclick="loadTable('kuliah-override')" title="Reload Data">
 				<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
 				</svg></span>
-			</button> -->
+			</button>
+		</div>
+		<div style="margin-bottom:10px;">
+			<button type="button" onclick="this.nextElementSibling.classList.toggle('ko-hidden')" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#6b7280;padding:0;letter-spacing:0.03em;">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:14px;height:14px;flex-shrink:0;color:#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+				FORMAT &amp; PANDUAN
+			</button>
+			<div class="ko-hidden" style="margin-top:8px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;line-height:1.7;color:#475569;">
+				<p style="margin:0 0 6px;">Fail ini menyimpan peraturan tarikh + type kuliah untuk <strong>batal</strong> atau <strong>ganti</strong> paparan (cth. Solat Tarawih, Hari Raya).</p>
+				<table style="width:100%;border-collapse:collapse;">
+					<thead><tr style="border-bottom:1px solid #e2e8f0;">
+						<th style="text-align:left;padding:3px 8px 3px 0;font-weight:700;white-space:nowrap;color:#334155;">Format</th>
+						<th style="text-align:left;padding:3px 0;font-weight:700;color:#334155;">Sintaks</th>
+					</tr></thead>
+					<tbody>
+						<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Tarikh tunggal (Masihi)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">DD-MM-YYYY|type|notes</td></tr>
+						<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Range Masihi</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">tahun?|bulan|type|hari|flag|catatan</td></tr>
+						<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">Hijri</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">hijri|tahun|bulan|hari|type|flag|catatan</td></tr>
+						<tr><td style="padding:3px 8px 3px 0;white-space:nowrap;color:#64748b;">+ Pengumuman (Hijri)</td><td style="padding:3px 0;font-family:monospace;color:#0f172a;">…|1|tajuk|tempat|jemputan</td></tr>
+					</tbody>
+				</table>
+				<p style="margin:8px 0 0;"><span style="background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">type</span> — <code>ks</code> · <code>km</code> · <code>kd</code> · <code>kk</code> &nbsp;|&nbsp; <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">flag ganti=1</span> slot diganti catatan &nbsp;|&nbsp; <span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px;">tahun kosong</span> = tahun semasa</p>
+			</div>
+		</div>
+		<style>.ko-hidden{display:none!important}</style>
+		<div class="table-container">
+			<table id="kuliah-override-table" class="data-table">
+				<thead id="kuliah-override-thead"></thead>
+				<tbody id="kuliah-override-tbody"></tbody>
+			</table>
 		</div>
 	</div>
-	<div class="table-container">
-		<table id="kuliah-table" class="data-table">
-			<thead id="kuliah-thead"></thead>
-			<tbody id="kuliah-tbody"></tbody>
-		</table>
+
+	<!-- Panel: Pengkuliah (Penceramah) -->
+	<div id="kuliah-panel-pengkuliah" class="kuliah-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Pengkuliah">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="penceramah-table" class="data-table">
+				<thead id="penceramah-thead"></thead>
+				<tbody id="penceramah-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Panel: List Paparan -->
+	<div id="kuliah-panel-paparan" class="kuliah-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div id="kuliah-paparan-container" class="gallery-container" style="margin-top:12px;flex:1;min-height:0;">
+			<div id="kuliah-paparan-grid" class="gallery-grid slides-gallery-grid"></div>
+		</div>
 	</div>
 </div>

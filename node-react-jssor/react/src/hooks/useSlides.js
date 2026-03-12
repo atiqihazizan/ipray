@@ -46,17 +46,33 @@ export const useSlides = () => {
       if (!slidesConfigData || !slidesConfigData[configKey]) return template;
       const cfg = slidesConfigData[configKey];
       const updated = { ...template };
-      const noImageValues = ['', 'none', 'null'];
-      const isNoImage = noImageValues.includes(String(cfg.image ?? '').trim().toLowerCase());
-      if (isNoImage) {
-        updated.image = null;
-      } else if (cfg.image) {
-        let imagePath = imagesData && imagesData[cfg.image] ? imagesData[cfg.image] : cfg.image;
-        if (imagePath && !imagePath.startsWith('/')) imagePath = '/' + imagePath;
-        updated.image = { ...updated.image, src: imagePath };
+
+      // Untuk semua jenis kecuali 'home', image boleh override dan dibenarkan kosong.
+      // Untuk 'home', image asal dari HOME_TITLE_CONFIG (background) akan dikekalkan.
+      if (configKey !== 'home') {
+        const noImageValues = ['', 'none', 'null'];
+        const isNoImage = noImageValues.includes(String(cfg.image ?? '').trim().toLowerCase());
+        if (isNoImage) {
+          updated.image = null;
+        } else if (cfg.image) {
+          let imagePath = imagesData && imagesData[cfg.image] ? imagesData[cfg.image] : cfg.image;
+          if (imagePath && !imagePath.startsWith('/')) imagePath = '/' + imagePath;
+          updated.image = { ...updated.image, src: imagePath };
+        }
       }
-      if (cfg.duration != null) updated.duration = cfg.duration;
-      if (cfg.datetime != null) updated.datetime = cfg.datetime;
+
+      // Datetime sentiasa boleh override dari slides.txt jika ada
+      if (cfg.datetime != null) {
+        updated.datetime = cfg.datetime;
+      }
+
+      // Tempoh:
+      // - 'home' guna DURATION_SEC dari HOME_TITLE_CONFIG (dah ditetapkan dalam buildHomeTemplate)
+      // - jenis lain guna duration dari slides.txt jika ada
+      if (configKey !== 'home' && cfg.duration != null) {
+        updated.duration = cfg.duration;
+      }
+
       return updated;
     };
 

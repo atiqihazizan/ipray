@@ -5,7 +5,7 @@
 import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils';
 // Import build functions dan constants dari slideBuilders
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
-import { MOSQUE_NAME, MOSQUE_LOCATION } from './mosqueInfo';
+import { MOSQUE_NAME, MOSQUE_LOCATION, HOME_SLIDE_BACKGROUND } from './mosqueInfo';
 
 // ============================================================================
 // HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
@@ -18,6 +18,7 @@ import { MOSQUE_NAME, MOSQUE_LOCATION } from './mosqueInfo';
  */
 export const buildHomeTemplate = (homeTitleConfig = {}) => {
   const {
+    SHOW_TITLE = true,
     TITLE1_TOP = 120,
     TITLE_LEFT = 0,
     TITLE_RIGHT = 0,
@@ -27,17 +28,15 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
     TITLE1_SIZE = 88,
     TITLE1_COLOR = '#00FFFF',
     TITLE2_SIZE = 88,
-    TITLE2_COLOR = '#00FFFF'
+    TITLE2_COLOR = '#00FFFF',
+    DURATION_SEC = 10,
   } = homeTitleConfig;
+
+  const showTitle = SHOW_TITLE !== false;
 
   const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
 
-  return {
-    type: 'home',
-    duration: 1000,
-    transitionType: 'auto',
-    image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
-    captions: [
+  const captions = showTitle ? [
       {
         type: "div", transition: "CLIP|LR", duration: 1500,
         style: { 
@@ -55,7 +54,14 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
         <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
         </div>`
       },
-    ],
+    ] : [];
+
+  return {
+    type: 'home',
+    duration: DURATION_SEC * 1000,
+    transitionType: 'auto',
+    image: { src: HOME_SLIDE_BACKGROUND, alt: "Slide 1" },
+    captions,
     datetime: ['date', 'solat-time']
   };
 };
@@ -133,7 +139,7 @@ export const slidesTemplate = {
     type: 'home',
     duration: 1000,
     transitionType: 'auto',
-    image: { src: "/images/slides/bg-mta.jpg", alt: "Slide 1" },
+    image: { src: HOME_SLIDE_BACKGROUND, alt: "Slide 1" },
     captions: [
       {
         type: "div", transition: "CLIP|LR", duration: 1500,

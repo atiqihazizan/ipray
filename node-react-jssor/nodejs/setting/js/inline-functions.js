@@ -42,6 +42,9 @@
 			if (configData.MARQUEE_ENABLED === undefined) configData.MARQUEE_ENABLED = 'true';
 			if (configData.MARQUEE_DURATION === undefined) configData.MARQUEE_DURATION = '25';
 			if (configData.MARQUEE_SEPARATOR === undefined) configData.MARQUEE_SEPARATOR = '•';
+			if (configData.MARQUEE_SHOW_MOSQUE_NAME === undefined) configData.MARQUEE_SHOW_MOSQUE_NAME = 'true';
+			if (configData.HOME_TITLE_VISIBLE === undefined) configData.HOME_TITLE_VISIBLE = 'true';
+			if (configData.HOME_TITLE_DURATION_SEC === undefined) configData.HOME_TITLE_DURATION_SEC = '10';
 			if (configData.COLOR_CURRENT_TIME === undefined) configData.COLOR_CURRENT_TIME = '#FFFF00';
 			if (configData.COLOR_DEFAULT === undefined) configData.COLOR_DEFAULT = '#FFFF00';
 			if (configData.WARNING_START_MINUTES === undefined && configData.WARNING_START_SECONDS !== undefined) {
@@ -127,7 +130,7 @@
 					});
 					if (updateResponse.ok) {
 						configData[key] = saveValue;
-						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+						// if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
 					}
 				} else {
 					const insertResponse = await fetch(`${getApiUrl()}/data/config/insert`, {
@@ -137,7 +140,7 @@
 					});
 					if (insertResponse.ok) {
 						configData[key] = saveValue;
-						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+						// if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
 					}
 				}
 			}
@@ -149,11 +152,11 @@
 
 	function updateToggleButton(btn, isActive) {
 		if (isActive) {
-			btn.textContent = 'Aktif';
+			if (!btn.classList.contains('switch')) btn.textContent = 'Aktif';
 			btn.classList.add('btn-toggle--on');
 			btn.classList.remove('btn-toggle--off');
 		} else {
-			btn.textContent = 'Tidak Aktif';
+			if (!btn.classList.contains('switch')) btn.textContent = 'Tidak Aktif';
 			btn.classList.add('btn-toggle--off');
 			btn.classList.remove('btn-toggle--on');
 		}
@@ -178,7 +181,7 @@
 					if (updateResponse.ok) {
 						configData[key] = newValue;
 						if (btn) updateToggleButton(btn, newValue === 'true');
-						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+						// if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
 					}
 				} else {
 					const insertResponse = await fetch(`${getApiUrl()}/data/config/insert`, {
@@ -189,7 +192,7 @@
 					if (insertResponse.ok) {
 						configData[key] = newValue;
 						if (btn) updateToggleButton(btn, newValue === 'true');
-						if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
+						// if (window.NotificationUtils) window.NotificationUtils.showNotification(`${key} disimpan`, 'success');
 					}
 				}
 			}
@@ -228,7 +231,7 @@
 			});
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok) throw new Error(data.error || 'Gagal set masa mesin');
-			if (window.NotificationUtils) window.NotificationUtils.showNotification('Masa mesin berjaya dikemas kini. Paparan akan dimuat semula.', 'success');
+			// if (window.NotificationUtils) window.NotificationUtils.showNotification('Masa mesin berjaya dikemas kini. Paparan akan dimuat semula.', 'success');
 			if (input) input.value = '';
 			if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Berjaya. Paparan akan dimuat semula.'; }
 		} catch (err) {
@@ -246,7 +249,7 @@
 			const response = await fetch(apiBase + '/api/time/sync');
 			if (!response.ok) throw new Error('Sync gagal');
 			await response.json();
-			if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync berjaya! Masa kini menggunakan Internet (NTP).', 'success');
+			// if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync berjaya! Masa kini menggunakan Internet (NTP).', 'success');
 			if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Sync berjaya.'; }
 		} catch (err) {
 			console.error('Error syncing time:', err);
@@ -271,7 +274,7 @@
 			return;
 		}
 		socket.emit('test-sound');
-		if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian dihantar ke paparan kiosk.', 'success');
+		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian dihantar ke paparan kiosk.', 'success');
 	}
 
 	function updateKematianStatus(active) {
@@ -317,7 +320,7 @@
 		};
 		socket.emit('kematian:update', data);
 		updateKematianStatus(true);
-		if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipaparkan.', 'success');
+		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipaparkan.', 'success');
 	}
 
 	function handleKematianClear() {
@@ -328,7 +331,7 @@
 		}
 		socket.emit('kematian:clear');
 		updateKematianStatus(false);
-		if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipadam.', 'success');
+		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipadam.', 'success');
 	}
 
 	function updateLivestreamStatus(active) {
@@ -364,7 +367,7 @@
 		};
 		socket.emit('live:start', { url, title, overlayConfig });
 		updateLivestreamStatus(true);
-		if (window.NotificationUtils) window.NotificationUtils.showNotification('Siaran langsung dimulakan.', 'success');
+		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Siaran langsung dimulakan.', 'success');
 	}
 
 	function handleLiveStop() {
@@ -375,7 +378,7 @@
 		}
 		socket.emit('live:stop');
 		updateLivestreamStatus(false);
-		if (window.NotificationUtils) window.NotificationUtils.showNotification('Siaran langsung ditamatkan.', 'success');
+		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Siaran langsung ditamatkan.', 'success');
 	}
 
 	function initColorPickerSync() {
@@ -424,6 +427,86 @@
 		await saveConfigItem('SLIDES_ORDER');
 	}
 
+	let slidesVisibleDebounceTimer = null;
+	const SLIDES_VISIBLE_DEBOUNCE_MS = 800;
+
+	async function saveSlidesVisible() {
+		const container = document.getElementById('slides-visible-container');
+		if (!container) return;
+		const items = container.querySelectorAll('.slides-visible-item');
+		const arr = [];
+		items.forEach((item, i) => {
+			const cb = item.querySelector('input[type="checkbox"]');
+			arr.push((i === 0 || (cb && cb.checked)) ? 1 : 0);
+		});
+		const value = '[' + arr.join(',') + ']';
+		await saveConfigItem('SLIDES_VISIBLE', value);
+	}
+
+	function scheduleSlidesVisibleSave() {
+		if (slidesVisibleDebounceTimer) clearTimeout(slidesVisibleDebounceTimer);
+		slidesVisibleDebounceTimer = setTimeout(() => {
+			slidesVisibleDebounceTimer = null;
+			saveSlidesVisible();
+		}, SLIDES_VISIBLE_DEBOUNCE_MS);
+	}
+
+	async function initSlidesVisibleCheckboxes() {
+		const container = document.getElementById('slides-visible-container');
+		if (!container) return;
+		try {
+			const response = await fetch(`${getApiUrl()}/data/slides`);
+			const result = await response.json();
+			const rows = result.data || [];
+			if (rows.length === 0) {
+				container.innerHTML = '<span style="color:#9ca3af;font-size:13px;">Tiada baris slides.</span>';
+				return;
+			}
+			let visibleArray = [];
+			try {
+				const raw = configData.SLIDES_VISIBLE;
+				if (raw && typeof raw === 'string') {
+					const parsed = JSON.parse(raw);
+					if (Array.isArray(parsed) && parsed.length === rows.length) {
+						visibleArray = parsed.map((v) => (v === 1 || v === '1' ? 1 : 0));
+					}
+				}
+			} catch (_) {}
+			if (visibleArray.length !== rows.length) {
+				visibleArray = rows.map(() => 1);
+			}
+			visibleArray[0] = 1;
+			container.innerHTML = '';
+			rows.forEach((row, i) => {
+				// if(i === 0) return;
+				const type = (row.type || '').trim() || 'slide' + (i + 1);
+				const isHome = i === 0;
+				const div = document.createElement('div');
+				div.className = 'slides-visible-item';
+				const label = document.createElement('label');
+				const cb = document.createElement('input');
+				cb.type = 'checkbox';
+				cb.checked = visibleArray[i] === 1;
+				cb.dataset.slidesVisibleIndex = String(i);
+				if (isHome) {
+					cb.disabled = true;
+					cb.style.display = 'none';
+					label.style.display = 'none';
+					div.style.display = 'none';
+				} else {
+					cb.addEventListener('change', scheduleSlidesVisibleSave);
+				}
+				label.appendChild(cb);
+				label.appendChild(document.createTextNode(type));
+				div.appendChild(label);
+				container.appendChild(div);
+			});
+		} catch (err) {
+			console.error('initSlidesVisibleCheckboxes:', err);
+			container.innerHTML = '<span style="color:#ef4444;font-size:13px;">Ralat memuat paparan.</span>';
+		}
+	}
+
 	/** Minimum berperingkat: Sebelum Azan >= 1, Sebelum Iqamah >= Azan, Durasi Solat >= Iqamah */
 	function syncWaktuSolatMins() {
 		const azanEl = document.getElementById('WARNING_START_MINUTES');
@@ -451,6 +534,8 @@
 	window.toggleConfigBool = toggleConfigBool;
 	window.initSlidesOrderBtns = initSlidesOrderBtns;
 	window.selectSlidesOrder = selectSlidesOrder;
+	window.saveSlidesVisible = saveSlidesVisible;
+	window.initSlidesVisibleCheckboxes = initSlidesVisibleCheckboxes;
 	window.handleRebootKiosk = handleRebootKiosk;
 	window.toggleSidebar = toggleSidebar;
 	window.handleKematianPublish = handleKematianPublish;

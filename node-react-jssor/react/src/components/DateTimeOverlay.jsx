@@ -57,12 +57,13 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
 
   const separator = MARQUEE_CONFIG?.SEPARATOR ?? '•';
   const sep = `\u00A0\u00A0${separator}\u00A0\u00A0`;
-  const hebahanMessages = hebahanData && hebahanData.length > 0 
+  const hebahanMessages = hebahanData && hebahanData.length > 0
     ? hebahanData.map(h => h.text).join(sep)
     : '';
-  const hebahanText = (hebahanMessages 
-    ? `${MOSQUE_NAME}${sep}${hebahanMessages}`
-    : MOSQUE_NAME).toUpperCase();
+  const showMosqueName = MARQUEE_CONFIG?.SHOW_MOSQUE_NAME !== false;
+  const hebahanText = showMosqueName
+    ? (hebahanMessages ? `${MOSQUE_NAME}${sep}${hebahanMessages}` : MOSQUE_NAME).toUpperCase()
+    : (hebahanMessages ? hebahanMessages.toUpperCase() : '');
   
   useEffect(() => {
     if (takwimArray && takwimArray.length > 0) {

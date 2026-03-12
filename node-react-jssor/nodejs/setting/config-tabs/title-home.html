@@ -1,4 +1,33 @@
 <div class="config-group">
+	<h3 class="config-group-title">Paparan Tajuk Home</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label>Tajuk Home</label>
+			<div class="config-item-control">
+				<span role="button" tabindex="0" id="HOME_TITLE_VISIBLE_toggle" class="btn-toggle switch" onclick="toggleConfigBool('HOME_TITLE_VISIBLE')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConfigBool('HOME_TITLE_VISIBLE');}">
+					<span class="switch-track"><span class="switch-thumb"></span></span>
+				</span>
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE_DURATION_SEC">Tempoh Paparan (saat)</label>
+			<div class="config-item-control">
+				<input
+					type="number"
+					id="HOME_TITLE_DURATION_SEC"
+					name="HOME_TITLE_DURATION_SEC"
+					placeholder="10"
+					min="1"
+					max="600"
+					onchange="saveConfigItem('HOME_TITLE_DURATION_SEC')"
+				/>
+				<span class="config-unit">s</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
 	<h3 class="config-group-title">Paparan Teks Skrin Utama - Kotak Teks</h3>
 	<div class="config-group-items">
 		<div class="config-item">

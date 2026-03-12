@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { sendAck, deleteFile, uploadFile } = require('./cloudClient');
 
 /** Default config (fallback bila config.txt kosong atau tiada) */
 const DEFAULT_PRAYER_TIME_CONFIG = {
@@ -48,6 +49,82 @@ class DataService {
       petugas: 'petugas',
       'jadual-petugas': 'jadual-petugas'
     };
+  }
+
+  /**
+   * Simpan image upload ke imagesPath/<category>/<filename>
+   * Return path untuk digunakan oleh UI (contoh: /images/penceramah/a.png)
+   */
+  async saveUploadedImage({ buffer, originalName, category, imagesPath }) {
+    if (!imagesPath) {
+      throw new Error('imagesPath not configured');
+    }
+    if (!category) {
+      category = 'penceramah';
+    }
+    if (!buffer || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+      throw new Error('Empty upload buffer');
+    }
+    if (!originalName) {
+      throw new Error('Missing original filename');
+    }
+
+    const sanitizedName = String(originalName).replace(/[^a-zA-Z0-9.-]/g, '_');
+    const destDir = path.join(imagesPath, category);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+
+    const actualPath = path.join(destDir, sanitizedName);
+    fs.writeFileSync(actualPath, buffer);
+
+    // Verify file size > 0
+    const stats = fs.statSync(actualPath);
+    if (!stats || stats.size === 0) {
+      try { fs.unlinkSync(actualPath); } catch (e) {}
+      throw new Error('Fail kosong. Upload mungkin gagal.');
+    }
+
+    const imagePath = `/images/${category}/${sanitizedName}`;
+    const folder = `/images/${category}`;
+
+    // Sync ke cloud (fire-and-forget) – ikut implementasi asal di apiServerService
+    (async () => {
+      try {
+        const cloudResult = await uploadFile(actualPath, folder);
+        await sendAck(sanitizedName, 'uploaded');
+      } catch (cloudError) {
+        // eslint-disable-next-line no-console
+        console.error('[CloudSync] Gagal sync image ke cloud:', cloudError.message || cloudError);
+      }
+    })();
+
+    return {
+      success: true,
+      path: imagePath,
+      filename: sanitizedName,
+      category,
+      actualPath
+    };
+  }
+
+  /**
+   * Sync fail .txt ke cloud (upload penuh setiap kali diubah)
+   * normalized = nama fail tanpa extension (.txt)
+   */
+  async syncTextFileToCloud(normalized) {
+    try {
+      if (!normalized || typeof normalized !== 'string') return;
+      const filePath = this.getFilePath(normalized);
+      const folder = 'data';
+      const fileName = `${normalized}.txt`;
+
+      await uploadFile(filePath, folder);
+      await sendAck(fileName, 'uploaded');
+    } catch (cloudError) {
+      // eslint-disable-next-line no-console
+      console.error('[CloudSync] Gagal sync txt ke cloud:', cloudError.message || cloudError);
+    }
   }
 
   /**
@@ -122,6 +199,16 @@ class DataService {
           console.error('Error writing file:', err);
           return reject(new Error('Failed to write file'));
         }
+        // Sync ke cloud secara async (fire-and-forget)
+        (async () => {
+          try {
+            await this.syncTextFileToCloud(normalized);
+          } catch (syncError) {
+            // eslint-disable-next-line no-console
+            console.error('[CloudSync] Gagal trigger sync txt ke cloud:', syncError.message || syncError);
+          }
+        })();
+
         resolve({
           success: true,
           filename: `${normalized}.txt`
@@ -175,14 +262,16 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'kuliah') {
+        const isOldFormat = parts.length >= 6;
+        const slug = (parts[3] || '').trim();
         parsed.push({
           id: index + 1,
           week: parts[0] || '',
           day: parts[1] || '',
           type: parts[2] || '',
-          speaker: parts[3] || '',
-          speakerId: parts[4] || '',
-          title: parts[5] || '',
+          speaker: isOldFormat ? (parts[3] || '') : slug,
+          speakerId: isOldFormat ? (parts[4] || '') : slug,
+          title: isOldFormat ? (parts[5] || '') : (parts[4] || ''),
           raw: line
         });
       } else if (normalized === 'kuliah-override') {
@@ -403,25 +492,27 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'penceramah') {
-        // Penceramah format: kod|nama_penuh|shortname|imageCode|kitab1,kitab2,kitabN
+        // Format: kod(slug)|nama_penuh|shortname|kitab (4 lajur, tiada imageCode)
+        const kod = parts[0] || '';
+        const namaPenuh = parts[1] || '';
+        const shortname = parts[2] || '';
+        const kitab = parts.length >= 5 ? (parts[4] || '') : (parts[3] || ''); // 4 lajur baru; 5 lajur lama
         parsed.push({
           id: index + 1,
-          kod: parts[0] || '',
-          namaPenuh: parts[1] || '',
-          shortname: parts[2] || '',
-          imageCode: parts[3] || '',
-          kitab: parts[4] || '',
+          kod,
+          namaPenuh,
+          shortname,
+          kitab,
           raw: line
         });
       } else if (normalized === 'petugas') {
-        // Petugas format: kod|nama_penuh|shortname|role|imageCode
+        // Petugas format: slug|namaPenuh|shortname|role
         parsed.push({
           id: index + 1,
-          kod: parts[0] || '',
+          slug: parts[0] || '',
           namaPenuh: parts[1] || '',
           shortname: parts[2] || '',
           role: parts[3] || '',
-          imageCode: parts[4] || '',
           raw: line
         });
       } else if (normalized === 'jadual-petugas') {
@@ -457,8 +548,8 @@ class DataService {
       'slideshow': ['caption', 'image', 'validFrom', 'validTo'],
       'hebahan': ['text', 'startDate', 'endDate'],
       'livestream': ['tajuk', 'url', 'jenis'],
-      'penceramah': ['kod', 'namaPenuh', 'shortname', 'imageCode', 'kitab'],
-      'petugas': ['kod', 'namaPenuh', 'shortname', 'role', 'imageCode'],
+      'penceramah': ['kod', 'namaPenuh', 'shortname', 'kitab'],
+      'petugas': ['slug', 'namaPenuh', 'shortname', 'role'],
       'jadual-petugas': ['week', 'day', 'role', 'officerCode']
     };
     return columnMap[normalized] || [];
@@ -631,6 +722,170 @@ class DataService {
         if (lineIndex === null || lineIndex < 0 || lineIndex >= allLines.length) {
           return reject(new Error('Invalid row ID'));
         }
+
+        // Petugas: cascade delete (jadual-petugas + images) sebelum buang rekod petugas
+        if (normalized === 'petugas' && lineToDelete) {
+          const petugasSlug = ((lineToDelete.split('|')[0]) || '').trim();
+          if (petugasSlug) {
+            // 1) Buang rekod jadual-petugas yang match slug (lajur ke-4)
+            try {
+              const jpContent = await this.readFile('jadual-petugas').catch(() => '');
+              const jpLines = jpContent.split('\n');
+              const keptJpLines = [];
+              for (const jpLine of jpLines) {
+                const trimmed = (jpLine || '').trim();
+                if (!trimmed) {
+                  keptJpLines.push(jpLine);
+                  continue;
+                }
+                const parts = jpLine.split('|');
+                const officerCode = (parts[3] || '').trim();
+                if (officerCode && officerCode === petugasSlug) {
+                  continue; // buang baris jadual-petugas yang guna slug ini
+                }
+                keptJpLines.push(jpLine);
+              }
+              await this.writeFile('jadual-petugas', keptJpLines.join('\n'));
+            } catch (e) {
+              return reject(e);
+            }
+
+            // 2) Buang rekod images.txt yang match slug, dan padam fail image jika ada
+            try {
+              const imagesContent = await this.readFile('images').catch(() => '');
+              const imagesLines = imagesContent.split('\n');
+              const keptImagesLines = [];
+              for (const imgLine of imagesLines) {
+                const trimmed = (imgLine || '').trim();
+                if (!trimmed) {
+                  keptImagesLines.push(imgLine);
+                  continue;
+                }
+                if (trimmed.startsWith('#')) {
+                  keptImagesLines.push(imgLine);
+                  continue;
+                }
+                const parts = imgLine.split('|');
+                const imageCode = (parts[0] || '').trim();
+                const imagePath = (parts[1] || '').trim();
+                if (imageCode && imageCode === petugasSlug) {
+                  if (imagePath && options.imagesPath) {
+                    try {
+                      const relativePath = imagePath.replace(/^\/images\//, '');
+                      const fullPath = path.join(options.imagesPath, relativePath);
+                      const normalizedFullPath = path.normalize(fullPath);
+                      const normalizedImagesPath = path.normalize(options.imagesPath);
+                      if (normalizedFullPath.startsWith(normalizedImagesPath) && fs.existsSync(normalizedFullPath)) {
+                        fs.unlinkSync(normalizedFullPath);
+                        (async () => {
+                          try {
+                            const fileNameOnly = imagePath.split('/').filter(Boolean).pop();
+                            await deleteFile(imagePath);
+                            await sendAck(fileNameOnly, 'deleted');
+                          } catch (cloudError) {
+                            console.error('[CloudSync] Gagal sync image ke cloud:', cloudError.message || cloudError);
+                          }
+                        })();
+                      }
+                    } catch (imageError) {
+                      console.warn('Failed to delete petugas image file during cascade:', imageError);
+                    }
+                  }
+                  continue; // buang baris images ini
+                }
+                keptImagesLines.push(imgLine);
+              }
+              await this.writeFile('images', keptImagesLines.join('\n'));
+            } catch (e) {
+              return reject(e);
+            }
+          }
+        }
+
+        // Penceramah: cascade delete (images + kuliah) sebelum buang rekod penceramah
+        if (normalized === 'penceramah' && lineToDelete) {
+          const slug = ((lineToDelete.split('|')[0]) || '').trim();
+          if (slug) {
+            // 1) Buang rekod images.txt yang match slug, dan padam fail image jika ada
+            try {
+              const imagesContent = await this.readFile('images').catch(() => '');
+              const imagesLines = imagesContent.split('\n');
+              const keptImagesLines = [];
+              for (const imgLine of imagesLines) {
+                const trimmed = (imgLine || '').trim();
+                if (!trimmed) {
+                  keptImagesLines.push(imgLine);
+                  continue;
+                }
+                if (trimmed.startsWith('#')) {
+                  keptImagesLines.push(imgLine);
+                  continue;
+                }
+                const parts = imgLine.split('|');
+                const imageCode = (parts[0] || '').trim();
+                const imagePath = (parts[1] || '').trim();
+                if (imageCode && imageCode === slug) {
+                  // Padam fail gambar jika ada (ikut logik delete row images)
+                  if (imagePath && options.imagesPath) {
+                    try {
+                      const relativePath = imagePath.replace(/^\/images\//, '');
+                      const fullPath = path.join(options.imagesPath, relativePath);
+                      const normalizedFullPath = path.normalize(fullPath);
+                      const normalizedImagesPath = path.normalize(options.imagesPath);
+                      if (normalizedFullPath.startsWith(normalizedImagesPath) && fs.existsSync(normalizedFullPath)) {
+                        fs.unlinkSync(normalizedFullPath);
+                        (async () => {
+                          try {
+                            const fileNameOnly = imagePath.split('/').filter(Boolean).pop();
+                            await deleteFile(imagePath);
+                            await sendAck(fileNameOnly, 'deleted');
+                          } catch (cloudError) {
+                            console.error('[CloudSync] Gagal sync image ke cloud:', cloudError.message || cloudError);
+                          }
+                        })();
+                      }
+                    } catch (imageError) {
+                      console.warn('Failed to delete penceramah image file during cascade:', imageError);
+                    }
+                  }
+                  // Skip (buang baris ini)
+                  continue;
+                }
+                keptImagesLines.push(imgLine);
+              }
+              await this.writeFile('images', keptImagesLines.join('\n'));
+            } catch (e) {
+              return reject(e);
+            }
+
+            // 2) Buang rekod kuliah.txt yang match slug (lajur ke-4)
+            try {
+              const kuliahContent = await this.readFile('kuliah').catch(() => '');
+              const kuliahLines = kuliahContent.split('\n');
+              const keptKuliahLines = [];
+              for (const kLine of kuliahLines) {
+                const trimmed = (kLine || '').trim();
+                if (!trimmed) {
+                  keptKuliahLines.push(kLine);
+                  continue;
+                }
+                if (trimmed.startsWith('#')) {
+                  keptKuliahLines.push(kLine);
+                  continue;
+                }
+                const parts = kLine.split('|');
+                const kuliahSlug = (parts[3] || '').trim();
+                if (kuliahSlug && kuliahSlug === slug) {
+                  continue; // buang baris kuliah yang guna slug ini
+                }
+                keptKuliahLines.push(kLine);
+              }
+              await this.writeFile('kuliah', keptKuliahLines.join('\n'));
+            } catch (e) {
+              return reject(e);
+            }
+          }
+        }
         
         // Jika slideshow atau images, delete image file juga
         if ((normalized === 'slideshow' || normalized === 'images') && lineToDelete && options.imagesPath) {
@@ -668,7 +923,18 @@ class DataService {
               if (normalizedFullPath.startsWith(normalizedImagesPath) && fs.existsSync(normalizedFullPath)) {
                 // Delete image file
                 fs.unlinkSync(normalizedFullPath);
-                console.log(`Deleted ${normalized} image: ${normalizedFullPath}`);
+    
+                // Sync ke cloud
+                (async () => {
+                  try {
+                    const fileNameOnly = imagePath.split('/').filter(Boolean).pop();
+                    const cloudResult = await deleteFile(imagePath);
+                    await sendAck(fileNameOnly, 'deleted');
+                  } catch (cloudError) {
+                    console.error('[CloudSync] Gagal sync image ke cloud:', cloudError.message || cloudError);
+                  }
+                })();
+
               } else {
                 console.warn(`${normalized} image file not found or path invalid: ${normalizedFullPath}`);
               }
@@ -1104,13 +1370,12 @@ class DataService {
       const imagePath = p[1];
       const duration = p[2];
       const datetimeStr = p[3];
-      const hide = p[4] === '1';
       if (slideType) {
         parsed[slideType] = {
           image: imagePath || '',
           duration: duration ? parseInt(duration, 10) : null,
           datetime: datetimeStr ? datetimeStr.split(',').map(s => s.trim()).filter(s => s) : [],
-          hide
+          hide: false
         };
       }
     });
@@ -1220,9 +1485,11 @@ class DataService {
       MARQUEE_CONFIG: {
         ENABLED: true,
         DURATION: 25,
-        SEPARATOR: '•'
+        SEPARATOR: '•',
+        SHOW_MOSQUE_NAME: true
       },
       HOME_TITLE_CONFIG: {
+        SHOW_TITLE: true,
         TITLE1_TOP: 120,
         TITLE_LEFT: 0,
         TITLE_RIGHT: 0,
@@ -1232,10 +1499,12 @@ class DataService {
         TITLE1_SIZE: 88,
         TITLE1_COLOR: '#00FFFF',
         TITLE2_SIZE: 88,
-        TITLE2_COLOR: '#00FFFF'
+        TITLE2_COLOR: '#00FFFF',
+        DURATION_SEC: 10
       },
       SLIDES_CONFIG: {
-        ORDER: 'A'
+        ORDER: 'A',
+        VISIBLE: null
       }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
@@ -1260,6 +1529,8 @@ class DataService {
       else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
       else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
       else if (key === 'MARQUEE_SEPARATOR') parsed.MARQUEE_CONFIG.SEPARATOR = value;
+      else if (key === 'MARQUEE_SHOW_MOSQUE_NAME') parsed.MARQUEE_CONFIG.SHOW_MOSQUE_NAME = value.toLowerCase() === 'true' || value === '1';
+      else if (key === 'HOME_TITLE_VISIBLE') parsed.HOME_TITLE_CONFIG.SHOW_TITLE = value.toLowerCase() === 'true' || value === '1';
       else if (key === 'HOME_TITLE1_TOP') parsed.HOME_TITLE_CONFIG.TITLE1_TOP = parseInt(value, 10) || 120;
       else if (key === 'HOME_TITLE_LEFT') parsed.HOME_TITLE_CONFIG.TITLE_LEFT = parseInt(value, 10) || 0;
       else if (key === 'HOME_TITLE_RIGHT') parsed.HOME_TITLE_CONFIG.TITLE_RIGHT = parseInt(value, 10) || 0;
@@ -1270,7 +1541,20 @@ class DataService {
       else if (key === 'HOME_TITLE1_COLOR') parsed.HOME_TITLE_CONFIG.TITLE1_COLOR = value;
       else if (key === 'HOME_TITLE2_SIZE') parsed.HOME_TITLE_CONFIG.TITLE2_SIZE = parseInt(value, 10) || 88;
       else if (key === 'HOME_TITLE2_COLOR') parsed.HOME_TITLE_CONFIG.TITLE2_COLOR = value;
+      else if (key === 'HOME_TITLE_DURATION_SEC') {
+        const n = parseInt(value, 10);
+        parsed.HOME_TITLE_CONFIG.DURATION_SEC = Number.isFinite(n) && n > 0 ? n : 10;
+      }
       else if (key === 'SLIDES_ORDER') parsed.SLIDES_CONFIG.ORDER = ['A', 'B', 'C'].includes(value.toUpperCase()) ? value.toUpperCase() : 'A';
+      else if (key === 'SLIDES_VISIBLE') {
+        try {
+          const arr = JSON.parse(value);
+          if (Array.isArray(arr)) parsed.SLIDES_CONFIG.VISIBLE = arr.map((v) => (v === 1 || v === '1' ? 1 : 0));
+          else parsed.SLIDES_CONFIG.VISIBLE = null;
+        } catch (_) {
+          parsed.SLIDES_CONFIG.VISIBLE = null;
+        }
+      }
     });
     return parsed;
   }

@@ -6,7 +6,8 @@
 import "./tab-loader.js";
 import { loadSidebar } from "./sidebar-loader.js";
 import { initSocket } from "./socket.js";
-import { loadTable, showTab } from "./table.js";
+import { initSidebarNavigation, restoreTabFromHash } from "./sidebar.js";
+import { loadTable } from "./table.js";
 import { closeDialog } from "./dialog.js";
 import { saveRow, reorderSlideshow } from "./api.js";
 import { loadGallery } from "./gallery.js";
@@ -33,40 +34,12 @@ function setupEventListeners() {
   });
 }
 
-/** Tab-tab yang sah */
-const VALID_TABS = [
-  "config",
-  "slides",
-  "slideshow",
-  "kuliah",
-  "kuliah-override",
-  "penceramah",
-  "images",
-  "announcements",
-  "hebahan",
-  "countdowns",
-  "takwim",
-  "kematian",
-  "livestream",
-  "petugas",
-  "jadual-petugas",
-];
-
-/**
- * Baca URL hash dan buka tab berkenaan (untuk restore selepas reload)
- */
-function restoreTabFromHash() {
-  const hash = window.location.hash.replace("#", "").trim();
-  const tab = VALID_TABS.includes(hash) ? hash : "config";
-  // updateHash = false supaya tidak overwrite hash semasa restore
-  showTab(tab, false);
-}
-
 /**
  * Initialize aplikasi
  */
 async function initApp() {
   await loadSidebar();
+  initSidebarNavigation();
   initSocket();
   setupEventListeners();
   restoreTabFromHash();
@@ -79,7 +52,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // Export global functions untuk digunakan dalam HTML
 if (typeof window !== "undefined") {
-  window.showTab = showTab;
   window.loadTable = loadTable;
   window.saveRow = saveRow;
   window.closeDialog = closeDialog;

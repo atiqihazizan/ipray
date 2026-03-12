@@ -72,7 +72,8 @@
 }
 
 /* Config sub-tabs (tab dalam halaman Config) */
-#config-subnav {
+#config-subnav,
+.config-subnav {
 	display: flex;
 	gap: 8px;
 	flex-wrap: wrap;
@@ -629,5 +630,53 @@
 }
 
 .btn-toggle--off:hover {
+	background: #d1d5db;
+}
+
+/* Switch (iOS-style toggle) – track + thumb */
+.btn-toggle.switch {
+	min-width: 0;
+	padding: 0;
+	background: transparent;
+	box-shadow: none;
+}
+.btn-toggle.switch .switch-track {
+	display: block;
+	width: 51px;
+	height: 31px;
+	border-radius: 999px;
+	position: relative;
+	transition: background-color 0.25s ease, box-shadow 0.2s ease;
+}
+.btn-toggle.switch .switch-thumb {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 27px;
+	height: 27px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	transition: transform 0.25s ease;
+}
+.btn-toggle.switch.btn-toggle--on .switch-track {
+	background: #007AFF;
+}
+.btn-toggle.switch.btn-toggle--off .switch-track {
+	background: #e5e7eb;
+}
+.btn-toggle.switch.btn-toggle--on .switch-thumb {
+	transform: translateX(20px);
+}
+.btn-toggle.switch.btn-toggle--off .switch-thumb {
+	transform: translateX(0);
+}
+.btn-toggle.switch:hover .switch-track {
+	opacity: 0.95;
+}
+.btn-toggle.switch.btn-toggle--on:hover .switch-track {
+	background: #0066dd;
+}
+.btn-toggle.switch.btn-toggle--off:hover .switch-track {
 	background: #d1d5db;
 }

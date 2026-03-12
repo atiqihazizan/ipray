@@ -8,6 +8,8 @@ const TimeService = require('./services/timeService');
 const publicServerService = require('./services/publicServerService');
 const apiServerService = require('./services/apiServerService');
 const socketServerService = require('./services/socketServerService');
+// Cloud client - pastikan connection ke cloud bila app start
+const { ensureCloudConnection } = require('./services/cloudClient');
 
 // Global constants
 const PUBLIC_PORT = 3000;
@@ -212,6 +214,14 @@ async function startServers() {
     }
     console.log(`═══════════════════════════════════════`);
     console.log(`Servers started successfully!`);
+
+    // Pastikan connection ke cloud (log status, tapi jangan matikan app jika gagal)
+    try {
+      await ensureCloudConnection(5000);
+      console.log('[Cloud] Connected to cloud as client:', process.env.CLIENT_ID || 'unknown');
+    } catch (err) {
+      console.error('[Cloud] Failed to connect to cloud:', err.message || err);
+    }
   } catch (error) {
     console.error('Error starting servers:', error);
     process.exit(1);

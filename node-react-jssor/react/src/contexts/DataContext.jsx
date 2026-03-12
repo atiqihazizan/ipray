@@ -27,9 +27,11 @@ const DEFAULT_MARQUEE_CONFIG = {
   ENABLED: true,
   DURATION: 25,
   SEPARATOR: ' • ',
+  SHOW_MOSQUE_NAME: true,
 };
 
 const DEFAULT_HOME_TITLE_CONFIG = {
+  SHOW_TITLE: true,
   TITLE1_TOP: 120,
   TITLE_LEFT: 0,
   TITLE_RIGHT: 0,
@@ -39,7 +41,8 @@ const DEFAULT_HOME_TITLE_CONFIG = {
   TITLE1_SIZE: 88,
   TITLE1_COLOR: '#00FFFF',
   TITLE2_SIZE: 88,
-  TITLE2_COLOR: '#00FFFF'
+  TITLE2_COLOR: '#00FFFF',
+  DURATION_SEC: 10,
 };
 
 const DEFAULT_SLIDES_CONFIG = {
@@ -74,7 +77,6 @@ export const DataProvider = ({ children }) => {
   const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
   const [kuliahBulananProcessed, setKuliahBulananProcessed] = useState([]);
   const [imagesData, setImagesData] = useState(null);
-  const dataLoadDateRef = useRef(null);
   const [midnightReloadMessage, setMidnightReloadMessage] = useState(null);
   const [slidesConfigData, setSlidesConfigData] = useState(null);
   const [slideshowData, setSlideshowData] = useState(null);
@@ -93,6 +95,7 @@ export const DataProvider = ({ children }) => {
   const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
   const [liveStreamData, setLiveStreamData] = useState(null);
   const [petugasData, setPetugasData] = useState([]);
+  const dataLoadDateRef = useRef(null);
   const kematianTimerRef = useRef(null);
 
   /**

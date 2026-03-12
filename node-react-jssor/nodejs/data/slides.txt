@@ -1,4 +1,4 @@
-home|bg-mta|1000|date,solat-time|0
+home|null|1000|date,solat-time|0
 announce|picture4|3000|date|0
 countDown|picture3|3000|solat-time-small|0
 kuliahHari|picture1b|3000|date,solat-time-small|0

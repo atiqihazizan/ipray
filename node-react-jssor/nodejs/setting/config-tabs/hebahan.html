@@ -4,7 +4,17 @@
 		<div class="config-item">
 			<label>Aktif</label>
 			<div class="config-item-control">
-				<button type="button" id="MARQUEE_ENABLED_toggle" class="btn-toggle" onclick="toggleConfigBool('MARQUEE_ENABLED')"></button>
+				<span role="button" tabindex="0" id="MARQUEE_ENABLED_toggle" class="btn-toggle switch" onclick="toggleConfigBool('MARQUEE_ENABLED')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConfigBool('MARQUEE_ENABLED');}">
+					<span class="switch-track"><span class="switch-thumb"></span></span>
+				</span>
+			</div>
+		</div>
+		<div class="config-item">
+			<label>Tunjuk nama masjid</label>
+			<div class="config-item-control">
+				<span role="button" tabindex="0" id="MARQUEE_SHOW_MOSQUE_NAME_toggle" class="btn-toggle switch" onclick="toggleConfigBool('MARQUEE_SHOW_MOSQUE_NAME')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConfigBool('MARQUEE_SHOW_MOSQUE_NAME');}">
+					<span class="switch-track"><span class="switch-thumb"></span></span>
+				</span>
 			</div>
 		</div>
 		<div class="config-item">

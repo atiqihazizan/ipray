@@ -1,7 +1,8 @@
 import { slidesTemplate } from '../config/sliderConfig';
+import { HOME_SLIDE_BACKGROUND } from '../config/mosqueInfo';
 
 const LoadingPage = () => {
-  const bgSrc = slidesTemplate.home?.image?.src || '/images/slides/bg-mta.jpg';
+  const bgSrc = slidesTemplate.home?.image?.src || HOME_SLIDE_BACKGROUND;
   const containerStyle = {
     position: 'fixed',
     top: 0,

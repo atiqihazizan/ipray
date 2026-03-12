@@ -2,9 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
-const http = require('http');
-const { URL } = require('url');
 const { parseKuliahOverride } = require('./kuliahOverrideParser');
 const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require('./kuliahProcessor');
 const { getWeekCode, getDayCode } = require('./kuliahDateUtils');
@@ -344,7 +341,7 @@ class ApiServerService {
           const penceramahContent = await this.dataService.readFile('penceramah');
           const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
           penceramahParsed.forEach((p) => {
-            if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.imageCode || '' };
+            if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.kod };
           });
         } catch (e) {
           console.warn('Could not load penceramah for app:', e);
@@ -352,8 +349,15 @@ class ApiServerService {
         const resolveKuliahLine = (line) => {
           const parts = line.split('|');
           if (parts.length >= 5) {
-            const speakerVal = (parts[3] || '').trim();
-            const match = penceramahMap[speakerVal];
+            if (parts.length === 5) {
+              const slug = (parts[3] || '').trim();
+              const title = (parts[4] || '').trim();
+              const match = penceramahMap[slug];
+              const namaPenuh = match ? match.namaPenuh : slug;
+              return [parts[0], parts[1], parts[2], namaPenuh, slug, title].join('|');
+            }
+            const slug = (parts[4] || '').trim();
+            const match = penceramahMap[slug] || penceramahMap[(parts[3] || '').trim()];
             if (match) {
               parts[3] = match.namaPenuh;
               if (match.imageCode && (!parts[4] || !parts[4].trim())) parts[4] = match.imageCode;
@@ -380,6 +384,20 @@ class ApiServerService {
         const images = this.dataService.parseImages(imagesContent);
         const slidesConfig = this.dataService.parseSlidesConfig(slidesContent);
         const config = this.dataService.parseConfig(configContent);
+        const slideTypesOrder = (slidesContent || '')
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .map((line) => line.split('|')[0])
+          .filter(Boolean);
+        let visibleArray = config.SLIDES_CONFIG?.VISIBLE;
+        if (!Array.isArray(visibleArray) || visibleArray.length !== slideTypesOrder.length) {
+          visibleArray = slideTypesOrder.map(() => 1);
+        }
+        if (slideTypesOrder.length > 0) visibleArray[0] = 1;
+        slideTypesOrder.forEach((type, i) => {
+          if (slidesConfig[type]) slidesConfig[type].hide = !(visibleArray[i] === 1);
+        });
         const slideshowParsed = this.dataService.parseSlideshow(slideshowContent);
         const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date());
         const hebahan = this.dataService.parseHebahan(hebahanContent);
@@ -495,7 +513,7 @@ class ApiServerService {
             const penceramahContent = await this.dataService.readFile('penceramah');
             const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
             penceramahParsed.forEach((p) => {
-              if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.imageCode };
+              if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.kod };
             });
           } catch (e) {
             console.warn('Could not load penceramah for kuliah resolve:', e);
@@ -570,10 +588,18 @@ class ApiServerService {
         if (this.socketServerService) {
           if (filename === 'takwim') {
             this.socketServerService.broadcastTakwimRefresh();
-          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('HOME_TITLE')) {
-            const configContent = await this.dataService.readFile('config');
-            const parsed = this.dataService.parseConfig(configContent);
-            this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+          } else if (filename === 'config' && row && (row.split('|')[0]?.startsWith('HOME_TITLE') || row.split('|')[0] === 'HOME_TITLE_VISIBLE')) {
+            const configKey = row.split('|')[0];
+            if (configKey === 'HOME_TITLE_VISIBLE') {
+              this.socketServerService.broadcastDataUpdate('config', { action: 'row:update', reason: 'HOME_TITLE_VISIBLE' });
+            } else {
+              const configContent = await this.dataService.readFile('config');
+              const parsed = this.dataService.parseConfig(configContent);
+              this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+              if (configKey === 'HOME_TITLE_DURATION_SEC') {
+                this.socketServerService.broadcastDataUpdate('config', { action: 'row:update', reason: 'HOME_TITLE_DURATION_SEC' });
+              }
+            }
           } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('MARQUEE')) {
             const configContent = await this.dataService.readFile('config');
             const parsed = this.dataService.parseConfig(configContent);
@@ -609,10 +635,18 @@ class ApiServerService {
         if (this.socketServerService) {
           if (filename === 'takwim') {
             this.socketServerService.broadcastTakwimRefresh();
-          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('HOME_TITLE')) {
-            const configContent = await this.dataService.readFile('config');
-            const parsed = this.dataService.parseConfig(configContent);
-            this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+          } else if (filename === 'config' && row && (row.split('|')[0]?.startsWith('HOME_TITLE') || row.split('|')[0] === 'HOME_TITLE_VISIBLE')) {
+            const configKey = row.split('|')[0];
+            if (configKey === 'HOME_TITLE_VISIBLE') {
+              this.socketServerService.broadcastDataUpdate('config', { action: 'row:insert', reason: 'HOME_TITLE_VISIBLE' });
+            } else {
+              const configContent = await this.dataService.readFile('config');
+              const parsed = this.dataService.parseConfig(configContent);
+              this.socketServerService.broadcastHomeTitleUpdate(parsed.HOME_TITLE_CONFIG);
+              if (configKey === 'HOME_TITLE_DURATION_SEC') {
+                this.socketServerService.broadcastDataUpdate('config', { action: 'row:insert', reason: 'HOME_TITLE_DURATION_SEC' });
+              }
+            }
           } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('MARQUEE')) {
             const configContent = await this.dataService.readFile('config');
             const parsed = this.dataService.parseConfig(configContent);
@@ -663,55 +697,60 @@ class ApiServerService {
       }
     });
 
-    // Toggle slide hide/show (slides only) - update terus tanpa buka dialog
+    // Toggle slide hide/show (slides only) - update SLIDES_VISIBLE dalam config
     this.app.post('/api/data/slides/:id/toggle-hide', async (req, res) => {
       try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
           return res.status(400).json({ error: 'Invalid row ID' });
         }
-        const result = await this.dataService.toggleSlideHide('slides', id);
-        if (this.socketServerService) {
-          this.socketServerService.broadcastDataUpdate('slides', { action: 'row:update', rowId: id });
+        const index = id - 1;
+        if (index === 0) {
+          return res.json({ success: true, hide: false });
         }
-        res.json(result);
+        const [slidesContent, configContent] = await Promise.all([
+          this.dataService.readFile('slides').catch(() => ''),
+          this.dataService.readFile('config').catch(() => '')
+        ]);
+        const slideTypesOrder = (slidesContent || '')
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0)
+          .map((line) => line.split('|')[0])
+          .filter(Boolean);
+        const config = this.dataService.parseConfig(configContent);
+        let visibleArray = config.SLIDES_CONFIG?.VISIBLE;
+        if (!Array.isArray(visibleArray) || visibleArray.length !== slideTypesOrder.length) {
+          visibleArray = slideTypesOrder.map(() => 1);
+        }
+        visibleArray[0] = 1;
+        const wasHidden = visibleArray[index] !== 1;
+        visibleArray[index] = wasHidden ? 1 : 0;
+        const value = '[' + visibleArray.join(',') + ']';
+        const configParsed = this.dataService.parseFileContent('config', configContent);
+        const slidesVisibleRow = configParsed.find((r) => r.key === 'SLIDES_VISIBLE');
+        const formattedRow = `SLIDES_VISIBLE|${value}`;
+        if (slidesVisibleRow && slidesVisibleRow.id) {
+          await this.dataService.updateRow('config', slidesVisibleRow.id, formattedRow);
+          if (this.socketServerService) {
+            this.socketServerService.broadcastDataUpdate('config', { action: 'row:update', rowId: slidesVisibleRow.id, row: formattedRow });
+          }
+        } else {
+          await this.dataService.insertRow('config', formattedRow, 'end');
+          if (this.socketServerService) {
+            this.socketServerService.broadcastDataUpdate('config', { action: 'row:insert' });
+          }
+        }
+        res.json({ success: true, hide: !wasHidden });
       } catch (error) {
         console.error('Error toggling slide hide:', error);
         res.status(500).json({ error: error.message });
       }
     });
     
-    // Configure multer for file uploads
-    const storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        try {
-          const category = req.query.category || req.body?.category || 'penceramah';
-          const destPath = path.join(this.imagesPath, category);
-          
-          // Create directory if it doesn't exist
-          if (!fs.existsSync(destPath)) {
-            fs.mkdirSync(destPath, { recursive: true });
-          }
-          
-          cb(null, destPath);
-        } catch (error) {
-          console.error('Error setting destination:', error);
-          cb(error);
-        }
-      },
-      filename: (req, file, cb) => {
-        try {
-          const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
-          cb(null, sanitizedName);
-        } catch (error) {
-          console.error('Error setting filename:', error);
-          cb(error);
-        }
-      }
-    });
-    
+    // Configure multer for file uploads (memory) - simpan file dilakukan oleh DataService
     const upload = multer({
-      storage: storage,
+      storage: multer.memoryStorage(),
       limits: { 
         fileSize: 10 * 1024 * 1024 // 10MB limit
       },
@@ -726,217 +765,38 @@ class ApiServerService {
     });
     
     // Upload image endpoint
-    this.app.post('/api/images/upload', upload.single('image'), (req, res) => {
+    this.app.post('/api/images/upload', upload.single('image'), async (req, res) => {
       try {
         if (!req.file) {
           return res.status(400).json({ error: 'Tiada fail dimuat naik. Pastikan fail image dipilih.' });
         }
         
         const category = req.query.category || req.body.category || 'penceramah';
-        const actualPath = req.file.path;
-        
-        // Verify file was saved correctly
-        if (!fs.existsSync(actualPath)) {
-          console.error('File tidak wujud selepas upload:', actualPath);
-          return res.status(500).json({ error: 'Fail tidak dapat disimpan' });
-        }
-        
-        // Verify file size > 0
-        const stats = fs.statSync(actualPath);
-        if (stats.size === 0) {
-          console.error('File kosong selepas upload');
-          fs.unlinkSync(actualPath);
-          return res.status(500).json({ error: 'Fail kosong. Upload mungkin gagal.' });
-        }
-        
-        const imagePath = `/images/${category}/${req.file.filename}`;
-        
+        const saved = await this.dataService.saveUploadedImage({
+          buffer: req.file.buffer,
+          originalName: req.file.originalname,
+          category,
+          imagesPath: this.imagesPath
+        });
+
         res.json({
           success: true,
-          path: imagePath,
-          filename: req.file.filename,
-          category: category
+          path: saved.path,
+          filename: saved.filename,
+          category: saved.category
         });
         
         // Broadcast update via Socket.IO untuk trigger React reload selepas response dikirim
         // Delay sedikit untuk ensure response sudah dikirim sebelum broadcast
         setTimeout(() => {
           if (this.socketServerService) {
-            this.socketServerService.broadcastDataUpdate('images', { action: 'image:upload', path: imagePath, category });
+            this.socketServerService.broadcastDataUpdate('images', { action: 'image:upload', path: saved.path, category: saved.category });
             this.socketServerService.broadcastTakwimRefresh();
           }
         }, 100);
       } catch (error) {
         console.error('Error uploading image:', error);
         res.status(500).json({ error: error.message || 'Gagal memuat naik image' });
-      }
-    });
-    
-    // Error handler untuk multer - mesti di akhir setupRoutes
-    // Error dari multer middleware akan di-catch di sini
-    
-    // Delete image file endpoint
-    this.app.delete('/api/images/delete', (req, res) => {
-      try {
-        const { imagePath } = req.body;
-        
-        if (!imagePath) {
-          return res.status(400).json({ error: 'Image path diperlukan' });
-        }
-        
-        // Remove /images/ prefix dan build full path
-        const relativePath = imagePath.replace(/^\/images\//, '');
-        const fullPath = path.join(this.imagesPath, relativePath);
-        
-        // Security check - ensure path is within imagesPath
-        if (!fullPath.startsWith(this.imagesPath)) {
-          return res.status(403).json({ error: 'Path tidak dibenarkan' });
-        }
-        
-        // Check if file exists
-        if (!fs.existsSync(fullPath)) {
-          return res.status(404).json({ error: 'Fail tidak ditemui' });
-        }
-        
-        // Delete file
-        fs.unlinkSync(fullPath);
-        
-        res.json({
-          success: true,
-          message: 'Fail berjaya dipadam'
-        });
-        
-        // Broadcast update via Socket.IO untuk trigger React reload selepas response dikirim
-        setTimeout(() => {
-          if (this.socketServerService) {
-            this.socketServerService.broadcastDataUpdate('images', { action: 'image:delete', path: imagePath });
-            this.socketServerService.broadcastTakwimRefresh();
-          }
-        }, 100);
-      } catch (error) {
-        console.error('Error deleting image:', error);
-        res.status(500).json({ error: error.message });
-      }
-    });
-    
-    // Download image from URL endpoint
-    this.app.post('/api/images/download', async (req, res) => {
-      try {
-        const { imageUrl, category = 'penceramah', filename } = req.body;
-        
-        if (!imageUrl) {
-          return res.status(400).json({ error: 'Image URL diperlukan' });
-        }
-        
-        // Validate URL
-        let parsedUrl;
-        try {
-          parsedUrl = new URL(imageUrl);
-        } catch (error) {
-          return res.status(400).json({ error: 'URL tidak sah' });
-        }
-        
-        // Only allow http and https
-        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
-          return res.status(400).json({ error: 'Hanya HTTP/HTTPS URL dibenarkan' });
-        }
-        
-        // Determine destination folder
-        const destPath = path.join(this.imagesPath, category);
-        if (!fs.existsSync(destPath)) {
-          fs.mkdirSync(destPath, { recursive: true });
-        }
-        
-        // Generate filename
-        let finalFilename = filename;
-        if (!finalFilename) {
-          // Extract filename from URL or generate one
-          const urlPath = parsedUrl.pathname;
-          const urlFilename = urlPath.split('/').pop() || 'image';
-          const ext = path.extname(urlFilename) || '.jpg';
-          finalFilename = `downloaded_${Date.now()}${ext}`;
-        }
-        
-        // Sanitize filename
-        finalFilename = finalFilename.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const fullPath = path.join(destPath, finalFilename);
-        
-        // Download file
-        const client = parsedUrl.protocol === 'https:' ? https : http;
-        
-        await new Promise((resolve, reject) => {
-          const file = fs.createWriteStream(fullPath);
-          
-          const request = client.get(imageUrl, (response) => {
-            // Check content type
-            const contentType = response.headers['content-type'] || '';
-            if (!contentType.startsWith('image/')) {
-              file.close();
-              fs.unlinkSync(fullPath);
-              return reject(new Error('URL bukan image file'));
-            }
-            
-            // Check status code
-            if (response.statusCode !== 200) {
-              file.close();
-              fs.unlinkSync(fullPath);
-              return reject(new Error(`HTTP ${response.statusCode}: Gagal memuat turun`));
-            }
-            
-            response.pipe(file);
-            
-            file.on('finish', () => {
-              file.close();
-              resolve();
-            });
-          });
-          
-          request.on('error', (error) => {
-            file.close();
-            if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath);
-            }
-            reject(error);
-          });
-          
-          file.on('error', (error) => {
-            file.close();
-            if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath);
-            }
-            reject(error);
-          });
-          
-          // Timeout after 30 seconds
-          request.setTimeout(30000, () => {
-            request.destroy();
-            file.close();
-            if (fs.existsSync(fullPath)) {
-              fs.unlinkSync(fullPath);
-            }
-            reject(new Error('Request timeout'));
-          });
-        });
-        
-        const imagePath = `/images/${category}/${finalFilename}`;
-        
-        res.json({
-          success: true,
-          path: imagePath,
-          filename: finalFilename,
-          category: category
-        });
-        
-        // Broadcast update via Socket.IO untuk trigger React reload selepas response dikirim
-        setTimeout(() => {
-          if (this.socketServerService) {
-            this.socketServerService.broadcastDataUpdate('images', { action: 'image:download', path: imagePath, category });
-            this.socketServerService.broadcastTakwimRefresh();
-          }
-        }, 100);
-      } catch (error) {
-        console.error('Error downloading image:', error);
-        res.status(500).json({ error: error.message || 'Gagal memuat turun image' });
       }
     });
     
