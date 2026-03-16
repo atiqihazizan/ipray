@@ -1,9 +1,9 @@
 directories:
   output: dist-electron
   buildResources: build
-appId: app.ipray.kiosk
-productName: iPray
-copyright: Copyright © 2026 iPray Team
+appId: app.midm.kiosk
+productName: MIDM
+copyright: Copyright © 2026 MIDM Team
 asar: true
 files:
   - filter:
@@ -19,6 +19,11 @@ files:
       - '!node_modules/electron-builder/**'
       - '!node_modules/nodemon/**'
 extraResources:
+  - from: bin/
+    to: bin
+    filter:
+      - ffmpeg
+      - ffmpeg.exe
   - from: data/
     to: ../data/
     filter:

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ujian HLS — IPray</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e5e5e5; margin: 0; padding: 16px; }
+    h1 { font-size: 1.25rem; margin-bottom: 12px; }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    input[type="url"] { flex: 1; min-width: 280px; padding: 8px 12px; background: #333; border: 1px solid #555; color: #fff; border-radius: 6px; }
+    button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .video-wrap { background: #000; border-radius: 8px; overflow: hidden; max-width: 960px; }
+    video { width: 100%; display: block; }
+    .status { margin-top: 12px; font-size: 0.875rem; color: #94a3b8; }
+    .error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h1>Ujian HLS (Siaran Langsung / CCTV)</h1>
+  <p style="color:#94a3b8;font-size:0.875rem;margin-bottom:12px;">
+    Masukkan URL .m3u8. Contoh: <code>http://localhost:3000/hls/cctv/index.m3u8</code> — pastikan siaran CCTV sudah dimulakan dari panel tetapan dahulu. Jangan guna <code>/public/</code> dalam URL; URL mesti menunjuk ke fail .m3u8 (akhiran <code>index.m3u8</code>).
+  </p>
+  <div class="controls">
+    <input type="url" id="hlsUrl" value="http://localhost:3000/hls/cctv/index.m3u8" placeholder="http://localhost:3000/hls/cctv/index.m3u8" />
+    <button id="btnLoad">Muat & Main</button>
+  </div>
+  <div class="video-wrap">
+    <video id="video" controls muted playsinline></video>
+  </div>
+  <div id="status" class="status"></div>
+
+  <script>
+    const video = document.getElementById('video');
+    const input = document.getElementById('hlsUrl');
+    const btn = document.getElementById('btnLoad');
+    const statusEl = document.getElementById('status');
+
+    function setStatus(msg, isError) {
+      statusEl.textContent = msg;
+      statusEl.className = 'status' + (isError ? ' error' : '');
+    }
+
+    function playHls(url) {
+      if (!url || !url.trim()) {
+        setStatus('Sila masukkan URL HLS.', true);
+        return;
+      }
+      setStatus('Memuat…');
+      if (window.hlsInstance) {
+        window.hlsInstance.destroy();
+        window.hlsInstance = null;
+      }
+
+      if (Hls.isSupported()) {
+        const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+        window.hlsInstance = hls;
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => setStatus('Playlist diterima, main…'));
+        hls.on(Hls.Events.ERROR, (e, data) => {
+          if (data.fatal) {
+            setStatus('Ralat: ' + (data.type || '') + ' — ' + (data.details || data.response?.code || 'gagal muat'), true);
+          }
+        });
+        video.play().catch(() => setStatus('Klik Main pada video jika autoplay disekat.', true));
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => setStatus('Main (Safari/native)'));
+        video.play().catch(() => setStatus('Klik Main pada video.', true));
+      } else {
+        setStatus('Pelayar tidak menyokong HLS.', true);
+      }
+    }
+
+    btn.addEventListener('click', () => playHls(input.value.trim()));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') playHls(input.value.trim()); });
+  </script>
+</body>
+</html>

@@ -232,3 +232,8 @@ coverage/
 history-development/
 **/history-development/
 *.pdn
+
+# FFmpeg binary dalam nodejs/bin/ — perlu di-track untuk build Electron
+!node-react-jssor/nodejs/bin/
+!node-react-jssor/nodejs/bin/ffmpeg
+!node-react-jssor/nodejs/bin/ffmpeg.exe
