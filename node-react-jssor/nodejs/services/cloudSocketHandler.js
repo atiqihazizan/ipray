@@ -309,25 +309,74 @@ function registerHandlers(socket) {
   socket.on('cloud:kematian:update', data => {
     if (!socketServerService) return;
     const io = socketServerService.getIO();
-    if (io) io.emit('kematian:updated', { ...data, active: true, timestamp: Date.now() });
+    const payload = { ...data, active: true, timestamp: Date.now() };
+    if (typeof socketServerService.setKematianAnnouncement === 'function') {
+      socketServerService.setKematianAnnouncement(payload);
+    } else {
+      socketServerService.deathAnnouncementData = payload;
+      if (io) io.emit('kematian:updated', payload);
+      socket.emit('kematian:updated', payload);
+    }
   });
 
   socket.on('cloud:kematian:clear', () => {
     if (!socketServerService) return;
     const io = socketServerService.getIO();
-    if (io) io.emit('kematian:cleared', { timestamp: Date.now() });
+    if (typeof socketServerService.clearKematianAnnouncement === 'function') {
+      socketServerService.clearKematianAnnouncement();
+    } else {
+      socketServerService.deathAnnouncementData = null;
+      const payload = { timestamp: Date.now() };
+      if (io) io.emit('kematian:cleared', payload);
+      socket.emit('kematian:cleared', payload);
+    }
+  });
+
+  // Panel cloud (Flutter/web) minta snapshot status kematian semasa.
+  // Nodejs akan jawab dengan emit kematian:updated (jika aktif) atau kematian:cleared.
+  socket.on('cloud:kematian:status', () => {
+    try {
+      const deathData = socketServerService?.deathAnnouncementData;
+      if (deathData) {
+        socket.emit('kematian:updated', { ...deathData, active: true, timestamp: Date.now() });
+      } else {
+        socket.emit('kematian:cleared', { timestamp: Date.now() });
+      }
+    } catch (_) {}
   });
 
   socket.on('cloud:live:start', data => {
     if (!socketServerService) return;
+    if (typeof socketServerService.startLiveStream === 'function') {
+      socketServerService.startLiveStream(data);
+      return;
+    }
     const io = socketServerService.getIO();
     if (io) io.emit('live:started', { ...data, active: true, timestamp: Date.now() });
   });
 
   socket.on('cloud:live:stop', () => {
     if (!socketServerService) return;
+    if (typeof socketServerService.stopLiveStream === 'function') {
+      socketServerService.stopLiveStream();
+      return;
+    }
     const io = socketServerService.getIO();
     if (io) io.emit('live:stopped', { timestamp: Date.now() });
+  });
+
+  // Panel cloud (Flutter/web) minta snapshot status live semasa.
+  // Nodejs akan jawab dengan emit live:started atau live:stopped ke cloud,
+  // dan cloud akan forward ke room setting_{clientId}.
+  socket.on('cloud:live:status', () => {
+    try {
+      const liveData = socketServerService?.liveStreamData;
+      if (liveData) {
+        socket.emit('live:started', { ...liveData, timestamp: Date.now() });
+      } else {
+        socket.emit('live:stopped', { timestamp: Date.now() });
+      }
+    } catch (_) {}
   });
 
   socket.on('cloud:reboot', () => {

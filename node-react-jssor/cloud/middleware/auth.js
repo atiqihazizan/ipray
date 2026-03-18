@@ -13,6 +13,13 @@ function parseClientTokens(envValue) {
 
 const clientTokens = parseClientTokens(process.env.CLIENT_TOKENS || '');
 
+/** Senarai client + token untuk menu tetapan (dari CLIENT_TOKENS). */
+function getClientList() {
+  const list = [];
+  clientTokens.forEach((token, id) => list.push({ id, token }));
+  return list;
+}
+
 function getExpectedToken(clientId) {
   return clientTokens.get(clientId) || null;
 }
@@ -51,7 +58,8 @@ function validateSocketAuth(payload) {
 
 module.exports = {
   requireAuth,
-  validateSocketAuth
+  validateSocketAuth,
+  getClientList
 };
 
 

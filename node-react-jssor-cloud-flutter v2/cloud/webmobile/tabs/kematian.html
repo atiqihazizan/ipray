@@ -1,0 +1,60 @@
+<div class="content-card">
+	<div style="max-width: 640px;">
+		<div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+			<span style="font-size:14px;font-weight:600;color:#475569;">Status:</span>
+			<span id="kematian-status" style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:500;background:#f1f5f9;color:#64748b;">Tidak Aktif</span>
+		</div>
+		<div style="display:flex;flex-direction:column;gap:16px;">
+			<div>
+				<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Nama Simati</label>
+				<input type="text" id="kematian-nama" placeholder="Allahyarham Hj. Ahmad bin Mohd" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+			</div>
+			<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+				<div>
+					<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Tarikh Meninggal</label>
+					<input type="date" id="kematian-tarikh" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+				</div>
+				<div>
+					<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Masa Meninggal</label>
+					<input type="time" id="kematian-masa" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+				</div>
+			</div>
+			<div>
+				<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Tempat Jenazah</label>
+				<input type="text" id="kematian-tempat" placeholder="Masjid Tuan Abdullah" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+			</div>
+			<div>
+				<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Masa Solat Jenazah</label>
+				<input type="text" id="kematian-solat" placeholder="Selepas Zohor / 16:00" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+			</div>
+			<div>
+				<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Maklumat Tambahan</label>
+				<textarea id="kematian-info" rows="2" placeholder="Sila hadir untuk solat jenazah" style="width:100%;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+			</div>
+		</div>
+		<div style="margin-top:16px;">
+			<label style="display:block;font-size:14px;font-weight:500;color:#475569;margin-bottom:6px;">Durasi Paparan (minit)</label>
+			<div style="display:flex;align-items:center;gap:10px;">
+				<input type="number" id="kematian-durasi" min="0" value="0" placeholder="0" style="width:120px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+				<span style="font-size:12px;color:#94a3b8;">0 = kekal sehingga padam manual</span>
+			</div>
+		</div>
+		<div style="margin-top:20px;padding:14px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+			<p style="font-size:13px;font-weight:600;color:#475569;margin-bottom:10px;">Paparan Overlay Semasa Pengumuman</p>
+			<div style="display:flex;gap:16px;flex-wrap:wrap;">
+				<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#475569;cursor:pointer;">
+					<input type="checkbox" id="kematian-show-date" checked> Tarikh
+				</label>
+				<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#475569;cursor:pointer;">
+					<input type="checkbox" id="kematian-show-smalltime" checked> Jam Kecil
+				</label>
+				<label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#475569;cursor:pointer;">
+					<input type="checkbox" id="kematian-show-marquee" checked> Marquee
+				</label>
+			</div>
+		</div>
+		<div style="margin-top:24px;">
+			<button id="kematian-toggle-btn" onclick="handleKematianToggle()" style="width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Papar Pengumuman</button>
+		</div>
+	</div>
+</div>

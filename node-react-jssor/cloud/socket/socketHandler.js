@@ -12,8 +12,10 @@ const CLOUD_EVENTS = [
   'cloud:image:upload',
   'cloud:kematian:update',
   'cloud:kematian:clear',
+  'cloud:kematian:status',
   'cloud:live:start',
   'cloud:live:stop',
+  'cloud:live:status',
   'cloud:reboot',
   'cloud:test-sound',
   'cloud:slideshow:reorder',
@@ -170,7 +172,7 @@ function registerSocketHandlers(io) {
       try {
         const result = await updateRow(clientId, fileName, parseInt(id, 10), row);
         socket.emit('cloud:response', { requestId, success: true, data: { ...result, action: 'update' } });
-        await pushStorageToClient(clientId, fileName);
+        io.to(`client_${clientId}`).emit('cloud:data:update', { fileName, id, row, clientId });
       } catch (err) {
         socket.emit('cloud:response', { requestId, success: false, error: err.message || 'Update failed' });
       }
@@ -183,7 +185,7 @@ function registerSocketHandlers(io) {
       try {
         const result = await insertRow(clientId, fileName, row, position || 'end');
         socket.emit('cloud:response', { requestId, success: true, data: { ...result, action: 'insert' } });
-        await pushStorageToClient(clientId, fileName);
+        io.to(`client_${clientId}`).emit('cloud:data:insert', { fileName, row, position: position || 'end', clientId });
       } catch (err) {
         socket.emit('cloud:response', { requestId, success: false, error: err.message || 'Insert failed' });
       }
@@ -196,7 +198,7 @@ function registerSocketHandlers(io) {
       try {
         const result = await deleteRow(clientId, fileName, parseInt(id, 10));
         socket.emit('cloud:response', { requestId, success: true, data: { ...result, action: 'delete' } });
-        await pushStorageToClient(clientId, fileName);
+        io.to(`client_${clientId}`).emit('cloud:data:delete', { fileName, id, clientId });
       } catch (err) {
         socket.emit('cloud:response', { requestId, success: false, error: err.message || 'Delete failed' });
       }

@@ -13,6 +13,7 @@ const { initCloudWatcher } = require('./watcher/cloudWatcher');
 const { startUploadWorker } = require('./workers/uploadWorker');
 const uploadRoute = require('./api/uploadRoute');
 const ackRoute = require('./api/ackRoute');
+const clientsRoute = require('./api/clientsRoute');
 
 const PORT = process.env.PORT || 4000;
 let uploadWorker = null;
@@ -56,6 +57,7 @@ async function bootstrap() {
   app.use(express.json({ limit: '15mb' }));
 
   // API routes
+  app.use('/api', clientsRoute);
   app.use(uploadRoute);
   app.use(ackRoute);
 

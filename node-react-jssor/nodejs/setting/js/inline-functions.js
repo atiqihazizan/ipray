@@ -276,7 +276,54 @@
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian dihantar ke paparan kiosk.', 'success');
 	}
 
-	function updateKematianStatus(active) {
+	let kematianCountdownTimer = null;
+
+	function formatRemaining(sec) {
+		const s = Math.max(0, sec | 0);
+		const m = Math.floor(s / 60);
+		const r = s % 60;
+		return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+	}
+
+	function stopKematianCountdown() {
+		if (kematianCountdownTimer) clearInterval(kematianCountdownTimer);
+		kematianCountdownTimer = null;
+		const el = document.getElementById('kematian-countdown');
+		if (el) el.style.display = 'none';
+	}
+
+	function startKematianCountdownFromData(data) {
+		stopKematianCountdown();
+		const durasiRaw = data && data.durasiSaat;
+		const durasi = (typeof durasiRaw === 'number') ? durasiRaw : parseInt(durasiRaw || '0', 10);
+		if (!durasi || durasi <= 0) return;
+		const tsRaw = data && data.timestamp;
+		const ts = (typeof tsRaw === 'number') ? tsRaw : parseInt(tsRaw || String(Date.now()), 10);
+		const endMs = ts + durasi * 1000;
+		const el = document.getElementById('kematian-countdown');
+		if (!el) return;
+		function tick() {
+			const remain = Math.ceil((endMs - Date.now()) / 1000);
+			if (remain <= 0) {
+				el.textContent = '00:00';
+				stopKematianCountdown();
+				return;
+			}
+			el.textContent = `Baki: ${formatRemaining(remain)}`;
+			el.style.display = 'block';
+		}
+		tick();
+		kematianCountdownTimer = setInterval(tick, 1000);
+	}
+
+	function setKematianInputsDisabled(disabled) {
+		['kematian-nama', 'kematian-tempat', 'kematian-solat', 'kematian-info', 'kematian-durasi'].forEach((id) => {
+			const el = document.getElementById(id);
+			if (el) el.disabled = !!disabled;
+		});
+	}
+
+	function updateKematianStatus(active, data = null) {
 		const el = document.getElementById('kematian-status');
 		if (el) {
 			el.setAttribute('data-active', active ? '1' : '0');
@@ -299,6 +346,15 @@
 				btn.textContent = 'Papar Pengumuman';
 				btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
 			}
+		}
+
+		setKematianInputsDisabled(active);
+		if (active) {
+			startKematianCountdownFromData(data);
+		} else {
+			stopKematianCountdown();
+			const durasiEl = document.getElementById('kematian-durasi');
+			if (durasiEl) durasiEl.value = '0';
 		}
 	}
 
@@ -327,8 +383,6 @@
 		const durasiSaat = (!isNaN(durasiMinit) && durasiMinit > 0) ? durasiMinit * 60 : 0;
 		const data = {
 			nama,
-			tarikhMeninggal: document.getElementById('kematian-tarikh')?.value || '',
-			masaMeninggal: document.getElementById('kematian-masa')?.value || '',
 			tempatJenazah: document.getElementById('kematian-tempat')?.value?.trim() || '',
 			masaSolat: document.getElementById('kematian-solat')?.value?.trim() || '',
 			maklumatTambahan: document.getElementById('kematian-info')?.value?.trim() || '',
@@ -336,7 +390,7 @@
 			overlayConfig: getOverlayFromConfigBit(KEMATIAN_SHOW_KEY),
 		};
 		socket.emit('kematian:update', data);
-		updateKematianStatus(true);
+		updateKematianStatus(true, { ...data, timestamp: Date.now() });
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipaparkan.', 'success');
 	}
 

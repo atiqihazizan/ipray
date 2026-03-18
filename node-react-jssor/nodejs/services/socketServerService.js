@@ -16,6 +16,83 @@ class SocketServerService {
     this.isAttached = false;
     this.deathAnnouncementData = null;
     this.liveStreamData = null;
+    this._kematianTimer = null;
+  }
+
+  _emitToCloud(eventName, payload) {
+    try {
+      // Lazy require untuk elak isu circular import semasa startup.
+      const cloudClient = require('./cloudClient');
+      const sock = cloudClient && cloudClient.socket;
+      if (sock && sock.connected) {
+        sock.emit(eventName, payload || {});
+      }
+    } catch (_) {
+      // Cloud client mungkin tidak diaktifkan pada sesetengah deploy.
+    }
+  }
+
+  _clearKematianTimer() {
+    if (this._kematianTimer) {
+      clearTimeout(this._kematianTimer);
+      this._kematianTimer = null;
+    }
+  }
+
+  setKematianAnnouncement(data) {
+    if (!this.io) return;
+    this._clearKematianTimer();
+    this.deathAnnouncementData = { ...data, active: true, timestamp: Date.now() };
+    this.io.emit('kematian:updated', this.deathAnnouncementData);
+    this._emitToCloud('kematian:updated', this.deathAnnouncementData);
+
+    const durasiRaw = this.deathAnnouncementData?.durasiSaat;
+    const durasi = (typeof durasiRaw === 'number') ? durasiRaw : parseInt(durasiRaw || '0', 10);
+    if (!Number.isNaN(durasi) && durasi > 0) {
+      this._kematianTimer = setTimeout(() => {
+        this.clearKematianAnnouncement();
+      }, durasi * 1000);
+    }
+  }
+
+  clearKematianAnnouncement() {
+    if (!this.io) return;
+    this._clearKematianTimer();
+    this.deathAnnouncementData = null;
+    const payload = { timestamp: Date.now() };
+    this.io.emit('kematian:cleared', payload);
+    this._emitToCloud('kematian:cleared', payload);
+  }
+
+  startLiveStream(data) {
+    if (!this.io) return;
+    console.log(`📡 Live stream start:`, data?.url ? '(url ada)' : data);
+    let url = (data && data.url) ? String(data.url).trim() : '';
+    const isRtsp = rtspToHlsService.isRtsp(url);
+    if (isRtsp) {
+      const result = rtspToHlsService.start(url);
+      if (result.error) {
+        console.warn('[RTSP→HLS]', result.error, '— papar mesej RTSP tidak disokong di overlay');
+      }
+      url = result.url;
+    }
+    const payload = { ...data, url, active: true, timestamp: Date.now() };
+    this.liveStreamData = payload;
+    // Emit live:started segera supaya React tukar paparan (YouTube→CCTV atau sebaliknya) tanpa perlu klik Play lagi
+    this.io.emit('live:started', payload);
+    // Hantar flag ke cloud supaya panel Flutter boleh ikut mode play/stop.
+    this._emitToCloud('live:started', payload);
+  }
+
+  stopLiveStream() {
+    if (!this.io) return;
+    console.log(`📡 Live stream stopped`);
+    rtspToHlsService.stop();
+    this.liveStreamData = null;
+    const payload = { timestamp: Date.now() };
+    this.io.emit('live:stopped', payload);
+    // Hantar flag ke cloud supaya panel Flutter boleh ikut mode play/stop.
+    this._emitToCloud('live:stopped', payload);
   }
 
   /**
@@ -24,6 +101,23 @@ class SocketServerService {
   init(config) {
     this.port = config.port;
     this.dataService = config.dataService || null;
+
+    // Bila cloudClient (nodejs) connect/register semula ke cloud,
+    // emit snapshot status live supaya panel Flutter ikut mode play/stop.
+    try {
+      const cloudClient = require('./cloudClient');
+      if (cloudClient && typeof cloudClient.setOnRegisteredCallback === 'function') {
+        cloudClient.setOnRegisteredCallback(() => {
+          if (this.liveStreamData) {
+            this._emitToCloud('live:started', this.liveStreamData);
+          } else {
+            this._emitToCloud('live:stopped', { timestamp: Date.now() });
+          }
+        });
+      }
+    } catch (_) {
+      // optional: cloudClient mungkin tiada pada sesetengah deploy
+    }
   }
 
   /**
@@ -199,42 +293,21 @@ class SocketServerService {
       // Handle kematian announcement
       socket.on('kematian:update', (data) => {
         console.log(`📡 Kematian update received:`, data);
-        this.deathAnnouncementData = { ...data, active: true, timestamp: Date.now() };
-        this.io.emit('kematian:updated', this.deathAnnouncementData);
+        this.setKematianAnnouncement(data);
       });
 
       socket.on('kematian:clear', () => {
         console.log(`📡 Kematian cleared`);
-        this.deathAnnouncementData = null;
-        this.io.emit('kematian:cleared', { timestamp: Date.now() });
+        this.clearKematianAnnouncement();
       });
 
       // Handle live streaming (RTSP/CCTV → auto HLS bila URL rtsp://)
       socket.on('live:start', (data) => {
-        console.log(`📡 Live stream start:`, data?.url ? '(url ada)' : data);
-        let url = (data && data.url) ? String(data.url).trim() : '';
-        const isRtsp = rtspToHlsService.isRtsp(url);
-        if (isRtsp) {
-          const result = rtspToHlsService.start(url);
-          if (result.error) {
-            console.warn('[RTSP→HLS]', result.error, '— papar mesej RTSP tidak disokong di overlay');
-          }
-          url = result.url;
-        }
-        const payload = { ...data, url, active: true, timestamp: Date.now() };
-        this.liveStreamData = payload;
-        // Emit live:started segera supaya React tukar paparan (YouTube→CCTV atau sebaliknya) tanpa perlu klik Play lagi
-        this.io.emit('live:started', payload);
-        if (isRtsp) {
-          // playlistReady akan emit semula live:started (payload sama) bila HLS sedia — optional refresh
-        }
+        this.startLiveStream(data);
       });
 
       socket.on('live:stop', () => {
-        console.log(`📡 Live stream stopped`);
-        rtspToHlsService.stop();
-        this.liveStreamData = null;
-        this.io.emit('live:stopped', { timestamp: Date.now() });
+        this.stopLiveStream();
       });
 
       // Send current state to newly connected client

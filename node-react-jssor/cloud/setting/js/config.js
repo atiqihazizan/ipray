@@ -12,8 +12,25 @@ export const BASE_URL = CLOUD_URL;
 export const API_URL = `${BASE_URL}/api`;
 export const SOCKET_URL = CLOUD_URL;
 
-export const CLIENT_ID = localStorage.getItem('cloud_client_id') || 'clientA';
-export const CLIENT_TOKEN = localStorage.getItem('cloud_client_token') || 'tokenA';
+function getStoredClientId() {
+  return localStorage.getItem('cloud_client_id') || 'clientA';
+}
+function getStoredClientToken() {
+  return localStorage.getItem('cloud_client_token') || 'tokenA';
+}
+
+export let CLIENT_ID = getStoredClientId();
+export let CLIENT_TOKEN = getStoredClientToken();
+
+/** Kemas kini CLIENT_ID/CLIENT_TOKEN dari localStorage (selepas tukar client). */
+export function updateConfigFromStorage() {
+  CLIENT_ID = getStoredClientId();
+  CLIENT_TOKEN = getStoredClientToken();
+  if (typeof window !== 'undefined' && window.Config) {
+    window.Config.CLIENT_ID = CLIENT_ID;
+    window.Config.CLIENT_TOKEN = CLIENT_TOKEN;
+  }
+}
 
 function getImageBaseUrl() {
     return `${BASE_URL}/images/${CLIENT_ID}`;
@@ -30,9 +47,12 @@ if (typeof window !== 'undefined') {
         API_URL,
         SOCKET_URL,
         CLOUD_URL,
-        CLIENT_ID,
-        CLIENT_TOKEN,
+        get CLIENT_ID() { return CLIENT_ID; },
+        set CLIENT_ID(v) { CLIENT_ID = v; },
+        get CLIENT_TOKEN() { return CLIENT_TOKEN; },
+        set CLIENT_TOKEN(v) { CLIENT_TOKEN = v; },
         getImageBaseUrl,
-        resolveImagePathForUrl
+        resolveImagePathForUrl,
+        updateConfigFromStorage
     };
 }

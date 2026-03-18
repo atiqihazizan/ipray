@@ -184,6 +184,17 @@ export function updateLocalConnectionStatus(connected) {
   }
 }
 
+/**
+ * Putuskan socket sedia ada dan sambung semula dengan config terkini (e.g. selepas tukar client).
+ */
+export function reconnectSocket() {
+  if (_socket) {
+    _socket.disconnect();
+    _socket = null;
+  }
+  initSocket();
+}
+
 export function initSocket() {
   const SOCKET_URL = window.Config.SOCKET_URL;
   const CLIENT_ID = window.Config.CLIENT_ID;
@@ -210,6 +221,16 @@ export function initSocket() {
     setTimeout(() => {
       if (socket.connected) socket.emit("getLocalStatus");
     }, 800);
+
+    // Snapshot status livestream semasa (untuk page/panel ikut mode play/stop selepas reload).
+    setTimeout(() => {
+      if (socket.connected) socket.emit("cloud:live:status");
+    }, 900);
+
+    // Snapshot status kematian semasa (untuk status/button ikut aktif/tidak aktif selepas reload).
+    setTimeout(() => {
+      if (socket.connected) socket.emit("cloud:kematian:status");
+    }, 950);
   });
 
   socket.on("disconnect", () => {
@@ -234,6 +255,16 @@ export function initSocket() {
     setTimeout(() => {
       if (socket.connected) socket.emit("getLocalStatus");
     }, 800);
+
+    // Snapshot status livestream semasa selepas reconnect.
+    setTimeout(() => {
+      if (socket.connected) socket.emit("cloud:live:status");
+    }, 900);
+
+    // Snapshot status kematian semasa selepas reconnect.
+    setTimeout(() => {
+      if (socket.connected) socket.emit("cloud:kematian:status");
+    }, 950);
   });
 
   socket.on("connect_error", (error) => {
@@ -243,7 +274,7 @@ export function initSocket() {
 
   socket.on("local:status", (payload) => {
     const connected = payload && payload.connected === true;
-    console.log("[ipray-cloud] Connection dengan Local (kiosk):", connected ? "Connected" : "Disconnected");
+    // console.log("[ipray-cloud] Connection dengan Local (kiosk):", connected ? "Connected" : "Disconnected");
     updateLocalConnectionStatus(connected);
   });
 
@@ -296,6 +327,28 @@ export function initSocket() {
     if (typeof window.updateLivestreamPlayState === "function") window.updateLivestreamPlayState(false);
   });
 
+  // Kematian status realtime/snapshot
+  socket.on("kematian:updated", (data) => {
+    if (typeof window.updateKematianStatus === "function") window.updateKematianStatus(true, data);
+    try {
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
+      setVal("kematian-nama", data?.nama || "");
+      setVal("kematian-tempat", data?.tempatJenazah || "");
+      setVal("kematian-solat", data?.masaSolat || "");
+      const infoEl = document.getElementById("kematian-info");
+      if (infoEl && data?.maklumatTambahan != null) infoEl.value = String(data.maklumatTambahan);
+      const durasiEl = document.getElementById("kematian-durasi");
+      if (durasiEl) {
+        const ds = data?.durasiSaat;
+        const n = typeof ds === "number" ? ds : parseInt(ds || "0", 10);
+        durasiEl.value = (!isNaN(n) && n > 0) ? String(Math.round(n / 60)) : "0";
+      }
+    } catch (_) {}
+  });
+  socket.on("kematian:cleared", () => {
+    if (typeof window.updateKematianStatus === "function") window.updateKematianStatus(false);
+  });
+
   socket.on("data:ack", () => {
     showNotification("Paparan telah dikemaskini", "success");
   });
@@ -313,10 +366,12 @@ export function initSocket() {
 if (typeof window !== "undefined") {
   window.SocketUtils = {
     initSocket,
+    reconnectSocket,
     updateConnectionStatus,
     updateReconnectingStatus,
     updateLocalConnectionStatus,
   };
+  
   window.CloudSocket = {
     emitWithResponse,
     fetchData,

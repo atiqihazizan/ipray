@@ -297,8 +297,8 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 			durasiSaat,
 			overlayConfig: getOverlayFromConfigBit(KEMATIAN_SHOW_KEY),
 		};
-		socket.emit('kematian:update', data);
-		updateKematianStatus(true);
+	socket.emit('cloud:kematian:update', data);
+	updateKematianStatus(true);
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipaparkan.', 'success');
 	}
 
@@ -308,8 +308,8 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 			if (window.NotificationUtils) window.NotificationUtils.showNotification('Socket tidak disambung. Sila pastikan sambungan aktif.', 'error');
 			return;
 		}
-		socket.emit('kematian:clear');
-		updateKematianStatus(false);
+	socket.emit('cloud:kematian:clear');
+	updateKematianStatus(false);
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Pengumuman kematian dipadam.', 'success');
 	}
 
@@ -346,7 +346,7 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 		}
 		const title = (row.tajuk || '').trim();
 		const overlayConfig = getOverlayFromConfigBit(LIVESTREAM_SHOW_KEY);
-		socket.emit('live:start', { url, title, overlayConfig });
+		socket.emit('cloud:live:start', { url, title, overlayConfig });
 		updateLivestreamStatus(true);
 		if (typeof window.updateLivestreamPlayState === 'function') window.updateLivestreamPlayState(true);
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Siaran langsung dimulakan.', 'success');
@@ -358,7 +358,7 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 			if (window.NotificationUtils) window.NotificationUtils.showNotification('Socket tidak disambung. Sila pastikan sambungan aktif.', 'error');
 			return;
 		}
-		socket.emit('live:stop');
+		socket.emit('cloud:live:stop');
 		updateLivestreamStatus(false);
 		if (typeof window.updateLivestreamPlayState === 'function') window.updateLivestreamPlayState(false);
 	}

@@ -7,21 +7,31 @@ import '../config/app_config.dart';
 /// Socket.IO untuk cloud panel. Selari dengan webmobile cloud-socket.js.
 /// Event: registerSettingPanel, cloud:data:get → cloud:response (requestId).
 class CloudSocketService {
-  CloudSocketService({required this.config});
+  CloudSocketService({required AppConfig config}) : _config = config;
 
-  final AppConfig config;
+  AppConfig _config;
   IO.Socket? _socket;
   int _requestId = 0;
   final Map<String, _PendingRequest> _pending = {};
   static const int _timeoutMs = 15000;
 
   final StreamController<bool> _localConnectedController = StreamController<bool>.broadcast();
+  final StreamController<bool> _cloudConnectedController = StreamController<bool>.broadcast();
 
   /// Stream status sambungan kiosk (paparan) ke cloud. Selari webmobile local:status.
   /// true = Local (kiosk) bersambung ke cloud; false = kiosk tidak bersambung.
   Stream<bool> get localConnectedStream => _localConnectedController.stream;
 
+  /// Stream status sambungan Cloud (socket connect/disconnect).
+  Stream<bool> get cloudConnectedStream => _cloudConnectedController.stream;
+
   bool get isConnected => _socket?.connected ?? false;
+
+  bool _isReady = false;
+
+  /// True bila socket sudah connect dan panel sudah "ready" untuk fetch data.
+  /// Nota: `onReadyStream` tidak replay untuk subscriber lewat; guna ini sebagai fallback.
+  bool get isReady => _isReady;
 
   /// Emit tanpa menunggu respons — selari handleTestSound() di webmobile.
   void emitTestSound() {
@@ -37,17 +47,94 @@ class CloudSocketService {
     }
   }
 
+  /// Emit tanpa respons untuk pengumuman kematian (update).
+  void emitKematianUpdate(Map<String, dynamic> data) {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:kematian:update', data);
+    }
+  }
+
+  /// Emit tanpa respons untuk padam pengumuman kematian.
+  void emitKematianClear() {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:kematian:clear');
+    }
+  }
+
+  /// Minta snapshot status kematian semasa.
+  /// Nodejs akan jawab dengan event `kematian:updated` atau `kematian:cleared`.
+  void requestKematianStatus() {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:kematian:status');
+    }
+  }
+
+  /// Emit mula siaran langsung — selari handleLiveStartFromTable() di webmobile.
+  void emitLivestreamStart(Map<String, dynamic> data) {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:live:start', data);
+    }
+  }
+
+  /// Emit hentikan siaran langsung — selari handleLiveStop() di webmobile.
+  void emitLivestreamStop() {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:live:stop');
+    }
+  }
+
+  /// Minta snapshot status live (play/stop) dari nodejs.
+  /// Nodejs akan jawab dengan event `live:started` atau `live:stopped`.
+  void requestLivestreamStatus() {
+    if (_socket?.connected == true) {
+      _socket!.emit('cloud:live:status');
+    }
+  }
+
   final StreamController<void> _onReadyController = StreamController<void>.broadcast();
 
   /// Stream yang emit bila socket bersambung & registerSettingPanel berjaya.
   /// Guna ini untuk load data selepas socket siap — elak race condition.
   Stream<void> get onReadyStream => _onReadyController.stream;
 
+  final StreamController<Map<String, dynamic>> _liveStartedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _liveStoppedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  Stream<Map<String, dynamic>> get liveStartedStream => _liveStartedController.stream;
+  Stream<Map<String, dynamic>> get liveStoppedStream => _liveStoppedController.stream;
+
+  final StreamController<Map<String, dynamic>> _kematianUpdatedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _kematianClearedController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final StreamController<Map<String, dynamic>> _kematianOverlayConfigController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  Stream<Map<String, dynamic>> get kematianUpdatedStream => _kematianUpdatedController.stream;
+  Stream<Map<String, dynamic>> get kematianClearedStream => _kematianClearedController.stream;
+  Stream<Map<String, dynamic>> get kematianOverlayConfigStream => _kematianOverlayConfigController.stream;
+
+  /// Kemas kini config dan sambung semula ke cloud.
+  /// Jika sudah ada sambungan, akan putuskan dan bina socket baru dengan config baharu.
+  void updateConfig(AppConfig newConfig) {
+    _config = newConfig;
+    reconnect();
+  }
+
+  /// Putuskan sambungan dan cuba sambung semula dengan config semasa.
+  void reconnect() {
+    disconnect();
+    connect();
+  }
+
   /// Sambung dan daftar panel. Panggil sekali selepas config ada.
   void connect() {
     if (_socket != null) return;
+    _isReady = false;
     _socket = IO.io(
-      config.socketUrl,
+      _config.socketUrl,
       IO.OptionBuilder()
           .setTransports(['websocket', 'polling'])
           .enableAutoConnect()
@@ -56,14 +143,18 @@ class CloudSocketService {
 
     _socket!.onConnect((_) {
       _socket!.emit('registerSettingPanel', {
-        'clientId': config.clientId,
-        'authToken': config.clientToken,
+        'clientId': _config.clientId,
+        'authToken': _config.clientToken,
       });
+      if (!_cloudConnectedController.isClosed) {
+        _cloudConnectedController.add(true);
+      }
       Future.delayed(const Duration(milliseconds: 800), () {
         if (_socket?.connected == true) {
           _socket!.emit('getLocalStatus');
         }
         if (!_onReadyController.isClosed) {
+          _isReady = true;
           _onReadyController.add(null);
         }
       });
@@ -92,11 +183,44 @@ class CloudSocketService {
       }
     });
 
-    _socket!.onDisconnect((_) {});
-    _socket!.onConnectError((e) {});
+    // Flag live streaming dari kiosk/nodejs → di-forward oleh cloud server ke setting panel.
+    _socket!.on('live:started', (data) {
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      if (!_liveStartedController.isClosed) _liveStartedController.add(map);
+    });
+    _socket!.on('live:stopped', (data) {
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      if (!_liveStoppedController.isClosed) _liveStoppedController.add(map);
+    });
+
+    // Flag kematian dari kiosk/nodejs → di-forward oleh cloud server ke setting panel.
+    _socket!.on('kematian:updated', (data) {
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      if (!_kematianUpdatedController.isClosed) _kematianUpdatedController.add(map);
+    });
+    _socket!.on('kematian:cleared', (data) {
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      if (!_kematianClearedController.isClosed) _kematianClearedController.add(map);
+    });
+    _socket!.on('kematian:overlay-config', (data) {
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      if (!_kematianOverlayConfigController.isClosed) _kematianOverlayConfigController.add(map);
+    });
+
+    _socket!.onDisconnect((_) {
+      if (!_cloudConnectedController.isClosed) {
+        _cloudConnectedController.add(false);
+      }
+    });
+    _socket!.onConnectError((e) {
+      if (!_cloudConnectedController.isClosed) {
+        _cloudConnectedController.add(false);
+      }
+    });
   }
 
   void disconnect() {
+    _isReady = false;
     for (final p in _pending.values) {
       p.timer.cancel();
       p.completer.completeError(TimeoutException('Disconnect'));
@@ -105,12 +229,25 @@ class CloudSocketService {
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
-    if (!_localConnectedController.isClosed) {
-      _localConnectedController.close();
-    }
-    if (!_onReadyController.isClosed) {
-      _onReadyController.close();
-    }
+
+    // Jangan tutup StreamController di sini — `disconnect()` juga digunakan oleh `reconnect()`.
+    // Tutup semua controller hanya melalui `dispose()`.
+    if (!_localConnectedController.isClosed) _localConnectedController.add(false);
+    if (!_cloudConnectedController.isClosed) _cloudConnectedController.add(false);
+  }
+
+  /// Tamatkan service sepenuhnya (untuk `dispose()` pada widget).
+  /// Ini akan memutuskan socket dan menutup semua stream.
+  void dispose() {
+    disconnect();
+    if (!_localConnectedController.isClosed) _localConnectedController.close();
+    if (!_onReadyController.isClosed) _onReadyController.close();
+    if (!_cloudConnectedController.isClosed) _cloudConnectedController.close();
+    if (!_liveStartedController.isClosed) _liveStartedController.close();
+    if (!_liveStoppedController.isClosed) _liveStoppedController.close();
+    if (!_kematianUpdatedController.isClosed) _kematianUpdatedController.close();
+    if (!_kematianClearedController.isClosed) _kematianClearedController.close();
+    if (!_kematianOverlayConfigController.isClosed) _kematianOverlayConfigController.close();
   }
 
   /// Emit event dan tunggu cloud:response (selari emitWithResponse di webmobile).
@@ -213,7 +350,7 @@ class CloudSocketService {
     final formattedRow = '$key|$value';
 
     if (existing != null && existing['id'] != null) {
-      print('[saveConfigItem] key=$key value=$value formattedRow=$formattedRow');
+      // print('[saveConfigItem] key=$key value=$value formattedRow=$formattedRow');
       final id = existing['id'];
       await emitWithResponse('cloud:data:update', {
         'fileName': 'config',

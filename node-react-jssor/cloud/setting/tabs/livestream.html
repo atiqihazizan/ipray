@@ -37,6 +37,17 @@
 		<p>• HLS: <code>http://ip/stream.m3u8</code> &nbsp;• YouTube: <code>https://youtube.com/watch?v=...</code> &nbsp;• Facebook: <code>https://facebook.com/.../videos/...</code> &nbsp;• Video: <code>.mp4 / .webm</code></p>
 		<p style="margin-top:4px;">Tekan butang <strong>Mula</strong> pada baris yang dikehendaki untuk memulakan siaran langsung.</p>
 	</div>
+	<div id="livestream-active-card" style="display:none;margin-bottom:16px;padding:14px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 6px 10px rgba(0,0,0,0.05);">
+		<div style="display:flex;align-items:stretch;gap:12px;">
+			<div style="flex:1;min-width:0;">
+				<div style="font-size:14px;font-weight:700;color:#111827;">Siaran sedang aktif</div>
+				<div style="margin-top:6px;font-size:12px;color:#4b5563;">Tekan Stop untuk hentikan siaran.</div>
+			</div>
+			<button id="livestream-stop-btn-big" onclick="handleLiveStop()" title="Stop" style="width:56px;min-height:56px;display:flex;align-items:center;justify-content:center;background:#ef4444;color:white;border:none;border-radius:16px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,0.08);">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:22px;height:22px;"><path fill-rule="evenodd" d="M4.5 7.5a3 3 0 013-3h9a3 3 0 013 3v9a3 3 0 01-3 3h-9a3 3 0 01-3-3v-9z" clip-rule="evenodd" /></svg>
+			</button>
+		</div>
+	</div>
 	<div class="table-container">
 		<table id="livestream-table" class="data-table">
 			<thead id="livestream-thead"></thead>

@@ -14,7 +14,8 @@ class ListTabItem {
   final String id;
   final String title;
   final String subtitle;
-  final IconData icon;
+  /// Ikon boleh jadi emoji (berwarna) atau widget lain.
+  final Widget icon;
   /// Warna ikon; jika null, widget guna [ListTabBar.iconColorForId] atau kelabu default.
   final Color? iconColor;
 }
@@ -28,6 +29,8 @@ class ListTabBar extends StatelessWidget {
     required this.onTap,
     this.selectedId,
     this.iconColorForId,
+    this.scrollController,
+    this.scrollPhysics,
   });
 
   final List<ListTabItem> items;
@@ -35,10 +38,14 @@ class ListTabBar extends StatelessWidget {
   final void Function(String id) onTap;
   /// Pilihan: warna ikon mengikut id (jika item tiada [ListTabItem.iconColor]).
   final Color Function(String id)? iconColorForId;
+  final ScrollController? scrollController;
+  final ScrollPhysics? scrollPhysics;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      controller: scrollController,
+      physics: scrollPhysics ?? const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Material(
         color: Colors.white,
@@ -72,7 +79,15 @@ class ListTabBar extends StatelessWidget {
                           color: Color(0xFFF0F0F0),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(item.icon, size: 22, color: iconColor),
+                        child: Center(
+                          child: DefaultTextStyle.merge(
+                            style: const TextStyle(fontSize: 20),
+                            child: IconTheme(
+                              data: IconThemeData(size: 22, color: iconColor),
+                              child: item.icon,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'config/app_config.dart';
-import 'screens/cloud_webview_screen.dart';
+import 'screens/cloud_menu_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/config_service.dart';
 
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MIDM Cloud Admin',
+      title: 'Muslim Indoor Digital Media',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -72,21 +72,9 @@ class _AppGateState extends State<AppGate> {
       );
     }
 
-    return CloudWebViewScreen(
+    return CloudMenuScreen(
       config: _config!,
-      onOpenConfig: () async {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            builder: (context) => LoginScreen(
-              initialConfig: _config,
-              onSaved: (c) {
-                setState(() => _config = c);
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-      },
+      onConfigSaved: (c) => setState(() => _config = c),
     );
   }
 }

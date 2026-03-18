@@ -211,11 +211,18 @@ class _PanelTabRowInputState extends State<PanelTabRowInput> {
     widget.onChanged?.call(_controller.text);
   }
 
+  void _setTextSilently(String value) {
+    _controller.removeListener(_onTextChanged);
+    _controller.text = value;
+    _controller.addListener(_onTextChanged);
+  }
+
   @override
   void didUpdateWidget(PanelTabRowInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialValue != widget.initialValue && _controller.text != widget.initialValue) {
-      _controller.text = widget.initialValue;
+      // Elak trigger listener → parent setState semasa build.
+      _setTextSilently(widget.initialValue);
     }
   }
 
@@ -264,7 +271,11 @@ class _PanelTabRowInputState extends State<PanelTabRowInput> {
       },
     );
     if (result != null) {
-      _controller.text = result.toString();
+      final next = result.toString();
+      // Ini tindakan user (bukan semasa build), jadi boleh notify onChanged.
+      _setTextSilently(next);
+      widget.onChanged?.call(next);
+      setState(() {}); // pastikan paparan numeric (Text) update.
     }
   }
 

@@ -68,6 +68,11 @@ export async function showConfigSubTab(tabId) {
 		if (tabId === 'hotspot' && typeof window.refreshHotspotStatus === 'function') {
 			window.refreshHotspotStatus();
 		}
+		if (tabId === 'system') {
+			if (typeof window.initClientConfigPanel === 'function') {
+				window.initClientConfigPanel();
+			}
+		}
 		if (tabId === 'masa-sistem' && document.getElementById('system-datetime')) {
 			const now = new Date();
 			const pad = n => String(n).padStart(2, '0');
