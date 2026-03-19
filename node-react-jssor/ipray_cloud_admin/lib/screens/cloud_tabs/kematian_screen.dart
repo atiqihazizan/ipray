@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/app_config.dart';
 import '../../services/cloud_socket_service.dart';
+import '../../widgets/stepper_field.dart';
 
 /// Sub-skrin Kematian (1 page sahaja, tiada sub page).
 class KematianScreen extends StatefulWidget {
@@ -27,7 +28,7 @@ class _KematianScreenState extends State<KematianScreen> {
   final _tempatCtrl = TextEditingController();
   final _masaSolatCtrl = TextEditingController();
   final _maklumatCtrl = TextEditingController();
-  final _durasiCtrl = TextEditingController(text: '0');
+  int _durasiMinit = 0;
 
   bool _showTarikh = true;
   bool _showJamKecil = true;
@@ -140,7 +141,7 @@ class _KematianScreenState extends State<KematianScreen> {
       final durasiSaat = payload['durasiSaat'];
       final durasiInt = durasiSaat is int ? durasiSaat : int.tryParse(durasiSaat?.toString() ?? '');
       if (durasiInt != null) {
-        _durasiCtrl.text = (durasiInt <= 0) ? '0' : (durasiInt / 60).round().toString();
+        setState(() => _durasiMinit = (durasiInt <= 0) ? 0 : (durasiInt / 60).round());
       }
       _startCountdownIfNeeded(payload, durasiInt);
 
@@ -160,7 +161,7 @@ class _KematianScreenState extends State<KematianScreen> {
       _stopCountdown();
       setState(() {
         _isActive = false;
-        _durasiCtrl.text = '0';
+        _durasiMinit = 0;
       });
     });
 
@@ -236,7 +237,6 @@ class _KematianScreenState extends State<KematianScreen> {
     _tempatCtrl.dispose();
     _masaSolatCtrl.dispose();
     _maklumatCtrl.dispose();
-    _durasiCtrl.dispose();
     super.dispose();
   }
 
@@ -358,8 +358,7 @@ class _KematianScreenState extends State<KematianScreen> {
 
     setState(() => _saving = true);
     try {
-      final durasiMinit = int.tryParse(_durasiCtrl.text.trim());
-      final durasiSaat = (durasiMinit != null && durasiMinit > 0) ? durasiMinit * 60 : 0;
+      final durasiSaat = (_durasiMinit > 0) ? _durasiMinit * 60 : 0;
 
       final overlayConfig = <String, dynamic>{
         'showDate': _showTarikh,
@@ -407,6 +406,7 @@ class _KematianScreenState extends State<KematianScreen> {
       if (!mounted) return;
       setState(() {
         _isActive = false;
+        _durasiMinit = 0;
       });
     } finally {
       if (mounted) {
@@ -509,42 +509,34 @@ class _KematianScreenState extends State<KematianScreen> {
                 //   maxLines: 3,
                 // ),
                 const SizedBox(height: 20),
-                Text(
-                  'Durasi Paparan (minit)',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF475569),
+                IgnorePointer(
+                  ignoring: _isActive,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Durasi Paparan (minit)',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: const Color(0xFF475569),
+                            ),
                       ),
+                      StepperField(
+                        label: null,
+                        value: _durasiMinit,
+                        min: 0,
+                        onChanged: (v) => setState(() => _durasiMinit = v),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: TextField(
-                        controller: _durasiCtrl,
-                        enabled: !_isActive,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        '0 = kekal sehingga padam manual',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                const Text(
+                  '0 = kekal sehingga padam manual',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
                 if (_isActive && _remainingSec > 0) ...[
                   const SizedBox(height: 8),

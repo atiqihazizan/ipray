@@ -14,11 +14,11 @@ router.post('/ack', requireAuth, async (req, res) => {
     }
 
     // eslint-disable-next-line no-console
-    console.log('[ACK]', {
-      clientId,
-      file,
-      status
-    });
+    // console.log('[ACK]', {
+    //   clientId,
+    //   file,
+    //   status
+    // });
 
     return res.status(200).json({
       message: 'ACK received',

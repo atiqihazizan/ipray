@@ -79,7 +79,12 @@ function parseLineToRow(normalized, line, index) {
     const checkboxRaw = parseInt(parts[3], 10) || 0;
     const marqueeCol = (parts[5] || '').trim() === '1';
     const combinedBit = parts.length >= 6 ? (checkboxRaw | (marqueeCol ? 8 : 0)) : checkboxRaw;
-    const checkbox = [1, 2, 4].filter(b => (combinedBit & b) !== 0).join(',');
+    const cbParts = [];
+    if (combinedBit & 1) cbParts.push('date');
+    if (combinedBit & 2) cbParts.push('solat-time');
+    if (combinedBit & 4) cbParts.push('solat-time-small');
+    if (combinedBit & 8) cbParts.push('marquee');
+    const checkbox = cbParts.join(',');
     return {
       id: index + 1,
       type: parts[0] || '',
@@ -114,6 +119,122 @@ function parseLineToRow(normalized, line, index) {
       speakerId: isOld ? (parts[4] || '') : (parts[3] || '').trim(),
       title: isOld ? (parts[5] || '') : (parts[4] || ''),
       raw: line
+    };
+  }
+  if (normalized === 'kuliah-override') {
+    // Format ikut nodejs/dataService: single, hijri, range (weekly/tahun/bulan)
+    // - single: DD-MM-YYYY|type|notes
+    // - hijri: hijri|tahun|bulan|hari|type|replace|notes|[showAnnounce|title|tempat|jemputan]
+    // - range: weekly|day|type|replace|notes ATAU tahun|bulan|type|hari|notes ATAU bulan|type|hari|replace|notes ATAU tahun|bulan|type|hari|replace|notes
+    const empty = {
+      id: index + 1,
+      format: '',
+      date: '',
+      tahun: '',
+      bulan: '',
+      type: '',
+      hari: '',
+      replace: '',
+      notes: '',
+      showAnnounce: '',
+      title: '',
+      tempat: '',
+      jemputan: '',
+      raw: line
+    };
+
+    const first = (parts[0] || '').trim();
+    const isHijri = first.toLowerCase() === 'hijri' && parts.length >= 6;
+    const isLegacySingle = /^\d{2}-\d{2}-\d{4}$/.test(first);
+
+    if (isHijri) {
+      return {
+        ...empty,
+        format: 'hijri',
+        tahun: (parts[1] || '').trim(),
+        bulan: (parts[2] || '').trim(),
+        hari: (parts[3] || '').trim(),
+        type: (parts[4] || '').trim(),
+        replace: (parts[5] || '').trim(),
+        notes: (parts[6] || '').trim(),
+        showAnnounce: parts.length >= 8 ? (parts[7] || '').trim() : '',
+        title: (parts[8] || '').trim(),
+        tempat: (parts[9] || '').trim(),
+        jemputan: (parts[10] || '').trim()
+      };
+    }
+
+    if (isLegacySingle) {
+      return {
+        ...empty,
+        format: 'single',
+        date: parts[0] || '',
+        type: parts[1] || '',
+        notes: parts[2] || '',
+        tahun: '',
+        bulan: '',
+        hari: '',
+        replace: ''
+      };
+    }
+
+    // Weekly: weekly|dayOfWeek|type|replace|notes (0=Ahad..6=Sabtu)
+    if (first.toLowerCase() === 'weekly' && parts.length >= 5) {
+      return {
+        ...empty,
+        format: 'weekly',
+        bulan: 'weekly',
+        hari: (parts[1] || '').trim(),
+        type: (parts[2] || '').trim(),
+        replace: (parts[3] || '').trim(),
+        notes: (parts[4] || '').trim()
+      };
+    }
+
+    // Range (Masihi)
+    let tahun = '';
+    let bulan = '';
+    let type = '';
+    let hari = '';
+    let replace = '';
+    let notes = '';
+    if (parts.length === 4) {
+      bulan = parts[0] || '';
+      type = parts[1] || '';
+      hari = parts[2] || '';
+      notes = parts[3] || '';
+    } else if (parts.length === 5) {
+      if (/^\d{4}$/.test(first)) {
+        tahun = parts[0] || '';
+        bulan = parts[1] || '';
+        type = parts[2] || '';
+        hari = parts[3] || '';
+        notes = parts[4] || '';
+      } else {
+        bulan = parts[0] || '';
+        type = parts[1] || '';
+        hari = parts[2] || '';
+        replace = parts[3] || '';
+        notes = parts[4] || '';
+      }
+    } else if (parts.length >= 6) {
+      tahun = parts[0] || '';
+      bulan = parts[1] || '';
+      type = parts[2] || '';
+      hari = parts[3] || '';
+      replace = parts[4] || '';
+      notes = parts[5] || '';
+    }
+    return {
+      ...empty,
+      format: 'range',
+      date: '',
+      tahun,
+      bulan,
+      type,
+      hari,
+      replace,
+      notes
     };
   }
   if (normalized === 'announcements') {
@@ -152,9 +273,9 @@ function parseLineToRow(normalized, line, index) {
 }
 
 function parseFileContent(normalized, content) {
-  const lines = content.split(/\r?\n/).filter(l => l.trim() !== '');
+  const cleaned = (content || '').replace(/^\uFEFF/, '');
+  const lines = cleaned.split(/\r?\n/).filter(l => l.trim() !== '');
   const parsed = [];
-  let id = 0;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line.trim().startsWith('#')) continue;
@@ -195,7 +316,8 @@ async function readDataFile(clientId, fileName) {
     }
     return { data: [], columns: COLUMNS[normalized] || [] };
   }
-  const content = await fs.readFile(filePath, 'utf8');
+  let content = await fs.readFile(filePath, 'utf8');
+  content = (content || '').replace(/^\uFEFF/, '');
   const data = parseFileContent(normalized, content);
   const columns = COLUMNS[normalized] || [];
   return { data, columns };
@@ -257,6 +379,18 @@ async function writeFile(clientId, fileName, content) {
   return { success: true };
 }
 
+/** Slides checkbox: comma string → bit (1=date, 2=solat-time, 4=solat-time-small, 8=marquee). */
+function slidesCheckboxCommaToBit(commaStr) {
+  if (!commaStr || typeof commaStr !== 'string') return 0;
+  const set = new Set(commaStr.split(',').map(s => s.trim()).filter(Boolean));
+  let bits = 0;
+  if (set.has('date')) bits |= 1;
+  if (set.has('solat-time')) bits |= 2;
+  if (set.has('solat-time-small')) bits |= 4;
+  if (set.has('marquee')) bits |= 8;
+  return bits;
+}
+
 /** Kemas kini satu baris. */
 async function updateRow(clientId, fileName, id, rowData) {
   const normalized = normalizeFilename(fileName);
@@ -277,6 +411,10 @@ async function updateRow(clientId, fileName, id, rowData) {
   }
   if (normalized === 'takwim' && rowData && rowData.raw) {
     newLine = rowData.raw;
+  }
+  if (normalized === 'slides' && rowData && typeof rowData === 'object' && (newLine == null || newLine === '')) {
+    const checkboxBit = slidesCheckboxCommaToBit(rowData.checkbox);
+    newLine = `${rowData.type || ''}|${rowData.image || ''}|${rowData.duration || ''}|${checkboxBit}|${rowData.hide || '0'}`;
   }
   if (newLine == null) newLine = '';
   allLines[lineIndex] = newLine;

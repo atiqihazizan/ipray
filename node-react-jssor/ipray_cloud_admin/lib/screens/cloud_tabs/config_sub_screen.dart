@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../../config/app_config.dart';
 import '../../services/cloud_socket_service.dart';
 import '../../widgets/panel_tab_screen.dart';
+import '../../widgets/stepper_field.dart';
 
 /// Screen sub-config: memaparkan kandungan satu tab Konfigurasi (ada Back).
 ///
@@ -413,20 +414,29 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
               _socketService?.saveConfigItem('HOME_TITLE_VISIBLE', stringValue);
             },
           ),
-          // const SizedBox(height: 12),
-          PanelTabRowInput(
-            label: 'Tempoh Paparan (saat)',
-            initialValue: _config('HOME_TITLE_DURATION_SEC', '10'),
-            unit: 's',
-            isNumeric: true,
-            onChanged: (text) {
-              final trimmed = text.trim();
-              final value = trimmed.isEmpty ? '10' : trimmed;
-              setState(() {
-                _configData['HOME_TITLE_DURATION_SEC'] = value;
-              });
-              _socketService?.saveConfigItem('HOME_TITLE_DURATION_SEC', value);
-            },
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Tempoh Paparan (saat)',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('HOME_TITLE_DURATION_SEC', '10')) ?? 10,
+                  min: 1,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() {
+                      _configData['HOME_TITLE_DURATION_SEC'] = value;
+                    });
+                    _socketService?.saveConfigItem('HOME_TITLE_DURATION_SEC', value);
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -572,26 +582,71 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
       PanelTabSectionHeader('WAKTU SOLAT - KONFIGURASI MASA'),
       PanelTabCard(
         children: [
-          PanelTabRowInput(
-            label: 'Durasi Sebelum Azan',
-            initialValue: _config('WARNING_START_MINUTES', '5'),
-            unit: 'min',
-            isNumeric: true,
-            onChanged: _handleWarningStartMinutesChanged,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Durasi Sebelum Azan',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('WARNING_START_MINUTES', '5')) ?? 5,
+                  min: 1,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() => _configData['WARNING_START_MINUTES'] = value);
+                    _socketService?.saveConfigItem('WARNING_START_MINUTES', value);
+                  },
+                ),
+              ],
+            ),
           ),
-          PanelTabRowInput(
-            label: 'Durasi Sebelum Iqamah',
-            initialValue: _config('IQAMAH_DURATION_MIN', '10'),
-            unit: 'min',
-            isNumeric: true,
-            onChanged: _handleIqamahDurationChanged,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Durasi Sebelum Iqamah',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('IQAMAH_DURATION_MIN', '10')) ?? 10,
+                  min: int.tryParse(_config('WARNING_START_MINUTES', '1')) ?? 1,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() => _configData['IQAMAH_DURATION_MIN'] = value);
+                    _socketService?.saveConfigItem('IQAMAH_DURATION_MIN', value);
+                  },
+                ),
+              ],
+            ),
           ),
-          PanelTabRowInput(
-            label: 'Durasi Solat',
-            initialValue: _config('SOLAT_DURATION_MIN', '10'),
-            unit: 'min',
-            isNumeric: true,
-            onChanged: _handleSolatDurationChanged,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Durasi Solat',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('SOLAT_DURATION_MIN', '10')) ?? 10,
+                  min: int.tryParse(_config('IQAMAH_DURATION_MIN', '1')) ?? 1,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() => _configData['SOLAT_DURATION_MIN'] = value);
+                    _socketService?.saveConfigItem('SOLAT_DURATION_MIN', value);
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -599,12 +654,27 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
       PanelTabSectionHeader('WAKTU SOLAT - ALERT & AMARAN'),
       PanelTabCard(
         children: [
-          PanelTabRowInput(
-            label: 'Beep Count',
-            initialValue: _config('BEEP_COUNT', '0'),
-            unit: '',
-            isNumeric: true,
-            onChanged: _handleBeepCountChanged,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Beep Count',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('BEEP_COUNT', '0')) ?? 0,
+                  min: 0,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() => _configData['BEEP_COUNT'] = value);
+                    _socketService?.saveConfigItem('BEEP_COUNT', value);
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -823,12 +893,27 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
             value: showMosque,
             onChanged: _handleToggleShowMosque,
           ),
-          PanelTabRowInput(
-            label: 'Kelajuan (saat per pusingan)',
-            initialValue: _config('MARQUEE_DURATION', '25'),
-            unit: 's',
-            onChanged: _handleMarqueeDurationChanged,
-            isNumeric: true,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Kelajuan (saat per pusingan)',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                ),
+                StepperField(
+                  label: null,
+                  value: int.tryParse(_config('MARQUEE_DURATION', '25')) ?? 25,
+                  min: 1,
+                  onChanged: (v) {
+                    final value = v.toString();
+                    setState(() => _configData['MARQUEE_DURATION'] = value);
+                    _socketService?.saveConfigItem('MARQUEE_DURATION', value);
+                  },
+                ),
+              ],
+            ),
           ),
           _buildPemisahMesejRow(),
         ],

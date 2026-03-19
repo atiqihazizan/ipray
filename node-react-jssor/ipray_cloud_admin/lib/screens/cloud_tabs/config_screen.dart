@@ -172,7 +172,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF5F5F5),
+      // color: const Color(0xFFF5F5F5),
       child: RefreshIndicator(
         onRefresh: _refreshNow,
         child: ListTabBar(

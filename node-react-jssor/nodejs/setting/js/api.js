@@ -52,6 +52,13 @@ function reconstructRawLine(fileName, rowData) {
     if (format === "single") {
       return `${rowData.date || ""}|${rowData.type || ""}|${rowData.notes || ""}`;
     }
+    if (format === "weekly") {
+      const hari = (rowData.hari || "").trim();
+      const type = (rowData.type || "").trim();
+      const replace = (rowData.replace || "").trim();
+      const notes = (rowData.notes || "").trim();
+      return `weekly|${hari}|${type}|${replace}|${notes}`;
+    }
     const tahun = (rowData.tahun || "").trim();
     const bulan = (rowData.bulan || "").trim();
     const type = (rowData.type || "").trim();
@@ -608,6 +615,12 @@ export async function saveRow() {
           showNotification("✗ Format tarikh tidak betul. Gunakan: DD-MM-YYYY atau YYYY-MM-DD","error");
           return;
         }
+      }
+    } else if (format === "weekly") {
+      const hari = parseInt(rowData.hari, 10);
+      if (isNaN(hari) || hari < 0 || hari > 6) {
+        showNotification("✗ Hari minggu wajib (0-6)", "error");
+        return;
       }
     } else {
       const bulan = parseInt(rowData.bulan, 10);

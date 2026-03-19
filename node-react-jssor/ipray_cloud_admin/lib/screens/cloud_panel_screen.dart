@@ -63,12 +63,6 @@ class _CloudPanelScreenState extends State<CloudPanelScreen> {
     super.dispose();
   }
 
-  /// Reload panel tab yang aktif (remount widget → initState → fetch data semula).
-  void _reloadPanelTab() {
-    if (_currentTabId.isEmpty) return;
-    setState(() => _panelRefreshKey++);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,17 +140,42 @@ class _CloudPanelScreenState extends State<CloudPanelScreen> {
           refreshTrigger: _panelRefreshKey,
         );
       case 'countdowns':
-        return CountdownsScreen(key: key);
+        return CountdownsScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
+        );
       case 'announcements':
-        return AnnouncementsScreen(key: key);
+        return AnnouncementsScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
+        );
       case 'slideshow':
-        return SlideshowScreen(key: key);
+        return SlideshowScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
+        );
       case 'kuliah':
-        return KuliahScreen(key: key);
+        return KuliahScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
+        );
       case 'imam-bilal':
-        return ImamBilalScreen(key: key);
-      case 'background':
-        return BackgroundScreen(key: key);
+        return ImamBilalScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
+        );
+      // case 'background':
+      //   return BackgroundScreen(key: key);
       case 'kematian':
         return KematianScreen(
           key: key,

@@ -51,7 +51,7 @@ const Icons = {
 
 /** URL imej untuk panel cloud (guna CLIENT_ID supaya server serve dari storage) */
 function imageSrc(path, defaultPath) {
-  const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/images/clientA";
+  const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/storage/clientA/images";
   const part = (path || defaultPath || "").trim();
   if (!part) return base + "/noimage.png";
   if (part.startsWith("http")) return part;
@@ -175,7 +175,9 @@ function buildTableRow(row, ctx) {
             ? "Hijri"
             : value === "range"
               ? "Range"
-              : "Tarikh";
+              : value === "weekly"
+                ? "Weekly"
+                : "Tarikh";
       if (col === "showAnnounce")
         value =
           value === "1" ? "Ya" : value === "0" ? "Tidak" : value || "–";
@@ -1101,9 +1103,10 @@ export async function loadBackgroundTable() {
 
     const result = await fetchData("images");
     const all = Array.isArray(result.data) ? result.data : [];
-    const filtered = all.filter((row) =>
-      String(row?.imagePath || "").includes("/slides/"),
-    );
+    const filtered = all.filter((row) => {
+      const p = String(row?.imagePath || "");
+      return p.includes("/slides/") || p.startsWith("slides/");
+    });
 
     setCurrentData(filtered);
     setCurrentColumns(["imageCode", "imagePath"]);

@@ -362,6 +362,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         { value: "single", label: "Tarikh tunggal" },
         { value: "range", label: "Range bulan/hari Masihi" },
         { value: "hijri", label: "Tarikh Hijri" },
+        { value: "weekly", label: "Mingguan (setiap minggu)" },
       ].forEach((opt) => {
         const o = document.createElement("option");
         o.value = opt.value;
@@ -377,8 +378,11 @@ function createFormFields(form, row, isAdd, options = {}) {
         form.querySelectorAll("[data-kb-single]").forEach((el) => {
           el.style.display = v === "single" ? "" : "none";
         });
-        form.querySelectorAll("[data-kb-range]").forEach((el) => {
-          el.style.display = v === "range" || v === "hijri" ? "" : "none";
+        form.querySelectorAll("[data-kb-tahun-bulan]").forEach((el) => {
+          el.style.display = (v === "range" || v === "hijri") ? "" : "none";
+        });
+        form.querySelectorAll("[data-kb-hari-replace]").forEach((el) => {
+          el.style.display = (v === "range" || v === "hijri" || v === "weekly") ? "" : "none";
         });
         form.querySelectorAll("[data-kb-hijri]").forEach((el) => {
           el.style.display = v === "hijri" ? "" : "none";
@@ -393,17 +397,26 @@ function createFormFields(form, row, isAdd, options = {}) {
         !isAdd && row.format
           ? (row.format || "single").toLowerCase()
           : "single";
-      if (fmt === "range" || fmt === "hijri") group.style.display = "none";
+      if (fmt === "range" || fmt === "hijri" || fmt === "weekly") group.style.display = "none";
     }
-    // Kuliah-override: tahun, bulan, hari, replace (format range atau hijri) - toggle by format
+    // Kuliah-override: tahun, bulan (format range atau hijri sahaja)
     if (
       currentFileName === "kuliah-override" &&
-      (col === "tahun" ||
-        col === "bulan" ||
-        col === "hari" ||
-        col === "replace")
+      (col === "tahun" || col === "bulan")
     ) {
-      group.setAttribute("data-kb-range", "1");
+      group.setAttribute("data-kb-tahun-bulan", "1");
+      const fmt =
+        !isAdd && row.format
+          ? (row.format || "single").toLowerCase()
+          : "single";
+      if (fmt === "single" || fmt === "weekly") group.style.display = "none";
+    }
+    // Kuliah-override: hari, replace (format range, hijri, atau weekly)
+    if (
+      currentFileName === "kuliah-override" &&
+      (col === "hari" || col === "replace")
+    ) {
+      group.setAttribute("data-kb-hari-replace", "1");
       const fmt =
         !isAdd && row.format
           ? (row.format || "single").toLowerCase()
@@ -816,7 +829,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         );
         if (found && found.imagePath) {
           const path = found.imagePath;
-          const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/images/clientA";
+          const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images";
           const part = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(path) : path.replace(/^\/images\/?/, "").replace(/^images\//, "");
           previewImg.src = path.startsWith("http") ? path : `${base}/${part}`;
           previewImg.style.display = "block";
@@ -959,9 +972,9 @@ function createFormFields(form, row, isAdd, options = {}) {
       previewImg.style.objectFit = "cover";
       const initialPreview = { src: "", visible: false };
       if (!isAdd && row[col]) {
-        const imageUrl = row[col].startsWith("/")
-          ? `${BASE_URL}${row[col]}`
-          : `${BASE_URL}${row[col]}`;
+        const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images";
+        const pathPart = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(row[col]) : String(row[col]).replace(/^\/images\/?/, "").replace(/^images\//, "");
+        const imageUrl = `${base}/${pathPart}`;
         previewImg.src = imageUrl;
         previewImg.style.display = "block";
         initialPreview.src = imageUrl;
@@ -1134,7 +1147,7 @@ function createFormFields(form, row, isAdd, options = {}) {
 
       // Set preview image jika ada value
       if (!isAdd && row[col]) {
-        const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/images/clientA";
+        const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images";
         const part = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(row[col]) : String(row[col]).replace(/^\/images\/?/, "").replace(/^images\//, "");
         previewImg.src = row[col].startsWith("http") ? row[col] : `${base}/${part}`;
         previewImg.style.display = "block";
@@ -1157,10 +1170,8 @@ function createFormFields(form, row, isAdd, options = {}) {
       const backgroundMode = typeof window !== "undefined" && window.__BACKGROUND_MODE__ === true;
       let defaultCategory = backgroundMode ? "slides" : "penceramah";
       if (!isAdd && row[col]) {
-        if (
-          row[col].includes("/images/slides/") ||
-          row[col].includes("images/slides/")
-        ) {
+        const p = String(row[col]);
+        if (p.includes("/images/slides/") || p.includes("images/slides/") || p.startsWith("slides/")) {
           defaultCategory = "slides";
         }
       }
@@ -1448,8 +1459,33 @@ function createFormFields(form, row, isAdd, options = {}) {
           input.max = "12";
           input.placeholder = "1-12";
         }
-        // Kuliah-batal: hari (range atau senarai)
+        // Kuliah-batal: hari — format weekly = dropdown 0-6, range/hijri = input teks
         if (col === "hari" && currentFileName === "kuliah-override") {
+          const fmt = (!isAdd && row && row.format) ? (row.format || "").toLowerCase() : "single";
+          if (fmt === "weekly") {
+            const select = document.createElement("select");
+            select.id = "field-hari";
+            select.name = "hari";
+            select.className = "form-control";
+            const DAY_OPTIONS = [
+              { value: "0", label: "Ahad" }, { value: "1", label: "Isnin" }, { value: "2", label: "Selasa" },
+              { value: "3", label: "Rabu" }, { value: "4", label: "Khamis" }, { value: "5", label: "Jumaat" },
+              { value: "6", label: "Sabtu" },
+            ];
+            const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+            DAY_OPTIONS.forEach((opt) => {
+              const o = document.createElement("option");
+              o.value = opt.value;
+              o.textContent = opt.label;
+              if (currentVal === opt.value) o.selected = true;
+              select.appendChild(o);
+            });
+            label.textContent = "Hari minggu (0-6)";
+            group.appendChild(label);
+            group.appendChild(select);
+            form.appendChild(group);
+            return;
+          }
           input.placeholder = "cth: 1-30 atau 1,2,3,5";
         }
         // Kuliah-batal: replace dropdown (0/1)
@@ -1628,12 +1664,12 @@ function createFormFields(form, row, isAdd, options = {}) {
       const found = (imagesList || []).find((im) => (im.imageCode || "").trim() === trimmed);
       const pathVal = found && found.imagePath ? found.imagePath : null;
       if (pathVal) {
-        const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/images/clientA";
+        const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images";
         const part = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(pathVal) : pathVal.replace(/^\/images\/?/, "").replace(/^images\//, "");
         previewImg.src = pathVal.startsWith("http") ? pathVal : `${base}/${part}`;
         previewImg.style.display = "block";
       } else {
-        previewImg.src = (window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/images/clientA") + "/imambilal/Random_user.svg";
+        previewImg.src = (window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images") + "/imambilal/Random_user.svg";
         previewImg.style.display = "block";
       }
     };
@@ -1720,7 +1756,7 @@ function createFormFields(form, row, isAdd, options = {}) {
       if (!trimmed) { previewImg.removeAttribute("src"); previewImg.style.display = "none"; return; }
       const found = (imagesList || []).find((im) => (im.imageCode || "").trim() === trimmed);
       const pathVal = found && found.imagePath ? found.imagePath : `penceramah/${trimmed}`;
-      const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/images/clientA";
+      const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : BASE_URL + "/storage/clientA/images";
       const part = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(pathVal) : pathVal.replace(/^\/images\/?/, "").replace(/^images\//, "");
       previewImg.src = pathVal.startsWith("http") ? pathVal : `${base}/${part}`;
       previewImg.style.display = "block";

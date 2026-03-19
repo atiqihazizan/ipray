@@ -296,9 +296,12 @@ async function startServers() {
       console.error('[Cloud] Failed to initialize cloud socket handler:', err.message || err);
     }
 
-    // Bila sambungan cloud berjaya, upload semua fail data dari local ke server
+    // Bila sambungan cloud berjaya, upload semua fail data (.txt) dan imej dari local ke server
     setOnRegisteredCallback(() => {
-      dataService.syncAllDataFilesToCloud().catch(err => {
+      Promise.all([
+        dataService.syncAllDataFilesToCloud(),
+        dataService.syncAllImagesToCloud(imagesPath)
+      ]).catch(err => {
         console.error('[Cloud] Full sync on connect failed:', err.message || err);
       });
     });

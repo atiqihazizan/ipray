@@ -64,25 +64,29 @@ async function bootstrap() {
   // Serve cloud setting panel
   const settingPath = path.join(__dirname, 'setting');
   app.use('/setting', express.static(settingPath));
+  const storagePath = path.join(__dirname, 'storage');
+  app.use('/storage', express.static(storagePath));
 
   // Serve webmobile panel (responsive phone UI)
-  const webmobilePath = path.join(__dirname, 'webmobile');
-  app.use('/webmobile', express.static(webmobilePath));
+  // const webmobilePath = path.join(__dirname, 'webmobile');
+  // app.use('/webmobile', express.static(webmobilePath));
 
-  // Serve images dari storage untuk panel cloud (URL: /images/:clientId/category/filename)
+  // Serve images dari storage (URL: /storage/:clientId/images/category/filename)
+  // Path fail: STORAGE_ROOT/clientId/images/category/filename (tanpa "storage" - itu prefix URL sahaja)
   app.use('/images', (req, res, next) => {
-    const segs = req.path.replace(/^\/+/, '').split('/');
-    const clientId = segs[0];
-    const rest = segs.slice(1).join('/');
-    if (!clientId || !rest) return next();
-    if (/\.\.|\0/.test(rest) || /\.\.|\0/.test(clientId)) return res.status(400).end();
-    if (rest === 'noimage.png') {
+    const segs = req.path.replace(/^\/+/, '').split('/').filter(Boolean);
+    if (segs.length === 0) return next();
+    const pathInStorage = segs[0] === 'images' ? segs.slice(1) : segs;
+    if (pathInStorage.length === 0) return next();
+    if (pathInStorage.some(s => /\.\.|\0/.test(s))) return res.status(400).end();
+    if (pathInStorage[pathInStorage.length - 1] === 'noimage.png') {
       res.setHeader('Content-Type', 'image/gif');
       res.end(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
       return;
     }
-    const filePath = path.join(STORAGE_ROOT, clientId, 'images', rest);
+    const filePath = path.join(STORAGE_ROOT, ...pathInStorage);
     fs.pathExists(filePath).then(exists => {
+      console.log(STORAGE_ROOT, filePath, exists);
       if (!exists) return res.status(404).end();
       res.sendFile(path.resolve(filePath), err => { if (err && !res.headersSent) next(); });
     }).catch(() => next());

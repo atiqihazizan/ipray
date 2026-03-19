@@ -14,20 +14,51 @@ class PanelMenuGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 12,
-          runSpacing: 12,
-          children: PanelMenu.items.map((item) => _MenuCard(
-                icon: item.icon,
-                label: item.label,
-                onTap: () => onItemSelected(item.tabId, item.label),
-              )).toList(),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Responsive sizing for mobile: ensure 2 columns fit without horizontal overflow.
+        final isMobile = constraints.maxWidth < 420;
+        final horizontalPadding = isMobile ? 16.0 : 24.0;
+        final spacing = isMobile ? 10.0 : 12.0;
+        final runSpacing = isMobile ? 10.0 : 12.0;
+
+        final availableWidth = constraints.maxWidth - (horizontalPadding * 2);
+        const minCardWidth = 140.0;
+        final useTwoColumns = availableWidth >= (minCardWidth * 2 + spacing);
+        final cardWidthBase = useTwoColumns
+            ? ((availableWidth - spacing) / 2)
+            : availableWidth; // 1 kolum bila ruang tak cukup untuk 2 kolum
+        final cardWidth = cardWidthBase.clamp(0.0, 170.0);
+
+        final iconFontSize = isMobile ? 28.0 : 36.0;
+        final cardPaddingH = isMobile ? 12.0 : 16.0;
+        final cardPaddingV = isMobile ? 16.0 : 20.0;
+
+        return Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: isMobile ? 16.0 : 24.0,
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: spacing,
+              runSpacing: runSpacing,
+              children: PanelMenu.items.map((item) => _MenuCard(
+                    icon: item.icon,
+                    label: item.label,
+                    cardWidth: cardWidth,
+                    iconFontSize: iconFontSize,
+                    cardPadding: EdgeInsets.symmetric(
+                      horizontal: cardPaddingH,
+                      vertical: cardPaddingV,
+                    ),
+                    onTap: () => onItemSelected(item.tabId, item.label),
+                  )).toList(),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -37,11 +68,17 @@ class _MenuCard extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    required this.cardWidth,
+    required this.iconFontSize,
+    required this.cardPadding,
   });
 
   final Widget icon;
   final String label;
   final VoidCallback onTap;
+  final double cardWidth;
+  final double iconFontSize;
+  final EdgeInsets cardPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +91,13 @@ class _MenuCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: 140,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          width: cardWidth,
+          padding: cardPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DefaultTextStyle.merge(
-                style: const TextStyle(fontSize: 36),
+                style: TextStyle(fontSize: iconFontSize),
                 child: icon,
               ),
               const SizedBox(height: 10),

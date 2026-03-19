@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
@@ -304,6 +306,36 @@ class CloudSocketService {
     });
   }
 
+  /// Upload imej ke storage cloud untuk panel setting (guna cloud:image:upload).
+  ///
+  /// Return: path storage dalam format `/images/<category>/<filename>`.
+  Future<String?> uploadImage({
+    required Uint8List bytes,
+    required String originalName,
+    required String category,
+  }) async {
+    final base64 = base64Encode(bytes);
+    final res = await emitWithResponse(
+      'cloud:image:upload',
+      {
+        'base64': base64,
+        'originalName': originalName,
+        'category': category,
+      },
+    );
+
+    if (res is! Map) return null;
+    final path = res['path'];
+    return path?.toString();
+  }
+
+  /// Kemaskini susunan baris slideshow (fileName=`slideshow`).
+  Future<void> reorderSlideshow(List<int> orderedIds) async {
+    await emitWithResponse('cloud:slideshow:reorder', {
+      'orderedIds': orderedIds,
+    });
+  }
+
   /// Insert baris hebahan (format raw string, selari cloudDataService hebahan).
   Future<void> insertHebahanRow(String text, String startDate, String endDate) async {
     final raw = '$text|$startDate|$endDate';
@@ -322,6 +354,88 @@ class CloudSocketService {
       'id': id,
       'row': raw,
     });
+  }
+
+  /// Bina baris raw untuk countdown (selari format nodejs setting/api.js).
+  /// format: date|masihi|hijri
+  static String? buildCountdownRaw({
+    required String format,
+    required String event,
+    String date = '',
+    String tahun = '',
+    String bulan = '',
+    String hari = '',
+    String windowDays = '',
+  }) {
+    final f = format.trim().toLowerCase();
+    final e = event.trim();
+    if (e.isEmpty) return null;
+    final w = windowDays.trim();
+
+    if (f == 'hijri') {
+      final y = tahun.trim();
+      final m = bulan.trim();
+      final d = hari.trim();
+      if (m.isEmpty || d.isEmpty) return null;
+      return 'COUNTDOWN_HIJRI|$y|$m|$d|$e|$w';
+    }
+    if (f == 'masihi') {
+      final m = bulan.trim();
+      final d = hari.trim();
+      if (m.isEmpty || d.isEmpty) return null;
+      return 'COUNTDOWN_MASIHI|$m|$d|$e|$w';
+    }
+    final dt = date.trim();
+    if (dt.isEmpty) return null;
+    return 'COUNTDOWN|$dt|$e|$w';
+  }
+
+  /// Insert baris countdown menggunakan format raw (lebih selamat daripada hantar map).
+  Future<void> insertCountdownRow({
+    required String format,
+    required String event,
+    String date = '',
+    String tahun = '',
+    String bulan = '',
+    String hari = '',
+    String windowDays = '',
+    String position = 'end',
+  }) async {
+    final raw = buildCountdownRaw(
+      format: format,
+      event: event,
+      date: date,
+      tahun: tahun,
+      bulan: bulan,
+      hari: hari,
+      windowDays: windowDays,
+    );
+    if (raw == null) return;
+    await insertRow('countdowns', {'raw': raw}, position: position);
+  }
+
+  /// Update baris countdown menggunakan format raw.
+  Future<void> updateCountdownRow(
+    int id, {
+    required String format,
+    required String event,
+    String date = '',
+    String tahun = '',
+    String bulan = '',
+    String hari = '',
+    String windowDays = '',
+  }) async {
+    final raw = buildCountdownRaw(
+      format: format,
+      event: event,
+      date: date,
+      tahun: tahun,
+      bulan: bulan,
+      hari: hari,
+      windowDays: windowDays,
+    );
+    if (raw == null) return;
+    await updateRow('countdowns', id, {'raw': raw});
   }
 
   /// Simpan keseluruhan fail data (contoh: hebahan) menggunakan cloud:file:save.

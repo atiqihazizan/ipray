@@ -26,7 +26,7 @@ class PanelMenu {
     PanelMenuItem(tabId: 'slideshow', label: 'Slideshow', icon: Text('🎬', style: _emojiStyle)),
     PanelMenuItem(tabId: 'kuliah', label: 'Kuliah', icon: Text('📚', style: _emojiStyle)),
     PanelMenuItem(tabId: 'imam-bilal', label: 'Imam & Bilal', icon: Text('👥', style: _emojiStyle)),
-    PanelMenuItem(tabId: 'background', label: 'Background', icon: Text('🖼️', style: _emojiStyle)),
+    // PanelMenuItem(tabId: 'background', label: 'Background', icon: Text('🖼️', style: _emojiStyle)),
     PanelMenuItem(tabId: 'kematian', label: 'Kematian', icon: Text('🕌', style: _emojiStyle)),
     PanelMenuItem(tabId: 'livestream', label: 'Siaran Langsung', icon: Text('📹', style: _emojiStyle)),
   ];

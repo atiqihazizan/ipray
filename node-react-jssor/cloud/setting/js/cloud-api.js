@@ -80,6 +80,13 @@ function reconstructRawLine(fileName, rowData) {
     if (format === "single") {
       return `${rowData.date || ""}|${rowData.type || ""}|${rowData.notes || ""}`;
     }
+    if (format === "weekly") {
+      const hari = (rowData.hari || "").trim();
+      const type = (rowData.type || "").trim();
+      const replace = (rowData.replace || "").trim();
+      const notes = (rowData.notes || "").trim();
+      return `weekly|${hari}|${type}|${replace}|${notes}`;
+    }
     const tahun = (rowData.tahun || "").trim();
     const bulan = (rowData.bulan || "").trim();
     const type = (rowData.type || "").trim();
@@ -356,7 +363,10 @@ export async function saveRow() {
     const typeStr = (rowData.type || "").trim();
     if (!typeStr) { showNotification("✗ Type kuliah wajib dipilih", "error"); return; }
     if (format === "single" && (!rowData.date || !rowData.date.trim())) { showNotification("✗ Tarikh wajib diisi", "error"); return; }
-    if (format !== "single") {
+    if (format === "weekly") {
+      const hari = parseInt(rowData.hari, 10);
+      if (isNaN(hari) || hari < 0 || hari > 6) { showNotification("✗ Hari minggu wajib (0-6)", "error"); return; }
+    } else if (format !== "single") {
       const bulan = parseInt(rowData.bulan, 10);
       if (isNaN(bulan) || bulan < 1 || bulan > 12) { showNotification("✗ Bulan wajib (1-12)", "error"); return; }
       if (!rowData.hari || !rowData.hari.trim()) { showNotification("✗ Hari wajib", "error"); return; }

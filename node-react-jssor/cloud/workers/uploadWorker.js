@@ -58,7 +58,7 @@ async function startUploadWorker() {
   );
 
   worker.on('completed', job => {
-    console.log('[UploadWorker] Completed job', job.id);
+    // console.log('[UploadWorker] Completed job', job.id);
   });
   worker.on('failed', (job, err) => {
     console.error('[UploadWorker] Failed job', job && job.id, err);

@@ -164,7 +164,9 @@ function buildTableRow(row, ctx) {
             ? "Hijri"
             : value === "range"
               ? "Range"
-              : "Tarikh";
+              : value === "weekly"
+                ? "Weekly"
+                : "Tarikh";
       if (col === "showAnnounce")
         value =
           value === "1" ? "Ya" : value === "0" ? "Tidak" : value || "–";

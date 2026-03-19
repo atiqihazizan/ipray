@@ -25,7 +25,7 @@ const Icons = {
  * Resolve URL penuh untuk imej (panel cloud: guna CLIENT_ID supaya server serve dari storage)
  */
 function resolveImageUrl(imagePath) {
-  const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/images/clientA";
+  const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/storage/clientA/images";
   if (!imagePath) return `${base}/noimage.png`;
   if (imagePath.startsWith("http")) return imagePath;
   const pathPart = window.Config.resolveImagePathForUrl ? window.Config.resolveImagePathForUrl(imagePath) : imagePath.replace(/^\/images\/?/, "").replace(/^images\//, "");
@@ -36,7 +36,7 @@ function resolveImageUrl(imagePath) {
  * Bina satu kad imej
  */
 function buildCard(row) {
-  const imageBase = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/images/clientA";
+  const imageBase = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (window.Config.BASE_URL || "") + "/storage/clientA/images";
   const imageUrl = resolveImageUrl(row.imagePath);
   const noimage = `${imageBase}/noimage.png`;
 

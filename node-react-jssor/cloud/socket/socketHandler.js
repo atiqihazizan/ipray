@@ -45,7 +45,7 @@ function registerSocketHandlers(io) {
 
       try {
         await ensureClientDir(clientId);
-        console.log('[Cloud] Client registered & directory ensured:', clientId);
+        // console.log('[Cloud] Client registered & directory ensured:', clientId);
       } catch (err) {
         console.error('[Cloud] Failed to ensure client directory', clientId, err);
       }
@@ -56,7 +56,7 @@ function registerSocketHandlers(io) {
       socket.data.clientId = clientId;
       socket.data.isClient = true;
       io.to(`setting_${clientId}`).emit('local:status', { connected: true });
-      console.log('[Cloud] Local client connected:', clientId);
+      // console.log('[Cloud] Local client connected:', clientId);
     });
 
     socket.on('registerSettingPanel', async payload => {
@@ -83,7 +83,7 @@ function registerSocketHandlers(io) {
         console.error('[Cloud] fetchSockets for local status:', err.message);
       }
       socket.emit('local:status', { connected: localConnected });
-      console.log('[Cloud] Setting panel registered for client:', clientId, '| Local (kiosk) connected:', localConnected);
+      // console.log('[Cloud] Setting panel registered for client:', clientId, '| Local (kiosk) connected:', localConnected);
     });
 
     socket.on('getLocalStatus', async () => {
@@ -97,7 +97,7 @@ function registerSocketHandlers(io) {
         console.error('[Cloud] getLocalStatus fetchSockets:', err.message);
       }
       socket.emit('local:status', { connected: localConnected });
-      console.log('[Cloud] getLocalStatus for client:', clientId, '| Local connected:', localConnected);
+      // console.log('[Cloud] getLocalStatus for client:', clientId, '| Local connected:', localConnected);
     });
 
     // Panel setting dari internet: layan cloud:data:get & cloud:file:get dari storage cloud
@@ -150,8 +150,20 @@ function registerSocketHandlers(io) {
           buffer,
           folder: `images/${cat}`
         });
+        // Path format seperti images.txt: /images/category/filename
+        const pathForStorage = `/images/${cat}/${sanitizedName}`;
+        socket.emit('cloud:response', {
+          requestId,
+          success: true,
+          data: { path: pathForStorage }
+        });
       } catch (err) {
         console.error('[Cloud] Save image to storage failed:', err.message);
+        socket.emit('cloud:response', {
+          requestId,
+          success: false,
+          error: err.message || 'Upload failed'
+        });
       }
       io.to(`client_${clientId}`).emit('cloud:image:upload', { ...payload, clientId });
     });
@@ -276,10 +288,10 @@ function registerSocketHandlers(io) {
     socket.on('disconnect', () => {
       if (socket.data?.isClient && socket.data?.clientId) {
         io.to(`setting_${socket.data.clientId}`).emit('local:status', { connected: false });
-        console.log('[Cloud] Local client disconnected:', socket.data.clientId);
+        // console.log('[Cloud] Local client disconnected:', socket.data.clientId);
       }
       if (socket.data?.isSettingPanel) {
-        console.log('[Cloud] Setting panel disconnected for client:', socket.data.clientId);
+        // console.log('[Cloud] Setting panel disconnected for client:', socket.data.clientId);
       }
     });
   });

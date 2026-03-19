@@ -194,6 +194,83 @@ class DataService {
     }
   }
 
+  /** Ekstensi fail imej yang disokong untuk sync ke cloud */
+  static get IMAGE_EXTENSIONS() {
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico', '.tiff', '.tif'];
+  }
+
+  /**
+   * Upload semua fail imej dari imagesPath ke cloud. Dipanggil bila sambungan cloud berjaya.
+   * Struktur local: imagesPath/<category>/<filename>
+   * Struktur cloud: storage/{clientId}/images/<category>/<filename>
+   * @param {string} imagesPath - Path folder images lokal
+   */
+  async syncAllImagesToCloud(imagesPath) {
+    if (!imagesPath || !fs.existsSync(imagesPath)) return;
+    let done = 0;
+    let failed = 0;
+    const imageExts = DataService.IMAGE_EXTENSIONS;
+    try {
+      // Sync fail imej di root imagesPath (cth. noimage.png) ke storage/{clientId}/images/
+      const rootEntries = fs.readdirSync(imagesPath, { withFileTypes: true });
+      const rootFiles = rootEntries.filter(e => e.isFile() && !e.name.startsWith('.')).map(e => e.name);
+      for (const file of rootFiles) {
+        const ext = path.extname(file).toLowerCase();
+        if (!imageExts.includes(ext)) continue;
+        try {
+          const filePath = path.join(imagesPath, file);
+          const folder = 'images';
+          await uploadFile(filePath, folder);
+          await sendAck(file, 'uploaded');
+          done++;
+        } catch (e) {
+          if (!isCloudUnavailableError(e)) {
+            // eslint-disable-next-line no-console
+            console.error('[CloudSync] Gagal sync image (root):', file, e.message);
+            failed++;
+          }
+        }
+      }
+
+      const categories = rootEntries
+        .filter(d => d.isDirectory() && !d.name.startsWith('.'))
+        .map(d => d.name);
+      for (const category of categories) {
+        const catDir = path.join(imagesPath, category);
+        if (!fs.existsSync(catDir)) continue;
+        const files = fs.readdirSync(catDir).filter(f => {
+          if (f.startsWith('.')) return false;
+          const ext = path.extname(f).toLowerCase();
+          return imageExts.includes(ext);
+        });
+        for (const file of files) {
+          try {
+            const filePath = path.join(catDir, file);
+            const folder = `images/${category}`;
+            await uploadFile(filePath, folder);
+            await sendAck(file, 'uploaded');
+            done++;
+          } catch (e) {
+            if (!isCloudUnavailableError(e)) {
+              // eslint-disable-next-line no-console
+              console.error('[CloudSync] Gagal sync image:', category, file, e.message);
+              failed++;
+            }
+          }
+        }
+      }
+      if (done > 0 || failed > 0) {
+        // eslint-disable-next-line no-console
+        console.log('[CloudSync] Images sync on connect: uploaded', done, failed ? `, failed ${failed}` : '');
+      }
+    } catch (e) {
+      if (!isCloudUnavailableError(e)) {
+        // eslint-disable-next-line no-console
+        console.error('[CloudSync] Gagal sync images:', e.message);
+      }
+    }
+  }
+
   /**
    * Normalize filename (alias + strip extension)
    */
@@ -393,6 +470,19 @@ class DataService {
             bulan: '',
             hari: '',
             replace: '',
+            raw: line
+          });
+        } else if (first.toLowerCase() === 'weekly' && parts.length >= 5) {
+          parsed.push({
+            id: index + 1,
+            format: 'weekly',
+            date: '',
+            tahun: '',
+            bulan: 'weekly',
+            type: (parts[2] || '').trim(),
+            hari: (parts[1] || '').trim(),
+            replace: (parts[3] || '').trim(),
+            notes: (parts[4] || '').trim(),
             raw: line
           });
         } else {

@@ -33,12 +33,15 @@ export function updateConfigFromStorage() {
 }
 
 function getImageBaseUrl() {
-    return `${BASE_URL}/images/${CLIENT_ID}`;
+    return `${BASE_URL}/storage/${CLIENT_ID}/images`;
 }
 
 function resolveImagePathForUrl(imagePath) {
     if (!imagePath || typeof imagePath !== 'string') return 'noimage.png';
-    return imagePath.replace(/^\/images\/?/, '').replace(/^images\//, '');
+    if (imagePath.startsWith('http')) return imagePath;
+    // Normalize: /images/category/file, images/category/file → category/file
+    const p = imagePath.replace(/^\/+/, '').replace(/^images\//, '');
+    return p || 'noimage.png';
 }
 
 if (typeof window !== 'undefined') {

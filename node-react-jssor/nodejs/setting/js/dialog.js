@@ -361,6 +361,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         { value: "single", label: "Tarikh tunggal" },
         { value: "range", label: "Range bulan/hari Masihi" },
         { value: "hijri", label: "Tarikh Hijri" },
+        { value: "weekly", label: "Mingguan" },
       ].forEach((opt) => {
         const o = document.createElement("option");
         o.value = opt.value;
@@ -376,8 +377,11 @@ function createFormFields(form, row, isAdd, options = {}) {
         form.querySelectorAll("[data-kb-single]").forEach((el) => {
           el.style.display = v === "single" ? "" : "none";
         });
-        form.querySelectorAll("[data-kb-range]").forEach((el) => {
-          el.style.display = v === "range" || v === "hijri" ? "" : "none";
+        form.querySelectorAll("[data-kb-tahun-bulan]").forEach((el) => {
+          el.style.display = (v === "range" || v === "hijri") ? "" : "none";
+        });
+        form.querySelectorAll("[data-kb-hari-replace]").forEach((el) => {
+          el.style.display = (v === "range" || v === "hijri" || v === "weekly") ? "" : "none";
         });
         form.querySelectorAll("[data-kb-hijri]").forEach((el) => {
           el.style.display = v === "hijri" ? "" : "none";
@@ -392,17 +396,26 @@ function createFormFields(form, row, isAdd, options = {}) {
         !isAdd && row.format
           ? (row.format || "single").toLowerCase()
           : "single";
-      if (fmt === "range" || fmt === "hijri") group.style.display = "none";
+      if (fmt === "range" || fmt === "hijri" || fmt === "weekly") group.style.display = "none";
     }
-    // Kuliah-override: tahun, bulan, hari, replace (format range atau hijri) - toggle by format
+    // Kuliah-override: tahun, bulan (format range atau hijri sahaja)
     if (
       currentFileName === "kuliah-override" &&
-      (col === "tahun" ||
-        col === "bulan" ||
-        col === "hari" ||
-        col === "replace")
+      (col === "tahun" || col === "bulan")
     ) {
-      group.setAttribute("data-kb-range", "1");
+      group.setAttribute("data-kb-tahun-bulan", "1");
+      const fmt =
+        !isAdd && row.format
+          ? (row.format || "single").toLowerCase()
+          : "single";
+      if (fmt === "single" || fmt === "weekly") group.style.display = "none";
+    }
+    // Kuliah-override: hari, replace (format range, hijri, atau weekly)
+    if (
+      currentFileName === "kuliah-override" &&
+      (col === "hari" || col === "replace")
+    ) {
+      group.setAttribute("data-kb-hari-replace", "1");
       const fmt =
         !isAdd && row.format
           ? (row.format || "single").toLowerCase()
@@ -1449,8 +1462,33 @@ function createFormFields(form, row, isAdd, options = {}) {
           input.max = "12";
           input.placeholder = "1-12";
         }
-        // Kuliah-batal: hari (range atau senarai)
+        // Kuliah-batal: hari — format weekly = dropdown 0-6, range/hijri = input teks
         if (col === "hari" && currentFileName === "kuliah-override") {
+          const fmt = (!isAdd && row && row.format) ? (row.format || "").toLowerCase() : "single";
+          if (fmt === "weekly") {
+            label.textContent = "Hari minggu (0-6)";
+            const select = document.createElement("select");
+            select.id = "field-hari";
+            select.name = "hari";
+            select.className = "form-control";
+            const DAY_OPTIONS = [
+              { value: "0", label: "Ahad" }, { value: "1", label: "Isnin" }, { value: "2", label: "Selasa" },
+              { value: "3", label: "Rabu" }, { value: "4", label: "Khamis" }, { value: "5", label: "Jumaat" },
+              { value: "6", label: "Sabtu" },
+            ];
+            const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
+            DAY_OPTIONS.forEach((opt) => {
+              const o = document.createElement("option");
+              o.value = opt.value;
+              o.textContent = opt.label;
+              if (currentVal === opt.value) o.selected = true;
+              select.appendChild(o);
+            });
+            group.appendChild(label);
+            group.appendChild(select);
+            form.appendChild(group);
+            return;
+          }
           input.placeholder = "cth: 1-30 atau 1,2,3,5";
         }
         // Kuliah-batal: replace dropdown (0/1)

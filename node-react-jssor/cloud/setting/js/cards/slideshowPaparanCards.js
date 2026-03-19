@@ -79,7 +79,7 @@ export function renderSlideshowPaparanCards({
     img.alt = row.image || "";
     img.loading = "lazy";
     img.onerror = function () {
-      const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (BASE_URL || "") + "/images/clientA";
+      const base = window.Config.getImageBaseUrl ? window.Config.getImageBaseUrl() : (BASE_URL || "") + "/storage/clientA/images";
       this.src = `${base}/noimage.png`;
       this.onerror = null;
     };
