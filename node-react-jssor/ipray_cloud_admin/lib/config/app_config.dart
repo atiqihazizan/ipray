@@ -30,4 +30,21 @@ class AppConfig {
       baseUrl.isNotEmpty &&
       clientId.isNotEmpty &&
       clientToken.isNotEmpty;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppConfig &&
+          runtimeType == other.runtimeType &&
+          baseUrl == other.baseUrl &&
+          socketUrl == other.socketUrl &&
+          clientId == other.clientId &&
+          clientToken == other.clientToken;
+
+  @override
+  int get hashCode =>
+      baseUrl.hashCode ^
+      socketUrl.hashCode ^
+      clientId.hashCode ^
+      clientToken.hashCode;
 }

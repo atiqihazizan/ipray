@@ -1,8 +1,8 @@
 <div class="config-group">
-	<h3 class="config-group-title">Paparan Tajuk Home</h3>
+	<h3 class="config-group-title">Paparan Nama Masjid</h3>
 	<div class="config-group-items">
 		<div class="config-item">
-			<label>Tajuk Home</label>
+			<label>Nama Masjid</label>
 			<div class="config-item-control">
 				<span role="button" tabindex="0" id="HOME_TITLE_VISIBLE_toggle" class="btn-toggle switch" onclick="toggleConfigBool('HOME_TITLE_VISIBLE')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConfigBool('HOME_TITLE_VISIBLE');}">
 					<span class="switch-track"><span class="switch-thumb"></span></span>
@@ -144,6 +144,15 @@
 					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
 				</button> -->
 			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Overlay Skrin Home</h3>
+	<div class="config-group-items">
+		<div class="config-item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+			<div id="home-overlay-checkboxes" class="slides-visible-container-wrap"></div>
 		</div>
 	</div>
 </div>

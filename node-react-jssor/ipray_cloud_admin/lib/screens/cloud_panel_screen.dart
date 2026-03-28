@@ -57,6 +57,16 @@ class _CloudPanelScreenState extends State<CloudPanelScreen> {
   }
 
   @override
+  void didUpdateWidget(covariant CloudPanelScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Jika config berubah (contoh: tukar client ID), update socket dan sambung semula
+    if (oldWidget.config != widget.config) {
+      _cloudSocket?.updateConfig(widget.config);
+      _connectivity.startMonitoring(baseUrl: widget.config.baseUrl);
+    }
+  }
+
+  @override
   void dispose() {
     _localStatusSub?.cancel();
     _cloudSocket?.dispose();

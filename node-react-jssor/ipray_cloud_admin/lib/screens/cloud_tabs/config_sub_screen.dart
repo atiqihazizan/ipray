@@ -79,6 +79,10 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
   CloudSocketService? _socketService;
   StreamSubscription<void>? _onReadySub;
 
+  /// State untuk home overlay checkboxes
+  Map<String, bool> _homeOverlayOptions = {};
+  bool _homeOverlayLoaded = false;
+
   String _takwimZone = 'PNG01';
   Map<String, String> _takwimZoneMap = const {'PNG01': 'PNG01'};
   bool _takwimSyncing = false;
@@ -117,6 +121,7 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
 
         if (widget.tabId == 'hebahan') _loadHebahanData();
         if (widget.tabId == 'slides') _loadSlidesData();
+        if (widget.tabId == 'title-home') _loadHomeOverlayData();
       });
 
       // Penting: `onReadyStream` tidak replay. Kalau socket dah ready sebelum screen ini subscribe,
@@ -127,6 +132,7 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
           if (_configLoading) setState(() => _configLoading = false);
           if (widget.tabId == 'hebahan') _loadHebahanData();
           if (widget.tabId == 'slides') _loadSlidesData();
+          if (widget.tabId == 'title-home') _loadHomeOverlayData();
         });
       }
     }
@@ -362,6 +368,10 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
       ];
     }
 
+    if (!_slidesLoaded && _socketService != null) {
+      _loadSlidesData();
+    }
+
     final homeTitleVisible = _config('HOME_TITLE_VISIBLE', 'true') == 'true' || _config('HOME_TITLE_VISIBLE') == '1';
     final homeTitleTop = _config('HOME_TITLE1_TOP', '480');
     final homeTitleLeft = _config('HOME_TITLE_LEFT', '28');
@@ -572,6 +582,9 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
           ),
         ],
       ),
+      const SizedBox(height: 20),
+      PanelTabSectionHeader('PAPARAN OVERLAY SKRIN HOME'),
+      _buildHomeOverlayCheckboxesCard(),
     ];
   }
 
@@ -706,6 +719,7 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
             initialHex: _config('COLOR_WARNING_PRAYER', '#000000'),
             onChanged: (c) => _handleColorChanged('COLOR_WARNING_PRAYER', c),
           ),
+          _buildOverlayBgColorRow(),
         ],
       ),
     ];
@@ -1762,6 +1776,324 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildOverlayBgColorRow() {
+    final overlayBgRaw = _config('OVERLAY_BG_COLOR', 'rgba(16, 16, 16, 0.1)');
+    final parsedColor = _parseRgbaColor(overlayBgRaw);
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Latar Belakang Panel',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => _showOverlayBgColorPicker(parsedColor),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: parsedColor['color'],
+                    border: Border.all(color: Colors.grey.shade300, width: 2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Opacity: ${parsedColor['opacity'].toStringAsFixed(2)}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
+                    ),
+                    Slider(
+                      value: parsedColor['opacity'],
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 20,
+                      onChanged: (value) {
+                        final rgb = parsedColor['color'] as Color;
+                        final newRgba = 'rgba(${rgb.red}, ${rgb.green}, ${rgb.blue}, ${value.toStringAsFixed(2)})';
+                        setState(() => _configData['OVERLAY_BG_COLOR'] = newRgba);
+                        _socketService?.saveConfigItem('OVERLAY_BG_COLOR', newRgba);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Text(
+            overlayBgRaw,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic> _parseRgbaColor(String rgba) {
+    final match = RegExp(r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)').firstMatch(rgba);
+    if (match != null) {
+      final r = int.parse(match.group(1)!);
+      final g = int.parse(match.group(2)!);
+      final b = int.parse(match.group(3)!);
+      final a = match.group(4) != null ? double.parse(match.group(4)!) : 1.0;
+      return {
+        'color': Color.fromARGB((a * 255).round(), r, g, b),
+        'opacity': a,
+        'r': r,
+        'g': g,
+        'b': b,
+      };
+    }
+    return {
+      'color': const Color.fromARGB(25, 16, 16, 16),
+      'opacity': 0.1,
+      'r': 16,
+      'g': 16,
+      'b': 16,
+    };
+  }
+
+  void _showOverlayBgColorPicker(Map<String, dynamic> currentColor) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        Color selectedColor = currentColor['color'];
+        return AlertDialog(
+          title: const Text('Pilih Warna Latar Belakang Panel'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final color in [
+                      Colors.black,
+                      Colors.grey.shade800,
+                      Colors.grey.shade600,
+                      Colors.grey.shade400,
+                      Colors.white,
+                      Colors.red.shade900,
+                      Colors.blue.shade900,
+                      Colors.green.shade900,
+                    ])
+                      GestureDetector(
+                        onTap: () {
+                          selectedColor = color;
+                          final opacity = currentColor['opacity'];
+                          final newRgba = 'rgba(${color.red}, ${color.green}, ${color.blue}, ${opacity.toStringAsFixed(2)})';
+                          setState(() => _configData['OVERLAY_BG_COLOR'] = newRgba);
+                          _socketService?.saveConfigItem('OVERLAY_BG_COLOR', newRgba);
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: color,
+                            border: Border.all(
+                              color: selectedColor == color ? Colors.blue : Colors.grey.shade300,
+                              width: selectedColor == color ? 3 : 1,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHomeOverlayCheckboxesCard() {
+    if (!_slidesLoaded) {
+      return Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Memuatkan data slides...', style: TextStyle(fontSize: 13, color: Color(0xFF9CA3AF))),
+        ),
+      );
+    }
+
+    if (!_homeOverlayLoaded) {
+      _loadHomeOverlayData();
+      return Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    final options = [
+      {'value': 'date', 'label': 'Tarikh'},
+      {'value': 'solat-time', 'label': 'Waktu Solat Penuh'},
+      {'value': 'solat-time-small', 'label': 'Waktu Solat Seterusnya'},
+      {'value': 'marquee', 'label': 'Hebahan Bar'},
+    ];
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      shadowColor: Colors.black.withOpacity(0.06),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            for (var i = 0; i < options.length; i++) ...[
+              if (i > 0) Divider(height: 1, thickness: 1, color: Colors.grey.shade100),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Checkbox(
+                        value: _homeOverlayOptions[options[i]['value']] ?? false,
+                        onChanged: (v) => _handleToggleHomeOverlay(options[i]['value']!, v ?? false),
+                        activeColor: const Color(0xFF212121),
+                        fillColor: WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) return const Color(0xFF212121);
+                          return null;
+                        }),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      options[i]['label']!,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF374151)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadHomeOverlayData() async {
+    if (_socketService == null) return;
+    
+    try {
+      final result = await _socketService!.fetchData('slides');
+      final homeRow = result.data.firstWhere(
+        (r) => (r['type']?.toString() ?? '').toLowerCase() == 'home',
+        orElse: () => <String, dynamic>{},
+      );
+      
+      if (homeRow.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _homeOverlayOptions = {
+              'date': false,
+              'solat-time': false,
+              'solat-time-small': false,
+              'marquee': false,
+            };
+            _homeOverlayLoaded = true;
+          });
+        }
+        return;
+      }
+      
+      final checkboxStr = (homeRow['checkbox']?.toString() ?? '').trim();
+      final selectedSet = checkboxStr.isNotEmpty 
+          ? checkboxStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet()
+          : <String>{};
+      
+      if (mounted) {
+        setState(() {
+          _homeOverlayOptions = {
+            'date': selectedSet.contains('date'),
+            'solat-time': selectedSet.contains('solat-time'),
+            'solat-time-small': selectedSet.contains('solat-time-small'),
+            'marquee': selectedSet.contains('marquee'),
+          };
+          _homeOverlayLoaded = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _homeOverlayOptions = {
+            'date': false,
+            'solat-time': false,
+            'solat-time-small': false,
+            'marquee': false,
+          };
+          _homeOverlayLoaded = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleToggleHomeOverlay(String key, bool value) async {
+    if (_socketService == null) return;
+    
+    setState(() {
+      _homeOverlayOptions[key] = value;
+    });
+    
+    try {
+      final result = await _socketService!.fetchData('slides');
+      final homeRow = result.data.firstWhere(
+        (r) => (r['type']?.toString() ?? '').toLowerCase() == 'home',
+        orElse: () => <String, dynamic>{},
+      );
+      
+      if (homeRow.isEmpty) return;
+      
+      final selectedValues = _homeOverlayOptions.entries
+          .where((e) => e.value)
+          .map((e) => e.key)
+          .join(',');
+      
+      final updatedRow = Map<String, dynamic>.from(homeRow);
+      updatedRow['checkbox'] = selectedValues;
+      updatedRow['raw'] = '${updatedRow['type'] ?? ''}|${updatedRow['image'] ?? ''}|${updatedRow['duration'] ?? ''}|$selectedValues|${updatedRow['hide'] ?? '0'}';
+      
+      await _socketService!.emitWithResponse('cloud:data:update', {
+        'fileName': 'slides',
+        'id': homeRow['id'],
+        'row': updatedRow,
+      });
+    } catch (e) {
+      setState(() {
+        _homeOverlayOptions[key] = !value;
+      });
+    }
   }
 }
 

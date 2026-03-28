@@ -26,7 +26,7 @@ class ConfigScreen extends StatefulWidget {
   State<ConfigScreen> createState() => _ConfigScreenState();
 }
 
-class _ConfigScreenState extends State<ConfigScreen> {
+class _ConfigScreenState extends State<ConfigScreen> with WidgetsBindingObserver {
   CloudSocketService? _socketService;
   bool _ownsSocket = false;
   Map<String, String> _configData = <String, String>{};
@@ -36,11 +36,24 @@ class _ConfigScreenState extends State<ConfigScreen> {
   StreamSubscription<void>? _readySub;
   StreamSubscription<bool>? _cloudConnSub;
   Timer? _reconnectTimer;
+  bool _isResumed = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initSocketAndLoad();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && !_isResumed) {
+      _isResumed = true;
+      _loadConfigDataSilently();
+    } else if (state != AppLifecycleState.resumed) {
+      _isResumed = false;
+    }
   }
 
   @override
@@ -161,12 +174,33 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     _readySub?.cancel();
     _cloudConnSub?.cancel();
     _reconnectTimer?.cancel();
     if (_ownsSocket) _socketService?.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadConfigDataSilently() async {
+    if (_socketService == null || !_socketService!.isReady) return;
+    try {
+      final result = await _socketService!.fetchData('config');
+      final map = <String, String>{};
+      for (final row in result.data) {
+        final k = row['key']?.toString();
+        final v = row['value']?.toString();
+        if (k != null && k.isNotEmpty) map[k] = v ?? '';
+      }
+      if (!mounted) return;
+      setState(() {
+        _configData = map;
+        _configLoaded = true;
+      });
+    } catch (_) {
+      // Silent fail - tidak perlu tunjuk error
+    }
   }
 
   @override
@@ -179,9 +213,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
           scrollController: _scrollController,
           scrollPhysics: const AlwaysScrollableScrollPhysics(),
           items: ConfigTabsDef.tabs,
-          onTap: (tabId) {
+          onTap: (tabId) async {
             final tab = ConfigTabsDef.tabOf(tabId);
-            ConfigSubScreen.push(
+            await ConfigSubScreen.push(
               context,
               config: widget.config,
               socketService: _socketService,
@@ -191,6 +225,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
               title: tab.title,
               refreshTrigger: widget.refreshTrigger,
             );
+            
+            // Reload data secara sembunyi selepas kembali dari ConfigSubScreen
+            if (mounted) {
+              _loadConfigDataSilently();
+            }
           },
           iconColorForId: ConfigTabsDef.iconColorForId,
         ),

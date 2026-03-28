@@ -141,6 +141,11 @@ class SocketService {
       this.notifyListeners('marquee-config:updated', data);
     });
 
+    // Listen for color config update (tanpa reload)
+    this.socket.on('color-config:updated', (data) => {
+      this.notifyListeners('color-config:updated', data);
+    });
+
     // Listen for hebahan update (tanpa reload)
     this.socket.on('hebahan:updated', (data) => {
       this.notifyListeners('hebahan:updated', data);

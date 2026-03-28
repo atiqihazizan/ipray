@@ -51,6 +51,7 @@ const DEFAULT_COLOR_CONFIG = {
   DEFAULT: '#FFFF00',
   NEXT_PRAYER: '#90EE90',
   WARNING_PRAYER: '#FF0000',
+  OVERLAY_BG: 'rgba(16, 16, 16, 0.1)',
 };
 
 /** Hari dalam bulan (index 0 unused, 1=Jan..12=Dec) untuk getYearDays */
@@ -1717,6 +1718,7 @@ class DataService {
       else if (key === 'COLOR_DEFAULT') parsed.COLOR_CONFIG.DEFAULT = value;
       else if (key === 'COLOR_NEXT_PRAYER') parsed.COLOR_CONFIG.NEXT_PRAYER = value;
       else if (key === 'COLOR_WARNING_PRAYER') parsed.COLOR_CONFIG.WARNING_PRAYER = value;
+      else if (key === 'OVERLAY_BG_COLOR') parsed.COLOR_CONFIG.OVERLAY_BG = value;
       else if (key === 'DATETIME_MANUAL_OFFSET_MS') parsed.DATETIME_CONFIG.MANUAL_OFFSET_MS = parseInt(value, 10) || 0;
       else if (key === 'DATETIME_NTP_ENABLED') parsed.DATETIME_CONFIG.NTP_ENABLED = value.toLowerCase() === 'true';
       else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;

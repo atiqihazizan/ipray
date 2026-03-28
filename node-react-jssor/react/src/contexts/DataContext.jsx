@@ -21,6 +21,7 @@ const DEFAULT_COLOR_CONFIG = {
   DEFAULT: '#FFFF00',
   NEXT_PRAYER: '#90EE90',
   WARNING_PRAYER: '#FF0000',
+  OVERLAY_BG: 'rgba(16, 16, 16, 0.1)',
 };
 
 const DEFAULT_MARQUEE_CONFIG = {
@@ -94,6 +95,20 @@ export const DataProvider = ({ children }) => {
   const [isReloading, setIsReloading] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
   const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
+  // const [deathAnnouncementData, setDeathAnnouncementData] = useState({
+  //     nama: "Abu Bakar bin Abdul Aziz",
+  //     tempatJenazah: "Kuala Lumpur",
+  //     masaSolat: "10:00",
+  //     maklumatTambahan: "",
+  //     durasiSaat: 0,
+  //     overlayConfig: {
+  //         showDate: true,
+  //         showSmallTime: true,
+  //         showMarquee: true
+  //     },
+  //     active: true,
+  //     timestamp: 1774614721856
+  // });
   const [liveStreamData, setLiveStreamData] = useState(null);
   const [petugasData, setPetugasData] = useState([]);
   const [hlsNotification, setHlsNotification] = useState(null); // { type: 'success'|'error', message }
@@ -315,6 +330,12 @@ export const DataProvider = ({ children }) => {
       }
     });
 
+    const unsubscribeColorConfigUpdated = socketService.on('color-config:updated', (data) => {
+      if (isMounted && data?.colorConfig) {
+        setConfigData(prev => ({ ...prev, COLOR_CONFIG: data.colorConfig }));
+      }
+    });
+
     // Hebahan - update state terus tanpa reload
     const unsubscribeHebahanUpdated = socketService.on('hebahan:updated', (data) => {
       if (isMounted && Array.isArray(data?.hebahan)) {
@@ -418,6 +439,7 @@ export const DataProvider = ({ children }) => {
       unsubscribeTakwimRefresh();
       unsubscribeHomeTitleUpdated();
       unsubscribeMarqueeConfigUpdated();
+      unsubscribeColorConfigUpdated();
       unsubscribeHebahanUpdated();
       unsubscribeScreenFlagsUpdated();
       unsubscribeDataUpdated();

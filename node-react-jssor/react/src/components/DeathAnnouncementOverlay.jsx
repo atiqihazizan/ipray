@@ -7,35 +7,39 @@ const DeathAnnouncementOverlay = ({ data }) => {
 
   return (
     <div
-      className="absolute inset-0 flex flex-col items-center justify-center"
+      className="absolute inset-0 flex flex-col items-center"
       style={{
         background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        backgroundImage: 'url(/img/bg-page4.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         zIndex: 5,
       }}
     >
-      {/* Bismillah */}
-      <p
-        className="text-white/60 font-light"
-        style={{ fontSize: ts(28), marginBottom: ts(12) }}
-      >
-        بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-      </p>
-
-      {/* Innalillahi */}
-      <p
-        className="text-white/80"
-        style={{ fontSize: ts(32), marginBottom: ts(30) }}
-      >
-        إِنَّا لِلَّٰهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ
-      </p>
 
       {/* Title */}
-      <h1
+      {/* <h1
         className="text-yellow-400 font-bold uppercase tracking-wider"
         style={{ fontSize: ts(42), marginBottom: ts(40) }}
       >
         PENGUMUMAN KEMATIAN
-      </h1>
+      </h1> */}
+
+      {/* Bismillah */}
+      {/* <p
+        className="text-white/60 font-light"
+        style={{ fontSize: ts(28), marginBottom: ts(12) }}
+      >
+        بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+      </p> */}
+
+      {/* Innalillahi */}
+      <img
+        src="/img/innalillah.svg"
+        alt="إِنَّا لِلَّٰهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ"
+        style={{ width: ts(600), marginBottom: ts(30), marginTop: ts(60) }}
+      />
 
       {/* Card maklumat */}
       <div
@@ -45,10 +49,27 @@ const DeathAnnouncementOverlay = ({ data }) => {
           maxWidth: '80%',
         }}
       >
+        {/* Gambar simati */}
+        <img
+          src="/img/Random_user.svg"
+          alt={data.nama || 'Gambar simati'}
+          style={{
+            width: ts(280),
+            height: ts(280),
+            objectFit: 'cover',
+            objectPosition: 'center',
+            display: 'block',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            borderRadius: '5px',
+            marginBottom: ts(24),
+          }}
+        />
+
         {/* Nama simati */}
         <h2
           className="text-white font-bold"
-          style={{ fontSize: ts(56), marginBottom: ts(24) }}
+          style={{ fontSize: ts(78), marginBottom: ts(24) }}
         >
           {data.nama}
         </h2>
@@ -64,7 +85,7 @@ const DeathAnnouncementOverlay = ({ data }) => {
           className="grid grid-cols-2 text-left"
           style={{ gap: `${ts(16)}px ${ts(48)}px` }}
         >
-          {data.tarikhMeninggal && (
+          {/* {data.tarikhMeninggal && (
             <>
               <span className="text-yellow-300/80 text-right" style={{ fontSize: ts(28) }}>
                 Tarikh Meninggal
@@ -74,18 +95,7 @@ const DeathAnnouncementOverlay = ({ data }) => {
                 {data.masaMeninggal ? ` — ${data.masaMeninggal}` : ''}
               </span>
             </>
-          )}
-
-          {data.tempatJenazah && (
-            <>
-              <span className="text-yellow-300/80 text-right" style={{ fontSize: ts(28) }}>
-                Tempat Jenazah
-              </span>
-              <span className="text-white" style={{ fontSize: ts(28) }}>
-                {data.tempatJenazah}
-              </span>
-            </>
-          )}
+          )} */}
 
           {data.masaSolat && (
             <>
@@ -94,6 +104,17 @@ const DeathAnnouncementOverlay = ({ data }) => {
               </span>
               <span className="text-white" style={{ fontSize: ts(28) }}>
                 {data.masaSolat}
+              </span>
+            </>
+          )}
+
+          {data.tempatJenazah && (
+            <>
+              <span className="text-yellow-300/80 text-right" style={{ fontSize: ts(28) }}>
+                Tempat Perkuburan
+              </span>
+              <span className="text-white" style={{ fontSize: ts(28) }}>
+                {data.tempatJenazah}
               </span>
             </>
           )}
@@ -112,7 +133,7 @@ const DeathAnnouncementOverlay = ({ data }) => {
 
       {/* Doa */}
       <p
-        className="text-white/50"
+        className="text-white/80"
         style={{ fontSize: ts(22), marginTop: ts(36) }}
       >
         Semoga roh Allahyarham/Allahyarhamah dicucuri rahmat dan ditempatkan bersama orang-orang yang beriman.

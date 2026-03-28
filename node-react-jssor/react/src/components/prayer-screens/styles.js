@@ -1,5 +1,13 @@
 import { textSize } from "../../utils/screenUtils";
 
+const textJawi = [
+  'Neirizi',
+  'Lateef',
+  'ScheherazadeNew',
+  'Amiri',
+]
+export const ARABIC_FONT_FAMILY = `'${textJawi[2]}'`;
+
 export const bgStyle = {
   width: "100vw",
   height: "100vh",
@@ -131,7 +139,7 @@ export const jawiTitleStyleIqamah = () => ({
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(10)))}px #FFFFFF`,
   paintOrder: "stroke fill",
   fontSize: `${textSize(256)}px`,
-  fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
+  fontFamily: ARABIC_FONT_FAMILY,
   fontWeight: 700,
   textAlign: "center",
   margin: 0,
@@ -148,7 +156,7 @@ export const jawiTitleStyleAzan = () => ({
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(10)))}px #FFFFFF`,
   paintOrder: "stroke fill",
   fontSize: `${textSize(AZAN_TITLE_FONT_SIZE)}px`,
-  fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
+  fontFamily: ARABIC_FONT_FAMILY,
   fontWeight: 700,
   textAlign: "center",
   margin: 0,
@@ -162,7 +170,7 @@ export const jawiTitleStyle = () => ({
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(15)))}px #FFFFFF`,
   paintOrder: "stroke fill",
   fontSize: `${textSize(400)}px`,
-  fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
+  fontFamily: ARABIC_FONT_FAMILY,
   fontWeight: 700,
   textAlign: "center",
   margin: 0,
@@ -178,7 +186,7 @@ export const jawiSubtitleStyle = () => ({
   WebkitTextStroke: `${Math.max(1, Math.round(textSize(5)))}px #000000`,
   paintOrder: "stroke fill",
   fontSize: `${textSize(100)}px`,
-  fontFamily: "'ScheherazadeNew', 'Traditional Arabic', serif",
+  fontFamily: ARABIC_FONT_FAMILY,
   // fontWeight: 600,
   textAlign: "center",
   margin: `${textSize(16)}px 0 0 0`,

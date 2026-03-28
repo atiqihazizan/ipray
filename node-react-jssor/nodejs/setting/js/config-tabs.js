@@ -2,7 +2,7 @@
  * Config sub-tabs: load partial HTML for each card in Config page
  */
 const CONFIG_SUB_TABS = [
-	{ id: 'title-home', label: 'Title Home', file: 'config-tabs/title-home.html' },
+	{ id: 'title-home', label: 'Home', file: 'config-tabs/title-home.html' },
 	{ id: 'slides', label: 'Slides', file: 'config-tabs/slides.html' },
 	{ id: 'hebahan', label: 'Hebahan', file: 'config-tabs/hebahan.html' },
 	{ id: 'waktu-solat', label: 'Waktu Solat', file: 'config-tabs/waktu-solat.html' },
@@ -46,12 +46,18 @@ export async function showConfigSubTab(tabId) {
 		if (typeof window.loadConfigData === 'function') {
 			window.loadConfigData();
 		}
+		if (tabId === 'title-home') {
+			if (typeof window.initHomeOverlayCheckboxes === 'function') window.initHomeOverlayCheckboxes();
+		}
 		if (tabId === 'slides') {
 			if (typeof window.initSlidesOrderBtns === 'function') window.initSlidesOrderBtns();
 			if (typeof window.initSlidesVisibleCheckboxes === 'function') window.initSlidesVisibleCheckboxes();
 		}
 		if (tabId === 'hebahan' && typeof window.loadTable === 'function') {
 			window.loadTable('hebahan');
+		}
+		if (tabId === 'waktu-solat') {
+			if (typeof window.initOverlayBgColorPicker === 'function') window.initOverlayBgColorPicker();
 		}
 		if (tabId === 'takwim') {
 			if (typeof window.loadZoneDropdown === 'function') {

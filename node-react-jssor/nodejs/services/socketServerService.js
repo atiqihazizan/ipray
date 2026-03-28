@@ -399,6 +399,23 @@ class SocketServerService {
   }
 
   /**
+   * Broadcast color config update - React update COLOR_CONFIG state tanpa reload
+   */
+  broadcastColorConfigUpdate(colorConfig) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit('color-config:updated', {
+      colorConfig,
+      timestamp: Date.now()
+    });
+
+    console.log('📡 Broadcast color-config:updated');
+  }
+
+  /**
    * Broadcast hebahan update - React update hebahanData state tanpa reload
    */
   broadcastHebahanUpdate(hebahanArray) {

@@ -12,7 +12,7 @@
 
 @font-face {
   font-family: 'Anton';
-  src: url('/fonts/Anton,Roboto/Anton/Anton-Regular.ttf') format('truetype');
+  src: url('/fonts/Anton/Anton-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap; /* Prevent slow network warning */
@@ -20,7 +20,7 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Regular.ttf') format('truetype');
+  src: url('/fonts/Roboto/static/Roboto-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
   font-display: swap; /* Prevent slow network warning */
@@ -28,7 +28,7 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Medium.ttf') format('truetype');
+  src: url('/fonts/Roboto/static/Roboto-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
   font-display: swap; /* Prevent slow network warning */
@@ -36,7 +36,7 @@
 
 @font-face {
   font-family: 'Roboto';
-  src: url('/fonts/Anton,Roboto/Roboto/static/Roboto-Bold.ttf') format('truetype');
+  src: url('/fonts/Roboto/static/Roboto-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap; /* Prevent slow network warning */
@@ -141,6 +141,160 @@
 @font-face {
   font-family: 'ArchivoBlack';
   src: url('/fonts/Archivo_Black/ArchivoBlack-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Amiri - untuk teks Arab */
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri/Amiri-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri/Amiri-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri/Amiri-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/Amiri/Amiri-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Lateef - untuk teks Arab */
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lateef';
+  src: url('/fonts/Lateef/Lateef-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Neirizi - kaligrafi Arab/Parsi */
+@font-face {
+  font-family: 'Neirizi';
+  src: url('/fonts/Neirizi.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Droid Arabic Naskh - untuk teks Arab */
+@font-face {
+  font-family: 'DroidArabicNaskh';
+  src: url('/fonts/Droid Arabic Naskh Regular/Droid Arabic Naskh Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Digital-7 - font paparan jam digital */
+@font-face {
+  font-family: 'Digital7';
+  src: url('/fonts/digital-7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Digital7';
+  src: url('/fonts/digital-7i.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DIN */
+@font-face {
+  font-family: 'DIN';
+  src: url('/fonts/din_light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DIN';
+  src: url('/fonts/din_medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DIN';
+  src: url('/fonts/din_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DIN';
+  src: url('/fonts/din_black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Sansation */
+@font-face {
+  font-family: 'Sansation';
+  src: url('/fonts/sansation.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;

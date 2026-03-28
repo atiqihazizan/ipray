@@ -661,6 +661,66 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 		iqamahEl.addEventListener('input', syncWaktuSolatMins);
 	}
 
+	async function initHomeOverlayCheckboxes() {
+		const container = document.getElementById('home-overlay-checkboxes');
+		if (!container) return;
+		try {
+			const result = await fetchData('slides');
+			const rows = result.data || [];
+			const homeRow = rows.find(r => (r.type || '').toLowerCase() === 'home');
+			if (!homeRow) {
+				container.innerHTML = '<span style="color:#9ca3af;font-size:13px;">Row home tidak dijumpai.</span>';
+				return;
+			}
+			const checkboxStr = (homeRow.checkbox || '').trim();
+			const selectedSet = new Set(checkboxStr ? checkboxStr.split(',').map(s => s.trim()).filter(Boolean) : []);
+			const options = [
+				{ value: 'date', label: 'Tarikh' },
+				{ value: 'solat-time', label: 'Waktu Solat Penuh' },
+				{ value: 'solat-time-small', label: 'Waktu Solat Seterusnya' },
+				{ value: 'marquee', label: 'Hebahan Bar' }
+			];
+			container.innerHTML = '';
+			let debounceTimer = null;
+			const scheduleSave = async () => {
+				if (debounceTimer) clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(async () => {
+					debounceTimer = null;
+					const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+					const vals = Array.from(checked).map(cb => cb.value).filter(Boolean);
+					const newCheckbox = vals.join(',');
+					try {
+						const payload = { ...homeRow, checkbox: newCheckbox };
+						payload.raw = `${payload.type || ''}|${payload.image || ''}|${payload.duration || ''}|${payload.checkbox || ''}|${payload.hide || '0'}`;
+						await emitWithResponse('cloud:data:update', { fileName: 'slides', id: homeRow.id, row: payload });
+					} catch (err) {
+						console.error('Ralat menyimpan overlay home:', err);
+					}
+				}, 800);
+			};
+			options.forEach(opt => {
+				const div = document.createElement('div');
+				div.className = 'slides-visible-item';
+				const label = document.createElement('label');
+				label.style.display = 'flex';
+				label.style.alignItems = 'center';
+				label.style.gap = '8px';
+				const cb = document.createElement('input');
+				cb.type = 'checkbox';
+				cb.value = opt.value;
+				cb.checked = selectedSet.has(opt.value);
+				cb.addEventListener('change', scheduleSave);
+				label.appendChild(cb);
+				label.appendChild(document.createTextNode(opt.label));
+				div.appendChild(label);
+				container.appendChild(div);
+			});
+		} catch (err) {
+			console.error('initHomeOverlayCheckboxes:', err);
+			container.innerHTML = '<span style="color:#ef4444;font-size:13px;">Ralat memuat paparan.</span>';
+		}
+	}
+
 	window.Icons = Icons;
 	window.syncWaktuSolatMins = syncWaktuSolatMins;
 	window.loadConfigData = loadConfigData;
@@ -670,6 +730,8 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 	window.selectSlidesOrder = selectSlidesOrder;
 	window.saveSlidesVisible = saveSlidesVisible;
 	window.initSlidesVisibleCheckboxes = initSlidesVisibleCheckboxes;
+	window.initHomeOverlayCheckboxes = initHomeOverlayCheckboxes;
+	window.initOverlayBgColorPicker = initOverlayBgColorPicker;
 	window.handleRebootKiosk = handleRebootKiosk;
 	window.toggleSidebar = toggleSidebar;
 	window.loadKematianOverlayConfig = loadKematianOverlayConfig;
@@ -707,6 +769,76 @@ import { fetchData, emitWithResponse } from "./cloud-socket.js";
 		saveConfigItem('MARQUEE_SEPARATOR', val);
 		const dialog = document.getElementById('sep-picker-dialog');
 		if (dialog) dialog.close();
+	}
+
+	function hexToRgb(hex) {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16)
+		} : { r: 16, g: 16, b: 16 };
+	}
+
+	function rgbaToHexAndOpacity(rgba) {
+		const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+		if (!match) return { hex: '#101010', opacity: 0.1 };
+		const r = parseInt(match[1]);
+		const g = parseInt(match[2]);
+		const b = parseInt(match[3]);
+		const a = match[4] ? parseFloat(match[4]) : 1;
+		const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+		return { hex, opacity: a };
+	}
+
+	async function initOverlayBgColorPicker() {
+		const colorInput = document.getElementById('OVERLAY_BG_COLOR');
+		const opacityInput = document.getElementById('OVERLAY_BG_OPACITY');
+		const opacityDisplay = document.getElementById('OVERLAY_BG_OPACITY_value');
+		const textInput = document.getElementById('OVERLAY_BG_COLOR_text');
+		
+		if (!colorInput || !opacityInput || !opacityDisplay || !textInput) return;
+
+		try {
+			const result = await fetchData('config');
+			const rows = result.data || [];
+			const overlayBgRow = rows.find(r => {
+				const parts = (r.raw || '').split('|');
+				return parts[0] === 'OVERLAY_BG_COLOR';
+			});
+
+			if (overlayBgRow) {
+				const parts = overlayBgRow.raw.split('|');
+				const rgba = parts[1] || 'rgba(16, 16, 16, 0.1)';
+				const { hex, opacity } = rgbaToHexAndOpacity(rgba);
+				colorInput.value = hex;
+				opacityInput.value = opacity;
+				opacityDisplay.textContent = opacity;
+				textInput.value = rgba;
+			}
+		} catch (err) {
+			console.error('Error loading OVERLAY_BG_COLOR:', err);
+		}
+
+		let debounceTimer = null;
+
+		const updateAndSave = () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(async () => {
+				const hex = colorInput.value;
+				const opacity = parseFloat(opacityInput.value);
+				const rgb = hexToRgb(hex);
+				const rgba = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
+				textInput.value = rgba;
+				await saveConfigItem('OVERLAY_BG_COLOR', rgba);
+			}, 300);
+		};
+
+		colorInput.addEventListener('change', updateAndSave);
+		opacityInput.addEventListener('input', (e) => {
+			opacityDisplay.textContent = e.target.value;
+			updateAndSave();
+		});
 	}
 
 	window.openSeparatorPicker = openSeparatorPicker;

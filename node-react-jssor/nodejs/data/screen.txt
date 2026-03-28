@@ -1,4 +1,4 @@
-home|null|1000|3|0|1
+home|null|1000|11|0
 announce|picture4|5000|9|0
 countDown|picture3|5000|0|0
 kuliahHari|picture1b|3000|13|0
