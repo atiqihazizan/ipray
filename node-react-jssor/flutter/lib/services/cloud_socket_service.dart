@@ -478,10 +478,14 @@ class CloudSocketService {
     final rawResult = await emitWithResponse('cloud:file:get', {
       'fileName': 'modbus-remote',
     });
-    if (rawResult is! Map) return null;
-    final content = rawResult['content'];
-    if (content == null) return null;
-    return content.toString();
+    if (rawResult is String) {
+      return rawResult;
+    }
+    if (rawResult is Map) {
+      final content = rawResult['content'];
+      if (content != null) return content.toString();
+    }
+    return null;
   }
 
   /// Simpan endpoint TCP pada kiosk (tulis modbus-remote.txt + sync).
@@ -490,11 +494,6 @@ class CloudSocketService {
       'host': host.trim(),
       'port': port,
     });
-  }
-
-  /// Uji sambungan TCP dari kiosk ke IP/port dalam modbus-remote.txt.
-  Future<void> testRemoteSwitchTcp() async {
-    await emitWithResponse('cloud:remote-switch:test', {});
   }
 
   /// Hantar arahan `sw i0N` + CRLF melalui kiosk (switchIndex 1–4).

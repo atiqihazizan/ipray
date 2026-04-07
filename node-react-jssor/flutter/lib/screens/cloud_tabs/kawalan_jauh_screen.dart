@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../config/app_config.dart';
@@ -25,16 +27,32 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
   final _portCtrl = TextEditingController(text: '502');
   bool _loading = false;
   int? _selectedSwitch;
+  StreamSubscription<void>? _onReadySub;
+
+  void _bindReadyListener() {
+    _onReadySub?.cancel();
+    _onReadySub = null;
+    final sock = widget.socketService;
+    if (sock == null) return;
+    _onReadySub = sock.onReadyStream.listen((_) {
+      if (mounted) _loadConfigFromCloud();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _bindReadyListener();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadConfigFromCloud());
   }
 
   @override
   void didUpdateWidget(covariant KawalanJauhScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.socketService != widget.socketService) {
+      _bindReadyListener();
+      _loadConfigFromCloud();
+    }
     if (oldWidget.refreshTrigger != widget.refreshTrigger) {
       _loadConfigFromCloud();
     }
@@ -42,6 +60,7 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
 
   @override
   void dispose() {
+    _onReadySub?.cancel();
     _hostCtrl.dispose();
     _portCtrl.dispose();
     super.dispose();
@@ -70,24 +89,31 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
     setState(() => _loading = true);
     try {
       final raw = await sock.fetchModbusRemoteRaw();
-      final parsed = _parseHostPort(raw);
       if (!mounted) return;
+      // final rawPreview = raw == null
+      //     ? '(null)'
+      //     : raw.isEmpty
+      //         ? '(kosong)'
+      //         : raw.replaceAll('\r', r'\r').replaceAll('\n', r'\n');
+      // _snack('Selepas fetch (raw): $rawPreview', duration: const Duration(seconds: 8));
+      final parsed = _parseHostPort(raw);
       if (parsed != null) {
         _hostCtrl.text = parsed.$1;
         _portCtrl.text = '${parsed.$2}';
       }
-    } catch (_) {
-      /* biar medan kekal */
+    } catch (e) {
+      _snack('Fetch modbus-remote gagal: $e', error: true, duration: const Duration(seconds: 8));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _snack(String msg, {bool error = false}) {
+  void _snack(String msg, {bool error = false, Duration? duration}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
+        duration: duration ?? const Duration(seconds: 4),
         backgroundColor: error ? Theme.of(context).colorScheme.error : null,
       ),
     );
@@ -108,26 +134,9 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
     setState(() => _loading = true);
     try {
       await sock.saveRemoteSwitchEndpoint(host, port);
-      _snack('Konfigurasi disimpan pada kiosk.');
+      _snack('Konfigurasi berjaya disimpan.');
     } catch (e) {
       _snack('Gagal simpan: $e', error: true);
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _testConnection() async {
-    final sock = widget.socketService;
-    if (sock == null || !sock.isConnected) {
-      _snack('Sambungan cloud diperlukan.', error: true);
-      return;
-    }
-    setState(() => _loading = true);
-    try {
-      await sock.testRemoteSwitchTcp();
-      _snack('Sambungan TCP ke peranti OK.');
-    } catch (e) {
-      _snack('Ujian gagal: $e', error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -157,7 +166,7 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
           detail = '$detail | jawapan: $reply';
         }
       }
-      _snack('Arahan suis $sw dihantar$detail');
+      // _snack('Arahan suis $sw dihantar$detail');
     } catch (e) {
       _snack('Gagal hantar: $e', error: true);
     } finally {
@@ -252,22 +261,9 @@ class _KawalanJauhScreenState extends State<KawalanJauhScreen> {
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _loading ? null : _save,
-                          child: const Text('Simpan ke kiosk'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _loading ? null : _testConnection,
-                          child: const Text('Uji sambungan'),
-                        ),
-                      ),
-                    ],
+                  FilledButton(
+                    onPressed: _loading ? null : _save,
+                    child: const Text('Simpan ke kiosk'),
                   ),
                   const SizedBox(height: 24),
                   Text(
