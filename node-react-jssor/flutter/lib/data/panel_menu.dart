@@ -29,6 +29,7 @@ class PanelMenu {
     // PanelMenuItem(tabId: 'background', label: 'Background', icon: Text('🖼️', style: _emojiStyle)),
     PanelMenuItem(tabId: 'kematian', label: 'Kematian', icon: Text('🕌', style: _emojiStyle)),
     PanelMenuItem(tabId: 'livestream', label: 'Siaran Langsung', icon: Text('📹', style: _emojiStyle)),
+    PanelMenuItem(tabId: 'kawalan-skrin', label: 'Kawalan Skrin', icon: Text('🎛️', style: _emojiStyle)),
   ];
 
   static Widget iconForTabId(String tabId) {

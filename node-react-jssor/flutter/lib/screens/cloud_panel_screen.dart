@@ -122,6 +122,7 @@ class _CloudPanelScreenState extends State<CloudPanelScreen> {
               MaterialPageRoute(
                 builder: (context) => LoginScreen(
                   initialConfig: widget.config,
+                  cloudService: _cloudSocket,
                   onSaved: (newConfig) {
                     widget.onConfigSaved(newConfig);
                     Navigator.of(context).pop();
@@ -197,6 +198,13 @@ class _CloudPanelScreenState extends State<CloudPanelScreen> {
           key: key,
           config: widget.config,
           socketService: _cloudSocket,
+        );
+      case 'kawalan-skrin':
+        return KawalanJauhScreen(
+          key: key,
+          config: widget.config,
+          socketService: _cloudSocket,
+          refreshTrigger: _panelRefreshKey,
         );
       default:
         return PlaceholderScreen(key: key, title: _screenTitle);

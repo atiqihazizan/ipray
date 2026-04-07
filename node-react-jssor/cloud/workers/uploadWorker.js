@@ -1,5 +1,5 @@
 const path = require('path');
-const { Worker } = require('bullmq');
+const { Worker, UnrecoverableError } = require('bullmq');
 const { createRedisClient, redisConfig } = require('../config/redis');
 const { UPLOAD_QUEUE_NAME } = require('../queue/uploadQueue');
 const { saveUploadedFile, deleteFile } = require('../services/fileService');
@@ -52,7 +52,12 @@ async function startUploadWorker() {
         await deleteFile({ clientId, fileName, folder });
         return { success: true };
       }
-      throw new Error('Invalid job name');
+      // Kerja dengan nama selain `upload` / `delete` (cth. sisa Redis lama atau queue dikongsi)
+      // akan gagal berulang; UnrecoverableError hentikan retry BullMQ.
+      console.warn(
+        `[UploadWorker] Job tidak dikenali (nama tidak disokong) | id=${job.id} | name=${JSON.stringify(job.name)}`
+      );
+      throw new UnrecoverableError(`Invalid job name: ${String(job.name)}`);
     },
     { connection: redisConfig.connection }
   );

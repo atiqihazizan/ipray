@@ -11,6 +11,20 @@ import '../config/app_config.dart';
 class CloudSocketService {
   CloudSocketService({required AppConfig config}) : _config = config;
 
+  /// Elak path dalam URL (cth. /setting) dianggap sebagai Socket.IO namespace.
+  /// Guna hanya scheme + host + port — selari dengan `io(SOCKET_URL)` di cloud-socket.js.
+  static String normalizeSocketUrl(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return s;
+    final uri = Uri.tryParse(s);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return s;
+    return Uri(
+      scheme: uri.scheme.toLowerCase(),
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+    ).toString();
+  }
+
   AppConfig _config;
   IO.Socket? _socket;
   int _requestId = 0;
@@ -135,10 +149,17 @@ class CloudSocketService {
   void connect() {
     if (_socket != null) return;
     _isReady = false;
+    final url = normalizeSocketUrl(_config.socketUrl);
     _socket = IO.io(
-      _config.socketUrl,
+      url,
       IO.OptionBuilder()
           .setTransports(['websocket', 'polling'])
+          // Cache Manager global dalam socket_io_client tidak dibuang selepas dispose —
+          // tanpa forceNew, sambungan semula boleh guna Manager lama yang sudah ditutup.
+          .enableForceNew()
+          .setReconnectionAttempts(double.infinity)
+          .setReconnectionDelay(1000)
+          .setTimeout(25000)
           .enableAutoConnect()
           .build(),
     );
@@ -215,6 +236,12 @@ class CloudSocketService {
       }
     });
     _socket!.onConnectError((e) {
+      if (!_cloudConnectedController.isClosed) {
+        _cloudConnectedController.add(false);
+      }
+    });
+    _socket!.on('error', (data) {
+      // Cloud server: validateSocketAuth gagal → emit error + disconnect.
       if (!_cloudConnectedController.isClosed) {
         _cloudConnectedController.add(false);
       }
@@ -443,6 +470,37 @@ class CloudSocketService {
     await emitWithResponse('cloud:file:save', {
       'fileName': fileName,
       'content': content,
+    });
+  }
+
+  /// Baca modbus-remote.txt (mentah) dari storan cloud / sync.
+  Future<String?> fetchModbusRemoteRaw() async {
+    final rawResult = await emitWithResponse('cloud:file:get', {
+      'fileName': 'modbus-remote',
+    });
+    if (rawResult is! Map) return null;
+    final content = rawResult['content'];
+    if (content == null) return null;
+    return content.toString();
+  }
+
+  /// Simpan endpoint TCP pada kiosk (tulis modbus-remote.txt + sync).
+  Future<void> saveRemoteSwitchEndpoint(String host, int port) async {
+    await emitWithResponse('cloud:remote-switch:save', {
+      'host': host.trim(),
+      'port': port,
+    });
+  }
+
+  /// Uji sambungan TCP dari kiosk ke IP/port dalam modbus-remote.txt.
+  Future<void> testRemoteSwitchTcp() async {
+    await emitWithResponse('cloud:remote-switch:test', {});
+  }
+
+  /// Hantar arahan `sw i0N` + CRLF melalui kiosk (switchIndex 1–4).
+  Future<dynamic> fireRemoteSwitch(int switchIndex) {
+    return emitWithResponse('cloud:remote-switch:fire', {
+      'switchIndex': switchIndex,
     });
   }
 

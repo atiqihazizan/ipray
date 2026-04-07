@@ -26,3 +26,4 @@ export 'imam_bilal_petugas_list_sub_screen.dart';
 // export 'background_screen.dart';
 export 'kematian_screen.dart';
 export 'livestream_screen.dart';
+export 'kawalan_jauh_screen.dart';

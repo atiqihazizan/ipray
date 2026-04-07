@@ -65,7 +65,7 @@ const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 class DataService {
   constructor(dataPath) {
     this.dataPath = dataPath;
-    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan', 'livestream', 'penceramah', 'petugas', 'jadual-petugas'];
+    this.allowedFiles = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'slideshow', 'kuliah-override', 'hebahan', 'livestream', 'penceramah', 'petugas', 'jadual-petugas', 'modbus-remote'];
     this.filenameAliases = {
       announcement: 'announcements',
       announcements: 'announcements',
@@ -85,7 +85,9 @@ class DataService {
       livestream: 'livestream',
       penceramah: 'penceramah',
       petugas: 'petugas',
-      'jadual-petugas': 'jadual-petugas'
+      'jadual-petugas': 'jadual-petugas',
+      'modbus-remote': 'modbus-remote',
+      modbus_remote: 'modbus-remote'
     };
   }
 

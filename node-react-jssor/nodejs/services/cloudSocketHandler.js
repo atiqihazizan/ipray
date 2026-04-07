@@ -10,6 +10,8 @@ let timeService = null;
 let imagesPath = null;
 let cloudSocket = null;
 
+const modbusRemoteSwitchService = require('./modbusRemoteSwitchService');
+
 function overlayConfigFromBits(bits) {
   const n = typeof bits === 'string' ? parseInt(bits, 10) : bits;
   if (Number.isNaN(n) || n < 0 || n > 7) {
@@ -451,6 +453,40 @@ function registerHandlers(socket) {
     respond(requestId, false, null, 'Hotspot status hanya tersedia dari setting panel local');
   });
 
+  socket.on('cloud:remote-switch:save', async payload => {
+    const { host, port, requestId } = payload || {};
+    try {
+      const result = await modbusRemoteSwitchService.saveConfig(host, port);
+      respond(requestId, true, result);
+    } catch (err) {
+      respond(requestId, false, null, err.message || 'Gagal simpan');
+    }
+  });
+
+  socket.on('cloud:remote-switch:test', async payload => {
+    const { requestId } = payload || {};
+    try {
+      const result = await modbusRemoteSwitchService.testConnection();
+      respond(requestId, true, result);
+    } catch (err) {
+      respond(requestId, false, null, err.message || 'Ujian sambungan gagal');
+    }
+  });
+
+  socket.on('cloud:remote-switch:fire', async payload => {
+    const { switchIndex, requestId } = payload || {};
+    try {
+      const sw = parseInt(switchIndex, 10);
+      if (Number.isNaN(sw) || sw < 1 || sw > 4) {
+        throw new Error('switchIndex mesti 1 hingga 4');
+      }
+      const result = await modbusRemoteSwitchService.sendSwitchCommand(sw);
+      respond(requestId, true, result);
+    } catch (err) {
+      respond(requestId, false, null, err.message || 'Gagal hantar arahan');
+    }
+  });
+
   console.log('[cloudSocketHandler] All cloud:* event handlers registered');
 }
 
@@ -459,6 +495,8 @@ function init(config) {
   socketServerService = config.socketServerService;
   timeService = config.timeService || null;
   imagesPath = config.imagesPath || null;
+
+  modbusRemoteSwitchService.init({ dataService });
 
   const { socket } = require('./cloudClient');
   registerHandlers(socket);

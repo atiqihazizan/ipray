@@ -6,6 +6,7 @@ import { useJssorSlider } from '../hooks/useJssorSlider';
 import { useSlides } from '../hooks/useSlides';
 import { useTakwimData } from '../hooks/useTakwimData';
 import { useData } from '../contexts/DataContext';
+import socketService from '../services/socketService';
 
 const SliderPage = ({ onReady }) => {
   const { slideData, loading: slidesLoading } = useSlides();
@@ -107,6 +108,10 @@ const SliderPage = ({ onReady }) => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    socketService.emit('kiosk:slide-index', { index: currentSlideIndex });
+  }, [currentSlideIndex]);
 
   useEffect(() => {
     if (!sliderRef?.current) return;

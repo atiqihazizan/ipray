@@ -8,7 +8,8 @@ const { STORAGE_ROOT } = require('./fileService');
 
 const ALLOWED_FILES = [
   'config', 'slides', 'hebahan', 'takwim', 'livestream', 'kuliah', 'kuliah-override',
-  'announcements', 'countdowns', 'slideshow', 'images', 'penceramah', 'petugas', 'jadual-petugas'
+  'announcements', 'countdowns', 'slideshow', 'images', 'penceramah', 'petugas', 'jadual-petugas',
+  'modbus-remote'
 ];
 
 function normalizeFilename(filename) {

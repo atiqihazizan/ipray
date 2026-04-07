@@ -1,6 +1,7 @@
 const http = require('http');
 const { Server } = require('socket.io');
 const rtspToHlsService = require('./rtspToHlsService');
+const modbusRemoteSwitchService = require('./modbusRemoteSwitchService');
 
 /**
  * Socket.IO Server Service
@@ -101,6 +102,9 @@ class SocketServerService {
   init(config) {
     this.port = config.port;
     this.dataService = config.dataService || null;
+    if (this.dataService) {
+      modbusRemoteSwitchService.init({ dataService: this.dataService });
+    }
 
     // Bila cloudClient (nodejs) connect/register semula ke cloud,
     // emit snapshot status live supaya panel Flutter ikut mode play/stop.
@@ -308,6 +312,11 @@ class SocketServerService {
 
       socket.on('live:stop', () => {
         this.stopLiveStream();
+      });
+
+      socket.on('kiosk:slide-index', (payload) => {
+        const idx = payload && payload.index != null ? payload.index : payload;
+        modbusRemoteSwitchService.setKioskSlideIndex(idx);
       });
 
       // Send current state to newly connected client

@@ -28,10 +28,26 @@ const CLOUD_EVENTS = [
   'cloud:wifi:hotspot:enable',
   'cloud:wifi:hotspot:disable',
   'cloud:wifi:hotspot:status',
+  'cloud:remote-switch:save',
+  'cloud:remote-switch:test',
+  'cloud:remote-switch:fire',
 ];
+
+/** Untuk log: Flutter `socket_io_client` biasanya hantar User-Agent mengandungi "Dart". */
+function socketClientHint(socket) {
+  const ua = String(socket.handshake?.headers?.['user-agent'] || '').trim();
+  if (!ua) return 'no User-Agent';
+  if (/dart/i.test(ua)) return 'Flutter/Dart';
+  return ua.length > 100 ? `${ua.slice(0, 97)}...` : ua;
+}
 
 function registerSocketHandlers(io) {
   io.on('connection', socket => {
+    const ip = socket.handshake?.address || socket.conn?.remoteAddress || '?';
+    console.log(
+      `[Cloud/Socket] Sambungan baharu | id=${socket.id} | ip=${ip} | client=${socketClientHint(socket)}`
+    );
+
     socket.on('registerClient', async payload => {
       const { clientId } = payload || {};
       if (!clientId) {
@@ -39,6 +55,9 @@ function registerSocketHandlers(io) {
       }
 
       if (!validateSocketAuth(payload)) {
+        console.warn(
+          `[Cloud/Socket] registerClient ditolak (auth) | clientId=${clientId} | socket.id=${socket.id}`
+        );
         socket.emit('error', { message: 'unauthorized' });
         return socket.disconnect(true);
       }
@@ -56,7 +75,9 @@ function registerSocketHandlers(io) {
       socket.data.clientId = clientId;
       socket.data.isClient = true;
       io.to(`setting_${clientId}`).emit('local:status', { connected: true });
-      // console.log('[Cloud] Local client connected:', clientId);
+      console.log(
+        `[Cloud/Socket] Kiosk/nodejs berdaftar | clientId=${clientId} | socket.id=${socket.id} | ${socketClientHint(socket)}`
+      );
     });
 
     socket.on('registerSettingPanel', async payload => {
@@ -66,6 +87,9 @@ function registerSocketHandlers(io) {
       }
 
       if (!validateSocketAuth(payload)) {
+        console.warn(
+          `[Cloud/Socket] registerSettingPanel ditolak (auth) | clientId=${clientId} | socket.id=${socket.id} | ${socketClientHint(socket)}`
+        );
         socket.emit('error', { message: 'unauthorized' });
         return socket.disconnect(true);
       }
@@ -83,7 +107,9 @@ function registerSocketHandlers(io) {
         console.error('[Cloud] fetchSockets for local status:', err.message);
       }
       socket.emit('local:status', { connected: localConnected });
-      // console.log('[Cloud] Setting panel registered for client:', clientId, '| Local (kiosk) connected:', localConnected);
+      console.log(
+        `[Cloud/Socket] Panel setting bersambung (Flutter/web) | clientId=${clientId} | socket.id=${socket.id} | kioskLocal=${localConnected ? 'ya' : 'tidak'} | ${socketClientHint(socket)}`
+      );
     });
 
     socket.on('getLocalStatus', async () => {
@@ -285,13 +311,20 @@ function registerSocketHandlers(io) {
       });
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', reason => {
       if (socket.data?.isClient && socket.data?.clientId) {
         io.to(`setting_${socket.data.clientId}`).emit('local:status', { connected: false });
-        // console.log('[Cloud] Local client disconnected:', socket.data.clientId);
+        console.log(
+          `[Cloud/Socket] Kiosk putus | clientId=${socket.data.clientId} | socket.id=${socket.id} | reason=${reason}`
+        );
       }
-      if (socket.data?.isSettingPanel) {
-        // console.log('[Cloud] Setting panel disconnected for client:', socket.data.clientId);
+      if (socket.data?.isSettingPanel && socket.data?.clientId) {
+        console.log(
+          `[Cloud/Socket] Panel setting putus | clientId=${socket.data.clientId} | socket.id=${socket.id} | reason=${reason}`
+        );
+      }
+      if (!socket.data?.isClient && !socket.data?.isSettingPanel) {
+        console.log(`[Cloud/Socket] Putus (belum daftar) | socket.id=${socket.id} | reason=${reason}`);
       }
     });
   });
