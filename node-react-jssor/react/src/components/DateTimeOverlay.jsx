@@ -10,6 +10,7 @@ import { OVERLAY_PRAYER_TIMES } from '../utils/prayerUtils';
 import { TIME_EVENTS } from '../utils/timeEvents';
 import { top as topPx, left as leftPx, right as rightPx, bottom as bottomPx } from '../utils/screenUtils';
 import { MOSQUE_NAME } from '../config/mosqueInfo';
+import { isHebahanActive } from '../utils/hebahanActive';
 
 const resolveOverlay = (dt, key) => {
   if (dt == null) return true;
@@ -23,7 +24,7 @@ const resolveOverlay = (dt, key) => {
 
 const DateTimeOverlay = ({ overlayOverride = null }) => {
   const dtRef = useRef(null);
-  const [, forceRender] = useState(0);
+  const [, forceRender, minuteTick, setMinuteTick] = useState(0);
   const { takwimArray, takwimParsed } = useTakwimData();
   const { MARQUEE_CONFIG, hebahanData, COLOR_CONFIG, slidesMarqueeShow } = useData();
   const currentTimeColor = COLOR_CONFIG?.CURRENT_TIME ?? '#FFFF00';
@@ -39,6 +40,11 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   const marqueeEnabled = marqueeFromSlide !== false;
   const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
+
+  useEffect(() => {
+    const id = setInterval(() => setMinuteTick(t => t + 1), 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -64,8 +70,10 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
 
   const separator = MARQUEE_CONFIG?.SEPARATOR ?? '•';
   const showMosqueName = MARQUEE_CONFIG?.SHOW_MOSQUE_NAME !== false;
-  const hebahanTexts = hebahanData && hebahanData.length > 0
-    ? hebahanData.map(h => h.text.toUpperCase())
+  const hebahanTexts = (hebahanData && hebahanData.length > 0)
+    ? hebahanData
+        .filter(h => isHebahanActive(h.startDate, h.endDate)) // minuteTick memaksa nilai semula
+        .map(h => h.text.toUpperCase())
     : [];
   const hebahanArray = showMosqueName
     ? [MOSQUE_NAME.toUpperCase(), ...hebahanTexts]

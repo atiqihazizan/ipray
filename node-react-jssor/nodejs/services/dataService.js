@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { sendAck, deleteFile, uploadFile } = require('./cloudClient');
+const { isHebahanActive } = require('../utils/hebahanDate');
 
 /** Paparan overlay: bit 1=date, 2=solat-time, 4=solat-time-small, 8=marquee (hebahan bar). Nilai 0-15. */
 function slidesCheckboxBitToComma(raw) {
@@ -1379,11 +1380,8 @@ class DataService {
    * - Tiada tarikh akhir sahaja: papar dari tarikh mula (hari ini >= tarikh mula).
    * - Kedua-dua ada: papar jika hari ini dalam julat [mula, akhir].
    */
-  parseHebahan(content) {
+  parseHebahan(content, now = new Date()) {
     if (!content || typeof content !== 'string') return [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
     return content
       .split(/\r?\n/)
       .map(line => line.trim())
@@ -1392,35 +1390,12 @@ class DataService {
         const parts = line.split('|').map(p => p.trim());
         const text = parts[0];
         if (!text) return null;
-        
         const startStr = parts[1] || '';
         const endStr = parts[2] || '';
-        const startDate = startStr ? new Date(startStr) : null;
-        const endDate = endStr ? new Date(endStr) : null;
-        
-        const hasStart = startDate && !isNaN(startDate.getTime());
-        const hasEnd = endDate && !isNaN(endDate.getTime());
-        
-        if (hasStart) startDate.setHours(0, 0, 0, 0);
-        if (hasEnd) endDate.setHours(23, 59, 59, 999);
-        
-        let isActive = false;
-        if (!hasStart && !hasEnd) {
-          isActive = true; // Tiada kedua tarikh → papar sentiasa
-        } else if (hasStart && !hasEnd) {
-          isActive = today >= startDate; // Tiada akhir → papar dari tarikh mula
-        } else if (!hasStart && hasEnd) {
-          isActive = today <= endDate; // Tiada mula → papar sehingga tarikh akhir
-        } else {
-          isActive = today >= startDate && today <= endDate; // Kedua ada → dalam julat
-        }
-        
-        if (isActive) {
-          return { text, startDate: startStr, endDate: endStr };
-        }
-        return null;
+        if (!isHebahanActive(startStr, endStr, now)) return null;
+        return { text, startDate: startStr, endDate: endStr };
       })
-      .filter(item => item !== null);
+      .filter(Boolean);
   }
 
   /**

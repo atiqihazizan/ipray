@@ -262,7 +262,11 @@ async function startServers() {
       timeService // Pass time service reference
     });
     await apiServerService.start(); // Socket.IO akan auto-attach di sini
-    
+    // === TAMBAH DI SINI ===
+    const { startHebahanScheduler } = require('./services/hebahanScheduler');
+    startHebahanScheduler(dataService, socketServerService);
+    // ======================
+
     console.log(`═══════════════════════════════════════`);
     console.log(`App Mode: ${appMode}`);
     console.log(`Data Path: ${dataPath}`);

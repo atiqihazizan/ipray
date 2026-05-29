@@ -203,14 +203,15 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   const checkMidnight = useCallback((todayStr) => {
-    const lastLoad = dataLoadDateRef.current ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null) ?? '';
+    const lastLoad = dataLoadDateRef.current
+      ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null)
+      ?? '';
     if (lastLoad && todayStr !== lastLoad) {
-      setMidnightReloadMessage('Mengemas kini…');
-      setTimeout(() => {
-        window.location.reload();
-      }, RELOAD_DELAY_MS);
+      dataLoadDateRef.current = todayStr;
+      try { if (typeof localStorage !== 'undefined') localStorage.setItem(DATA_LOAD_DATE_KEY, todayStr); } catch (_) {}
+      loadAllData();   // refresh tanpa reload penuh; takwim ikut takwim:refresh / loadTakwimOnly
     }
-  }, []);
+  }, [loadAllData]);
 
   /**
    * Load data hanya bila Socket.IO connected
