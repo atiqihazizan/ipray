@@ -939,23 +939,23 @@ class _ConfigSubScreenState extends State<ConfigSubScreen> {
     _socketService!.saveConfigItem('WARNING_START_MINUTES', value);
   }
 
-  void _handleIqamahDurationChanged(String text) {
-    final trimmed = text.trim();
-    final warning = double.tryParse(_config('WARNING_START_MINUTES', '1')) ?? 1;
-    final n = double.tryParse(trimmed) ?? warning;
-    final value = n < warning ? warning.toString() : n.toString();
-    setState(() => _configData['IQAMAH_DURATION_MIN'] = value);
-    _socketService?.saveConfigItem('IQAMAH_DURATION_MIN', value);
-  }
+  // void _handleIqamahDurationChanged(String text) {
+  //   final trimmed = text.trim();
+  //   final warning = double.tryParse(_config('WARNING_START_MINUTES', '1')) ?? 1;
+  //   final n = double.tryParse(trimmed) ?? warning;
+  //   final value = n < warning ? warning.toString() : n.toString();
+  //   setState(() => _configData['IQAMAH_DURATION_MIN'] = value);
+  //   _socketService?.saveConfigItem('IQAMAH_DURATION_MIN', value);
+  // }
 
-  void _handleSolatDurationChanged(String text) {
-    final trimmed = text.trim();
-    final iqamah = double.tryParse(_config('IQAMAH_DURATION_MIN', '1')) ?? 1;
-    final n = double.tryParse(trimmed) ?? iqamah;
-    final value = n < iqamah ? iqamah.toString() : n.toString();
-    setState(() => _configData['SOLAT_DURATION_MIN'] = value);
-    _socketService?.saveConfigItem('SOLAT_DURATION_MIN', value);
-  }
+  // void _handleSolatDurationChanged(String text) {
+  //   final trimmed = text.trim();
+  //   final iqamah = double.tryParse(_config('IQAMAH_DURATION_MIN', '1')) ?? 1;
+  //   final n = double.tryParse(trimmed) ?? iqamah;
+  //   final value = n < iqamah ? iqamah.toString() : n.toString();
+  //   setState(() => _configData['SOLAT_DURATION_MIN'] = value);
+  //   _socketService?.saveConfigItem('SOLAT_DURATION_MIN', value);
+  // }
 
   Color _parseHexColor(String hex) {
     var v = hex.trim();

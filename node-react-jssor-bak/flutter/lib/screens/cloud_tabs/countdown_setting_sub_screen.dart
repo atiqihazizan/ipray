@@ -248,21 +248,21 @@ class _CountdownSettingSubScreenState extends State<CountdownSettingSubScreen> {
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 1,
-      shadowColor: Colors.black.withAlpha((0.06 * 255).round()),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'Tetapan ini ambil template dari fail slides (type=countdown). Anda boleh pilih imej, tetapkan tempoh (s), dan pilih item Paparan.',
-          style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.35),
-        ),
-      ),
-    );
-  }
+  // Widget _buildHeaderCard() {
+  //   return Material(
+  //     color: Colors.white,
+  //     borderRadius: BorderRadius.circular(12),
+  //     elevation: 1,
+  //     shadowColor: Colors.black.withAlpha((0.06 * 255).round()),
+  //     child: const Padding(
+  //       padding: EdgeInsets.all(16),
+  //       child: Text(
+  //         'Tetapan ini ambil template dari fail slides (type=countdown). Anda boleh pilih imej, tetapkan tempoh (s), dan pilih item Paparan.',
+  //         style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.35),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildSlidesCard() {
     return Material(
@@ -306,60 +306,60 @@ class _CountdownSettingSubScreenState extends State<CountdownSettingSubScreen> {
   }
 }
 
-class _DurationPickerField extends StatelessWidget {
-  const _DurationPickerField({
-    required this.value,
-    required this.labelText,
-    required this.onChanged,
-  });
+// class _DurationPickerField extends StatelessWidget {
+//   const _DurationPickerField({
+//     required this.value,
+//     required this.labelText,
+//     required this.onChanged,
+//   });
 
-  final String value;
-  final String labelText;
-  final void Function(String value) onChanged;
+//   final String value;
+//   final String labelText;
+//   final void Function(String value) onChanged;
 
-  Future<void> _showPicker(BuildContext context) async {
-    int current = int.tryParse(value) ?? 0;
-    if (current < 0) current = 0;
-    if (current > 9999) current = 9999;
+//   Future<void> _showPicker(BuildContext context) async {
+//     int current = int.tryParse(value) ?? 0;
+//     if (current < 0) current = 0;
+//     if (current > 9999) current = 9999;
 
-    final result = await showDialog<int>(
-      context: context,
-      builder: (ctx) => _DurationPickerDialog(
-        initialValue: current,
-        onConfirm: (v) => Navigator.of(ctx).pop(v),
-      ),
-    );
-    if (result != null) onChanged(result.toString());
-  }
+//     final result = await showDialog<int>(
+//       context: context,
+//       builder: (ctx) => _DurationPickerDialog(
+//         initialValue: current,
+//         onConfirm: (v) => Navigator.of(ctx).pop(v),
+//       ),
+//     );
+//     if (result != null) onChanged(result.toString());
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showPicker(context),
-      borderRadius: BorderRadius.circular(4),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: labelText,
-          isDense: true,
-          border: const OutlineInputBorder(),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              value.isEmpty ? 'Pilih' : '$value s',
-              style: TextStyle(
-                fontSize: 14,
-                color: value.isEmpty ? Colors.grey : null,
-              ),
-            ),
-            const Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return InkWell(
+//       onTap: () => _showPicker(context),
+//       borderRadius: BorderRadius.circular(4),
+//       child: InputDecorator(
+//         decoration: InputDecoration(
+//           labelText: labelText,
+//           isDense: true,
+//           border: const OutlineInputBorder(),
+//         ),
+//         child: Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//           children: [
+//             Text(
+//               value.isEmpty ? 'Pilih' : '$value s',
+//               style: TextStyle(
+//                 fontSize: 14,
+//                 color: value.isEmpty ? Colors.grey : null,
+//               ),
+//             ),
+//             const Icon(Icons.keyboard_arrow_down, size: 20, color: Colors.grey),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 class _DurationPickerDialog extends StatefulWidget {
   const _DurationPickerDialog({

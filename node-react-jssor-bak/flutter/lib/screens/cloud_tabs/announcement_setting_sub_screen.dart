@@ -246,21 +246,21 @@ class _AnnouncementSettingSubScreenState extends State<AnnouncementSettingSubScr
     );
   }
 
-  Widget _buildHeaderCard() {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 1,
-      shadowColor: Colors.black.withAlpha((0.06 * 255).round()),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'Tetapan ini ambil template dari fail slides (type=announce). Anda boleh pilih imej, tetapkan tempoh (s), dan pilih item Paparan.',
-          style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.35),
-        ),
-      ),
-    );
-  }
+  // Widget _buildHeaderCard() {
+  //   return Material(
+  //     color: Colors.white,
+  //     borderRadius: BorderRadius.circular(12),
+  //     elevation: 1,
+  //     shadowColor: Colors.black.withAlpha((0.06 * 255).round()),
+  //     child: const Padding(
+  //       padding: EdgeInsets.all(16),
+  //       child: Text(
+  //         'Tetapan ini ambil template dari fail slides (type=announce). Anda boleh pilih imej, tetapkan tempoh (s), dan pilih item Paparan.',
+  //         style: TextStyle(fontSize: 12.5, color: Color(0xFF4B5563), height: 1.35),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildSlidesCard() {
     return Material(
