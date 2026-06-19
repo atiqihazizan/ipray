@@ -280,6 +280,10 @@ function buildTableRow(row, ctx) {
             : value === "masihi"
               ? "Masihi (ulang)"
               : "Tarikh tetap";
+      if (col === "date" && value) {
+        const datePart = String(value).trim().split(" ")[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) value = datePart;
+      }
       if (
         value === "" &&
         (col === "date" ||

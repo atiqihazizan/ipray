@@ -64,7 +64,7 @@ const COLUMNS = {
   kuliah: ['week', 'day', 'type', 'speaker', 'speakerId', 'title'],
   'kuliah-override': ['format', 'date', 'tahun', 'bulan', 'type', 'hari', 'replace', 'notes', 'showAnnounce', 'title', 'tempat', 'jemputan'],
   announcements: ['type', 'title', 'speaker', 'category', 'datetime', 'location', 'audience'],
-  countdowns: ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
+  countdowns: ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays', 'background', 'display', 'layout'],
   slideshow: ['caption', 'image', 'validFrom', 'validTo'],
   images: ['imageCode', 'imagePath'],
   penceramah: ['kod', 'namaPenuh', 'shortname', 'kitab'],
@@ -280,13 +280,21 @@ function parseLineToRow(normalized, line, index) {
   }
   if (normalized === 'countdowns') {
     const typeRaw = (parts[0] || '').toUpperCase();
+    const parseOpt = (startIdx) => ({
+      background: (parts[startIdx] || '').trim(),
+      display: (parts[startIdx + 1] || '').trim(),
+      layout: (parts[startIdx + 2] || '').trim(),
+    });
     if (typeRaw === 'COUNTDOWN_HIJRI' && parts.length >= 5) {
-      return { id: index + 1, format: 'hijri', date: '', tahun: parts[1] || '', bulan: parts[2] || '', hari: parts[3] || '', event: parts[4] || '', windowDays: parts[5] || '', raw: line };
+      const opt = parseOpt(6);
+      return { id: index + 1, format: 'hijri', date: '', tahun: parts[1] || '', bulan: parts[2] || '', hari: parts[3] || '', event: parts[4] || '', windowDays: parts[5] || '', ...opt, raw: line };
     }
     if (typeRaw === 'COUNTDOWN_MASIHI' && parts.length >= 4) {
-      return { id: index + 1, format: 'masihi', date: '', tahun: '', bulan: parts[1] || '', hari: parts[2] || '', event: parts[3] || '', windowDays: parts[4] || '', raw: line };
+      const opt = parseOpt(5);
+      return { id: index + 1, format: 'masihi', date: '', tahun: '', bulan: parts[1] || '', hari: parts[2] || '', event: parts[3] || '', windowDays: parts[4] || '', ...opt, raw: line };
     }
-    return { id: index + 1, format: 'date', date: parts[1] || '', tahun: '', bulan: '', hari: '', event: parts[2] || '', windowDays: parts[3] || '', raw: line };
+    const opt = parseOpt(4);
+    return { id: index + 1, format: 'date', date: parts[1] || '', tahun: '', bulan: '', hari: '', event: parts[2] || '', windowDays: parts[3] || '', ...opt, raw: line };
   }
   if (normalized === 'penceramah') {
     return { id: index + 1, kod: parts[0] || '', namaPenuh: parts[1] || '', shortname: parts[2] || '', kitab: parts.length >= 5 ? (parts[4] || '') : (parts[3] || ''), raw: line };

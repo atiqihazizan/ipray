@@ -36,6 +36,30 @@ async function uploadImageForSave(file, category) {
   return result;
 }
 
+async function upsertImageEntry(imageCode, imagePath) {
+  const API_URL = window.Config.API_URL;
+  const imageRow = { imageCode, imagePath };
+  const imageRaw = reconstructRawLine("images", imageRow);
+  const listRes = await fetch(`${API_URL}/data/images`);
+  const listJson = await listRes.json();
+  const existing = (listJson.data || []).find(
+    (im) => (im.imageCode || "").trim() === imageCode,
+  );
+  if (existing && existing.id != null) {
+    await fetch(`${API_URL}/data/images/${existing.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ row: { ...imageRow, raw: imageRaw } }),
+    });
+  } else {
+    await fetch(`${API_URL}/data/images/insert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ row: { ...imageRow, raw: imageRaw }, position: "end" }),
+    });
+  }
+}
+
 /**
  * Reconstruct raw line based on file type
  * @param {string} fileName - Nama fail
@@ -90,20 +114,24 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "countdowns") {
     const format = (rowData.format || "date").toLowerCase();
     const event = (rowData.event || "").trim();
-    const windowDays = (rowData.windowDays || "").trim();
+    const windowDays = (rowData.windowDays ?? "").toString().trim();
+    const bg = (rowData.background || "").trim();
+    const display = (rowData.display || "").trim();
+    const layout = (rowData.layout || "").trim();
+    const suffix = bg || display || layout ? `|${bg}|${display}|${layout}` : "";
     if (format === "hijri") {
       const tahun = (rowData.tahun || "").trim();
       const bulan = (rowData.bulan || "").trim();
       const hari = (rowData.hari || "").trim();
-      return `COUNTDOWN_HIJRI|${tahun}|${bulan}|${hari}|${event}|${windowDays}`;
+      return `COUNTDOWN_HIJRI|${tahun}|${bulan}|${hari}|${event}|${windowDays}${suffix}`;
     }
     if (format === "masihi") {
       const bulan = (rowData.bulan || "").trim();
       const hari = (rowData.hari || "").trim();
-      return `COUNTDOWN_MASIHI|${bulan}|${hari}|${event}|${windowDays}`;
+      return `COUNTDOWN_MASIHI|${bulan}|${hari}|${event}|${windowDays}${suffix}`;
     }
     const date = (rowData.date || "").trim();
-    return `COUNTDOWN|${date}|${event}|${windowDays}`;
+    return `COUNTDOWN|${date}|${event}|${windowDays}${suffix}`;
   } else if (fileName === "config") {
     return `${rowData.key || ""}|${rowData.value || ""}`;
   } else if (fileName === "takwim") {
@@ -476,6 +504,25 @@ export async function saveRow() {
         rowData.image = uploaded.path || "";
         const hidden = document.getElementById("field-image");
         if (hidden) hidden.value = rowData.image;
+      }
+    }
+
+    // Countdown: upload background ke images/countdown/ dan daftar dalam images.txt
+    if (currentFileName === "countdowns") {
+      const fileInput = document.getElementById("file-countdown-background");
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      const imgChgEl = document.getElementById("field-countdownBgChg");
+      const imgChg = imgChgEl ? (imgChgEl.value || "").trim() : (file ? "1" : "0");
+      const shouldUpload = addMode ? !!file : (imgChg === "1" && !!file);
+
+      if (shouldUpload) {
+        const imageCode = (rowData.background || "").trim();
+        if (!imageCode) {
+          showNotification("✗ Kod background wajib diisi sebelum upload imej", "error");
+          return;
+        }
+        const uploaded = await uploadImageForSave(file, "countdown");
+        await upsertImageEntry(imageCode, uploaded.path || "");
       }
     }
   } catch (error) {

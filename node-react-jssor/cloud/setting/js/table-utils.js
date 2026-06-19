@@ -38,7 +38,7 @@ const colLabelMap = {
   "kuliah-override": { format: "Format", date: "Tarikh", tahun: "Tahun", bulan: "Bulan", type: "Jenis", hari: "Hari", replace: "Ganti (1=ya)", notes: "Catatan", showAnnounce: "Pengumuman", title: "Tajuk", tempat: "Tempat", jemputan: "Jemputan" },
   images: { imageCode: "Kod Imej", imagePath: "Laluan Imej" },
   announcements: { type: "Jenis", title: "Tajuk", speaker: "Penceramah", category: "Kategori", datetime: "Tarikh/Masa", location: "Lokasi", audience: "Jemputan" },
-  countdowns: { format: "Format", date: "Tarikh", tahun: "Tahun", bulan: "Bulan", hari: "Hari", event: "Acara", windowDays: "Papar (hari)" },
+  countdowns: { format: "Format", date: "Tarikh", tahun: "Tahun", bulan: "Bulan", hari: "Hari", event: "Acara", windowDays: "Papar (hari)", background: "Background", display: "Paparan", layout: "Layout" },
   config: { key: "Kekunci", value: "Nilai" },
   slideshow: { caption: "Kapsyen", image: "Imej", validFrom: "Mula", validTo: "Tamat", showOn: "Papar Pada" },
   hebahan: { text: "Teks", startDate: "Tarikh Mula", endDate: "Tarikh Akhir" },

@@ -38,7 +38,8 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
 
   const captions = showTitle ? [
       {
-        type: "div", transition: "CLIP|LR", duration: 1500,
+        // type: "div", transition: "CLIP|LR", duration: 1500,
+        type: "div", transition: "auto", duration: 1500,
         style: { 
           left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP), //width: sz().width,
           textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
@@ -47,7 +48,7 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
           // '-webkit-text-stroke': '1px red',
           // webkitTextStrokeColor: 'red',
           // webkittextstrokewidth: '1px',
-          clip: 'auto'
+          // clip: 'auto'
         },
         content: `<div style="display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
         <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>

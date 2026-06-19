@@ -597,6 +597,7 @@ class DataService {
         // COUNTDOWN|date|event|windowDays | COUNTDOWN_MASIHI|bulan|hari|event|windowDays | COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays
         const typeRaw = (parts[0] || '').trim().toUpperCase();
         if (typeRaw === 'COUNTDOWN_HIJRI' && parts.length >= 5) {
+          const opt = this.parseCountdownOptionalFields(parts, 6);
           parsed.push({
             id: parsed.length + 1,
             format: 'hijri',
@@ -606,9 +607,13 @@ class DataService {
             hari: (parts[3] || '').trim(),
             event: (parts[4] || '').trim(),
             windowDays: (parts[5] || '').trim(),
+            background: opt.background,
+            display: opt.display.join(','),
+            layout: `${opt.layout.eventTop},${opt.layout.countdownBottom}`,
             raw: line
           });
         } else if (typeRaw === 'COUNTDOWN_MASIHI' && parts.length >= 4) {
+          const opt = this.parseCountdownOptionalFields(parts, 5);
           parsed.push({
             id: parsed.length + 1,
             format: 'masihi',
@@ -618,9 +623,13 @@ class DataService {
             hari: (parts[2] || '').trim(),
             event: (parts[3] || '').trim(),
             windowDays: (parts[4] || '').trim(),
+            background: opt.background,
+            display: opt.display.join(','),
+            layout: `${opt.layout.eventTop},${opt.layout.countdownBottom}`,
             raw: line
           });
         } else {
+          const opt = this.parseCountdownOptionalFields(parts, 4);
           parsed.push({
             id: parsed.length + 1,
             format: 'date',
@@ -630,6 +639,9 @@ class DataService {
             hari: '',
             event: (parts[2] || '').trim(),
             windowDays: (parts[3] || '').trim(),
+            background: opt.background,
+            display: opt.display.join(','),
+            layout: `${opt.layout.eventTop},${opt.layout.countdownBottom}`,
             raw: line
           });
         }
@@ -763,7 +775,7 @@ class DataService {
       'kuliah-override': ['format', 'date', 'tahun', 'bulan', 'type', 'hari', 'replace', 'notes', 'showAnnounce', 'title', 'tempat', 'jemputan'],
       'images': ['imageCode', 'imagePath'],
       'announcements': ['type', 'title', 'speaker', 'category', 'datetime', 'location', 'audience'],
-      'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
+      'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays', 'background', 'display', 'layout'],
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
       'slideshow': ['caption', 'image', 'validFrom', 'validTo', 'showOn'],
@@ -1454,12 +1466,139 @@ class DataService {
       .filter(Boolean);
   }
 
+  /** Paparan countdown default bila field display kosong. */
+  static get DEFAULT_COUNTDOWN_DISPLAY() {
+    return ['event', 'countdown'];
+  }
+
+  /** Layout caption countdown default (selaras sliderConfig). */
+  static get DEFAULT_COUNTDOWN_LAYOUT() {
+    return { eventTop: 30, countdownBottom: 220 };
+  }
+
+  parseCountdownDisplay(str) {
+    if (!str || typeof str !== 'string') return DataService.DEFAULT_COUNTDOWN_DISPLAY;
+    const valid = new Set(['event', 'datey', 'dateh', 'datem', 'countdown']);
+    const tokens = str.split(',').map((s) => s.trim().toLowerCase()).filter((s) => valid.has(s));
+    if (!tokens.length) return DataService.DEFAULT_COUNTDOWN_DISPLAY;
+    return tokens.map((t) => {
+      if (t === 'datey') return 'dateY';
+      if (t === 'dateh') return 'dateH';
+      if (t === 'datem') return 'dateM';
+      return t;
+    });
+  }
+
+  parseCountdownLayout(str) {
+    const def = DataService.DEFAULT_COUNTDOWN_LAYOUT;
+    if (!str || typeof str !== 'string') return { ...def };
+    const nums = str.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n));
+    if (nums.length >= 2) return { eventTop: nums[0], countdownBottom: nums[1] };
+    return { ...def };
+  }
+
+  parseCountdownOptionalFields(parts, startIdx) {
+    const background = (parts[startIdx] || '').trim();
+    const displayRaw = (parts[startIdx + 1] || '').trim();
+    const layoutRaw = (parts[startIdx + 2] || '').trim();
+    return {
+      background,
+      display: this.parseCountdownDisplay(displayRaw),
+      layout: this.parseCountdownLayout(layoutRaw),
+    };
+  }
+
+  formatCountdownMasihiDate(y, m, d) {
+    const months = ['Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun', 'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'];
+    const day = String(d).padStart(2, '0');
+    const monthName = months[m - 1] || String(m);
+    return `${day} ${monthName} ${y}`;
+  }
+
+  /**
+   * Resolve tarikh sasaran Gregorian + enrich untuk API app.
+   * @returns {object|null} payload atau null jika tidak aktif / LEWAT
+   */
+  enrichCountdownForApp(c, takwimContent, today) {
+    if (!c || typeof c !== 'object') return null;
+    let dateTimeRaw;
+    const event = c.event || '';
+    const windowDays = typeof c.windowDays === 'number' ? c.windowDays : parseInt(c.windowDays, 10) || 0;
+
+    if (c.type === 'COUNTDOWN_HIJRI') {
+      const gregorianDate = this.getNextGregorianForHijriDate(takwimContent, c.month, c.day, today);
+      if (!gregorianDate) return null;
+      dateTimeRaw = `${gregorianDate} 00:00`;
+    } else if (c.type === 'COUNTDOWN_MASIHI') {
+      const gregorianDate = this.getNextGregorianForMonthDay(c.month, c.day, today);
+      if (!gregorianDate) return null;
+      dateTimeRaw = `${gregorianDate} 00:00`;
+    } else {
+      dateTimeRaw = (c.dateTimeRaw || '').trim();
+      if (!dateTimeRaw) return null;
+    }
+
+    const { daysRemaining, countdownText } = this.getCountdownFromDate(dateTimeRaw, today);
+    if (countdownText === 'LEWAT') return null;
+    if (windowDays > 0 && daysRemaining > windowDays) return null;
+
+    const datePart = dateTimeRaw.includes(' ') ? dateTimeRaw.split(' ')[0] : dateTimeRaw;
+    const [y, mo, d] = datePart.split('-').map((n) => parseInt(n, 10));
+    const targetDate = new Date(y, mo - 1, d, 0, 0, 0, 0);
+    const hijri = this.getHijriForDate(takwimContent, targetDate, 12 * 60);
+
+    const masihi = {
+      year: y,
+      month: mo,
+      day: d,
+      formatted: this.formatCountdownMasihiDate(y, mo, d),
+    };
+
+    let hijriOut = null;
+    let dualYear = `${y}M`;
+    if (hijri) {
+      const monthName = hijri.monthName || this.getHijriMonthLabel(hijri.month);
+      hijriOut = {
+        year: hijri.year,
+        month: hijri.month,
+        day: hijri.day,
+        monthName,
+        formatted: `${String(hijri.day).padStart(2, '0')} ${monthName} ${hijri.year}H`,
+      };
+      dualYear = `${hijri.year}H/${y}M`;
+    }
+
+    const display = Array.isArray(c.display) && c.display.length
+      ? c.display
+      : DataService.DEFAULT_COUNTDOWN_DISPLAY;
+    const layout = c.layout && typeof c.layout === 'object'
+      ? { ...DataService.DEFAULT_COUNTDOWN_LAYOUT, ...c.layout }
+      : { ...DataService.DEFAULT_COUNTDOWN_LAYOUT };
+
+    return {
+      type: c.type || 'COUNTDOWN',
+      event,
+      dateTimeRaw,
+      windowDays,
+      raw: c.raw,
+      daysRemaining,
+      countdownText,
+      background: c.background || '',
+      display,
+      layout,
+      masihi,
+      hijri: hijriOut,
+      dualYear,
+    };
+  }
+
   /**
    * Parse countdowns content -> array of rule objects
    * Format:
-   * - Gregorian (sekali): COUNTDOWN|YYYY-MM-DD [HH:mm]|event|windowDays
-   * - Hijri (ulang setiap tahun): COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays (tahun kosong = setiap tahun)
-   * - Masihi ulang tahun: COUNTDOWN_MASIHI|bulan|hari|event|windowDays (contoh: 8|31 = 31 Ogos setiap tahun)
+   * - Gregorian (sekali): COUNTDOWN|YYYY-MM-DD [HH:mm]|event|windowDays|[background]|[display]|[layout]
+   * - Hijri (ulang setiap tahun): COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays|[background]|[display]|[layout]
+   * - Masihi ulang tahun: COUNTDOWN_MASIHI|bulan|hari|event|windowDays|[background]|[display]|[layout]
+   * display: event,dateY,dateH,dateM,countdown (comma). layout: eventTop,countdownBottom (contoh 30,220)
    */
   parseCountdowns(content) {
     if (!content || typeof content !== 'string') return [];
@@ -1485,7 +1624,8 @@ class DataService {
           if (isNaN(month) || month < 1 || month > 12 || isNaN(day) || day < 1 || day > 30) {
             return { type: 'COUNTDOWN', dateTimeRaw: '', event: '', windowDays: 0, raw: line };
           }
-          return { type: 'COUNTDOWN_HIJRI', year, month, day, event, windowDays, raw: line };
+          const opt = this.parseCountdownOptionalFields(parts, 6);
+          return { type: 'COUNTDOWN_HIJRI', year, month, day, event, windowDays, raw: line, ...opt };
         }
         if (typeRaw === 'COUNTDOWN_MASIHI' && parts.length >= 4) {
           const month = parseInt(parts[1], 10);
@@ -1500,7 +1640,8 @@ class DataService {
           if (isNaN(month) || month < 1 || month > 12 || isNaN(day) || day < 1 || day > 31) {
             return { type: 'COUNTDOWN', dateTimeRaw: '', event: '', windowDays: 0, raw: line };
           }
-          return { type: 'COUNTDOWN_MASIHI', month, day, event, windowDays, raw: line };
+          const opt = this.parseCountdownOptionalFields(parts, 5);
+          return { type: 'COUNTDOWN_MASIHI', month, day, event, windowDays, raw: line, ...opt };
         }
         const type = (typeRaw === 'COUNTDOWN_HIJRI' || typeRaw === 'COUNTDOWN_MASIHI') ? 'COUNTDOWN' : typeRaw;
         const dateTimeRaw = (parts[1] || '').trim();
@@ -1511,7 +1652,8 @@ class DataService {
           const n = parseInt(windowStr, 10);
           if (!isNaN(n) && n >= 0) windowDays = n;
         }
-        return { type, dateTimeRaw, event, windowDays, raw: line };
+        const opt = this.parseCountdownOptionalFields(parts, 4);
+        return { type, dateTimeRaw, event, windowDays, raw: line, ...opt };
       });
   }
 
@@ -1593,6 +1735,16 @@ class DataService {
       }
     });
     return result;
+  }
+
+  getHijriMonthLabel(month) {
+    const labels = [
+      '', 'MUHARRAM', 'SAFAR', 'RABIUL AWAL', 'RABIUL AKHIR',
+      'JAMADIL AWAL', 'JAMADIL AKHIR', 'REJAB', 'SYAABAN', 'RAMADHAN',
+      'SYAWAL', 'ZULKAEDAH', 'ZULHIJJAH'
+    ];
+    const m = parseInt(month, 10);
+    return labels[m] || '';
   }
 
   /**

@@ -83,20 +83,24 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "countdowns") {
     const format = (rowData.format || "date").toLowerCase();
     const event = (rowData.event || "").trim();
-    const windowDays = (rowData.windowDays || "").trim();
+    const windowDays = (rowData.windowDays ?? "").toString().trim();
+    const bg = (rowData.background || "").trim();
+    const display = (rowData.display || "").trim();
+    const layout = (rowData.layout || "").trim();
+    const suffix = bg || display || layout ? `|${bg}|${display}|${layout}` : "";
     if (format === "hijri") {
       const tahun = (rowData.tahun || "").trim();
       const bulan = (rowData.bulan || "").trim();
       const hari = (rowData.hari || "").trim();
-      return `COUNTDOWN_HIJRI|${tahun}|${bulan}|${hari}|${event}|${windowDays}`;
+      return `COUNTDOWN_HIJRI|${tahun}|${bulan}|${hari}|${event}|${windowDays}${suffix}`;
     }
     if (format === "masihi") {
       const bulan = (rowData.bulan || "").trim();
       const hari = (rowData.hari || "").trim();
-      return `COUNTDOWN_MASIHI|${bulan}|${hari}|${event}|${windowDays}`;
+      return `COUNTDOWN_MASIHI|${bulan}|${hari}|${event}|${windowDays}${suffix}`;
     }
     const date = (rowData.date || "").trim();
-    return `COUNTDOWN|${date}|${event}|${windowDays}`;
+    return `COUNTDOWN|${date}|${event}|${windowDays}${suffix}`;
   } else if (fileName === "config") {
     return `${rowData.key || ""}|${rowData.value || ""}`;
   } else if (fileName === "takwim") {

@@ -110,6 +110,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         hari: "Hari",
         event: "Event",
         windowDays: "Papar bila tinggal ___ hari (0 = selalu)",
+        background: "Background (kod imej)",
       };
       if (cdLabels[col]) label.textContent = cdLabels[col];
     }
@@ -150,6 +151,11 @@ function createFormFields(form, row, isAdd, options = {}) {
 
     // Penceramah: kolum kod dijana automatik dari namaPenuh (slug), jadi tiada input dalam dialog
     if (currentFileName === "penceramah" && col === "kod") {
+      return;
+    }
+
+    // Countdown: bulan/hari sudah dalam row tahun
+    if (currentFileName === "countdowns" && (col === "bulan" || col === "hari")) {
       return;
     }
 
@@ -951,6 +957,328 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
+    // Countdown background: kod imej + upload ke images/countdown/
+    if (currentFileName === "countdowns" && col === "background") {
+      label.textContent = "Background (kod imej + upload)";
+      const uploadContainer = document.createElement("div");
+      uploadContainer.className = "image-upload-container";
+
+      const bgChg = document.createElement("input");
+      bgChg.type = "hidden";
+      bgChg.id = "field-countdownBgChg";
+      bgChg.name = "countdownBgChg";
+      bgChg.value = "0";
+      uploadContainer.appendChild(bgChg);
+
+      const codeInput = document.createElement("input");
+      codeInput.type = "text";
+      codeInput.id = "field-background";
+      codeInput.name = "background";
+      codeInput.className = "form-control";
+      codeInput.placeholder = "cth: bg-maulid (kosong = global countDown slide)";
+      codeInput.value = isAdd ? "" : row[col] || "";
+      codeInput.style.marginBottom = "8px";
+
+      const previewContainer = document.createElement("div");
+      previewContainer.className = "image-preview-container";
+      previewContainer.style.marginBottom = "12px";
+      const previewImg = document.createElement("img");
+      previewImg.id = "countdown-background-preview";
+      previewImg.className = "image-preview";
+      previewImg.style.maxWidth = "200px";
+      previewImg.style.maxHeight = "200px";
+      previewImg.style.borderRadius = "8px";
+      previewImg.style.border = "1px solid #e5e7eb";
+      previewImg.style.display = "none";
+      previewImg.style.objectFit = "cover";
+      previewImg.onerror = function () {
+        this.style.display = "none";
+      };
+
+      const updatePreviewFromCode = (code) => {
+        const trimmed = (code || "").trim();
+        if (!trimmed) {
+          previewImg.removeAttribute("src");
+          previewImg.style.display = "none";
+          return;
+        }
+        const found = (imagesList || []).find(
+          (im) => (im.imageCode || "").trim() === trimmed,
+        );
+        const pathVal = found && found.imagePath ? found.imagePath : null;
+        if (pathVal) {
+          const url = pathVal.startsWith("/")
+            ? `${BASE_URL}${pathVal}`
+            : `${BASE_URL}/images/${pathVal}`;
+          previewImg.src = url;
+          previewImg.style.display = "block";
+        } else {
+          previewImg.removeAttribute("src");
+          previewImg.style.display = "none";
+        }
+      };
+
+      const initialBgPreview = { src: "", visible: false };
+      if (!isAdd && row[col]) {
+        updatePreviewFromCode(row[col]);
+        if (previewImg.src) {
+          initialBgPreview.src = previewImg.src;
+          initialBgPreview.visible = true;
+        }
+      }
+
+      previewContainer.appendChild(previewImg);
+      uploadContainer.appendChild(previewContainer);
+      uploadContainer.appendChild(codeInput);
+
+      const fileWrapper = document.createElement("div");
+      fileWrapper.style.position = "relative";
+      fileWrapper.style.width = "100%";
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.id = "file-countdown-background";
+      fileInput.accept = "image/*";
+      fileInput.className = "form-control";
+      fileInput.style.marginBottom = "8px";
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.title = "Kosongkan pilihan fail";
+      clearBtn.innerHTML = "&times;";
+      clearBtn.style.cssText =
+        "position:absolute;right:8px;top:50%;transform:translateY(-70%);background:none;color:#dc2626;border:none;cursor:pointer;font-size:20px;line-height:1;padding:0;display:none;align-items:center;justify-content:center;";
+      clearBtn.onclick = () => {
+        fileInput.value = "";
+        clearBtn.style.display = "none";
+        bgChg.value = "0";
+        if (initialBgPreview.visible && initialBgPreview.src) {
+          previewImg.src = initialBgPreview.src;
+          previewImg.style.display = "block";
+        } else {
+          updatePreviewFromCode(codeInput.value);
+        }
+      };
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        clearBtn.style.display = file ? "flex" : "none";
+        if (!file) return;
+        bgChg.value = "1";
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          previewImg.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      });
+      codeInput.addEventListener("input", () => updatePreviewFromCode(codeInput.value));
+
+      fileWrapper.appendChild(fileInput);
+      fileWrapper.appendChild(clearBtn);
+      uploadContainer.appendChild(fileWrapper);
+
+      group.appendChild(label);
+      group.appendChild(uploadContainer);
+      form.appendChild(group);
+      return;
+    }
+
+    // Countdown display: checkbox (event, dateY, dateH, dateM, countdown)
+    if (currentFileName === "countdowns" && col === "display") {
+      label.textContent = "Paparan (pilih apa hendak dipaparkan)";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = "field-display";
+      hiddenInput.name = "display";
+
+      const DISPLAY_OPTIONS = [
+        { v: "event", label: "Nama acara" },
+        { v: "dateY", label: "Tahun dual (1448H/2026M)" },
+        { v: "dateH", label: "Tarikh Hijri penuh" },
+        { v: "dateM", label: "Tarikh Masihi penuh" },
+        { v: "countdown", label: "Countdown (X HARI LAGI)" },
+      ];
+
+      const parseDisplayTokens = (val) => {
+        if (!val || !String(val).trim()) return new Set(["event", "countdown"]);
+        const tokens = String(val)
+          .split(",")
+          .map((s) => {
+            const t = s.trim().toLowerCase();
+            if (t === "datey") return "dateY";
+            if (t === "dateh") return "dateH";
+            if (t === "datem") return "dateM";
+            return t;
+          })
+          .filter(Boolean);
+        return new Set(tokens);
+      };
+
+      const selected = parseDisplayTokens(isAdd ? "" : row[col]);
+
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "display:flex;flex-direction:column;gap:8px;margin-top:4px;";
+      const CB_STYLE =
+        "display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;user-select:none;width:100px";
+
+      const syncHidden = () => {
+        const checked = DISPLAY_OPTIONS.filter(
+          (opt) => wrapper.querySelector(`[data-cd-display="${opt.v}"]:checked`),
+        ).map((opt) => opt.v);
+        hiddenInput.value = checked.join(",");
+      };
+
+      hiddenInput.value = [...selected].join(",");
+
+      DISPLAY_OPTIONS.forEach((opt) => {
+        const labelWrap = document.createElement("label");
+        labelWrap.style.cssText = CB_STYLE;
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.value = opt.v;
+        cb.setAttribute("data-cd-display", opt.v);
+        cb.checked = selected.has(opt.v);
+        cb.addEventListener("change", syncHidden);
+        labelWrap.appendChild(cb);
+        const span = document.createElement("span");
+        span.textContent = opt.label;
+        labelWrap.appendChild(span);
+        wrapper.appendChild(labelWrap);
+      });
+
+      group.appendChild(label);
+      group.appendChild(hiddenInput);
+      group.appendChild(wrapper);
+      form.appendChild(group);
+      return;
+    }
+
+    // Countdown: tahun/bulan/hari dalam satu row
+    if (currentFileName === "countdowns" && col === "tahun") {
+      const fmt =
+        !isAdd && row && row.format
+          ? (row.format || "date").toLowerCase()
+          : "date";
+      group.setAttribute("data-cd-range", "1");
+      if (fmt === "date") group.style.display = "none";
+      label.textContent = "Tarikh berulang";
+
+      const rowFlex = document.createElement("div");
+      rowFlex.style.cssText =
+        "display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:4px;";
+
+      const makeCol = (fieldName, colLabel, inputEl) => {
+        const wrap = document.createElement("div");
+        wrap.style.cssText =
+          "display:flex;flex-direction:column;gap:4px;min-width:100px;flex:1;";
+        const lbl = document.createElement("label");
+        lbl.textContent = colLabel;
+        lbl.style.cssText =
+          "font-size:12px;color:#6b7280;font-weight:500;margin:0;";
+        lbl.setAttribute("for", `field-${fieldName}`);
+        inputEl.id = `field-${fieldName}`;
+        inputEl.name = fieldName;
+        inputEl.className = "form-control";
+        wrap.appendChild(lbl);
+        wrap.appendChild(inputEl);
+        return wrap;
+      };
+
+      const tahunInput = document.createElement("input");
+      tahunInput.type = "number";
+      tahunInput.placeholder = "Kosong = setiap tahun";
+      tahunInput.min = "1440";
+      tahunInput.max = "1500";
+      if (!isAdd && row.tahun) tahunInput.value = row.tahun;
+      const tahunCol = makeCol("tahun", "Tahun (Hijri)", tahunInput);
+      tahunCol.setAttribute("data-cd-hijri", "1");
+      if (fmt !== "hijri") tahunCol.style.display = "none";
+
+      const bulanInput = document.createElement("input");
+      bulanInput.type = "number";
+      bulanInput.min = "1";
+      bulanInput.max = "12";
+      bulanInput.placeholder = "1-12 (10=Syawal)";
+      if (!isAdd && row.bulan) bulanInput.value = row.bulan;
+
+      const hariInput = document.createElement("input");
+      hariInput.type = "number";
+      hariInput.min = "1";
+      hariInput.max = "31";
+      hariInput.placeholder = "1-31 / 1-30 Hijri";
+      if (!isAdd && row.hari) hariInput.value = row.hari;
+
+      rowFlex.appendChild(tahunCol);
+      rowFlex.appendChild(makeCol("bulan", "Bulan", bulanInput));
+      rowFlex.appendChild(makeCol("hari", "Hari", hariInput));
+
+      group.appendChild(label);
+      group.appendChild(rowFlex);
+      form.appendChild(group);
+      return;
+    }
+
+    // Countdown layout: 2 input berlabel
+    if (currentFileName === "countdowns" && col === "layout") {
+      label.textContent = "Layout posisi teks";
+      const layoutRaw = !isAdd && row.layout ? String(row.layout).trim() : "";
+      const parts = layoutRaw ? layoutRaw.split(",") : ["30", "220"];
+
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = "field-layout";
+      hiddenInput.name = "layout";
+
+      const topIn = document.createElement("input");
+      const bottomIn = document.createElement("input");
+      topIn.value = (parts[0] || "30").trim();
+      bottomIn.value = (parts[1] || "220").trim();
+
+      const syncLayout = () => {
+        hiddenInput.value = `${(topIn.value || "30").trim()},${(bottomIn.value || "220").trim()}`;
+      };
+      syncLayout();
+      topIn.addEventListener("input", syncLayout);
+      bottomIn.addEventListener("input", syncLayout);
+
+      const rowFlex = document.createElement("div");
+      rowFlex.style.cssText =
+        "display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:4px;";
+
+      const makeLayoutCol = (fieldId, colLabel, inputEl) => {
+        const wrap = document.createElement("div");
+        wrap.style.cssText =
+          "display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px;";
+        const lbl = document.createElement("label");
+        lbl.textContent = colLabel;
+        lbl.style.cssText =
+          "font-size:12px;color:#6b7280;font-weight:500;margin:0;";
+        lbl.setAttribute("for", fieldId);
+        inputEl.id = fieldId;
+        inputEl.className = "form-control";
+        inputEl.type = "number";
+        inputEl.min = "0";
+        wrap.appendChild(lbl);
+        wrap.appendChild(inputEl);
+        return wrap;
+      };
+
+      rowFlex.appendChild(
+        makeLayoutCol("field-layout-eventTop", "Atas teks — eventTop", topIn),
+      );
+      rowFlex.appendChild(
+        makeLayoutCol(
+          "field-layout-countdownBottom",
+          "Bawah countdown — countdownBottom (px)",
+          bottomIn,
+        ),
+      );
+
+      group.appendChild(label);
+      group.appendChild(hiddenInput);
+      group.appendChild(rowFlex);
+      form.appendChild(group);
+      return;
+    }
+
     // Special handling untuk column image dalam slideshow table:
     // - Dialog hanya pilih file + preview
     // - Upload dibuat semasa Save (rujuk setting/js/api.js)
@@ -959,7 +1287,6 @@ function createFormFields(form, row, isAdd, options = {}) {
       const uploadContainer = document.createElement("div");
       uploadContainer.className = "image-upload-container";
       const previewContainer = document.createElement("div");
-      previewContainer.className = "image-preview-container";
       previewContainer.style.marginBottom = "12px";
       const previewImg = document.createElement("img");
       previewImg.id = `image-preview-${col}`;
@@ -1554,47 +1881,12 @@ function createFormFields(form, row, isAdd, options = {}) {
               input.value = datePart;
           }
         }
-        if (col === "tahun" && currentFileName === "countdowns") {
-          group.setAttribute("data-cd-range", "1");
-          group.setAttribute("data-cd-hijri", "1");
-          const fmt =
-            !isAdd && row.format
-              ? (row.format || "date").toLowerCase()
-              : "date";
-          if (fmt !== "hijri") group.style.display = "none";
-          input.type = "number";
-          input.placeholder = "Kosong = setiap tahun";
-          input.min = "1440";
-          input.max = "1500";
-        }
-        if (col === "bulan" && currentFileName === "countdowns") {
-          group.setAttribute("data-cd-range", "1");
-          const fmt =
-            !isAdd && row.format
-              ? (row.format || "date").toLowerCase()
-              : "date";
-          if (fmt === "date") group.style.display = "none";
-          input.type = "number";
-          input.min = "1";
-          input.max = "12";
-          input.placeholder = "1-12 (10=Syawal)";
-        }
-        if (col === "hari" && currentFileName === "countdowns") {
-          group.setAttribute("data-cd-range", "1");
-          const fmt =
-            !isAdd && row.format
-              ? (row.format || "date").toLowerCase()
-              : "date";
-          if (fmt === "date") group.style.display = "none";
-          input.placeholder = "1-31 (Masihi) atau 1-30 (Hijri)";
-        }
         if (col === "windowDays" && currentFileName === "countdowns") {
           input.type = "number";
           input.min = "0";
           input.placeholder =
             "Contoh: 0 = selalu, 30 = tunjuk bila tinggal 30 hari atau kurang";
         }
-
         // Tukar kepada datetime-local untuk datetime field
         if (col === "datetime" && currentFileName === "announcements") {
           input.type = "datetime-local";
@@ -2054,6 +2346,18 @@ export async function openAddDialog() {
       console.warn("Could not load images for " + currentFileName + ":", e);
     }
   }
+  if (currentFileName === "countdowns") {
+    try {
+      const API_URL = window.Config.API_URL;
+      const res = await fetch(`${API_URL}/data/images`);
+      if (res.ok) {
+        const data = await res.json();
+        imagesList = data.data || [];
+      }
+    } catch (e) {
+      console.warn("Could not load images for countdown:", e);
+    }
+  }
   let petugasList = [];
   if (currentFileName === "jadual-petugas") {
     try {
@@ -2122,7 +2426,12 @@ export async function openEditDialog(rowId) {
   let imagesList = [];
   let penceramahList = [];
   let petugasList = [];
-  if (currentFileName === "slides" || currentFileName === "penceramah" || currentFileName === "petugas") {
+  if (
+    currentFileName === "slides" ||
+    currentFileName === "penceramah" ||
+    currentFileName === "petugas" ||
+    currentFileName === "countdowns"
+  ) {
     try {
       const API_URL = window.Config.API_URL;
       const imgRes = await fetch(`${API_URL}/data/images`);

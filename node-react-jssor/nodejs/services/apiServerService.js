@@ -346,35 +346,8 @@ class ApiServerService {
         const countdownsRaw = this.dataService.parseCountdowns(countdownsContent);
         const countdowns = [];
         for (const c of countdownsRaw) {
-          let dateTimeRaw;
-          let event = c.event;
-          let windowDays = c.windowDays ?? 0;
-          if (c.type === 'COUNTDOWN_HIJRI') {
-            const gregorianDate = this.dataService.getNextGregorianForHijriDate(
-              takwimContent, c.month, c.day, today
-            );
-            if (!gregorianDate) continue;
-            dateTimeRaw = `${gregorianDate} 00:00`;
-          } else if (c.type === 'COUNTDOWN_MASIHI') {
-            const gregorianDate = this.dataService.getNextGregorianForMonthDay(c.month, c.day, today);
-            if (!gregorianDate) continue;
-            dateTimeRaw = `${gregorianDate} 00:00`;
-          } else {
-            dateTimeRaw = c.dateTimeRaw || '';
-            if (!dateTimeRaw) continue;
-          }
-          const { daysRemaining, countdownText } = this.dataService.getCountdownFromDate(dateTimeRaw, today);
-          if (countdownText === 'LEWAT') continue;
-          if (windowDays > 0 && daysRemaining > windowDays) continue;
-          countdowns.push({
-            type: 'COUNTDOWN',
-            dateTimeRaw,
-            event,
-            windowDays,
-            raw: c.raw,
-            daysRemaining,
-            countdownText
-          });
+          const enriched = this.dataService.enrichCountdownForApp(c, takwimContent, today);
+          if (enriched) countdowns.push(enriched);
         }
         const kuliahLines = this.dataService.parseKuliah(kuliahContent);
         let penceramahMap = {};

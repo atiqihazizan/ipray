@@ -16,7 +16,7 @@ import {
 import { showNotification } from "./notification.js";
 import * as TableUtils from "./table-utils.js";
 import { closeDialog } from "./dialog.js";
-import { emitWithResponse, registerOnReconnect } from "./cloud-socket.js";
+import { emitWithResponse, registerOnReconnect, fetchData } from "./cloud-socket.js";
 
 /** Antrian upload image: bila internet putus, item masuk sini; bila sambung semula, proses sehingga selesai. */
 const imageUploadQueue = [];
@@ -65,6 +65,28 @@ async function uploadImageForSave(file, category) {
     imageUploadQueue.push({ base64, originalName: file.name, category: category || 'penceramah' });
     showNotification("Sambungan terputus. Gambar akan dihantar apabila sambungan pulih.", "info");
     throw err;
+  }
+}
+
+async function upsertImageEntry(imageCode, imagePath) {
+  const imageRow = { imageCode, imagePath };
+  const imageRaw = reconstructRawLine("images", imageRow);
+  const listJson = await fetchData("images");
+  const existing = (listJson.data || []).find(
+    (im) => (im.imageCode || "").trim() === imageCode,
+  );
+  if (existing && existing.id != null) {
+    await emitWithResponse("cloud:data:update", {
+      fileName: "images",
+      id: existing.id,
+      row: { ...imageRow, raw: imageRaw },
+    });
+  } else {
+    await emitWithResponse("cloud:data:insert", {
+      fileName: "images",
+      row: { ...imageRow, raw: imageRaw },
+      position: "end",
+    });
   }
 }
 
@@ -117,14 +139,18 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "countdowns") {
     const format = (rowData.format || "date").toLowerCase();
     const event = (rowData.event || "").trim();
-    const windowDays = (rowData.windowDays || "").trim();
+    const windowDays = (rowData.windowDays ?? "").toString().trim();
+    const bg = (rowData.background || "").trim();
+    const display = (rowData.display || "").trim();
+    const layout = (rowData.layout || "").trim();
+    const suffix = bg || display || layout ? `|${bg}|${display}|${layout}` : "";
     if (format === "hijri") {
-      return `COUNTDOWN_HIJRI|${rowData.tahun || ""}|${rowData.bulan || ""}|${rowData.hari || ""}|${event}|${windowDays}`;
+      return `COUNTDOWN_HIJRI|${rowData.tahun || ""}|${rowData.bulan || ""}|${rowData.hari || ""}|${event}|${windowDays}${suffix}`;
     }
     if (format === "masihi") {
-      return `COUNTDOWN_MASIHI|${rowData.bulan || ""}|${rowData.hari || ""}|${event}|${windowDays}`;
+      return `COUNTDOWN_MASIHI|${rowData.bulan || ""}|${rowData.hari || ""}|${event}|${windowDays}${suffix}`;
     }
-    return `COUNTDOWN|${(rowData.date || "").trim()}|${event}|${windowDays}`;
+    return `COUNTDOWN|${(rowData.date || "").trim()}|${event}|${windowDays}${suffix}`;
   } else if (fileName === "config") {
     return `${rowData.key || ""}|${rowData.value || ""}`;
   } else if (fileName === "takwim") {
@@ -318,6 +344,23 @@ export async function saveRow() {
         rowData.image = uploaded.path || "";
         const hidden = document.getElementById("field-image");
         if (hidden) hidden.value = rowData.image;
+      }
+    }
+
+    if (currentFileName === "countdowns") {
+      const fileInput = document.getElementById("file-countdown-background");
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      const imgChgEl = document.getElementById("field-countdownBgChg");
+      const imgChg = imgChgEl ? (imgChgEl.value || "").trim() : (file ? "1" : "0");
+      const shouldUpload = addMode ? !!file : (imgChg === "1" && !!file);
+      if (shouldUpload) {
+        const imageCode = (rowData.background || "").trim();
+        if (!imageCode) {
+          showNotification("✗ Kod background wajib diisi sebelum upload imej", "error");
+          return;
+        }
+        const uploaded = await uploadImageForSave(file, "countdown");
+        await upsertImageEntry(imageCode, uploaded.path || "");
       }
     }
   } catch (error) {
