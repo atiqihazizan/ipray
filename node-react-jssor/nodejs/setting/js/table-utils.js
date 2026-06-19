@@ -39,7 +39,7 @@ const colLabelMap = {
   announcements: { type: "Jenis", title: "Tajuk", speaker: "Penceramah", category: "Kategori", datetime: "Tarikh/Masa", location: "Lokasi", audience: "Jemputan" },
   countdowns: { format: "Format", date: "Tarikh", tahun: "Tahun", bulan: "Bulan", hari: "Hari", event: "Acara", windowDays: "Papar (hari)" },
   config: { key: "Kekunci", value: "Nilai" },
-  slideshow: { caption: "Kapsyen", image: "Imej", validFrom: "Mula", validTo: "Tamat" },
+  slideshow: { caption: "Kapsyen", image: "Imej", validFrom: "Mula", validTo: "Tamat", showOn: "Papar Pada" },
   hebahan: { text: "Teks", startDate: "Tarikh Mula", endDate: "Tarikh Akhir" },
   livestream: { tajuk: "Tajuk", url: "URL / IP", jenis: "Jenis" },
   petugas: { slug: "Slug", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", gambar: "Gambar" },

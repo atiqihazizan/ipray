@@ -442,7 +442,7 @@ class ApiServerService {
         const firstSlideType = slideTypesOrder[0];
         const slidesMarqueeShow = firstSlideType && slidesConfig[firstSlideType] ? slidesConfig[firstSlideType].marquee !== false : true;
         const slideshowParsed = this.dataService.parseSlideshow(slideshowContent);
-        const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date());
+        const slideshow = this.dataService.filterSlideshowByValidity(slideshowParsed, new Date(), takwimContent);
         const hebahan = this.dataService.parseHebahan(hebahanContent);
 
         // Petugas untuk hari ini (dari jadual-petugas)

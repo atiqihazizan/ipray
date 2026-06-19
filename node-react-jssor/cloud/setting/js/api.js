@@ -117,7 +117,8 @@ function reconstructRawLine(fileName, rowData) {
     const image = rowData.image || "";
     const validFrom = (rowData.validFrom || "").trim();
     const validTo = (rowData.validTo || "").trim();
-    return `${caption}|${image}|${validFrom}|${validTo}`;
+    const showOn = (rowData.showOn || "").trim();
+    return `${caption}|${image}|${validFrom}|${validTo}|${showOn}`;
   } else if (fileName === "hebahan") {
     return `${rowData.text || ""}|${rowData.startDate || ""}|${rowData.endDate || ""}`;
   } else if (fileName === "livestream") {

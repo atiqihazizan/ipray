@@ -42,11 +42,39 @@ function isCloudUnavailableError(err) {
 
 /** Default config (fallback bila config.txt kosong atau tiada) */
 const DEFAULT_PRAYER_TIME_CONFIG = {
-  BEEP_COUNT: 5,
   WARNING_START_MINUTES: 5,
   IQAMAH_DURATION_MIN: 10,
   SOLAT_DURATION_MIN: 10,
 };
+
+/** Kunci config lama yang tidak lagi digunakan — diabaikan & dibuang dari fail. */
+const DEPRECATED_CONFIG_KEYS = new Set(['BEEP_COUNT']);
+
+function isDeprecatedConfigKey(key) {
+  return DEPRECATED_CONFIG_KEYS.has((key || '').trim());
+}
+
+/**
+ * Buang baris config usang (contoh BEEP_COUNT) daripada kandungan config.txt.
+ * @returns {{ content: string, changed: boolean }}
+ */
+function sanitizeConfigContent(content) {
+  if (!content || typeof content !== 'string') return { content: content || '', changed: false };
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+  let changed = false;
+  const kept = lines.filter((line) => {
+    const trimmed = (line || '').trim();
+    if (!trimmed || trimmed.startsWith('#')) return true;
+    const key = trimmed.split('|')[0];
+    if (isDeprecatedConfigKey(key)) {
+      changed = true;
+      return false;
+    }
+    return true;
+  });
+  return { content: kept.join(eol), changed };
+}
 const DEFAULT_COLOR_CONFIG = {
   CURRENT_TIME: '#FFFF00',
   DEFAULT: '#FFFF00',
@@ -327,6 +355,16 @@ class DataService {
         if (err) {
           console.error('Error reading file:', err);
           return reject(new Error('Failed to read file'));
+        }
+        if (normalized === 'config') {
+          const { content, changed } = sanitizeConfigContent(data);
+          if (changed) {
+            return fs.writeFile(filePath, content, 'utf8', (wErr) => {
+              if (wErr) console.warn('[dataService] Gagal bersihkan config usang:', wErr.message);
+              resolve(content);
+            });
+          }
+          return resolve(content);
         }
         resolve(data);
       });
@@ -630,6 +668,8 @@ class DataService {
           }
         }
       } else if (normalized === 'config') {
+        const configKey = (parts[0] || '').trim();
+        if (isDeprecatedConfigKey(configKey)) return;
         // Config format: KEY|VALUE
         parsed.push({
           id: index + 1,
@@ -638,18 +678,20 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'slideshow') {
-        // Slideshow format: caption|image|validFrom|validTo (validFrom/validTo optional, YYYY-MM-DD; empty = always show)
+        // Slideshow format: caption|image|validFrom|validTo|showOn (showOn optional, e.g. d=4,w=1,m=3)
         const tabParts = line.split('|');
         const caption = (tabParts[0] || '').trim();
         const imagePath = (tabParts[1] || '').trim();
         const validFrom = (tabParts[2] || '').trim();
         const validTo = (tabParts[3] || '').trim();
+        const showOn = (tabParts[4] || '').trim();
         parsed.push({
           id: index + 1,
           caption,
           image: imagePath,
           validFrom,
           validTo,
+          showOn,
           raw: line
         });
       } else if (normalized === 'hebahan') {
@@ -724,7 +766,7 @@ class DataService {
       'countdowns': ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays'],
       'takwim': ['date', 'hijri', 'imsak', 'subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'],
       'config': ['key', 'value'],
-      'slideshow': ['caption', 'image', 'validFrom', 'validTo'],
+      'slideshow': ['caption', 'image', 'validFrom', 'validTo', 'showOn'],
       'hebahan': ['text', 'startDate', 'endDate'],
       'livestream': ['tajuk', 'url', 'jenis'],
       'penceramah': ['kod', 'namaPenuh', 'shortname', 'kitab'],
@@ -785,6 +827,14 @@ class DataService {
         if (lineIndex === null || lineIndex < 0 || lineIndex >= allLines.length) {
           return reject(new Error('Invalid row ID'));
         }
+
+        if (normalized === 'config') {
+          const rawLine = rowData.raw || rowData;
+          const configKey = typeof rawLine === 'string' ? rawLine.split('|')[0] : rowData.key;
+          if (isDeprecatedConfigKey(configKey)) {
+            return reject(new Error(`Config key '${configKey}' tidak lagi disokong`));
+          }
+        }
         
         // Update the line
         if (normalized === 'takwim' && rowData.raw) {
@@ -835,6 +885,12 @@ class DataService {
         
         // Insert new row
         let newRow = rowData.raw || rowData;
+        if (normalized === 'config') {
+          const configKey = typeof newRow === 'string' ? newRow.split('|')[0] : rowData.key;
+          if (isDeprecatedConfigKey(configKey)) {
+            return reject(new Error(`Config key '${configKey}' tidak lagi disokong`));
+          }
+        }
         if (normalized === 'slides' && rowData && typeof rowData === 'object') {
           const checkboxBit = slidesCheckboxCommaToBit(rowData.checkbox);
           newRow = `${rowData.type || ''}|${rowData.image || ''}|${rowData.duration || ''}|${checkboxBit}|${rowData.hide || '0'}`;
@@ -1496,25 +1552,124 @@ class DataService {
         if (imagePath && !imagePath.startsWith('/')) imagePath = `/${imagePath}`;
         const validFrom = (tabParts[2] || '').trim();
         const validTo = (tabParts[3] || '').trim();
-        return { caption, image: imagePath, validFrom, validTo };
+        const showOn = (tabParts[4] || '').trim();
+        return { caption, image: imagePath, validFrom, validTo, showOn };
       });
   }
 
   /**
-   * Filter slideshow items by validity period. refDate = tarikh rujukan (biasanya new Date()).
-   * Include item if: (validFrom empty OR refDate >= validFrom) AND (validTo empty OR refDate <= validTo).
-   * Returns array of { caption, image } only (for API response).
+   * Parse showOn string ke object { d, w, m, dom, hm, hdom }.
+   * Pemisah antara kunci: ';'  |  nilai berbilang dalam satu kunci: ','  |  julat: 'a-b'
+   * d    = hari minggu (0=Ahad…6=Sabtu)
+   * w    = minggu dalam bulan (1–4, dikira Math.ceil(hari/7))
+   * m    = bulan Masihi 0-indexed (0=Jan…11=Dis) — selaras dengan Date.getMonth()
+   * dom  = hari dalam bulan Masihi (1–31)
+   * hm   = bulan Hijri (1–12)
+   * hdom = hari dalam bulan Hijri (1–30)
    */
-  filterSlideshowByValidity(parsedSlideshow, refDate) {
+  parseShowOn(showOn) {
+    if (!showOn || typeof showOn !== 'string') return {};
+    const result = {};
+    const expandRange = (str) => {
+      const out = new Set();
+      (str || '').split(',').forEach(part => {
+        const trimmed = part.trim();
+        if (trimmed.includes('-')) {
+          const [a, b] = trimmed.split('-').map(Number);
+          if (!isNaN(a) && !isNaN(b)) for (let i = a; i <= b; i++) out.add(i);
+        } else {
+          const n = Number(trimmed);
+          if (!isNaN(n) && trimmed !== '') out.add(n);
+        }
+      });
+      return out.size > 0 ? Array.from(out) : null;
+    };
+    showOn.split(';').forEach(part => {
+      const [key, ...rest] = part.trim().split('=');
+      const k = (key || '').trim().toLowerCase();
+      const val = rest.join('=').trim();
+      if (['d', 'w', 'm', 'dom', 'hm', 'hdom'].includes(k)) {
+        result[k] = expandRange(val);
+      }
+    });
+    return result;
+  }
+
+  /**
+   * Cari tarikh Hijri untuk tarikh Gregorian refDate daripada kandungan takwim.
+   * Baris takwim format: "DD-MM-YYYY DD-MM-YYYY\t..." (Gregorian lalu Hijri)
+   * Pulangkan { day, month, year } atau null jika tidak dijumpai.
+   */
+  getHijriForDate(takwimContent, refDate) {
+    if (!takwimContent || !refDate) return null;
+    const date = refDate instanceof Date ? refDate : new Date(refDate);
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    const gregStr = `${dd}-${mm}-${yyyy}`;
+    const lines = takwimContent.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line.startsWith(gregStr)) continue;
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 2) continue;
+      const hijriParts = parts[1].split('-');
+      if (hijriParts.length !== 3) continue;
+      const [hDay, hMonth, hYear] = hijriParts.map(Number);
+      if (!isNaN(hDay) && !isNaN(hMonth) && !isNaN(hYear)) {
+        return { day: hDay, month: hMonth, year: hYear };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Semak sama ada tarikh refDate memenuhi syarat showOn.
+   * takwimContent diperlukan untuk semakan Hijri (hm, hdom).
+   */
+  matchShowOn(showOn, refDate, takwimContent) {
+    if (!showOn) return true;
+    const rules = this.parseShowOn(showOn);
+    if (Object.keys(rules).length === 0) return true;
+    const date = refDate instanceof Date ? refDate : new Date(refDate);
+    if (rules.d && !rules.d.includes(date.getDay())) return false;
+    if (rules.w && !rules.w.includes(Math.ceil(date.getDate() / 7))) return false;
+    if (rules.m && !rules.m.includes(date.getMonth())) return false;
+    if (rules.dom && !rules.dom.includes(date.getDate())) return false;
+    if (rules.hm || rules.hdom) {
+      const hijri = this.getHijriForDate(takwimContent || '', date);
+      if (!hijri) return false;
+      if (rules.hm && !rules.hm.includes(hijri.month)) return false;
+      if (rules.hdom && !rules.hdom.includes(hijri.day)) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Filter slideshow items mengikut tempoh sah dan showOn.
+   * validFrom/validTo sokong dua format:
+   *   YYYY-MM-DD — satu tahun sahaja
+   *   MM-DD      — berulang setiap tahun (banding bulan+hari sahaja)
+   */
+  filterSlideshowByValidity(parsedSlideshow, refDate, takwimContent) {
     if (!parsedSlideshow || !Array.isArray(parsedSlideshow)) return [];
     const ref = refDate instanceof Date ? refDate : new Date(refDate);
-    const refStr = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}-${String(ref.getDate()).padStart(2, '0')}`;
+    const refFull = `${ref.getFullYear()}-${String(ref.getMonth() + 1).padStart(2, '0')}-${String(ref.getDate()).padStart(2, '0')}`;
+    const refMD = refFull.slice(5); // "MM-DD"
     return parsedSlideshow
       .filter((item) => {
         const from = (item.validFrom || '').trim();
         const to = (item.validTo || '').trim();
-        if (from && refStr < from) return false;
-        if (to && refStr > to) return false;
+        const fromIsYearly = from.length === 5 && from[2] === '-';
+        const toIsYearly = to.length === 5 && to[2] === '-';
+        if (from) {
+          const cmpFrom = fromIsYearly ? refMD : refFull;
+          if (cmpFrom < from) return false;
+        }
+        if (to) {
+          const cmpTo = toIsYearly ? refMD : refFull;
+          if (cmpTo > to) return false;
+        }
+        if (!this.matchShowOn(item.showOn || '', ref, takwimContent)) return false;
         return true;
       })
       .map((item) => ({ caption: item.caption, image: item.image }));
@@ -1686,8 +1841,7 @@ class DataService {
       const key = parts[0];
       const value = parts[1];
       if (!key || !value) return;
-      if (key === 'BEEP_COUNT') parsed.PRAYER_TIME_CONFIG.BEEP_COUNT = parseInt(value, 10);
-      else if (key === 'WARNING_START_MINUTES') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = parseFloat(value) || 5;
+      if (key === 'WARNING_START_MINUTES') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = parseFloat(value) || 5;
       else if (key === 'WARNING_START_SECONDS') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = (parseInt(value, 10) || 30) / 60;
       else if (key === 'IQAMAH_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.IQAMAH_DURATION_MIN = parseFloat(value) || 10;
       else if (key === 'SOLAT_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.SOLAT_DURATION_MIN = parseFloat(value) || 10;

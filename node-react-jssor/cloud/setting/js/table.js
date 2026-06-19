@@ -26,6 +26,83 @@ import { renderAnnouncementPaparanCards } from "./cards/announcementPaparanCards
 import { renderCountdownPaparanCards } from "./cards/countdownPaparanCards.js";
 import * as TableUtils from "./table-utils.js";
 
+const SHOW_ON_DAY_NAMES = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+const SHOW_ON_GREG_MONTH = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+const SHOW_ON_HIJRI_MONTH = ['Muharram', 'Safar', 'Rabiul Awal', 'Rabiul Akhir', 'Jamadil Awal', 'Jamadil Akhir', 'Rejab', 'Syaaban', 'Ramadan', 'Syawal', 'Zulkaedah', 'Zulhijjah'];
+
+function formatShowOn(showOn) {
+  if (!showOn || !showOn.trim()) return 'Setiap hari';
+  const parts = [];
+  const expandRange = (str) => {
+    const out = new Set();
+    (str || '').split(',').forEach(p => {
+      const t = p.trim();
+      if (t.includes('-')) { const [a, b] = t.split('-').map(Number); if (!isNaN(a) && !isNaN(b)) for (let i = a; i <= b; i++) out.add(i); }
+      else { const n = Number(t); if (!isNaN(n) && t !== '') out.add(n); }
+    });
+    return Array.from(out);
+  };
+  showOn.split(';').forEach(part => {
+    const [key, ...rest] = part.trim().split('=');
+    const k = (key || '').trim().toLowerCase();
+    const val = rest.join('=').trim();
+    if (k === 'd') {
+      const days = expandRange(val).map(n => SHOW_ON_DAY_NAMES[n] || n).join(', ');
+      if (days) parts.push(days);
+    } else if (k === 'w') {
+      const weeks = expandRange(val).map(n => `Mggu${n}`).join(', ');
+      if (weeks) parts.push(weeks);
+    } else if (k === 'm') {
+      const months = expandRange(val).map(n => SHOW_ON_GREG_MONTH[n] || n).join(', ');
+      if (months) parts.push(months);
+    } else if (k === 'dom') {
+      parts.push(`Hari ${val}`);
+    } else if (k === 'hm') {
+      const months = expandRange(val).map(n => SHOW_ON_HIJRI_MONTH[n - 1] || `H${n}`).join(', ');
+      if (months) parts.push(`[H] ${months}`);
+    } else if (k === 'hdom') {
+      parts.push(`[H] Hari ${val}`);
+    }
+  });
+  return parts.length ? parts.join(' · ') : showOn;
+}
+
+function showImagePopup(imageUrl, caption) {
+  const overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;cursor:zoom-out;padding:20px;";
+  const close = () => document.body.removeChild(overlay);
+  overlay.addEventListener("click", close);
+  const img = document.createElement("img");
+  img.src = imageUrl;
+  img.style.cssText = "max-width:90vw;max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,0.6);cursor:default;";
+  img.addEventListener("click", e => e.stopPropagation());
+  overlay.appendChild(img);
+  if (caption) {
+    const cap = document.createElement("div");
+    cap.textContent = caption;
+    cap.style.cssText = "margin-top:14px;color:#f3f4f6;font-size:14px;text-align:center;max-width:80vw;";
+    overlay.appendChild(cap);
+  }
+  const closeBtn = document.createElement("button");
+  closeBtn.innerHTML = "&#x2715;";
+  closeBtn.style.cssText = "position:absolute;top:16px;right:20px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:20px;width:36px;height:36px;border-radius:50%;cursor:pointer;line-height:1;";
+  closeBtn.addEventListener("click", close);
+  overlay.appendChild(closeBtn);
+  document.addEventListener("keydown", function esc(e) { if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); } }, { once: true });
+  document.body.appendChild(overlay);
+}
+
+function attachImgPopup(img, getCaption) {
+  img.style.cursor = "zoom-in";
+  img.title = "Klik untuk besarkan";
+  img.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const noPopupKeywords = ["noimage", "Random_user", "data:image/svg"];
+    if (!img.src || noPopupKeywords.some(k => img.src.includes(k))) return;
+    showImagePopup(img.src, getCaption ? getCaption() : "");
+  });
+}
+
 // Framework-like SVG Icons
 const Icons = {
   pencil: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 348.882 348.882"><path d="m333.988 11.758-.42-.383A43.363 43.363 0 0 0 304.258 0a43.579 43.579 0 0 0-32.104 14.153L116.803 184.231a14.993 14.993 0 0 0-3.154 5.37l-18.267 54.762c-2.112 6.331-1.052 13.333 2.835 18.729 3.918 5.438 10.23 8.685 16.886 8.685h.001c2.879 0 5.693-.592 8.362-1.76l52.89-23.138a14.985 14.985 0 0 0 5.063-3.626L336.771 73.176c16.166-17.697 14.919-45.247-2.783-61.418zM130.381 234.247l10.719-32.134.904-.99 20.316 18.556-.904.99-31.035 13.578zm184.24-181.304L182.553 197.53l-20.316-18.556L294.305 34.386c2.583-2.828 6.118-4.386 9.954-4.386 3.365 0 6.588 1.252 9.082 3.53l.419.383c5.484 5.009 5.87 13.546.861 19.03z"/><path d="M303.85 138.388c-8.284 0-15 6.716-15 15v127.347c0 21.034-17.113 38.147-38.147 38.147H68.904c-21.035 0-38.147-17.113-38.147-38.147V100.413c0-21.034 17.113-38.147 38.147-38.147h131.587c8.284 0 15-6.716 15-15s-6.716-15-15-15H68.904C31.327 32.266.757 62.837.757 100.413v180.321c0 37.576 30.571 68.147 68.147 68.147h181.798c37.576 0 68.147-30.571 68.147-68.147V153.388c.001-8.284-6.715-15-14.999-15z"/></svg>`,
@@ -255,6 +332,7 @@ function buildTableRow(row, ctx) {
         this.src = imageSrc(null, "penceramah/Random_user.svg");
         this.onerror = null;
       };
+      attachImgPopup(img, () => namaPenuh);
       imgContainer.appendChild(img);
       const nameSpan = document.createElement("span");
       nameSpan.textContent = namaPenuh;
@@ -315,6 +393,7 @@ function buildTableRow(row, ctx) {
           this.style.opacity = "0.4";
         }
       };
+      attachImgPopup(img, () => value || "");
       imgContainer.appendChild(img);
       const codeText = document.createElement("span");
       codeText.textContent = value || "—";
@@ -354,6 +433,7 @@ function buildTableRow(row, ctx) {
         this.src = imageSrc(null, "penceramah/Random_user.svg");
         this.onerror = null;
       };
+      attachImgPopup(img, () => row.namaPenuh || code || "");
       imgContainer.appendChild(img);
       const codeText = document.createElement("span");
       codeText.textContent = code || "—";
@@ -389,6 +469,7 @@ function buildTableRow(row, ctx) {
         this.src = imageSrc(null, "penceramah/Random_user.svg");
         this.onerror = null;
       };
+      attachImgPopup(img, () => row.namaPenuh || slug || "");
       imgContainer.appendChild(img);
       td.appendChild(imgContainer);
     } else if (fileName === "slides" && col === "image") {
@@ -423,6 +504,7 @@ function buildTableRow(row, ctx) {
         this.src = imageSrc();
         this.onerror = null;
       };
+      attachImgPopup(img, () => value || "");
       imgContainer.appendChild(img);
       const codeText = document.createElement("span");
       codeText.style.fontSize = "13px";
@@ -461,6 +543,7 @@ function buildTableRow(row, ctx) {
         this.src = imageSrc();
         this.onerror = null;
       };
+      attachImgPopup(img, () => row.caption || value || "");
       imgContainer.appendChild(img);
       const pathText = document.createElement("span");
       pathText.textContent =
@@ -501,6 +584,7 @@ function buildTableRow(row, ctx) {
           this.style.opacity = "0.4";
         }
       };
+      attachImgPopup(img, () => row.imageCode || value || "");
       imgContainer.appendChild(img);
       const pathText = document.createElement("span");
       pathText.textContent =
@@ -541,6 +625,11 @@ function buildTableRow(row, ctx) {
         td.textContent = "";
         td.title = "";
       }
+    } else if (fileName === "slideshow" && col === "showOn") {
+      td.textContent = formatShowOn(value);
+      td.title = value || "";
+      td.style.fontSize = "12px";
+      td.style.color = value ? "#374151" : "#9ca3af";
     } else {
       td.textContent =
         value.length > 50 ? value.substring(0, 50) + "..." : value;
@@ -1171,7 +1260,7 @@ export async function loadBackgroundTable() {
         this.src = imageSrc(null, "slides/noimage.png");
         this.onerror = null;
       };
-
+      attachImgPopup(img, () => row.imageCode || pathVal || "");
       imgContainer.appendChild(img);
 
       const pathText = document.createElement("span");

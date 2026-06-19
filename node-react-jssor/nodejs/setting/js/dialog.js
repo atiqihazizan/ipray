@@ -1073,6 +1073,184 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
+    // Special handling untuk showOn dalam slideshow
+    if (currentFileName === "slideshow" && col === "showOn") {
+      label.textContent = "Papar Pada (pilihan — kosong = setiap hari)";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = isAdd ? "" : row[col] || "";
+
+      const DAY_LABELS = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+      const GREG_MONTH_LABELS = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+      const HIJRI_MONTH_LABELS = ['Muharram', 'Safar', 'Rabiul Awal', 'Rabiul Akhir', 'Jamadil Awal', 'Jamadil Akhir', 'Rejab', 'Syaaban', 'Ramadan', 'Syawal', 'Zulkaedah', 'Zulhijjah'];
+
+      const expandRange = (str) => {
+        const out = new Set();
+        (str || '').split(',').forEach(p => {
+          const t = p.trim();
+          if (t.includes('-')) { const [a, b] = t.split('-').map(Number); if (!isNaN(a) && !isNaN(b)) for (let i = a; i <= b; i++) out.add(i); }
+          else { const n = Number(t); if (!isNaN(n) && t !== '') out.add(n); }
+        });
+        return Array.from(out);
+      };
+
+      const parseShowOnLocal = (val) => {
+        const result = { d: [], w: [], m: [], dom: [], hm: [], hdom: [] };
+        if (!val) return result;
+        val.split(';').forEach(part => {
+          const [key, ...rest] = part.trim().split('=');
+          const k = (key || '').trim().toLowerCase();
+          const v = rest.join('=').trim();
+          if (['d', 'w', 'm', 'dom', 'hm', 'hdom'].includes(k)) result[k] = expandRange(v);
+        });
+        return result;
+      };
+
+      const wrapper2 = document.createElement("div");
+      wrapper2.style.cssText = "display:flex;flex-direction:column;gap:12px;";
+
+      const buildShowOnValue = () => {
+        const parts = [];
+        const get = (attr) => [...wrapper2.querySelectorAll(`[data-so="${attr}"]:checked`)].map(el => el.value);
+        const dChecked = get('d');
+        const wChecked = get('w');
+        const mChecked = get('m');
+        const hmChecked = get('hm');
+        const domVal = (wrapper2.querySelector('[data-so-input="dom"]') || {}).value || '';
+        const hdomVal = (wrapper2.querySelector('[data-so-input="hdom"]') || {}).value || '';
+        if (dChecked.length) parts.push(`d=${dChecked.join(',')}`);
+        if (wChecked.length) parts.push(`w=${wChecked.join(',')}`);
+        if (mChecked.length) parts.push(`m=${mChecked.join(',')}`);
+        if (domVal.trim()) parts.push(`dom=${domVal.trim()}`);
+        if (hmChecked.length) parts.push(`hm=${hmChecked.join(',')}`);
+        if (hdomVal.trim()) parts.push(`hdom=${hdomVal.trim()}`);
+        return parts.join(';');
+      };
+
+      const current = parseShowOnLocal(hiddenInput.value);
+
+      const makeSectionLabel = (text, desc) => {
+        const wrap = document.createElement("div");
+        const s = document.createElement("div");
+        s.style.cssText = "font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;";
+        s.textContent = text;
+        wrap.appendChild(s);
+        if (desc) {
+          const d = document.createElement("div");
+          d.style.cssText = "font-size:10px;color:#9ca3af;margin-top:1px;";
+          d.textContent = desc;
+          wrap.appendChild(d);
+        }
+        return wrap;
+      };
+
+      const makeSeparator = () => {
+        const hr = document.createElement("div");
+        hr.style.cssText = "border-top:1px dashed #e5e7eb;margin:2px 0;";
+        return hr;
+      };
+
+      const CB_STYLE = "display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;padding:4px 10px;user-select:none;";
+
+      const makeCheckboxRow = (items, soKey, checkedList, startIdx = 0) => {
+        const div = document.createElement("div");
+        div.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;";
+        items.forEach((itemLabel, i) => {
+          const val = String(i + startIdx);
+          const lbl = document.createElement("label");
+          lbl.style.cssText = CB_STYLE;
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.value = val;
+          cb.dataset.so = soKey;
+          cb.checked = checkedList.map(String).includes(val);
+          cb.style.cursor = "pointer";
+          cb.addEventListener("change", () => { hiddenInput.value = buildShowOnValue(); });
+          lbl.appendChild(cb);
+          lbl.appendChild(document.createTextNode(itemLabel));
+          div.appendChild(lbl);
+        });
+        return div;
+      };
+
+      const makeWeekRow = (checkedList) => {
+        const div = document.createElement("div");
+        div.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;";
+        [1,2,3,4].forEach(n => {
+          const val = String(n);
+          const lbl = document.createElement("label");
+          lbl.style.cssText = CB_STYLE;
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.value = val;
+          cb.dataset.so = 'w';
+          cb.checked = checkedList.map(String).includes(val);
+          cb.style.cursor = "pointer";
+          cb.addEventListener("change", () => { hiddenInput.value = buildShowOnValue(); });
+          lbl.appendChild(cb);
+          lbl.appendChild(document.createTextNode(`Minggu ${n}`));
+          div.appendChild(lbl);
+        });
+        return div;
+      };
+
+      const makeTextInput = (soInputKey, placeholder, currentVal) => {
+        const div = document.createElement("div");
+        div.style.cssText = "display:flex;align-items:center;gap:8px;margin-top:4px;";
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.placeholder = placeholder;
+        inp.value = currentVal;
+        inp.dataset.soInput = soInputKey;
+        inp.style.cssText = "border:1px solid #d1d5db;border-radius:6px;padding:5px 10px;font-size:13px;width:180px;";
+        const hint = document.createElement("span");
+        hint.style.cssText = "font-size:11px;color:#9ca3af;";
+        hint.textContent = "Contoh: 1-12 atau 15";
+        inp.addEventListener("input", () => { hiddenInput.value = buildShowOnValue(); });
+        div.appendChild(inp);
+        div.appendChild(hint);
+        return div;
+      };
+
+      // Bahagian Masihi
+      wrapper2.appendChild(makeSectionLabel("MASIHI", "Pilih hari / minggu / bulan Masihi (biarkan kosong = semua)"));
+      wrapper2.appendChild(makeSectionLabel("Hari Dalam Minggu"));
+      wrapper2.appendChild(makeCheckboxRow(DAY_LABELS, 'd', current.d, 0));
+      wrapper2.appendChild(makeSectionLabel("Minggu Dalam Bulan"));
+      wrapper2.appendChild(makeWeekRow(current.w));
+      wrapper2.appendChild(makeSectionLabel("Bulan Masihi"));
+      wrapper2.appendChild(makeCheckboxRow(GREG_MONTH_LABELS, 'm', current.m, 0));
+      wrapper2.appendChild(makeSectionLabel("Hari Dalam Bulan Masihi (dom)"));
+      wrapper2.appendChild(makeTextInput('dom', 'cth: 1-12 atau 31', current.dom.join(',') || ''));
+      wrapper2.appendChild(makeSeparator());
+      // Bahagian Hijri
+      wrapper2.appendChild(makeSectionLabel("HIJRI", "Berulang setiap tahun mengikut tarikh Hijri (dari takwim)"));
+      wrapper2.appendChild(makeSectionLabel("Bulan Hijri"));
+      wrapper2.appendChild(makeCheckboxRow(HIJRI_MONTH_LABELS, 'hm', current.hm, 1));
+      wrapper2.appendChild(makeSectionLabel("Hari Dalam Bulan Hijri (hdom)"));
+      wrapper2.appendChild(makeTextInput('hdom', 'cth: 1-12 atau 15', current.hdom.join(',') || ''));
+
+      // Butang Reset
+      const resetBtn = document.createElement("button");
+      resetBtn.type = "button";
+      resetBtn.textContent = "Reset (Setiap Hari)";
+      resetBtn.style.cssText = "margin-top:4px;padding:4px 12px;font-size:12px;color:#6b7280;background:#f9fafb;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;";
+      resetBtn.onclick = () => {
+        wrapper2.querySelectorAll('[data-so]:checked').forEach(cb => { cb.checked = false; });
+        wrapper2.querySelectorAll('[data-so-input]').forEach(inp => { inp.value = ''; });
+        hiddenInput.value = '';
+      };
+      wrapper2.appendChild(resetBtn);
+
+      group.appendChild(label);
+      group.appendChild(wrapper2);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
+      return;
+    }
+
     // Hebahan: input dengan butang clear X merah di dalam inputbox
     if (
       currentFileName === "hebahan" &&
@@ -1561,9 +1739,12 @@ function createFormFields(form, row, isAdd, options = {}) {
           const wrapper = document.createElement("div");
           wrapper.className = "kuliah-type-checkboxes";
           wrapper.style.display = "flex";
-          wrapper.style.flexWrap = "wrap";
+          // wrapper.style.flexWrap = "wrap";
           wrapper.style.gap = "12px 16px";
-          wrapper.style.alignItems = "center";
+          // wrapper.style.alignItems = "center";
+          wrapper.style.flexDirection = "column";
+          // wrapper.style.alignItems = "flex-start";
+          wrapper.style.width = "30px";
 
           TYPE_OPTIONS.forEach((opt) => {
             const labelEl = document.createElement("label");
