@@ -26,7 +26,6 @@ w3|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah
 w3|h4|kd|ust-uzair-abd-hani-albanjari|Tafsir Al-Quran
 w3|h5|km|ust-qutub|Masalah Muafiq & Masbuq
 w3|h6|ks|ust-taufik-mohd-husin|Ayyuhal Walad
-w3|h6|km|ust-bakar-pelantek|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)
 
 w4|h0|ks|ust-hafezol-saad|Misbahul Munir
 w4|h0|km|ust-ridhoudin|Hidayatul Mutafakirin
