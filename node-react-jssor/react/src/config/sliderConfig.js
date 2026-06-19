@@ -244,7 +244,7 @@ export const slidesTemplate = {
         // Parent container - di-control PlayIn/PlayOut dalam useSlides (sama konsep announcement)
         type: "div",
         duration: 500,
-        style: { position: 'absolute', left: 0, top: 0, width: sz().width, height: sz().height },
+        style: { position: 'absolute', left: -3, top: 0, width: sz().width, height: sz().height },
         // Children: 1 kategori global + 1 header kategori + dynamic cards (tajuk kategori, image, teks gabungan). Data isi dalam useSlides.
         children: [
           {

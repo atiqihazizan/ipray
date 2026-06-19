@@ -44,7 +44,7 @@ function processKuliahHari(kuliahLines, batalOptions, today) {
     const m = matchBatal(today, p.type, list, opts);
     return !m.replaceDisplay;
   });
-  const TYPE_PRIORITY = ['ks', 'kd', 'km'];
+  const TYPE_PRIORITY = ['ks', 'kd', 'km', 'kk'];
   const rawReplacements = [];
   for (const type of TYPE_PRIORITY) {
     const m = matchBatal(today, type, list, opts);
@@ -86,7 +86,7 @@ function processKuliahMinggu(kuliahLines, batalOptions, today) {
 }
 
 /** Types yang boleh ada rekod batal/ganti paparan (untuk suntikan slot dari batal sahaja) */
-const BULANAN_TYPES = ['km', 'kd', 'ks'];
+const BULANAN_TYPES = ['km', 'kd', 'ks', 'kk'];
 
 /**
  * Kuliah bulanan: for each day in month, build entries. replaceDisplay -> replacementText only.

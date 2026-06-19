@@ -1,0 +1,42 @@
+{
+  "name": "ipray-nodejs-app",
+  "version": "1.0.0",
+  "description": "iPray Node.js Application",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "node main.js",
+    "start:prod": "PROD_MODE=true node main.js",
+    "dev": "nodemon main.js",
+    "dev:prod": "PROD_MODE=true nodemon main.js",
+    "build:setting:css": "tailwindcss -i ./setting/input.css -o ./setting/output.css --config ./setting/tailwind.config.js --watch",
+    "build:setting:css:prod": "tailwindcss -i ./setting/input.css -o ./setting/output.css --config ./setting/tailwind.config.js --minify",
+    "electron:dev": "electron .",
+    "electron:build": "electron-builder --win",
+    "electron:build:linux": "electron-builder --linux",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "MIDM Team",
+    "email": "support@midm.app"
+  },
+  "homepage": "https://midm.app",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^35.1.2",
+    "electron-builder": "^26.0.12",
+    "nodemon": "^3.0.0",
+    "tailwindcss": "^3.4.0"
+  }
+}

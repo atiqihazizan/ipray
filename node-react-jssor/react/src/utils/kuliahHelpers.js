@@ -55,6 +55,32 @@ export const TYPE_LABELS = {
   'kk': 'KULIAH KHAS'
 };
 
+const KULIAH_TYPE_CODES = new Set(Object.keys(TYPE_LABELS));
+
+/**
+ * Background slide kuliah harian ikut kod type: /img/bg-ks.png, bg-km.png, dll.
+ * @param {string} typeCode - ks, km, kd, kk
+ * @returns {string|null} Path background atau null jika kod tidak dikenali
+ */
+export const getKuliahTypeBackground = (typeCode) => {
+  const code = (typeCode || '').trim().toLowerCase();
+  if (!KULIAH_TYPE_CODES.has(code)) return null;
+  return `/img/bg-${code}.png`;
+};
+
+/**
+ * Override slide.image.src dengan background ikut kod type kuliah.
+ * @param {object} slide - Objek slide Jssor
+ * @param {string} typeCode - ks, km, kd, kk
+ */
+export const applyKuliahTypeBackground = (slide, typeCode) => {
+  const bg = getKuliahTypeBackground(typeCode);
+  if (!bg || !slide) return;
+  slide.image = slide.image
+    ? { ...slide.image, src: bg }
+    : { src: bg, alt: 'Kuliah Harian' };
+};
+
 // Map day code ke nama hari
 export const DAY_NAMES = {
   'h0': 'AHAD',

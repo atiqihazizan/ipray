@@ -46,7 +46,7 @@ function parseLine(line, refYear) {
     const tempat = (parts[9] || '').trim();
     const jemputan = (parts[10] || '').trim();
     if (isNaN(month) || month < 1 || month > 12) return { legacy: false, hijri: false, entries: [], hijriRule: null };
-    const validTypes = ['km', 'kd', 'ks'];
+    const validTypes = ['km', 'kd', 'ks', 'kk'];
     const typeParts = type.split(',').map((t) => t.trim()).filter((t) => validTypes.includes(t));
     if (typeParts.length === 0) return { legacy: false, hijri: false, entries: [], hijriRule: null };
     const days = expandDayRange(dayStr);
@@ -64,7 +64,7 @@ function parseLine(line, refYear) {
     const type = (parts[2] || '').trim();
     const replaceDisplay = parts[3] === '1';
     const notes = (parts[4] || '').trim();
-    if (!isNaN(dayOfWeek) && dayOfWeek >= 0 && dayOfWeek <= 6 && ['km', 'kd', 'ks'].includes(type)) {
+    if (!isNaN(dayOfWeek) && dayOfWeek >= 0 && dayOfWeek <= 6 && ['km', 'kd', 'ks', 'kk'].includes(type)) {
       return {
         legacy: false,
         hijri: false,
@@ -133,7 +133,7 @@ function parseLine(line, refYear) {
   const notes = (parts[notesIdx] || '').trim();
   const replaceDisplay = flagIdx >= 0 && parts[flagIdx] === '1';
   if (isNaN(month) || month < 1 || month > 12) return { legacy: false, hijri: false, entries: [], hijriRule: null };
-  if (!['km', 'kd', 'ks'].includes(type)) return { legacy: false, hijri: false, entries: [], hijriRule: null };
+  if (!['km', 'kd', 'ks', 'kk'].includes(type)) return { legacy: false, hijri: false, entries: [], hijriRule: null };
 
   const days = expandDayRange(parts[dayIdx] || '');
   if (days.length === 0) return { legacy: false, hijri: false, entries: [], hijriRule: null };
@@ -160,7 +160,7 @@ function parseKuliahOverride(content, refYear) {
     if (parsed.entries.length) expanded.push(...parsed.entries);
     if (parsed.hijriRule) {
       const rule = parsed.hijriRule;
-      const types = (rule.type || '').split(',').map((t) => t.trim()).filter((t) => ['km', 'kd', 'ks'].includes(t));
+      const types = (rule.type || '').split(',').map((t) => t.trim()).filter((t) => ['km', 'kd', 'ks', 'kk'].includes(t));
       if (types.length > 0) {
         for (const t of types) {
           hijriRules.push({ ...rule, type: t });

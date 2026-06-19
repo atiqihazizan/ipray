@@ -1,0 +1,632 @@
+{
+  "version": "1.0",
+  "canvasBase": {
+    "w": 1920,
+    "h": 1080
+  },
+  "pages": [
+    {
+      "id": "home",
+      "type": "home",
+      "label": "Home",
+      "enabled": true,
+      "order": 0,
+      "background": {
+        "src": "bg-mta",
+        "fit": "cover"
+      },
+      "duration": 10000,
+      "datetime": [
+        "date",
+        "solat-time"
+      ],
+      "blocks": [
+        {
+          "id": "blk-home-title",
+          "kind": "text",
+          "label": "Nama & Lokasi Masjid",
+          "dataField": "namaMasjidBlock",
+          "staticContent": "",
+          "x": 0,
+          "y": 120,
+          "w": 1920,
+          "h": 200,
+          "style": {
+            "fontSize": 88,
+            "color": "#00FFFF",
+            "fontFamily": "din_bold, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "textShadow": "3px 3px 0px rgba(0,0,0,1)",
+            "display": "flex",
+            "flexDirection": "column",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "gap": 30
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1500,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "announce",
+      "type": "announce",
+      "label": "Pengumuman",
+      "enabled": true,
+      "order": 1,
+      "background": {
+        "src": "picture4",
+        "fit": "cover"
+      },
+      "duration": 5000,
+      "datetime": [],
+      "blocks": [
+        {
+          "id": "blk-ann-kategori",
+          "kind": "text",
+          "label": "Kategori",
+          "dataField": "kategori",
+          "staticContent": "",
+          "x": 0,
+          "y": 33,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 80,
+            "color": "#FFFFFF",
+            "fontFamily": "SairaCondensed, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-tajuk",
+          "kind": "text",
+          "label": "Tajuk",
+          "dataField": "tajuk",
+          "staticContent": "",
+          "x": 0,
+          "y": 166,
+          "w": 1920,
+          "h": 50,
+          "style": {
+            "fontSize": 47,
+            "color": "rgb(245,206,28)",
+            "fontFamily": "system-ui",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "letterSpacing": "3px",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-penceramah",
+          "kind": "text",
+          "label": "Penceramah / Nama",
+          "dataField": "penceramah",
+          "staticContent": "",
+          "x": 0,
+          "y": 229,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "textAlign": "center",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -500,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-tema",
+          "kind": "text",
+          "label": "Tema / Program",
+          "dataField": "tema",
+          "staticContent": "",
+          "x": 0,
+          "y": 314,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|L",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -500,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-tarikh",
+          "kind": "text",
+          "label": "Tarikh",
+          "dataField": "tarikh",
+          "staticContent": "",
+          "x": 0,
+          "y": 398,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|L",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -300,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-masa",
+          "kind": "text",
+          "label": "Masa",
+          "dataField": "masa",
+          "staticContent": "",
+          "x": 0,
+          "y": 480,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|L",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -300,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-lokasi",
+          "kind": "text",
+          "label": "Lokasi",
+          "dataField": "lokasi",
+          "staticContent": "",
+          "x": 0,
+          "y": 560,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|L",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -300,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-sasaran",
+          "kind": "text",
+          "label": "Sasaran",
+          "dataField": "sasaran",
+          "staticContent": "",
+          "x": 0,
+          "y": 642,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 47,
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|L",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -300,
+          "visible": true
+        },
+        {
+          "id": "blk-ann-countdown",
+          "kind": "text",
+          "label": "Countdown",
+          "dataField": "countdown",
+          "staticContent": "",
+          "x": 0,
+          "y": 708,
+          "w": 1920,
+          "h": 180,
+          "style": {
+            "fontSize": 62,
+            "color": "#FFFFFF",
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "textAlign": "center",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": -300,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "countDown",
+      "type": "countDown",
+      "label": "Countdown",
+      "enabled": true,
+      "order": 2,
+      "background": {
+        "src": "picture3",
+        "fit": "cover"
+      },
+      "duration": 5000,
+      "datetime": [
+        "solat-time-small"
+      ],
+      "blocks": [
+        {
+          "id": "blk-cd-countdown",
+          "kind": "text",
+          "label": "Nombor Countdown",
+          "dataField": "countdownText",
+          "staticContent": "",
+          "x": 0,
+          "y": 200,
+          "w": 1920,
+          "h": 400,
+          "style": {
+            "fontSize": 200,
+            "color": "#FFFFFF",
+            "fontFamily": "SairaCondensed, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-cd-tajuk",
+          "kind": "text",
+          "label": "Nama Event",
+          "dataField": "event",
+          "staticContent": "",
+          "x": 0,
+          "y": 680,
+          "w": 1920,
+          "h": 180,
+          "style": {
+            "fontSize": 100,
+            "color": "rgb(245,206,28)",
+            "fontWeight": "bold",
+            "fontFamily": "system-ui",
+            "textAlign": "center",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "kuliahHari",
+      "type": "kuliahHari",
+      "label": "Kuliah Hari Ini",
+      "enabled": true,
+      "order": 3,
+      "background": {
+        "src": "picture1b",
+        "fit": "cover"
+      },
+      "duration": 3000,
+      "datetime": [
+        "solat-time-small"
+      ],
+      "blocks": [
+        {
+          "id": "blk-kh-header",
+          "kind": "text",
+          "label": "Header",
+          "dataField": null,
+          "staticContent": "KULIAH HARI INI",
+          "x": 0,
+          "y": 33,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 80,
+            "color": "#FFFFFF",
+            "fontFamily": "SairaCondensed, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-kh-kategori",
+          "kind": "text",
+          "label": "Kategori Kuliah",
+          "dataField": "kategoriKuliah",
+          "staticContent": "",
+          "x": 0,
+          "y": 166,
+          "w": 1920,
+          "h": 50,
+          "style": {
+            "fontSize": 47,
+            "color": "rgb(245,206,28)",
+            "fontFamily": "system-ui",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "letterSpacing": "3px",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "kuliahWeekly",
+      "type": "kuliahWeekly",
+      "label": "Kuliah Minggu Ini",
+      "enabled": true,
+      "order": 4,
+      "background": {
+        "src": "picture1b",
+        "fit": "cover"
+      },
+      "duration": 4000,
+      "datetime": [
+        "solat-time-small"
+      ],
+      "blocks": [
+        {
+          "id": "blk-kw-header",
+          "kind": "text",
+          "label": "Header",
+          "dataField": null,
+          "staticContent": "KULIAH MINGGU INI",
+          "x": 0,
+          "y": 33,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 80,
+            "color": "#FFFFFF",
+            "fontFamily": "SairaCondensed, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|LR",
+          "transition2": "NO_CLIP_OUT",
+          "transitionDuration": 0,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-kw-kategori",
+          "kind": "text",
+          "label": "Kategori Kuliah",
+          "dataField": "kategoriKuliah",
+          "staticContent": "",
+          "x": 0,
+          "y": 160,
+          "w": 1920,
+          "h": 50,
+          "style": {
+            "fontSize": 47,
+            "color": "rgb(245,206,28)",
+            "fontFamily": "system-ui",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "letterSpacing": "3px",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center"
+          },
+          "transition": "CLIP|LR",
+          "transition2": "NO_CLIP_OUT",
+          "transitionDuration": 0,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-kw-grid",
+          "kind": "grid",
+          "label": "Grid Kuliah (6 cards)",
+          "dataField": "kuliahCards",
+          "staticContent": "",
+          "x": 77,
+          "y": 240,
+          "w": 1749,
+          "h": 800,
+          "gridConfig": {
+            "cols": 2,
+            "rows": 3,
+            "cardWidth": 620,
+            "cardHeight": 193,
+            "gap": 40,
+            "imageWidth": 193,
+            "imageHeight": 193,
+            "fields": [
+              "imagePenceramah",
+              "penceramah",
+              "hari",
+              "kitab"
+            ]
+          },
+          "style": {
+            "fontSize": 32,
+            "color": "#FFFFFF",
+            "fontFamily": "system-ui"
+          },
+          "transition": "CLIP|L",
+          "transition2": "NO_CLIP_OUT",
+          "transitionDuration": 0,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "kuliahBulanan",
+      "type": "kuliahBulanan",
+      "label": "Kuliah Bulan Ini",
+      "enabled": true,
+      "order": 5,
+      "background": {
+        "src": "picture4e",
+        "fit": "cover"
+      },
+      "duration": 10000,
+      "datetime": [
+        "solat-time-small"
+      ],
+      "blocks": [
+        {
+          "id": "blk-kb-header",
+          "kind": "text",
+          "label": "Header",
+          "dataField": null,
+          "staticContent": "JADUAL KULIAH BULAN INI",
+          "x": 0,
+          "y": 33,
+          "w": 1920,
+          "h": 70,
+          "style": {
+            "fontSize": 80,
+            "color": "#FFFFFF",
+            "fontFamily": "SairaCondensed, sans-serif",
+            "fontWeight": "bold",
+            "textAlign": "center",
+            "lineHeight": "70px"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1000,
+          "transitionDelay": 0,
+          "visible": true
+        },
+        {
+          "id": "blk-kb-list",
+          "kind": "list",
+          "label": "Senarai Kuliah Bulanan",
+          "dataField": "kuliahBulananList",
+          "staticContent": "test",
+          "x": 0,
+          "y": 140,
+          "w": 1920,
+          "h": 880,
+          "listConfig": {
+            "fields": [
+              "tarikhHari",
+              "jenis",
+              "penceramah"
+            ],
+            "fieldWidths": [
+              200,
+              200,
+              800
+            ],
+            "rowHeight": 65
+          },
+          "style": {
+            "fontSize": 40,
+            "color": "#FFFFFF",
+            "fontFamily": "system-ui",
+            "fontWeight": "bold"
+          },
+          "transition": "CLIP|LR",
+          "transition2": null,
+          "transitionDuration": 1500,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "slideshow",
+      "type": "slideshow",
+      "label": "Slideshow",
+      "enabled": true,
+      "order": 6,
+      "background": {
+        "src": "bg-mta",
+        "fit": "cover"
+      },
+      "duration": 10000,
+      "datetime": [],
+      "blocks": [
+        {
+          "id": "blk-ss-images",
+          "kind": "slideshow-images",
+          "label": "Imej Slideshow",
+          "dataField": "slideshowImages",
+          "staticContent": "",
+          "x": 0,
+          "y": 0,
+          "w": 1920,
+          "h": 1080,
+          "style": {
+            "objectFit": "cover"
+          },
+          "transition": "FADE",
+          "transition2": null,
+          "transitionDuration": 800,
+          "transitionDelay": 0,
+          "visible": true
+        }
+      ]
+    }
+  ]
+}

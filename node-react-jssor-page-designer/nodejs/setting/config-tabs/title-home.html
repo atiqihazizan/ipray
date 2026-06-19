@@ -1,0 +1,158 @@
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Nama Masjid</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label>Nama Masjid</label>
+			<div class="config-item-control">
+				<span role="button" tabindex="0" id="HOME_TITLE_VISIBLE_toggle" class="btn-toggle switch" onclick="toggleConfigBool('HOME_TITLE_VISIBLE')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConfigBool('HOME_TITLE_VISIBLE');}">
+					<span class="switch-track"><span class="switch-thumb"></span></span>
+				</span>
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE_DURATION_SEC">Tempoh Paparan (saat)</label>
+			<div class="config-item-control">
+				<input
+					type="number"
+					id="HOME_TITLE_DURATION_SEC"
+					name="HOME_TITLE_DURATION_SEC"
+					placeholder="10"
+					min="1"
+					max="600"
+					onchange="saveConfigItem('HOME_TITLE_DURATION_SEC')"
+				/>
+				<span class="config-unit">s</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Teks Skrin Utama - Kotak Teks</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label for="HOME_TITLE1_TOP">Posisi Atas (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE1_TOP" name="HOME_TITLE1_TOP" placeholder="120" min="0" max="1080" onchange="saveConfigItem('HOME_TITLE1_TOP')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE1_TOP')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE_LEFT">Posisi Kiri (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE_LEFT" name="HOME_TITLE_LEFT" placeholder="0" min="0" max="3840" onchange="saveConfigItem('HOME_TITLE_LEFT')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE_LEFT')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE_RIGHT">Posisi Kanan (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE_RIGHT" name="HOME_TITLE_RIGHT" placeholder="0" min="0" max="3840" onchange="saveConfigItem('HOME_TITLE_RIGHT')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE_RIGHT')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<!-- <div class="config-item">
+			<label for="HOME_TITLE_BG">Warna Latar</label>
+			<div class="config-item-control">
+				<input type="color" id="HOME_TITLE_BG" name="HOME_TITLE_BG" value="#000000" onchange="saveConfigItem('HOME_TITLE_BG')" />
+				<input type="text" id="HOME_TITLE_BG_text" placeholder="#000000" class="color-text-input" />
+				< !-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE_BG')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -- >
+			</div>
+		</div> -->
+		<div class="config-item">
+			<label for="HOME_TITLE_GAP">Gap Teks (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE_GAP" name="HOME_TITLE_GAP" placeholder="30" min="0" max="200" onchange="saveConfigItem('HOME_TITLE_GAP')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE_GAP')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE_ALIGN">Penjajaran</label>
+			<div class="config-item-control">
+				<select id="HOME_TITLE_ALIGN" name="HOME_TITLE_ALIGN" onchange="saveConfigItem('HOME_TITLE_ALIGN')">
+					<option value="left">Kiri</option>
+					<option value="center" selected>Tengah</option>
+					<option value="right">Kanan</option>
+				</select>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE_ALIGN')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Teks Skrin Utama - Teks Pertama</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label for="HOME_TITLE1_SIZE">Saiz Font (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE1_SIZE" name="HOME_TITLE1_SIZE" placeholder="88" min="10" max="300" onchange="saveConfigItem('HOME_TITLE1_SIZE')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE1_SIZE')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE1_COLOR">Warna Teks</label>
+			<div class="config-item-control">
+				<input type="color" id="HOME_TITLE1_COLOR" name="HOME_TITLE1_COLOR" value="#00FFFF" onchange="saveConfigItem('HOME_TITLE1_COLOR')" />
+				<input type="text" id="HOME_TITLE1_COLOR_text" placeholder="#000000" class="color-text-input" />
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE1_COLOR')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Teks Skrin Utama - Teks Kedua</h3>
+	<div class="config-group-items">
+		<div class="config-item">
+			<label for="HOME_TITLE2_SIZE">Saiz Font (px)</label>
+			<div class="config-item-control">
+				<input type="number" id="HOME_TITLE2_SIZE" name="HOME_TITLE2_SIZE" placeholder="88" min="10" max="300" onchange="saveConfigItem('HOME_TITLE2_SIZE')" />
+				<span class="config-unit">px</span>
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE2_SIZE')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+		<div class="config-item">
+			<label for="HOME_TITLE2_COLOR">Warna Teks</label>
+			<div class="config-item-control">
+				<input type="color" id="HOME_TITLE2_COLOR" name="HOME_TITLE2_COLOR" value="#00FFFF" onchange="saveConfigItem('HOME_TITLE2_COLOR')" />
+				<input type="text" id="HOME_TITLE2_COLOR_text" placeholder="#000000" class="color-text-input" />
+				<!-- <button type="button" class="btn-icon btn-edit" onclick="saveConfigItem('HOME_TITLE2_COLOR')" title="Simpan">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
+				</button> -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="config-group">
+	<h3 class="config-group-title">Paparan Overlay Skrin Home</h3>
+	<div class="config-group-items">
+		<div class="config-item" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+			<div id="home-overlay-checkboxes" class="slides-visible-container-wrap"></div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,40 @@
+<div class="content-card">
+	<nav id="imam-bilal-subnav" class="config-subnav">
+		<button type="button" class="config-subtab active" data-imam-bilal-tab="jadual-petugas" onclick="showImamBilalTab('jadual-petugas')">Jadual Petugas</button>
+		<button type="button" class="config-subtab" data-imam-bilal-tab="petugas" onclick="showImamBilalTab('petugas')">Petugas</button>
+	</nav>
+
+	<!-- Panel: Jadual Petugas -->
+	<div id="imam-bilal-panel-jadual-petugas" class="imam-bilal-panel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Jadual Petugas">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="jadual-petugas-table" class="data-table">
+				<thead id="jadual-petugas-thead"></thead>
+				<tbody id="jadual-petugas-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Panel: Petugas -->
+	<div id="imam-bilal-panel-petugas" class="imam-bilal-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Petugas">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="petugas-table" class="data-table">
+				<thead id="petugas-thead"></thead>
+				<tbody id="petugas-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+</div>

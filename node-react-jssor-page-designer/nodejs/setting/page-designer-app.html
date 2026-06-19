@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iPray — Page Designer</title>
+  <link rel="stylesheet" href="output.css">
+  <script src="js/interact.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; background: #111827; color: #e5e7eb; font-family: system-ui, sans-serif; font-size: 13px; }
+    #app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ── Topbar ──────────────────────────── */
+    #topbar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 0 10px; height: 48px;
+      background: #1f2937; border-bottom: 1px solid #374151;
+      flex-shrink: 0; overflow: hidden;
+    }
+    #topbar-back {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px; background: #374151; border: 1px solid #4b5563;
+      border-radius: 6px; color: #d1d5db; cursor: pointer; font-size: 12px;
+      white-space: nowrap; text-decoration: none; flex-shrink: 0;
+    }
+    #topbar-back:hover { background: #4b5563; }
+    .tsep { width: 1px; height: 26px; background: #374151; flex-shrink: 0; }
+
+    /* Page tabs */
+    #topbar-pages {
+      display: flex; align-items: center; gap: 2px;
+      flex: 1; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: none; min-width: 0;
+    }
+    #topbar-pages::-webkit-scrollbar { display: none; }
+    .tb-pg {
+      display: flex; align-items: center; gap: 0;
+      border-radius: 6px; border: 1px solid transparent;
+      background: transparent; color: #9ca3af; cursor: pointer;
+      font-size: 11px; white-space: nowrap; flex-shrink: 0;
+      transition: all 0.12s; overflow: hidden;
+    }
+    .tb-pg:hover { background: #374151; color: #e5e7eb; }
+    .tb-pg.active { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }
+    .tb-pg-label {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 8px;
+    }
+    .tb-en { font-size: 9px; width: 12px; height: 12px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .tb-en.on { background: #059669; color: #fff; }
+    .tb-en.off { background: #6b7280; color: #fff; }
+    .tb-cnt { font-size: 9px; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 0 4px; line-height: 14px; }
+    .tb-pg.active .tb-cnt { background: rgba(59,130,246,0.3); color: #93c5fd; }
+    .tb-pg-more {
+      padding: 4px 5px; border-left: 1px solid rgba(255,255,255,0.08);
+      opacity: 0.6; font-size: 11px; cursor: pointer;
+    }
+    .tb-pg:hover .tb-pg-more { opacity: 1; }
+    .tb-pg-more:hover { background: rgba(255,255,255,0.12); }
+    #btn-add-page {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 6px;
+      border: 1px dashed #4b5563; background: transparent;
+      color: #6b7280; cursor: pointer; font-size: 16px; flex-shrink: 0;
+      transition: all 0.12s;
+    }
+    #btn-add-page:hover { background: #374151; color: #e5e7eb; border-color: #6b7280; }
+
+    /* Actions */
+    #topbar-actions {
+      display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: 4px;
+    }
+    .tb-btn {
+      padding: 4px 10px; border-radius: 6px; border: 1px solid #4b5563;
+      background: #374151; color: #e5e7eb; cursor: pointer; font-size: 11px;
+      font-weight: 500; white-space: nowrap; transition: all 0.12s; line-height: 1.4;
+    }
+    .tb-btn:hover { background: #4b5563; }
+    .tb-btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .tb-btn.primary:hover { background: #1d4ed8; }
+    .tb-btn.success { background: #065f46; border-color: #065f46; color: #6ee7b7; }
+    .tb-btn.warn { background: #78350f; border-color: #92400e; color: #fcd34d; }
+    .tb-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Main ────────────────────────────── */
+    #main { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Left panel ──────────────────────── */
+    #left-panel {
+      width: 220px; min-width: 180px;
+      background: #1f2937; border-right: 1px solid #374151;
+      display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+    }
+    .lp-hdr {
+      padding: 6px 10px 4px; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.08em; color: #6b7280; text-transform: uppercase;
+      border-bottom: 1px solid #374151; flex-shrink: 0;
+    }
+    #block-palette {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      padding: 7px 8px; border-bottom: 1px solid #374151; flex-shrink: 0;
+    }
+    .blk-add {
+      display: flex; flex-direction: column; align-items: center; gap: 1px;
+      padding: 5px 6px; background: #374151; border: 1px solid #4b5563;
+      border-radius: 5px; color: #d1d5db; cursor: pointer; font-size: 9px;
+      transition: all 0.1s; min-width: 42px;
+    }
+    .blk-add:hover { background: #4b5563; color: #fff; }
+    .blk-add .bi { font-size: 13px; }
+    #props-panel { flex: 1; overflow-y: auto; padding: 7px 8px; }
+    .prop-empty { color: #6b7280; font-size: 11px; text-align: center; padding: 14px 0; }
+    .pg { margin-bottom: 8px; }
+    .pl { font-size: 9px; font-weight: 600; color: #9ca3af; text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 3px; }
+    .pi {
+      width: 100%; background: #374151; border: 1px solid #4b5563;
+      border-radius: 4px; color: #e5e7eb; padding: 3px 6px; font-size: 11px;
+    }
+    .pi:focus { outline: none; border-color: #3b82f6; }
+    .prow { display: flex; gap: 4px; }
+    .prow .pi { flex: 1; }
+    .bg-btn {
+      width: 100%; padding: 4px 6px; background: #1e3a5f; border: 1px solid #3b82f6;
+      border-radius: 4px; color: #93c5fd; cursor: pointer; font-size: 10px;
+      text-align: left; transition: all 0.1s;
+    }
+    .bg-btn:hover { background: #1e40af; }
+    .bg-thumb {
+      width: 100%; height: 54px; object-fit: cover; border-radius: 4px;
+      border: 1px solid #374151; margin-top: 4px; display: block;
+    }
+    .btngrp { display: flex; gap: 3px; }
+    .btngrp button {
+      flex: 1; padding: 3px; background: #374151; border: 1px solid #4b5563;
+      border-radius: 4px; color: #d1d5db; cursor: pointer; font-size: 10px;
+      transition: all 0.1s;
+    }
+    .btngrp button:hover { background: #4b5563; }
+    .btngrp button.on { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+    .crow { display: flex; gap: 4px; align-items: center; }
+    .crow input[type="color"] {
+      width: 26px; height: 24px; padding: 1px; border: 1px solid #4b5563;
+      border-radius: 4px; background: #374151; cursor: pointer; flex-shrink: 0;
+    }
+    .del-btn {
+      width: 100%; padding: 4px; margin-top: 5px;
+      background: #7f1d1d; border: 1px solid #991b1b;
+      border-radius: 4px; color: #fca5a5; cursor: pointer; font-size: 10px;
+      transition: all 0.1s;
+    }
+    .del-btn:hover { background: #991b1b; color: #fff; }
+    .psel { width:100%; background:#374151; border:1px solid #4b5563; border-radius:4px; color:#e5e7eb; padding:3px 6px; font-size:11px; }
+
+    /* ── Canvas area ─────────────────────── */
+    #canvas-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #111827; }
+    #ctoolbar {
+      display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+      background: #1f2937; border-bottom: 1px solid #374151; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .ctl { font-size: 10px; color: #9ca3af; display: flex; align-items: center; gap: 3px; }
+    .csep { width: 1px; height: 18px; background: #374151; flex-shrink: 0; }
+    .align-btn {
+      padding: 3px 5px; background: #374151; border: 1px solid #4b5563;
+      border-radius: 4px; color: #d1d5db; cursor: pointer; font-size: 10px;
+      transition: all 0.1s; line-height: 1;
+    }
+    .align-btn:hover { background: #4b5563; }
+    .align-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    #canvas-scroll {
+      flex: 1; overflow: auto; display: flex;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    #canvas {
+      position: relative; background: #000;
+      border: 2px solid #4b5563; border-radius: 3px;
+      overflow: hidden; flex-shrink: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #canvas.grid-on {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    }
+    #canvas-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; z-index: 0; }
+    #canvas-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 14px; background: rgba(0,0,0,0.5); z-index: 1; }
+    #canvas-hud {
+      position: absolute; bottom: 6px; left: 6px; font-size: 9px; color: rgba(255,255,255,0.65);
+      background: rgba(0,0,0,0.55); padding: 2px 6px; border-radius: 3px;
+      pointer-events: none; z-index: 100; font-family: monospace; display: none;
+    }
+
+    /* ── Blocks ──────────────────────────── */
+    .pd-block {
+      position: absolute; cursor: move;
+      border: 1px dashed rgba(59,130,246,0.5);
+      background: rgba(59,130,246,0.06);
+      z-index: 10; display: flex; align-items: center; justify-content: center;
+      user-select: none; box-sizing: border-box; overflow: hidden;
+    }
+    .pd-block:hover { border-color: rgba(59,130,246,0.85); background: rgba(59,130,246,0.12); }
+    .pd-block.sel {
+      border: 2px solid #3b82f6; background: rgba(59,130,246,0.18);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.3); z-index: 20;
+    }
+    .pd-block.multi-sel {
+      border: 2px solid #f59e0b; background: rgba(245,158,11,0.1);
+      box-shadow: 0 0 0 2px rgba(245,158,11,0.25); z-index: 15;
+    }
+    .pd-block.hid { opacity: 0.3; }
+    .b-lbl {
+      position: absolute; top: 2px; left: 2px; font-size: 8px; color: rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.5); padding: 1px 3px; border-radius: 2px;
+      pointer-events: none; z-index: 1;
+      white-space: nowrap; max-width: 90%; overflow: hidden; text-overflow: ellipsis;
+    }
+    .b-pv {
+      pointer-events: none; color: rgba(255,255,255,0.8); text-align: center;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      padding: 0 4px; width: 100%;
+    }
+    .rh {
+      position: absolute; width: 9px; height: 9px;
+      background: #3b82f6; border: 1px solid #fff;
+      border-radius: 2px; z-index: 30;
+    }
+    .rh.se { right: -4px; bottom: -4px; cursor: se-resize; }
+    .rh.e  { right: -4px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+    .rh.s  { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+
+    /* ── Statusbar ───────────────────────── */
+    #statusbar {
+      display: flex; align-items: center; gap: 10px; padding: 3px 10px;
+      background: #1f2937; border-top: 1px solid #374151; font-size: 10px; color: #6b7280; flex-shrink: 0;
+    }
+    .sbadge { padding: 1px 5px; border-radius: 3px; background: #374151; color: #9ca3af; font-weight: 600; font-size: 10px; }
+    .sbadge.sv { background: #064e3b; color: #6ee7b7; }
+    .sbadge.us { background: #78350f; color: #fcd34d; }
+
+    /* ── Toast ───────────────────────────── */
+    #toast {
+      position: fixed; bottom: 18px; left: 50%;
+      transform: translateX(-50%) translateY(70px);
+      background: #065f46; color: #fff; padding: 7px 16px; border-radius: 7px;
+      font-size: 12px; font-weight: 500; transition: transform 0.28s ease;
+      z-index: 9999; pointer-events: none; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.err { background: #991b1b; }
+
+    /* ── Context menu ─────────────────────── */
+    #ctx-menu {
+      position: fixed; background: #1f2937; border: 1px solid #374151;
+      border-radius: 7px; padding: 4px 0; z-index: 9000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5); min-width: 140px; display: none;
+    }
+    .ctx-item {
+      padding: 6px 14px; cursor: pointer; font-size: 11px; color: #d1d5db;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .ctx-item:hover { background: #374151; }
+    .ctx-item.danger { color: #f87171; }
+    .ctx-sep { height: 1px; background: #374151; margin: 3px 0; }
+
+    /* ── Modal base ──────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 8000; display: none;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #1f2937; border: 1px solid #374151; border-radius: 10px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6); overflow: hidden;
+      display: flex; flex-direction: column; max-height: 90vh;
+    }
+    .modal-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid #374151; flex-shrink: 0;
+    }
+    .modal-hdr h3 { font-size: 13px; font-weight: 600; }
+    .modal-close {
+      background: none; border: none; color: #9ca3af; cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 2px 5px; border-radius: 4px;
+    }
+    .modal-close:hover { background: #374151; color: #fff; }
+    .modal-body { flex: 1; overflow: auto; padding: 12px; }
+    .modal-footer {
+      padding: 8px 14px; border-top: 1px solid #374151;
+      display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0;
+    }
+
+    /* ── Background picker ───────────────── */
+    #bg-modal .modal-box { width: 640px; }
+    #bg-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .bg-item {
+      position: relative; border-radius: 5px; overflow: hidden;
+      border: 2px solid transparent; cursor: pointer; aspect-ratio: 16/9;
+      background: #374151;
+    }
+    .bg-item:hover { border-color: #6b7280; }
+    .bg-item.sel { border-color: #3b82f6; }
+    .bg-item img { width: 100%; height: 100%; object-fit: cover; }
+    .bg-none {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: #6b7280; height: 100%;
+    }
+
+    /* ── Add page modal ──────────────────── */
+    #addpage-modal .modal-box { width: 360px; }
+    .form-row { margin-bottom: 10px; }
+    .form-lbl { font-size: 10px; color: #9ca3af; margin-bottom: 3px; font-weight: 600; }
+    .form-inp { width: 100%; background: #374151; border: 1px solid #4b5563; border-radius: 5px; color: #e5e7eb; padding: 5px 8px; font-size: 12px; }
+    .form-inp:focus { outline: none; border-color: #3b82f6; }
+
+    /* ── Preview modal ───────────────────── */
+    #preview-modal .modal-box { width: 90vw; max-width: 960px; }
+    #preview-canvas-wrap {
+      display: flex; align-items: center; justify-content: center;
+      background: #000; border-radius: 6px; overflow: hidden; position: relative;
+    }
+    #preview-canvas { position: relative; overflow: hidden; }
+    #preview-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Topbar ─────────────────────────────────────────── -->
+  <div id="topbar">
+    <a href="index.html" id="topbar-back">← Setting</a>
+    <div class="tsep"></div>
+
+    <div id="topbar-pages">
+      <span style="color:#6b7280;font-size:11px;">Memuatkan...</span>
+    </div>
+    <button id="btn-add-page" title="Tambah page baru" onclick="openAddPageModal()">+</button>
+
+    <div class="tsep"></div>
+    <div id="topbar-actions">
+      <button class="tb-btn" onclick="pdUndo()" title="Undo (Ctrl+Z)">↩</button>
+      <button class="tb-btn" onclick="pdRedo()" title="Redo (Ctrl+Y)">↪</button>
+      <div class="tsep"></div>
+      <button class="tb-btn" id="btn-preview" onclick="openPreview()" title="Preview page">👁 Preview</button>
+      <button class="tb-btn" id="btn-toggle-en" onclick="pdToggleEnabled()">✓ Aktif</button>
+      <button class="tb-btn primary" id="btn-save" onclick="pdSave()">💾 Simpan</button>
+    </div>
+  </div>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <div id="main">
+
+    <!-- Left panel -->
+    <div id="left-panel">
+      <div class="lp-hdr">Tambah Block</div>
+      <div id="block-palette">
+        <button class="blk-add" onclick="pdAddBlock('text')"><span class="bi">T</span><span>Teks</span></button>
+        <button class="blk-add" onclick="pdAddBlock('static')"><span class="bi">📌</span><span>Statik</span></button>
+        <button class="blk-add" onclick="pdAddBlock('image')"><span class="bi">🖼</span><span>Imej</span></button>
+        <button class="blk-add" onclick="pdAddBlock('divider')"><span class="bi">─</span><span>Garis</span></button>
+      </div>
+
+      <div class="lp-hdr">Properties</div>
+      <div id="props-panel">
+        <div class="prop-empty" id="prop-empty">Klik block untuk edit</div>
+        <div id="prop-fields" style="display:none">
+
+          <!-- Page background (hanya tunjuk bila tiada block dipilih) -->
+          <div class="pg" id="pg-bg-section" style="display:none">
+            <div class="pl">Background Page</div>
+            <button class="bg-btn" onclick="openBgPicker()">🖼 Pilih Imej Background...</button>
+            <img id="bg-thumb" class="bg-thumb" src="" alt="" style="display:none">
+          </div>
+
+          <div class="pg">
+            <div class="pl">Label</div>
+            <input class="pi" id="p-label" onchange="updProp('label',this.value)">
+          </div>
+          <div class="pg">
+            <div class="pl">Data Field</div>
+            <select class="psel" id="p-df" onchange="updProp('dataField',this.value||null)">
+              <option value="">— Teks Statik —</option>
+            </select>
+          </div>
+          <div class="pg">
+            <div class="pl">Teks Statik</div>
+            <input class="pi" id="p-st" placeholder="Teks..." onchange="updProp('staticContent',this.value)">
+          </div>
+          <div class="pg">
+            <div class="pl">X, Y (base 1920×1080)</div>
+            <div class="prow">
+              <input class="pi" type="number" id="p-x" onchange="updPropXY('x',+this.value)">
+              <input class="pi" type="number" id="p-y" onchange="updPropXY('y',+this.value)">
+            </div>
+          </div>
+          <div class="pg">
+            <div class="pl">W, H (base 1920×1080)</div>
+            <div class="prow">
+              <input class="pi" type="number" id="p-w" onchange="updPropXY('w',+this.value)">
+              <input class="pi" type="number" id="p-h" onchange="updPropXY('h',+this.value)">
+            </div>
+          </div>
+          <div class="pg">
+            <div class="pl">Font Size (px)</div>
+            <input class="pi" type="number" id="p-fs" min="8" max="400" onchange="updStyle('fontSize',+this.value)">
+          </div>
+          <div class="pg">
+            <div class="pl">Font</div>
+            <select class="psel" id="p-ff" onchange="updStyle('fontFamily',this.value)">
+              <option value="system-ui">System UI</option>
+              <option value="SairaCondensed, sans-serif">Saira Condensed</option>
+              <option value="din_bold, sans-serif">DIN Bold</option>
+              <option value="Arial, sans-serif">Arial</option>
+            </select>
+          </div>
+          <div class="pg">
+            <div class="pl">Tebal &amp; Align</div>
+            <div class="prow">
+              <div class="btngrp" style="flex:1"><button id="btn-bold" onclick="toggleBold()"><b>B</b></button></div>
+              <div class="btngrp" style="flex:2">
+                <button id="btn-al" onclick="updStyle('textAlign','left')">⬅</button>
+                <button id="btn-ac" onclick="updStyle('textAlign','center')">≡</button>
+                <button id="btn-ar" onclick="updStyle('textAlign','right')">➡</button>
+              </div>
+            </div>
+          </div>
+          <div class="pg">
+            <div class="pl">Warna Teks</div>
+            <div class="crow">
+              <input type="color" id="p-col" onchange="updStyle('color',this.value);setVal('p-coltxt',this.value)">
+              <input class="pi" id="p-coltxt" placeholder="#FFFFFF" onchange="updStyle('color',this.value);tryHex(this.value)">
+            </div>
+          </div>
+          <div class="pg">
+            <div class="pl">Transisi Masuk</div>
+            <select class="psel" id="p-tr" onchange="updProp('transition',this.value||null)">
+              <option value="">— Tiada —</option>
+              <option value="CLIP|LR">Clip Kiri-Kanan</option>
+              <option value="CLIP|L">Clip dari Kiri</option>
+              <option value="CLIP|R">Clip dari Kanan</option>
+              <option value="CLIP|TB">Clip Atas-Bawah</option>
+              <option value="CLIP|T">Clip dari Atas</option>
+              <option value="CLIP|B">Clip dari Bawah</option>
+              <option value="FADE">Fade</option>
+              <option value="WV|B">Wave Bawah</option>
+              <option value="MCLIP|R">Multi-Clip Kanan</option>
+              <option value="L|IB">Slide dari Bawah</option>
+            </select>
+          </div>
+          <div class="pg">
+            <div class="pl">Duration / Delay (ms)</div>
+            <div class="prow">
+              <input class="pi" type="number" id="p-td" placeholder="800" onchange="updProp('transitionDuration',+this.value)">
+              <input class="pi" type="number" id="p-dy" placeholder="0" onchange="updProp('transitionDelay',+this.value)">
+            </div>
+          </div>
+          <div class="pg">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;">
+              <input type="checkbox" id="p-vis" onchange="updProp('visible',this.checked)"> Papar block
+            </label>
+          </div>
+          <button class="del-btn" onclick="pdDeleteBlock()">🗑 Padam Block</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas area -->
+    <div id="canvas-area">
+      <!-- Toolbar canvas -->
+      <div id="ctoolbar">
+        <button class="tb-btn" onclick="pdToggleGrid()" id="btn-grid">⊞ Grid</button>
+        <div class="csep"></div>
+        <label class="ctl"><input type="checkbox" id="snap-chk" checked style="margin:0"> Snap</label>
+        <div class="csep"></div>
+        <!-- Align tools — aktif bila ada selection -->
+        <span class="ctl" style="color:#6b7280;font-size:9px;">ALIGN:</span>
+        <button class="align-btn" id="al-l"   onclick="alignBlocks('left')"   title="Align Kiri">⇤</button>
+        <button class="align-btn" id="al-cx"  onclick="alignBlocks('cx')"     title="Tengah Mendatar">↔</button>
+        <button class="align-btn" id="al-r"   onclick="alignBlocks('right')"  title="Align Kanan">⇥</button>
+        <button class="align-btn" id="al-t"   onclick="alignBlocks('top')"    title="Align Atas">⇡</button>
+        <button class="align-btn" id="al-cy"  onclick="alignBlocks('cy')"     title="Tengah Menegak">↕</button>
+        <button class="align-btn" id="al-b"   onclick="alignBlocks('bottom')" title="Align Bawah">⇣</button>
+        <div class="csep"></div>
+        <span class="ctl" id="info-scale">Scale: —</span>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <span class="sbadge" id="save-badge">Terkini</span>
+          <span class="ctl" id="info-blocks">—</span>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div id="canvas-scroll">
+        <div id="canvas" class="grid-on">
+          <img id="canvas-bg" src="" alt="" style="display:none">
+          <div id="canvas-empty">Pilih page dari tab atas</div>
+          <div id="canvas-hud"></div>
+        </div>
+      </div>
+
+      <!-- Statusbar -->
+      <div id="statusbar">
+        <span id="sb-page">—</span>
+        <span>|</span>
+        <span>1920 × 1080</span>
+        <span style="margin-left:auto;color:#374151;">iPray Page Designer</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Context menu (kanan klik pada tab page) -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="ctxRename()">✏️ Rename</div>
+  <div class="ctx-item" onclick="ctxDuplicate()">⧉ Duplicate</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxMoveUp()">↑ Ke Atas</div>
+  <div class="ctx-item" onclick="ctxMoveDown()">↓ Ke Bawah</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="ctxDelete()">🗑 Padam Page</div>
+</div>
+
+<!-- Background picker modal -->
+<div class="modal-overlay" id="bg-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>Pilih Background</h3>
+      <button class="modal-close" onclick="closeBgPicker()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="bg-grid"><div style="color:#6b7280;font-size:11px;">Memuatkan imej...</div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn" onclick="clearBg()">🗑 Buang Background</button>
+      <button class="tb-btn primary" id="btn-bg-ok" onclick="applyBg()">✓ Guna</button>
+      <button class="tb-btn" onclick="closeBgPicker()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add page modal -->
+<div class="modal-overlay" id="addpage-modal">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <h3>Tambah Page Baru</h3>
+      <button class="modal-close" onclick="closeAddPageModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-lbl">Label Page</div>
+        <input class="form-inp" id="np-label" placeholder="cth: Announce Khas">
+      </div>
+      <div class="form-row">
+        <div class="form-lbl">Jenis (Type)</div>
+        <select class="form-inp" id="np-type">
+          <option value="announce">announce</option>
+          <option value="countDown">countDown</option>
+          <option value="home">home</option>
+          <option value="kuliahHari">kuliahHari</option>
+          <option value="kuliahWeekly">kuliahWeekly</option>
+          <option value="kuliahBulanan">kuliahBulanan</option>
+          <option value="slideshow">slideshow</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="tb-btn primary" onclick="confirmAddPage()">✓ Tambah</button>
+      <button class="tb-btn" onclick="closeAddPageModal()">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-box" style="width:90vw;max-width:1000px;">
+    <div class="modal-hdr">
+      <h3 id="preview-title">Preview</h3>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:10px;">
+      <div id="preview-canvas-wrap">
+        <div id="preview-canvas">
+          <img id="preview-bg" src="" alt="" style="display:none">
+          <!-- blocks rendered here -->
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;align-items:center;">
+      <span style="font-size:10px;color:#6b7280;">Preview adalah anggaran visual sahaja. Transisi animasi tidak ditunjukkan.</span>
+      <button class="tb-btn" onclick="closePreview()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ─── Const & State ──────────────────────────────────────────────────────────
+const BASE_W = 1920, BASE_H = 1080;
+
+const host = location.hostname;
+const port = location.port;
+const proto = location.protocol;
+const BASE_URL = (port === '3001' || port === '')
+  ? `${proto}//${host}${port ? ':'+port : ''}`
+  : `${proto}//${host}:3001`;
+const API = `${BASE_URL}/api`;
+
+const DATA_FIELDS = {
+  announce:     ['kategori','tajuk','penceramah','tema','tarikh','masa','lokasi','sasaran','countdown'],
+  countDown:    ['event','countdownText'],
+  home:         ['namaMasjidBlock'],
+  kuliahHari:   ['kategoriKuliah','penceramah','kitab','masa','imagePenceramah'],
+  kuliahWeekly: ['kategoriKuliah','penceramah','hari','imagePenceramah'],
+  kuliahBulanan:['tarikhHari','jenis','penceramah','kuliahBulananList'],
+  slideshow:    ['slideshowImages'],
+};
+
+let allLayouts = null;
+let currentPage = null;
+let selBlocks = [];         // multi-select array
+let isDirty = false;
+let gridOn = true;
+let canvasScale = 0.5;
+let undoStack = [];
+let redoStack = [];
+
+// context menu target
+let ctxTargetPageId = null;
+
+// background picker
+let bgPickerSrc = null;
+let bgImages = [];
+let imagesMap = {};   // { kod: '/images/xxx/xxx.jpg' } dari images.txt
+
+// ─── Scale ──────────────────────────────────────────────────────────────────
+function calcScale() {
+  const scroll = document.getElementById('canvas-scroll');
+  if (!scroll) return;
+  const avW = scroll.clientWidth - 40;
+  const avH = scroll.clientHeight - 40;
+  canvasScale = Math.min(avW / BASE_W, avH / BASE_H, 1);
+  const c = document.getElementById('canvas');
+  if (c) {
+    c.style.width  = `${Math.round(BASE_W * canvasScale)}px`;
+    c.style.height = `${Math.round(BASE_H * canvasScale)}px`;
+    c.style.backgroundSize = `${5 * canvasScale}px ${5 * canvasScale}px`;
+  }
+  const info = document.getElementById('info-scale');
+  if (info) info.textContent = `Scale: ${Math.round(canvasScale * 100)}% (${Math.round(BASE_W*canvasScale)}×${Math.round(BASE_H*canvasScale)})`;
+}
+window.addEventListener('resize', () => { calcScale(); if (currentPage) renderCanvas(); });
+
+// ─── Load ────────────────────────────────────────────────────────────────────
+async function loadLayouts() {
+  try {
+    // Load serentak: page layouts + images map
+    const [layoutRes, appRes] = await Promise.all([
+      fetch(`${API}/page-layouts?t=${Date.now()}`),
+      fetch(`${API}/data/app?t=${Date.now()}`),
+    ]);
+    if (!layoutRes.ok) throw new Error('Gagal load layouts');
+    allLayouts = await layoutRes.json();
+
+    // Bina imagesMap dari data.images (hasil parseImages dari images.txt)
+    if (appRes.ok) {
+      const appData = await appRes.json();
+      if (appData.images && typeof appData.images === 'object') {
+        imagesMap = appData.images; // { 'bg-mta': '/images/slides/bg-mta.jpg', ... }
+      }
+    }
+    renderTabs();
+  } catch (e) {
+    document.getElementById('topbar-pages').innerHTML =
+      `<span style="color:#f87171;font-size:11px;">Ralat: ${e.message}</span>`;
+  }
+}
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+function renderTabs() {
+  const c = document.getElementById('topbar-pages');
+  if (!c || !allLayouts?.pages) return;
+  c.innerHTML = allLayouts.pages.map(p => `
+    <div class="tb-pg ${currentPage?.id === p.id ? 'active' : ''}" data-pid="${p.id}">
+      <div class="tb-pg-label" onclick="selectPage('${p.id}')">
+        <span class="tb-en ${p.enabled !== false ? 'on' : 'off'}">${p.enabled !== false ? '✓' : '✗'}</span>
+        ${esc(p.label || p.type)}
+        <span class="tb-cnt">${p.blocks?.length || 0}</span>
+      </div>
+      <div class="tb-pg-more" onclick="openCtxMenu(event,'${p.id}')" title="Urus page">⋮</div>
+    </div>
+  `).join('');
+}
+
+// ─── Select page ─────────────────────────────────────────────────────────────
+window.selectPage = function(pageId) {
+  if (isDirty && !confirm('Ada perubahan belum disimpan. Teruskan?')) return;
+  isDirty = false;
+  currentPage = allLayouts.pages.find(p => p.id === pageId) || null;
+  selBlocks = [];
+  undoStack = []; redoStack = [];
+  renderTabs();
+  renderCanvas();
+  hideProps();
+  updateStatus();
+  updateEnBtn();
+  updateAlignBtns();
+};
+
+// ─── Render canvas ────────────────────────────────────────────────────────────
+function renderCanvas() {
+  calcScale();
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+  canvas.querySelectorAll('.pd-block').forEach(e => e.remove());
+  const empty = document.getElementById('canvas-empty');
+  const bg    = document.getElementById('canvas-bg');
+  if (!currentPage) {
+    empty.style.display = 'flex'; empty.textContent = 'Pilih page dari tab atas';
+    bg.style.display = 'none';
+    return;
+  }
+  const bgSrc = resolveBg(currentPage.background);
+  if (bgSrc) { bg.src = bgSrc; bg.style.display = ''; empty.style.display = 'none'; }
+  else { bg.style.display = 'none'; empty.style.display = 'flex'; empty.textContent = 'Tiada background'; }
+  (currentPage.blocks || []).forEach(b => renderBlock(b));
+  updateStatus();
+}
+
+function resolveBg(bg) {
+  if (!bg?.src) return '';
+  const s = bg.src;
+  if (!s || ['','none','null'].includes(s.toLowerCase())) return '';
+  // Kalau path penuh (/...) atau URL (http...) — guna terus
+  if (s.startsWith('/') || s.startsWith('http')) return s;
+  // Lookup dalam imagesMap dulu (dari images.txt)
+  if (imagesMap[s]) return imagesMap[s];
+  // Fallback: teka dalam /images/slides/ (mungkin ada extension berbeza)
+  return `/images/slides/${s}.jpg`;
+}
+
+// ─── Render block ─────────────────────────────────────────────────────────────
+function renderBlock(block) {
+  const canvas = document.getElementById('canvas');
+  if (!canvas) return;
+  const el = document.createElement('div');
+  el.className = 'pd-block' + (block.visible === false ? ' hid' : '');
+  el.dataset.bid = block.id;
+  applyPos(el, block);
+
+  const lbl = document.createElement('div');
+  lbl.className = 'b-lbl';
+  lbl.textContent = block.label || block.dataField || block.kind || block.id;
+  el.appendChild(lbl);
+
+  const pv = document.createElement('div');
+  pv.className = 'b-pv';
+  const fs = Math.min((block.style?.fontSize || 40) * canvasScale, 40);
+  pv.style.cssText = `font-size:${fs}px;color:${block.style?.color||'#fff'};text-align:${block.style?.textAlign||'center'};font-weight:${block.style?.fontWeight||'normal'}`;
+  pv.textContent = block.staticContent || (block.dataField ? `[${block.dataField}]` : '');
+  el.appendChild(pv);
+
+  ['se','e','s'].forEach(d => {
+    const h = document.createElement('div'); h.className = `rh ${d}`; el.appendChild(h);
+  });
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('rh')) return;
+    e.stopPropagation();
+    handleBlockClick(block.id, e.shiftKey);
+  });
+  canvas.appendChild(el);
+  applySel(el, block.id);
+  attachInteract(el, block);
+}
+
+function applyPos(el, block) {
+  el.style.left   = `${block.x * canvasScale}px`;
+  el.style.top    = `${block.y * canvasScale}px`;
+  el.style.width  = `${block.w * canvasScale}px`;
+  el.style.height = block.h > 0 ? `${block.h * canvasScale}px` : '20px';
+}
+
+function applySel(el, id) {
+  const primary = selBlocks[0]?.id === id;
+  const multi   = selBlocks.length > 1 && selBlocks.some(b => b.id === id);
+  el.classList.toggle('sel',   primary && selBlocks.length === 1);
+  el.classList.toggle('multi-sel', selBlocks.length > 1 && selBlocks.some(b => b.id === id));
+}
+
+// ─── Block click (multi-select support) ──────────────────────────────────────
+function handleBlockClick(id, shift) {
+  const block = (currentPage?.blocks || []).find(b => b.id === id);
+  if (!block) return;
+  if (shift) {
+    const idx = selBlocks.findIndex(b => b.id === id);
+    if (idx >= 0) selBlocks.splice(idx, 1);
+    else selBlocks.push(block);
+  } else {
+    selBlocks = [block];
+  }
+  refreshAllSel();
+  if (selBlocks.length === 1) showProps(selBlocks[0]);
+  else if (selBlocks.length === 0) hideProps();
+  else showMultiProps();
+  updateAlignBtns();
+}
+
+function refreshAllSel() {
+  document.querySelectorAll('.pd-block').forEach(el => {
+    const id = el.dataset.bid;
+    const isPrimary = selBlocks.length === 1 && selBlocks[0]?.id === id;
+    const isMulti   = selBlocks.length > 1 && selBlocks.some(b => b.id === id);
+    el.classList.toggle('sel', isPrimary);
+    el.classList.toggle('multi-sel', isMulti);
+  });
+}
+
+document.addEventListener('mousedown', e => {
+  if (!e.target.closest('.pd-block') && !e.target.closest('#left-panel') && !e.target.closest('#ctoolbar')) {
+    selBlocks = [];
+    refreshAllSel();
+    hideProps();
+    updateAlignBtns();
+  }
+});
+
+function showMultiProps() {
+  document.getElementById('prop-empty').style.display = 'none';
+  document.getElementById('prop-fields').style.display = '';
+  document.getElementById('pg-bg-section').style.display = 'none';
+  // Hanya tunjuk bahagian yang relevan (partial update)
+  document.getElementById('p-label').value = `(${selBlocks.length} blocks dipilih)`;
+}
+
+// ─── Interact.js ─────────────────────────────────────────────────────────────
+const SNAP = 5;
+
+function attachInteract(el, block) {
+  if (!window.interact) return;
+  const snap = () => document.getElementById('snap-chk')?.checked;
+
+  window.interact(el)
+    .draggable({
+      modifiers: [
+        window.interact.modifiers.snap({
+          targets: [window.interact.snappers.grid({ x: SNAP, y: SNAP })],
+          range: Infinity, relativePoints: [{ x: 0, y: 0 }],
+          enabled: snap
+        }),
+        window.interact.modifiers.restrictRect({ restriction: '#canvas', endOnly: false })
+      ],
+      listeners: {
+        start() { saveUndo(); },
+        move(ev) {
+          // Kalau block ini sebahagian dari multi-select, gerak semua
+          const inMulti = selBlocks.length > 1 && selBlocks.some(b => b.id === block.id);
+          if (inMulti) {
+            selBlocks.forEach(b => {
+              b.x = Math.max(0, Math.round((b.x * canvasScale + ev.dx) / canvasScale));
+              b.y = Math.max(0, Math.round((b.y * canvasScale + ev.dy) / canvasScale));
+              const bEl = document.querySelector(`[data-bid="${b.id}"]`);
+              if (bEl) applyPos(bEl, b);
+            });
+          } else {
+            block.x = Math.max(0, Math.round((block.x * canvasScale + ev.dx) / canvasScale));
+            block.y = Math.max(0, Math.round((block.y * canvasScale + ev.dy) / canvasScale));
+            applyPos(el, block);
+            syncXY();
+          }
+          showHud(inMulti ? `${selBlocks.length} blocks` : `x:${block.x} y:${block.y}`);
+          markDirty();
+        }
+      }
+    })
+    .resizable({
+      edges: { right: true, bottom: true, bottomRight: true },
+      modifiers: [
+        window.interact.modifiers.snapSize({
+          targets: [window.interact.snappers.grid({ width: SNAP, height: SNAP })],
+          enabled: snap
+        })
+      ],
+      listeners: {
+        start() { saveUndo(); },
+        move(ev) {
+          block.w = Math.max(10, Math.round(ev.rect.width / canvasScale));
+          block.h = Math.max(0,  Math.round(ev.rect.height / canvasScale));
+          applyPos(el, block);
+          syncXY();
+          showHud(`w:${block.w} h:${block.h}`);
+          markDirty();
+        }
+      }
+    });
+}
+
+// ─── Properties panel ────────────────────────────────────────────────────────
+function showProps(b) {
+  document.getElementById('prop-empty').style.display = 'none';
+  document.getElementById('prop-fields').style.display = '';
+  document.getElementById('pg-bg-section').style.display = 'none';
+  setVal('p-label', b.label || '');
+  setVal('p-x', b.x); setVal('p-y', b.y);
+  setVal('p-w', b.w); setVal('p-h', b.h);
+  setVal('p-st', b.staticContent || '');
+  setVal('p-fs', b.style?.fontSize || 40);
+  setVal('p-td', b.transitionDuration ?? 800);
+  setVal('p-dy', b.transitionDelay ?? 0);
+  const c = b.style?.color || '#FFFFFF';
+  document.getElementById('p-col').value = toHex(c);
+  setVal('p-coltxt', c);
+  setSel('p-ff', b.style?.fontFamily || 'system-ui');
+  populateDf(currentPage?.type, b.dataField);
+  setSel('p-df', b.dataField || '');
+  document.getElementById('btn-bold').classList.toggle('on', b.style?.fontWeight === 'bold');
+  ['al','ac','ar'].forEach((a,i) => document.getElementById(`btn-${a}`)?.classList.toggle('on', ['left','center','right'][i] === b.style?.textAlign));
+  setSel('p-tr', b.transition || '');
+  document.getElementById('p-vis').checked = b.visible !== false;
+}
+function hideProps() {
+  document.getElementById('prop-empty').style.display = '';
+  document.getElementById('prop-fields').style.display = 'none';
+}
+function showPageProps() {
+  document.getElementById('prop-empty').style.display = 'none';
+  document.getElementById('prop-fields').style.display = '';
+  document.getElementById('pg-bg-section').style.display = '';
+  // tunjuk thumbnail background semasa
+  const bgSrc = resolveBg(currentPage?.background);
+  const thumb = document.getElementById('bg-thumb');
+  if (bgSrc) { thumb.src = bgSrc; thumb.style.display = ''; }
+  else { thumb.style.display = 'none'; }
+}
+
+function populateDf(type, current) {
+  const sel = document.getElementById('p-df'); if (!sel) return;
+  sel.innerHTML = '<option value="">— Teks Statik —</option>';
+  (DATA_FIELDS[type] || []).forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o); });
+  sel.value = current || '';
+}
+
+function syncXY() {
+  if (selBlocks.length !== 1) return;
+  const b = selBlocks[0];
+  setVal('p-x', b.x); setVal('p-y', b.y);
+  setVal('p-w', b.w); setVal('p-h', b.h);
+}
+
+// ─── Update props ─────────────────────────────────────────────────────────────
+window.updProp = (k, v) => {
+  if (!selBlocks.length) return;
+  saveUndo();
+  selBlocks.forEach(b => { b[k] = v; refreshBlockEl(b); });
+  markDirty();
+};
+window.updPropXY = (k, v) => {
+  if (selBlocks.length !== 1) return;
+  saveUndo();
+  selBlocks[0][k] = v;
+  const el = document.querySelector(`[data-bid="${selBlocks[0].id}"]`);
+  if (el) applyPos(el, selBlocks[0]);
+  markDirty();
+};
+window.updStyle = (k, v) => {
+  if (!selBlocks.length) return;
+  saveUndo();
+  selBlocks.forEach(b => {
+    if (!b.style) b.style = {};
+    b.style[k] = v;
+    const el = document.querySelector(`[data-bid="${b.id}"]`);
+    const pv = el?.querySelector('.b-pv');
+    if (pv) {
+      if (k === 'color') pv.style.color = v;
+      if (k === 'textAlign') pv.style.textAlign = v;
+      if (k === 'fontSize') pv.style.fontSize = `${Math.min(v,80)*canvasScale}px`;
+      if (k === 'fontWeight') pv.style.fontWeight = v;
+    }
+  });
+  if (k === 'textAlign') ['al','ac','ar'].forEach((a,i) => document.getElementById(`btn-${a}`)?.classList.toggle('on', ['left','center','right'][i] === v));
+  markDirty();
+};
+window.toggleBold = () => {
+  if (!selBlocks.length) return;
+  const bold = selBlocks[0].style?.fontWeight === 'bold';
+  window.updStyle('fontWeight', bold ? 'normal' : 'bold');
+  document.getElementById('btn-bold')?.classList.toggle('on', !bold);
+};
+window.tryHex = (v) => { try { document.getElementById('p-col').value = toHex(v); } catch{} };
+
+function refreshBlockEl(block) {
+  const el = document.querySelector(`[data-bid="${block.id}"]`); if (!el) return;
+  el.classList.toggle('hid', block.visible === false);
+  const pv = el.querySelector('.b-pv');
+  if (pv) pv.textContent = block.staticContent || (block.dataField ? `[${block.dataField}]` : '');
+  const lbl = el.querySelector('.b-lbl');
+  if (lbl) lbl.textContent = block.label || block.dataField || block.kind || block.id;
+}
+
+// ─── Add / delete block ───────────────────────────────────────────────────────
+window.pdAddBlock = (kind) => {
+  if (!currentPage) { showToast('Pilih page dahulu', 'err'); return; }
+  saveUndo();
+  const blk = {
+    id: `blk-${Date.now()}`, kind, label: kind === 'divider' ? 'Garis' : 'Block Baru',
+    dataField: null, staticContent: kind === 'static' ? 'Teks di sini' : '',
+    x: 60, y: 60, w: 500, h: 70,
+    style: { fontSize: 48, color: '#FFFFFF', fontFamily: 'system-ui', fontWeight: 'bold', textAlign: 'center' },
+    transition: 'CLIP|LR', transitionDuration: 800, transitionDelay: 0, visible: true,
+  };
+  currentPage.blocks = currentPage.blocks || [];
+  currentPage.blocks.push(blk);
+  renderBlock(blk);
+  selBlocks = [blk];
+  refreshAllSel();
+  showProps(blk);
+  markDirty(); updateStatus(); updateAlignBtns();
+};
+
+window.pdDeleteBlock = () => {
+  if (!selBlocks.length || !currentPage) return;
+  const labels = selBlocks.map(b => b.label || b.id).join(', ');
+  if (!confirm(`Padam: ${labels}?`)) return;
+  saveUndo();
+  selBlocks.forEach(b => {
+    document.querySelector(`[data-bid="${b.id}"]`)?.remove();
+    currentPage.blocks = currentPage.blocks.filter(x => x.id !== b.id);
+  });
+  selBlocks = [];
+  hideProps(); markDirty(); updateStatus(); updateAlignBtns();
+};
+
+// ─── Align tools ─────────────────────────────────────────────────────────────
+window.alignBlocks = (dir) => {
+  if (!selBlocks.length || !currentPage) return;
+  saveUndo();
+  if (selBlocks.length === 1) {
+    const b = selBlocks[0];
+    if (dir === 'left')   b.x = 0;
+    if (dir === 'right')  b.x = BASE_W - b.w;
+    if (dir === 'cx')     b.x = Math.round((BASE_W - b.w) / 2);
+    if (dir === 'top')    b.y = 0;
+    if (dir === 'bottom') b.y = BASE_H - b.h;
+    if (dir === 'cy')     b.y = Math.round((BASE_H - b.h) / 2);
+    const el = document.querySelector(`[data-bid="${b.id}"]`);
+    if (el) applyPos(el, b);
+    syncXY();
+  } else {
+    // Align relative to first selected block
+    const ref = selBlocks[0];
+    selBlocks.forEach(b => {
+      if (b.id === ref.id) return;
+      if (dir === 'left')   b.x = ref.x;
+      if (dir === 'right')  b.x = ref.x + ref.w - b.w;
+      if (dir === 'cx')     b.x = ref.x + Math.round((ref.w - b.w) / 2);
+      if (dir === 'top')    b.y = ref.y;
+      if (dir === 'bottom') b.y = ref.y + ref.h - b.h;
+      if (dir === 'cy')     b.y = ref.y + Math.round((ref.h - b.h) / 2);
+      const el = document.querySelector(`[data-bid="${b.id}"]`);
+      if (el) applyPos(el, b);
+    });
+  }
+  markDirty();
+};
+
+function updateAlignBtns() {
+  const disabled = selBlocks.length === 0;
+  ['al-l','al-cx','al-r','al-t','al-cy','al-b'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = disabled;
+  });
+}
+
+// ─── Toggle enabled ───────────────────────────────────────────────────────────
+window.pdToggleEnabled = () => {
+  if (!currentPage) return;
+  saveUndo();
+  currentPage.enabled = currentPage.enabled === false ? true : false;
+  updateEnBtn(); renderTabs(); markDirty();
+};
+function updateEnBtn() {
+  const btn = document.getElementById('btn-toggle-en'); if (!btn || !currentPage) return;
+  const on = currentPage.enabled !== false;
+  btn.textContent = on ? '✓ Aktif' : '✗ Nyahaktif';
+  btn.className = `tb-btn ${on ? 'success' : 'warn'}`;
+}
+
+// ─── Save ──────────────────────────────────────────────────────────────────────
+window.pdSave = async () => {
+  if (!currentPage) return;
+  const btn = document.getElementById('btn-save');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+  try {
+    const res = await fetch(`${API}/page-layouts/${currentPage.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentPage),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+    isDirty = false;
+    updateStatus();
+    showToast('Disimpan dan dihantar ke kiosk!');
+  } catch (e) { showToast(`Gagal: ${e.message}`, 'err'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan'; } }
+};
+
+// ─── Undo / Redo ──────────────────────────────────────────────────────────────
+function saveUndo() {
+  if (!currentPage) return;
+  undoStack.push(JSON.stringify(currentPage));
+  if (undoStack.length > 40) undoStack.shift();
+  redoStack = [];
+}
+window.pdUndo = () => {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(currentPage));
+  const prev = JSON.parse(undoStack.pop());
+  Object.assign(currentPage, prev);
+  currentPage.blocks = prev.blocks; // pastikan blocks diganti sepenuhnya
+  selBlocks = []; hideProps(); renderCanvas(); markDirty(); updateAlignBtns();
+};
+window.pdRedo = () => {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(currentPage));
+  const next = JSON.parse(redoStack.pop());
+  Object.assign(currentPage, next);
+  currentPage.blocks = next.blocks;
+  selBlocks = []; hideProps(); renderCanvas(); markDirty(); updateAlignBtns();
+};
+
+// ─── Grid ─────────────────────────────────────────────────────────────────────
+window.pdToggleGrid = () => {
+  gridOn = !gridOn;
+  document.getElementById('canvas')?.classList.toggle('grid-on', gridOn);
+  document.getElementById('btn-grid')?.classList.toggle('on', gridOn);
+};
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+function updateStatus() {
+  const badge = document.getElementById('save-badge');
+  if (badge) { badge.textContent = isDirty ? 'Belum Simpan' : 'Terkini'; badge.className = `sbadge ${isDirty ? 'us' : 'sv'}`; }
+  const sbp = document.getElementById('sb-page');
+  if (sbp) sbp.textContent = currentPage ? `${currentPage.label || currentPage.id} (${currentPage.blocks?.length || 0} blocks)` : '—';
+  const ib = document.getElementById('info-blocks');
+  if (ib) ib.textContent = currentPage ? `${currentPage.blocks?.length || 0} blk` : '';
+}
+function markDirty() { isDirty = true; updateStatus(); }
+function showHud(t) { const h = document.getElementById('canvas-hud'); if (h) { h.style.display=''; h.textContent=t; } }
+
+// ─── Context menu (⋮ pada tab page) ──────────────────────────────────────────
+window.openCtxMenu = (e, pageId) => {
+  e.stopPropagation(); e.preventDefault();
+  ctxTargetPageId = pageId;
+  const menu = document.getElementById('ctx-menu');
+  menu.style.display = 'block';
+  menu.style.left = `${e.clientX}px`;
+  menu.style.top  = `${e.clientY}px`;
+  // Pastikan tidak keluar skrin
+  requestAnimationFrame(() => {
+    const r = menu.getBoundingClientRect();
+    if (r.right  > window.innerWidth)  menu.style.left = `${window.innerWidth - r.width - 4}px`;
+    if (r.bottom > window.innerHeight) menu.style.top  = `${window.innerHeight - r.height - 4}px`;
+  });
+};
+document.addEventListener('click', () => document.getElementById('ctx-menu').style.display = 'none');
+
+window.ctxRename = async () => {
+  const pg = allLayouts?.pages.find(p => p.id === ctxTargetPageId); if (!pg) return;
+  const name = prompt('Nama baru:', pg.label || pg.type);
+  if (!name || name.trim() === pg.label) return;
+  pg.label = name.trim();
+  if (currentPage?.id === pg.id) currentPage.label = pg.label;
+  await savePageDirect(pg);
+  renderTabs();
+  showToast('Label dikemaskini');
+};
+window.ctxDuplicate = async () => {
+  const pg = allLayouts?.pages.find(p => p.id === ctxTargetPageId); if (!pg) return;
+  try {
+    const res = await fetch(`${API}/page-layouts/${pg.id}/duplicate`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const newPg = await res.json();
+    allLayouts.pages.push(newPg);
+    renderTabs();
+    showToast('Page diduplicate');
+  } catch (e) { showToast(`Gagal: ${e.message}`, 'err'); }
+};
+window.ctxDelete = async () => {
+  const pg = allLayouts?.pages.find(p => p.id === ctxTargetPageId); if (!pg) return;
+  if (!confirm(`Padam page "${pg.label || pg.id}"? Tindakan ini tidak boleh dibalik.`)) return;
+  try {
+    const res = await fetch(`${API}/page-layouts/${pg.id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    allLayouts.pages = allLayouts.pages.filter(p => p.id !== pg.id);
+    if (currentPage?.id === pg.id) {
+      currentPage = null; selBlocks = [];
+      renderCanvas(); hideProps();
+    }
+    renderTabs(); updateStatus();
+    showToast('Page dipadam');
+  } catch (e) { showToast(`Gagal: ${e.message}`, 'err'); }
+};
+window.ctxMoveUp = async () => {
+  const idx = allLayouts?.pages.findIndex(p => p.id === ctxTargetPageId); if (idx <= 0) return;
+  [allLayouts.pages[idx-1], allLayouts.pages[idx]] = [allLayouts.pages[idx], allLayouts.pages[idx-1]];
+  await reorderPages();
+};
+window.ctxMoveDown = async () => {
+  const idx = allLayouts?.pages.findIndex(p => p.id === ctxTargetPageId);
+  if (idx < 0 || idx >= allLayouts.pages.length - 1) return;
+  [allLayouts.pages[idx], allLayouts.pages[idx+1]] = [allLayouts.pages[idx+1], allLayouts.pages[idx]];
+  await reorderPages();
+};
+
+async function reorderPages() {
+  const order = allLayouts.pages.map(p => p.id);
+  try {
+    const res = await fetch(`${API}/page-layouts/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    renderTabs();
+    showToast('Urutan dikemaskini');
+  } catch (e) { showToast(`Gagal: ${e.message}`, 'err'); }
+}
+
+async function savePageDirect(pg) {
+  await fetch(`${API}/page-layouts/${pg.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(pg),
+  });
+}
+
+// ─── Add page modal ───────────────────────────────────────────────────────────
+window.openAddPageModal = () => {
+  document.getElementById('np-label').value = '';
+  document.getElementById('np-type').value = 'announce';
+  document.getElementById('addpage-modal').classList.add('show');
+  setTimeout(() => document.getElementById('np-label').focus(), 50);
+};
+window.closeAddPageModal = () => document.getElementById('addpage-modal').classList.remove('show');
+window.confirmAddPage = async () => {
+  const label = document.getElementById('np-label').value.trim();
+  const type  = document.getElementById('np-type').value;
+  if (!label) { showToast('Sila masukkan label page', 'err'); return; }
+  const newPage = {
+    id: `${type}-${Date.now()}`, type, label, enabled: true, order: allLayouts.pages.length,
+    background: { src: '' }, duration: 8000,
+    datetime: { show: false }, canvasBase: { w: BASE_W, h: BASE_H }, blocks: [],
+  };
+  try {
+    const res = await fetch(`${API}/page-layouts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newPage),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `HTTP ${res.status}`);
+    allLayouts.pages.push(newPage);
+    renderTabs();
+    closeAddPageModal();
+    selectPage(newPage.id);
+    showToast(`Page "${label}" ditambah`);
+  } catch (e) { showToast(`Gagal: ${e.message}`, 'err'); }
+};
+
+// ─── Background picker ────────────────────────────────────────────────────────
+window.openBgPicker = async () => {
+  if (!currentPage) return;
+  bgPickerSrc = currentPage.background?.src || '';
+  document.getElementById('bg-modal').classList.add('show');
+  await loadBgImages();
+};
+window.closeBgPicker = () => document.getElementById('bg-modal').classList.remove('show');
+window.applyBg = () => {
+  if (!currentPage) return;
+  if (!currentPage.background) currentPage.background = {};
+  currentPage.background.src = bgPickerSrc || '';
+  renderCanvas();
+  const thumb = document.getElementById('bg-thumb');
+  const src = resolveBg(currentPage.background);
+  if (src) { thumb.src = src; thumb.style.display = ''; } else { thumb.style.display = 'none'; }
+  markDirty();
+  closeBgPicker();
+};
+window.clearBg = () => {
+  bgPickerSrc = '';
+  document.querySelectorAll('.bg-item').forEach(e => e.classList.remove('sel'));
+  document.querySelector('.bg-item[data-src=""]')?.classList.add('sel');
+};
+
+async function loadBgImages() {
+  const grid = document.getElementById('bg-grid');
+  grid.innerHTML = '<div style="color:#6b7280;font-size:11px;">Memuatkan...</div>';
+  // Guna imagesMap yang sudah diload semasa init (dari images.txt)
+  // Setiap entry: { kod, path }
+  bgImages = Object.entries(imagesMap).map(([kod, path]) => ({ kod, path }));
+  renderBgGrid();
+}
+
+function renderBgGrid() {
+  const grid = document.getElementById('bg-grid');
+  // item tiada BG
+  const noneItem = `<div class="bg-item ${bgPickerSrc === '' ? 'sel' : ''}" data-src="" onclick="selectBg(this,'')">
+    <div class="bg-none">🚫 Tiada BG</div>
+  </div>`;
+  // item dari imagesMap: { kod, path }
+  const imgItems = bgImages.map(({ kod, path }) => {
+    const isSel = (kod === bgPickerSrc) ? 'sel' : '';
+    return `<div class="bg-item ${isSel}" data-src="${esc(kod)}" onclick="selectBg(this,'${esc(kod)}')">
+      <img src="${esc(path)}" alt="${esc(kod)}" loading="lazy"
+           title="${esc(kod)}"
+           onerror="this.parentElement.innerHTML='<div class=bg-none style=font-size:8px;padding:4px>${esc(kod)}</div>'">
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.6);font-size:8px;padding:1px 3px;color:#d1d5db;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(kod)}</div>
+    </div>`;
+  }).join('');
+  grid.innerHTML = bgImages.length ? noneItem + imgItems : noneItem + '<div style="color:#6b7280;font-size:11px;padding:8px;">Tiada imej dalam images.txt</div>';
+}
+
+window.selectBg = (el, src) => {
+  bgPickerSrc = src;
+  document.querySelectorAll('.bg-item').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+};
+
+// ─── Preview modal ────────────────────────────────────────────────────────────
+window.openPreview = () => {
+  if (!currentPage) { showToast('Pilih page dahulu', 'err'); return; }
+  document.getElementById('preview-title').textContent = `Preview — ${currentPage.label || currentPage.type}`;
+  const wrap = document.getElementById('preview-canvas-wrap');
+  const pc   = document.getElementById('preview-canvas');
+  // Saiz preview: max 900px lebar
+  const maxW = Math.min(wrap.clientWidth || 900, 900);
+  const scale = maxW / BASE_W;
+  const pw = Math.round(BASE_W * scale);
+  const ph = Math.round(BASE_H * scale);
+  pc.style.width  = `${pw}px`;
+  pc.style.height = `${ph}px`;
+  pc.style.position = 'relative';
+  pc.style.overflow = 'hidden';
+
+  // Background
+  const pbg = document.getElementById('preview-bg');
+  const bgSrc = resolveBg(currentPage.background);
+  if (bgSrc) { pbg.src = bgSrc; pbg.style.display = ''; } else { pbg.style.display = 'none'; }
+
+  // Bersih blocks lama
+  pc.querySelectorAll('.pv-block').forEach(e => e.remove());
+
+  // Render blocks
+  (currentPage.blocks || []).filter(b => b.visible !== false).forEach(b => {
+    const el = document.createElement('div');
+    el.className = 'pv-block';
+    el.style.cssText = `
+      position:absolute;
+      left:${b.x * scale}px; top:${b.y * scale}px;
+      width:${b.w * scale}px; height:${b.h > 0 ? b.h * scale : 20}px;
+      color:${b.style?.color||'#fff'};
+      font-size:${Math.min((b.style?.fontSize||40)*scale, 80)}px;
+      font-family:${b.style?.fontFamily||'system-ui'};
+      font-weight:${b.style?.fontWeight||'normal'};
+      text-align:${b.style?.textAlign||'center'};
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; border:1px dashed rgba(255,255,255,0.12);
+      padding:0 4px;
+    `;
+    el.textContent = b.staticContent || (b.dataField ? `[${b.dataField}]` : '');
+    pc.appendChild(el);
+  });
+
+  document.getElementById('preview-modal').classList.add('show');
+};
+window.closePreview = () => document.getElementById('preview-modal').classList.remove('show');
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); pdUndo(); }
+  if ((e.ctrlKey||e.metaKey) && (e.key==='y'||(e.key==='z'&&e.shiftKey))) { e.preventDefault(); pdRedo(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); pdSave(); }
+  if (e.key==='Delete' && selBlocks.length) pdDeleteBlock();
+  if (e.key==='Escape') {
+    document.getElementById('bg-modal').classList.remove('show');
+    document.getElementById('preview-modal').classList.remove('show');
+    document.getElementById('addpage-modal').classList.remove('show');
+  }
+  // Nudge (arrow keys)
+  if (selBlocks.length && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 1;
+    saveUndo();
+    selBlocks.forEach(b => {
+      if (e.key==='ArrowLeft')  b.x = Math.max(0, b.x - step);
+      if (e.key==='ArrowRight') b.x = Math.min(BASE_W - b.w, b.x + step);
+      if (e.key==='ArrowUp')    b.y = Math.max(0, b.y - step);
+      if (e.key==='ArrowDown')  b.y = Math.min(BASE_H - b.h, b.y + step);
+      const el = document.querySelector(`[data-bid="${b.id}"]`);
+      if (el) applyPos(el, b);
+    });
+    syncXY(); markDirty();
+  }
+});
+
+// ─── Canvas click (deselect) & canvas klik → tunjuk page props ───────────────
+document.getElementById('canvas').addEventListener('click', e => {
+  if (!e.target.closest('.pd-block') && currentPage) {
+    selBlocks = []; refreshAllSel(); updateAlignBtns();
+    showPageProps();
+    document.getElementById('prop-fields').style.display = '';
+    document.getElementById('prop-empty').style.display = 'none';
+  }
+});
+
+// ─── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast'); if (!t) return;
+  t.textContent = msg;
+  t.className = type === 'err' ? 'err show' : 'show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function setVal(id, v) { const el=document.getElementById(id); if(el) el.value=v??''; }
+function setSel(id, v) {
+  const el=document.getElementById(id); if(!el) return;
+  el.value=v;
+  if(el.value !== String(v||'')) { const o=document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); el.value=v; }
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toHex(color) {
+  if(!color) return '#ffffff';
+  if(/^#[0-9a-f]{3,6}$/i.test(color)) return color;
+  const d=document.createElement('div'); d.style.color=color; document.body.appendChild(d);
+  const c=getComputedStyle(d).color; document.body.removeChild(d);
+  const m=c.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+  return m ? '#'+[1,2,3].map(i=>(+m[i]).toString(16).padStart(2,'0')).join('') : '#ffffff';
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+calcScale();
+updateAlignBtns();
+loadLayouts();
+</script>
+</body>
+</html>

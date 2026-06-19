@@ -1,0 +1,220 @@
+<!-- Page Designer Tab -->
+
+<div class="pd-wrapper" id="pd-wrapper">
+
+  <!-- ── Sidebar Kiri ──────────────────────────────────────── -->
+  <div class="pd-sidebar">
+
+    <!-- Pages list -->
+    <div class="pd-sidebar-section">Pages</div>
+    <div class="pd-pages-list" id="pd-pages-list">
+      <div class="pd-loading" style="height:80px;font-size:12px;">Memuatkan...</div>
+    </div>
+
+    <!-- Tambah block palette -->
+    <div class="pd-sidebar-section">Tambah Block</div>
+    <div class="pd-blocks-palette">
+      <button class="pd-block-btn" onclick="pdAddBlock('text')" title="Text Block">
+        <span>T</span><span>Teks</span>
+      </button>
+      <button class="pd-block-btn" onclick="pdAddBlock('image')" title="Image Block">
+        <span>🖼</span><span>Imej</span>
+      </button>
+      <button class="pd-block-btn" onclick="pdAddBlock('static')" title="Static Text">
+        <span>📌</span><span>Statik</span>
+      </button>
+      <button class="pd-block-btn" onclick="pdAddBlock('divider')" title="Divider">
+        <span>─</span><span>Garis</span>
+      </button>
+    </div>
+
+    <!-- Properties panel -->
+    <div class="pd-sidebar-section">Properties</div>
+    <div class="pd-properties" id="pd-properties">
+      <div class="pd-prop-empty" id="pd-prop-empty">
+        Klik block pada kanvas untuk edit
+      </div>
+      <div id="pd-prop-fields" style="display:none;">
+
+        <!-- Block Label -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Label Block</div>
+          <input type="text" class="pd-prop-input" id="pd-prop-label" placeholder="Nama block"
+            onchange="pdUpdateBlockProp('label', this.value)">
+        </div>
+
+        <!-- DataField -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Data Field</div>
+          <select class="pd-prop-select" id="pd-prop-datafield" onchange="pdUpdateBlockProp('dataField', this.value)">
+            <option value="">— Tiada (guna Statik) —</option>
+          </select>
+        </div>
+
+        <!-- Static Content -->
+        <div class="pd-prop-group" id="pd-prop-static-group">
+          <div class="pd-prop-label">Teks Statik</div>
+          <input type="text" class="pd-prop-input" id="pd-prop-static" placeholder="Teks tetap..."
+            onchange="pdUpdateBlockProp('staticContent', this.value)">
+        </div>
+
+        <!-- Posisi & Saiz -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Posisi (x, y) — base 1920×1080</div>
+          <div class="pd-prop-row">
+            <input type="number" class="pd-prop-input" id="pd-prop-x" placeholder="X"
+              onchange="pdUpdateBlockProp('x', +this.value)" min="0" max="1920">
+            <input type="number" class="pd-prop-input" id="pd-prop-y" placeholder="Y"
+              onchange="pdUpdateBlockProp('y', +this.value)" min="0" max="1080">
+          </div>
+        </div>
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Saiz (w, h) — base 1920×1080</div>
+          <div class="pd-prop-row">
+            <input type="number" class="pd-prop-input" id="pd-prop-w" placeholder="W"
+              onchange="pdUpdateBlockProp('w', +this.value)" min="10" max="1920">
+            <input type="number" class="pd-prop-input" id="pd-prop-h" placeholder="H"
+              onchange="pdUpdateBlockProp('h', +this.value)" min="0" max="1080">
+          </div>
+        </div>
+
+        <!-- Font Size -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Saiz Font (px base)</div>
+          <input type="number" class="pd-prop-input" id="pd-prop-fontsize" placeholder="80"
+            onchange="pdUpdateBlockStyle('fontSize', +this.value)" min="8" max="300">
+        </div>
+
+        <!-- Font Family -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Font</div>
+          <select class="pd-prop-select" id="pd-prop-fontfamily"
+            onchange="pdUpdateBlockStyle('fontFamily', this.value)">
+            <option value="system-ui">System UI</option>
+            <option value="SairaCondensed, sans-serif">Saira Condensed</option>
+            <option value="din_bold, sans-serif">DIN Bold</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+          </select>
+        </div>
+
+        <!-- Font Weight & Text Align -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Tebal &amp; Align</div>
+          <div class="pd-prop-row">
+            <div class="pd-btn-group" style="flex:1;">
+              <button id="pd-prop-bold-btn" onclick="pdToggleBold()">B</button>
+            </div>
+            <div class="pd-btn-group" style="flex:2;">
+              <button onclick="pdUpdateBlockStyle('textAlign','left')" id="pd-align-left">⬅</button>
+              <button onclick="pdUpdateBlockStyle('textAlign','center')" id="pd-align-center">≡</button>
+              <button onclick="pdUpdateBlockStyle('textAlign','right')" id="pd-align-right">➡</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warna -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Warna Teks</div>
+          <div class="pd-prop-color-row">
+            <input type="color" id="pd-prop-color" value="#FFFFFF"
+              onchange="pdUpdateBlockStyle('color', this.value)">
+            <input type="text" class="pd-prop-input" id="pd-prop-color-text" placeholder="#FFFFFF"
+              onchange="pdUpdateBlockColorFromText(this.value)">
+          </div>
+        </div>
+
+        <!-- Transisi -->
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Transisi Masuk</div>
+          <select class="pd-prop-select" id="pd-prop-transition"
+            onchange="pdUpdateBlockProp('transition', this.value)">
+            <option value="">— Tiada —</option>
+            <option value="CLIP|LR">Clip Kiri-Kanan</option>
+            <option value="CLIP|L">Clip dari Kiri</option>
+            <option value="CLIP|R">Clip dari Kanan</option>
+            <option value="CLIP|TB">Clip Atas-Bawah</option>
+            <option value="CLIP|T">Clip dari Atas</option>
+            <option value="CLIP|B">Clip dari Bawah</option>
+            <option value="FADE">Fade</option>
+            <option value="WV|B">Wave Bawah</option>
+            <option value="WV|T">Wave Atas</option>
+            <option value="MCLIP|R">Multi-Clip Kanan</option>
+            <option value="L|IB">Slide dari Bawah</option>
+          </select>
+        </div>
+
+        <div class="pd-prop-group">
+          <div class="pd-prop-label">Durasi &amp; Delay (ms)</div>
+          <div class="pd-prop-row">
+            <input type="number" class="pd-prop-input" id="pd-prop-transdur" placeholder="800"
+              onchange="pdUpdateBlockProp('transitionDuration', +this.value)">
+            <input type="number" class="pd-prop-input" id="pd-prop-transdelay" placeholder="0"
+              onchange="pdUpdateBlockProp('transitionDelay', +this.value)">
+          </div>
+        </div>
+
+        <!-- Visible toggle -->
+        <div class="pd-prop-group">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="pd-prop-visible" checked
+              onchange="pdUpdateBlockProp('visible', this.checked)">
+            <span style="font-size:12px;">Papar block ini</span>
+          </label>
+        </div>
+
+        <!-- Delete block -->
+        <button class="pd-delete-block-btn" onclick="pdDeleteSelectedBlock()">
+          🗑 Padam Block Ini
+        </button>
+
+      </div>
+    </div>
+
+  </div><!-- end pd-sidebar -->
+
+  <!-- ── Canvas Area ───────────────────────────────────────── -->
+  <div class="pd-canvas-area">
+
+    <!-- Toolbar atas -->
+    <div class="pd-toolbar">
+      <span class="pd-toolbar-title" id="pd-toolbar-page-name">Pilih Page</span>
+      <div class="pd-toolbar-sep"></div>
+      <button class="pd-toolbar-btn" onclick="pdUndo()" title="Undo (Ctrl+Z)">↩ Undo</button>
+      <button class="pd-toolbar-btn" onclick="pdRedo()" title="Redo (Ctrl+Y)">↪ Redo</button>
+      <div class="pd-toolbar-sep"></div>
+      <button class="pd-toolbar-btn" onclick="pdToggleGrid()" id="pd-grid-btn" title="Toggle Grid">⊞ Grid</button>
+      <button class="pd-toolbar-btn primary" onclick="pdSave()" id="pd-save-btn">💾 Simpan</button>
+      <div class="pd-toolbar-sep"></div>
+      <label class="pd-toolbar-label">
+        <input type="checkbox" id="pd-snap-toggle" checked style="margin:0;">
+        Snap 10px
+      </label>
+    </div>
+
+    <!-- Kanvas scroll container -->
+    <div class="pd-canvas-scroll">
+      <div class="pd-canvas grid-on" id="pd-canvas">
+        <div class="pd-loading" id="pd-canvas-empty" style="background:rgba(0,0,0,0.6);color:#aaa;">
+          Pilih page dari senarai di kiri
+        </div>
+        <!-- Background image -->
+        <img class="pd-canvas-bg" id="pd-canvas-bg" src="" alt="" style="display:none;">
+        <!-- HUD -->
+        <div class="pd-hud" id="pd-hud" style="display:none;"></div>
+        <!-- Blocks akan di-render di sini secara dinamik -->
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="pd-statusbar">
+      <span id="pd-status-page">—</span>
+      <span id="pd-status-blocks">—</span>
+      <span class="pd-statusbar-badge" id="pd-status-badge">Terkini</span>
+      <span style="margin-left:auto;color:#9ca3af;">Kanvas: 960×540 (50% dari 1920×1080)</span>
+    </div>
+
+  </div><!-- end pd-canvas-area -->
+
+</div><!-- end pd-wrapper -->
+

@@ -1,0 +1,29 @@
+Font Size Digital 7: 
+- Base clocks 69 points 
+- Main clocks 72 
+- Main Clock AM/PM : 35 
+- Top Clock : 90
+- Sun Clock : 42
+- Iqamah : 330 
+
+Bebas: 
+Top Date : 45 
+Prayer Names : 30 
+Prayer Names Base : 29
+Title Announcement : 62 
+ 
+
+Din Black: 
+- Mosque Name Top : 22 
+- Qabliyyah : 70
+- Iqamah : 115 
+- Mosque Name Welcome : 60
+ 
+DIN: 
+Schedule Text : 30 
+Important Dates Titles : 36 
+Important Dates Text : 36
+Announcement Title : 47 
+Announcement Text : 47
+Announcement X more Days : 55
+With the support of : 35

@@ -1,0 +1,443 @@
+/* ============================================================
+   Page Designer — CSS
+   Canvas drag-drop layout editor untuk admin panel
+   ============================================================ */
+
+/* ── Layout utama ─────────────────────────────────────────── */
+.pd-wrapper {
+  display: flex;
+  gap: 0;
+  height: calc(100vh - 110px);
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+/* ── Panel kiri: Pages list + Blocks + Properties ─────────── */
+.pd-sidebar {
+  width: 260px;
+  min-width: 220px;
+  max-width: 300px;
+  background: #1f2937;
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid #374151;
+  flex-shrink: 0;
+}
+
+.pd-sidebar-section {
+  padding: 10px 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+  text-transform: uppercase;
+  border-bottom: 1px solid #374151;
+}
+
+/* ── Pages tab list ───────────────────────────────────────── */
+.pd-pages-list {
+  overflow-y: auto;
+  max-height: 220px;
+  border-bottom: 1px solid #374151;
+}
+
+.pd-page-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+  transition: background 0.15s;
+  gap: 8px;
+}
+.pd-page-item:hover { background: #374151; }
+.pd-page-item.active {
+  background: #1e3a5f;
+  border-left-color: #3b82f6;
+  color: #fff;
+}
+.pd-page-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-page-item-badge {
+  font-size: 10px;
+  background: #374151;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #9ca3af;
+}
+.pd-page-item.active .pd-page-item-badge { background: #3b82f6; color: #fff; }
+.pd-page-toggle {
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+}
+.pd-page-toggle:hover { background: #4b5563; color: #fff; }
+
+/* ── Add blocks palette ───────────────────────────────────── */
+.pd-blocks-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #374151;
+}
+
+.pd-block-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.pd-block-btn:hover { background: #4b5563; color: #fff; border-color: #6b7280; }
+.pd-block-btn span:first-child { font-size: 16px; }
+
+/* ── Properties panel ─────────────────────────────────────── */
+.pd-properties {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+}
+
+.pd-prop-empty {
+  color: #6b7280;
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.pd-prop-group {
+  margin-bottom: 12px;
+}
+
+.pd-prop-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.pd-prop-input {
+  width: 100%;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 5px;
+  color: #e5e7eb;
+  padding: 5px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.pd-prop-input:focus { outline: none; border-color: #3b82f6; }
+
+.pd-prop-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pd-prop-row .pd-prop-input { flex: 1; }
+
+.pd-prop-select {
+  width: 100%;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 5px;
+  color: #e5e7eb;
+  padding: 5px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+.pd-prop-select:focus { outline: none; border-color: #3b82f6; }
+
+.pd-prop-color-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pd-prop-color-row input[type="color"] {
+  width: 32px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid #4b5563;
+  border-radius: 5px;
+  background: #374151;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pd-btn-group {
+  display: flex;
+  gap: 4px;
+}
+.pd-btn-group button {
+  flex: 1;
+  padding: 5px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 5px;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.pd-btn-group button:hover { background: #4b5563; }
+.pd-btn-group button.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+.pd-delete-block-btn {
+  width: 100%;
+  padding: 6px;
+  margin-top: 8px;
+  background: #7f1d1d;
+  border: 1px solid #991b1b;
+  border-radius: 6px;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.pd-delete-block-btn:hover { background: #991b1b; color: #fff; }
+
+/* ── Canvas area ──────────────────────────────────────────── */
+.pd-canvas-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.pd-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  border-bottom: 1px solid #d1d5db;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pd-toolbar-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1f2937;
+  margin-right: 8px;
+}
+
+.pd-toolbar-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pd-toolbar-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+.pd-toolbar-btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+.pd-toolbar-btn.primary:hover { background: #1d4ed8; }
+.pd-toolbar-btn.success {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+.pd-toolbar-btn.success:hover { background: #047857; }
+
+.pd-toolbar-sep { width: 1px; height: 24px; background: #e5e7eb; margin: 0 4px; }
+
+.pd-toolbar-label {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pd-canvas-scroll {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ── Kanvas utama (skala 50% dari 1920×1080) ─────────────── */
+.pd-canvas {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  background: #000;
+  border: 2px solid #6b7280;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+.pd-canvas.grid-on {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 5px 5px; /* 10px dalam base ÷ 2 untuk 50% scale */
+}
+
+/* Background image dalam kanvas */
+.pd-canvas-bg {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Block elements dalam kanvas ─────────────────────────── */
+.pd-block {
+  position: absolute;
+  cursor: move;
+  border: 1px dashed rgba(59,130,246,0.6);
+  background: rgba(59,130,246,0.08);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: border-color 0.1s, box-shadow 0.1s;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.pd-block:hover {
+  border-color: rgba(59,130,246,0.9);
+  background: rgba(59,130,246,0.14);
+}
+
+.pd-block.selected {
+  border: 2px solid #3b82f6;
+  background: rgba(59,130,246,0.18);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+  z-index: 20;
+}
+
+.pd-block-label {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 1px 4px;
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+.pd-block-content {
+  pointer-events: none;
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 6px;
+  width: 100%;
+}
+
+/* Resize handles */
+.pd-resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #3b82f6;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  z-index: 30;
+}
+.pd-resize-handle.se { right: -4px; bottom: -4px; cursor: se-resize; }
+.pd-resize-handle.sw { left: -4px; bottom: -4px; cursor: sw-resize; }
+.pd-resize-handle.ne { right: -4px; top: -4px; cursor: ne-resize; }
+.pd-resize-handle.nw { left: -4px; top: -4px; cursor: nw-resize; }
+.pd-resize-handle.e  { right: -4px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+.pd-resize-handle.w  { left: -4px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+.pd-resize-handle.n  { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.pd-resize-handle.s  { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+
+/* ── HUD koordinat ────────────────────────────────────────── */
+.pd-hud {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.5);
+  padding: 3px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 100;
+  font-family: monospace;
+}
+
+/* ── Status bar bawah ─────────────────────────────────────── */
+.pd-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 5px 14px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  font-size: 11px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.pd-statusbar-badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 600;
+}
+.pd-statusbar-badge.saved { background: #d1fae5; color: #065f46; }
+.pd-statusbar-badge.unsaved { background: #fef3c7; color: #92400e; }
+
+/* ── Loading overlay ──────────────────────────────────────── */
+.pd-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6b7280;
+  font-size: 14px;
+  gap: 10px;
+}

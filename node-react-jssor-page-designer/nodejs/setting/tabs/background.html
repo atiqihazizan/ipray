@@ -1,0 +1,20 @@
+<div class="content-card" style="display:flex;flex-direction:column;min-height:0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+      <h2 style="font-size:18px;font-weight:700;color:#111827;">Background (Slides)</h2>
+      <p style="margin-top:4px;color:#6b7280;font-size:13px;">Senarai ini ditapis dari <code>images.txt</code> untuk folder <code>slides</code> sahaja.</p>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn-save" onclick="openAddDialog()" title="Tambah background baru">+ Add</button>
+      <button class="btn-cancel" onclick="loadBackgroundTable()" title="Muat semula">Reload</button>
+    </div>
+  </div>
+
+  <div class="table-container" style="margin-top:16px;min-height:0;">
+    <table class="data-table">
+      <thead id="background-thead"></thead>
+      <tbody id="background-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
