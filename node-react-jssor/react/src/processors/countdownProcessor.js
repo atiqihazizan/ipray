@@ -75,8 +75,8 @@ function buildCaptionChildren(item, isLast) {
     if (countdownText) {
       children.push({
         type: 'div',
-        transition: 'CLIP|LR',
-        // transition: 'auto',
+        // transition: 'CLIP|LR',
+        transition: 'auto',
         duration: 1000,
         content: countdownText,
         style: {
@@ -108,14 +108,14 @@ function buildCaptionChildren(item, isLast) {
     }
   }
 
-  if (children.length > 0) {
-    children[0].transition = children[0].transition || 'CLIP|LR';
-    if (isLast) {
-      children[0].transition2 = 'CLIP|LR';
-    } else {
-      children[0].transition2 = 'NO_CLIP_OUT';
-    }
-  }
+  // if (children.length > 0) {
+  //   children[0].transition = children[0].transition || 'CLIP|LR';
+  //   if (isLast) {
+  //     children[0].transition2 = 'CLIP|LR';
+  //   } else {
+  //     children[0].transition2 = 'NO_CLIP_OUT';
+  //   }
+  // }
 
   return children;
 }
