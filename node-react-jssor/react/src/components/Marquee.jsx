@@ -1,6 +1,6 @@
 const MARQUEE_STANDARD_CLASS = 'text-yellow-400 text-xl font-medium py-1';
 export const MARQUEE_STANDARD_HEIGHT_BASE = 72;
-const Marquee = ({ texts = [], separator = '•', duration = 25, className = '', enabled = true, style = {} }) => {
+const Marquee = ({ texts = [], separator = '•', duration = 25, className = '', enabled = false, style = {} }) => {
   if (!enabled || !texts || texts.length === 0) return null;
 
   const durationSec = Number(duration) > 0 ? Number(duration) : 25;

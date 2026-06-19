@@ -13,12 +13,16 @@ import { MOSQUE_NAME } from '../config/mosqueInfo';
 import { isHebahanActive } from '../utils/hebahanActive';
 
 const resolveOverlay = (dt, key) => {
-  if (dt == null) return true;
+  // if (dt == null) return true;
+  if (dt == null) {
+    if (key === 'solat-time-small') return false; // ← tambah
+    return true;
+  }
   if (!Array.isArray(dt)) return false;
   if (dt.includes(key)) return true;
   if (key === 'solat-time' && dt.includes('solat') && dt.includes('time')) return true;
   if (key === 'solat-time-small' && dt.includes('next-solat') && dt.includes('small-time')) return true;
-  if (key === 'time-small-clock') return dt.includes('time-small-clock');
+  // if (key === 'time-small-clock') return dt.includes('time-small-clock');
   return false;
 };
 
@@ -59,11 +63,12 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   const showOverlay = (key) => {
     if (hasOverride) {
       if (key === 'date') return overlayOverride.showDate !== false;
-      if (key === 'solat-time-small') return overlayOverride.showSmallTime !== false;
-      if (key === 'time-small-clock') return overlayOverride.showTimeSmallClock === true;
+      if (key === 'solat-time-small') return overlayOverride.showSmallTime === true;
+      // if (key === 'time-small-clock') return overlayOverride.showTimeSmallClock === true;
       if (key === 'solat-time') return false;
       return false;
     }
+    // if (key === 'solat-time-small' && dtRef.current == null) return false;
     return resolveOverlay(dtRef.current, key);
   };
   const showMarqueeOverride = hasOverride ? (overlayOverride.showMarquee !== false) : true;
@@ -121,7 +126,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
               <Marquee texts={hebahanArray} separator={separator} duration={MARQUEE_CONFIG.DURATION} className="w-full" enabled={marqueeEnabled && showMarqueeOverride} style={{ ...STANDARD_DARK_BACKGROUND_STYLE }} />
             </div>
 
-            {showOverlay('solat-time-small') && (
+            {showOverlay('solat-time-small')  && nextPrayerData && (
               <DisplayTime key="clock-small" type={1} size={100} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{
                 bottom: 0, right: 0, padding: '14px', paddingLeft: '1.5rem', position: 'relative',
                 clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%', ...STANDARD_DARK_BACKGROUND_STYLE
