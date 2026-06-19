@@ -1,8 +1,0 @@
-{
-  "appId": "com.ipray.kiosk",
-  "appName": "ipray",
-  "webDir": "dist",
-  "android": {
-    "allowMixedContent": true
-  }
-}

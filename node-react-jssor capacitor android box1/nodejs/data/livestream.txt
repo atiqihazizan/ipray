@@ -1,3 +1,0 @@
-Siaran Langsung Solat Jumaat|https://www.youtube.com/watch?v=bYxi21piR2k|youtube
-
-cctv|rtsp://admin:@dmin2026@192.168.0.13:554/unicast/c1/s0/live|hls
