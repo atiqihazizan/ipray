@@ -41,7 +41,10 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   
   // Marquee ikut flag per-slide (datetime overlay), fallback slidesMarqueeShow bila slide belum berubah. Tiada global ENABLED.
   const marqueeFromSlide = dtRef.current != null ? resolveOverlay(dtRef.current, 'marquee') : slidesMarqueeShow;
-  const marqueeEnabled = marqueeFromSlide !== false;
+  // const marqueeEnabled = marqueeFromSlide !== false;
+  const marqueeEnabled = dtRef.current == null 
+    ? false                                          // first load: hide
+    : (marqueeFromSlide !== false);                  // selepas slide pertama: ikut slide
   const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
 
