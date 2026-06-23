@@ -16,21 +16,31 @@ const { io } = require('socket.io-client');
 const axios = require('axios');
 const FormData = require('form-data');
 
-const CLIENT_ID = process.env.CLIENT_ID || false;
+const CLIENT_ID = process.env.CLIENT_ID || '';
 const CLIENT_TOKEN = process.env.CLIENT_TOKEN;
 const CLOUD_URL = process.env.CLOUD_URL || 'http://ipray-cloud.mahsites.net';
 
 let isConnected = false;
 let _onRegisteredCallback = null;
 const REGISTERED_DELAY_MS = 800;
+// Guard untuk elak double-sync (connect event + setOnRegisteredCallback boleh fire serentak)
+let _syncScheduled = false;
+let _syncTimer = null;
 
 function runOnRegisteredCallback() {
+  _syncScheduled = false;
   if (typeof _onRegisteredCallback === 'function') _onRegisteredCallback();
 }
 
 function scheduleSyncOnConnect() {
-  setTimeout(() => {
+  // Batalkan timer lama jika ada — elak double sync
+  if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+  if (_syncScheduled) return;
+  _syncScheduled = true;
+  _syncTimer = setTimeout(() => {
+    _syncTimer = null;
     if (socket.connected && isConnected) runOnRegisteredCallback();
+    else _syncScheduled = false;
   }, REGISTERED_DELAY_MS);
 }
 
@@ -59,6 +69,9 @@ socket.on('disconnect', reason => {
   // eslint-disable-next-line no-console
   console.log('[cloudClient] Disconnected from cloud:', reason);
   isConnected = false;
+  // Batalkan pending sync supaya tidak fire selepas reconnect sebagai sync tambahan
+  if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; }
+  _syncScheduled = false;
 });
 
 socket.on('connect_error', err => {

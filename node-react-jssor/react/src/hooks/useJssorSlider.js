@@ -42,6 +42,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
   const scaleAfterInitIntervalRef = useRef(null);
   const slideDataRef = useRef([]);
   const isFirstInitRef = useRef(true);
+  const scaleHandlerRef = useRef(null); // Track resize handler supaya boleh remove dengan tepat
   const [loading, setLoading] = useState(false); // Set false by default, akan set true bila start init
 
   const dataHash = useMemo(() => createDataHash(slideData), [slideData]);
@@ -66,10 +67,19 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
       try {
         setLoading(true);
 
+        // Tunggu Jssor siap dengan had retry (elak infinite loop bila skrip gagal load)
+        const MAX_JSSOR_WAIT_RETRIES = 100; // 10 saat (100 × 100ms)
         if (typeof window.$JssorSlider$ === 'undefined') {
+          initSlider._retryCount = (initSlider._retryCount || 0) + 1;
+          if (initSlider._retryCount > MAX_JSSOR_WAIT_RETRIES) {
+            console.error('[Slider] Jssor gagal dimuatkan selepas 10s. Semak sama ada jssor.slider.mini.js berjaya dimuatkan.');
+            setLoading(false);
+            return;
+          }
           setTimeout(initSlider, 100);
           return;
         }
+        initSlider._retryCount = 0; // Reset pada kejayaan
 
         const { $JssorSlider$, $JssorEasing$, $JssorSlideshowFormations$, $JssorSlideshowRunner$, $JssorCaptionSlider$ } = window;
 
@@ -286,34 +296,15 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
         if (sliderContainerRef.current && !isInitializingRef.current) {
           isInitializingRef.current = true;
 
+          // Destroy instance lama secara synchronous sebelum create baru
+          // (elak dua timer destroy berlaku serentak bila dataHash berubah cepat)
           if (sliderInstanceRef.current) {
+            const oldInst = sliderInstanceRef.current;
+            sliderInstanceRef.current = null;
             try {
-              // CRITICAL: Stop all animations and scale to 0 before destroy
-              if (sliderInstanceRef.current.$Elmt) {
-                if (typeof sliderInstanceRef.current.$Pause === 'function') {
-                  sliderInstanceRef.current.$Pause();
-                }
-                if (typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
-                  sliderInstanceRef.current.$ScaleWidth(0); // Stop all animations
-                }
-                // Wait for animations to stop
-                setTimeout(() => {
-                  if (sliderInstanceRef.current &&
-                      sliderInstanceRef.current.$Elmt &&
-                      typeof sliderInstanceRef.current.$Destroy === 'function') {
-                    try {
-                      sliderInstanceRef.current.$Destroy();
-                    } catch (destroyError) {
-                      // Ignore destroy errors
-                    }
-                    sliderInstanceRef.current = null;
-                  }
-                }, 150); // Increased delay to ensure cleanup
-              }
-            } catch (e) {
-              // Ignore destroy errors
-              sliderInstanceRef.current = null;
-            }
+              if (oldInst.$Elmt && typeof oldInst.$Pause === 'function') oldInst.$Pause();
+              if (oldInst.$Elmt && typeof oldInst.$Destroy === 'function') oldInst.$Destroy();
+            } catch (_) {}
           }
 
           setTimeout(() => {
@@ -379,30 +370,24 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
       }
     };
 
-    let scaleSliderHandler = null;
-
     const initSliderWithCleanup = async () => {
       await initSlider();
-      
+
       if (sliderInstanceRef.current) {
-        scaleSliderHandler = () => {
+        const newHandler = () => {
           if (sliderInstanceRef.current && sliderInstanceRef.current.$Elmt) {
             const parentNode = sliderInstanceRef.current.$Elmt.parentNode;
             const parentWidth = parentNode?.clientWidth;
             const parentHeight = parentNode?.clientHeight;
-            
+
             if (parentWidth && parentHeight) {
-              // Calculate scale berdasarkan width dan height untuk maintain aspect ratio
               const widthRatio = parentWidth / sliderConfig.container.width;
               const heightRatio = parentHeight / sliderConfig.container.height;
-              // Pilih scale yang lebih kecil untuk pastikan slider muat dalam parent
               const scale = Math.min(widthRatio, heightRatio);
-              
               const scaledWidth = Math.max(
-                Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth), 
+                Math.min(scale * sliderConfig.container.width, sliderConfig.container.maxWidth),
                 sliderConfig.container.minWidth
               );
-              
               sliderInstanceRef.current.$ScaleWidth(scaledWidth);
               const aspectRatio = sliderConfig.container.height / sliderConfig.container.width;
               const scaledHeight = scaledWidth * aspectRatio;
@@ -412,53 +397,50 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
             }
           }
         };
-        
-        window.addEventListener("load", scaleSliderHandler);
-        window.addEventListener("resize", scaleSliderHandler);
-        window.addEventListener("orientationchange", scaleSliderHandler);
+
+        // Buang handler lama sebelum daftar yang baru — elak accumulate listener
+        if (scaleHandlerRef.current) {
+          window.removeEventListener('load', scaleHandlerRef.current);
+          window.removeEventListener('resize', scaleHandlerRef.current);
+          window.removeEventListener('orientationchange', scaleHandlerRef.current);
+        }
+        scaleHandlerRef.current = newHandler;
+
+        window.addEventListener('load', scaleHandlerRef.current);
+        window.addEventListener('resize', scaleHandlerRef.current);
+        window.addEventListener('orientationchange', scaleHandlerRef.current);
       }
     };
 
     initSliderWithCleanup();
 
     return () => {
+      isInitializingRef.current = false;
+
       if (scaleAfterInitIntervalRef.current) {
         clearTimeout(scaleAfterInitIntervalRef.current);
         scaleAfterInitIntervalRef.current = null;
       }
-      
-      if (scaleSliderHandler) {
-        window.removeEventListener("load", scaleSliderHandler);
-        window.removeEventListener("resize", scaleSliderHandler);
-        window.removeEventListener("orientationchange", scaleSliderHandler);
+
+      // Buang resize listener guna ref supaya tidak ada orphan handlers
+      if (scaleHandlerRef.current) {
+        window.removeEventListener('load', scaleHandlerRef.current);
+        window.removeEventListener('resize', scaleHandlerRef.current);
+        window.removeEventListener('orientationchange', scaleHandlerRef.current);
+        scaleHandlerRef.current = null;
       }
+
+      // Destroy synchronously dalam cleanup — elak akses DOM stale selepas unmount
       if (sliderInstanceRef.current) {
+        const inst = sliderInstanceRef.current;
+        sliderInstanceRef.current = null; // null dulu untuk elak race condition
         try {
-          // Check if instance is still valid before cleanup
-          if (sliderInstanceRef.current.$Elmt && typeof sliderInstanceRef.current.$Pause === 'function') {
-            sliderInstanceRef.current.$Pause();
-          }
-          setTimeout(() => {
-            if (sliderInstanceRef.current && 
-                sliderInstanceRef.current.$Elmt && 
-                typeof sliderInstanceRef.current.$Destroy === 'function') {
-              try {
-                sliderInstanceRef.current.$Destroy();
-              } catch (e) {
-                // Ignore destroy errors
-              }
-              sliderInstanceRef.current = null;
-            } else {
-              // Instance already invalid, just clear ref
-              sliderInstanceRef.current = null;
-            }
-          }, 100);
-        } catch (e) {
-          // Ignore pause errors
-          sliderInstanceRef.current = null;
+          if (inst.$Elmt && typeof inst.$Pause === 'function') inst.$Pause();
+          if (inst.$Elmt && typeof inst.$Destroy === 'function') inst.$Destroy();
+        } catch (_) {
+          // Ignore - DOM mungkin sudah dibuang
         }
       }
-      isInitializingRef.current = false;
     };
   }, [dataHash, dataReady]); // Hanya re-init bila dataHash atau dataReady berubah; callback dibaca dari optsRef
 

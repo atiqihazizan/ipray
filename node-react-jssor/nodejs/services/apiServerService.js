@@ -92,24 +92,24 @@ class ApiServerService {
     
     // Serve penceramah images dengan fallback ke noimage.png
     if (this.imagesPath) {
-      this.app.get('/images/penceramah/:filename', (req, res, next) => {
+      this.app.get('/images/penceramah/:filename', (req, res) => {
         const filename = req.params.filename;
         const imagePath = path.join(this.imagesPath, 'penceramah', filename);
-        
-        // Check jika file wujud
-        if (fs.existsSync(imagePath)) {
-          // File wujud, serve as usual
-          res.sendFile(imagePath);
-        } else {
-          // File tidak wujud, serve noimage.png dari images folder
-          const defaultImage = path.join(this.imagesPath, 'noimage.png');
-          if (fs.existsSync(defaultImage)) {
-            res.sendFile(defaultImage);
+        const defaultImage = path.join(this.imagesPath, 'noimage.png');
+        // Guna async fs.access untuk elak blocking event loop
+        fs.access(imagePath, fs.constants.R_OK, (err) => {
+          if (!err) {
+            res.sendFile(imagePath);
           } else {
-            // Fallback: jika noimage.png juga tidak wujud
-            res.status(404).json({ error: 'Image not found' });
+            fs.access(defaultImage, fs.constants.R_OK, (err2) => {
+              if (!err2) {
+                res.sendFile(defaultImage);
+              } else {
+                res.status(404).json({ error: 'Image not found' });
+              }
+            });
           }
-        }
+        });
       });
     }
     
@@ -141,34 +141,31 @@ class ApiServerService {
   /**
    * Check if running in Raspberry Pi/Linux environment with nmcli
    */
+  /**
+   * Semak persekitaran Raspberry Pi/Linux SEKALI sahaja dan cache hasilnya.
+   * Elak spawn process baru pada setiap request WiFi API.
+   */
   async isRaspberryPiEnvironment() {
+    // Cache result — platform tidak berubah semasa runtime
+    if (this._isRPiCached !== undefined) return this._isRPiCached;
     try {
       const os = require('os');
-      const platform = os.platform();
-      
-      // Check if running on Linux
-      if (platform !== 'linux') {
+      if (os.platform() !== 'linux') {
+        this._isRPiCached = false;
         return false;
       }
-      
-      // Check if nmcli exists
       const { exec } = require('child_process');
       const { promisify } = require('util');
       const execAsync = promisify(exec);
-      
       try {
-        await execAsync('/usr/bin/nmcli --version 2>/dev/null');
-        return true;
-      } catch (err) {
-        // Try alternative path
-        try {
-          await execAsync('which nmcli 2>/dev/null');
-          return true;
-        } catch (err2) {
-          return false;
-        }
+        await execAsync('/usr/bin/nmcli --version 2>/dev/null', { timeout: 3000 });
+        this._isRPiCached = true;
+      } catch (_) {
+        this._isRPiCached = false;
       }
-    } catch (error) {
+      return this._isRPiCached;
+    } catch (_) {
+      this._isRPiCached = false;
       return false;
     }
   }
@@ -269,8 +266,8 @@ class ApiServerService {
           return res.status(400).json({ error: 'Invalid dateTime format' });
         }
         const year = new Date(ts).getFullYear();
-        if (year < 2020 || year > 2030) {
-          return res.status(400).json({ error: 'Year out of allowed range (2020-2030)' });
+        if (year < 2020 || year > 2099) {
+          return res.status(400).json({ error: 'Year out of allowed range (2020-2099)' });
         }
         const ok = this.timeService.setSystemClock(ts);
         if (!ok) {
@@ -893,17 +890,19 @@ class ApiServerService {
         
         // Broadcast update via Socket.IO untuk trigger React reload selepas response dikirim
         // Delay sedikit untuk ensure response sudah dikirim sebelum broadcast
-        setTimeout(async () => {
-          if (this.socketServerService) {
-            this.socketServerService.broadcastDataUpdate('images', { action: 'image:upload', path: saved.path, category: saved.category });
+        setTimeout(() => {
+          if (!this.socketServerService) return;
+          this.socketServerService.broadcastDataUpdate('images', { action: 'image:upload', path: saved.path, category: saved.category });
+          this.dataService.readFile('takwim').catch(() => '').then(takwimContent => {
             try {
-              const takwimContent = await this.dataService.readFile('takwim').catch(() => '');
               const takwim = this.dataService.getTakwimForApp(takwimContent);
               this.socketServerService.broadcastTakwimRefresh({ takwimArray: takwim.takwimArray, takwimParsed: takwim.takwimParsed });
             } catch (_) {
               this.socketServerService.broadcastTakwimRefresh();
             }
-          }
+          }).catch(() => {
+            if (this.socketServerService) this.socketServerService.broadcastTakwimRefresh();
+          });
         }, 100);
       } catch (error) {
         console.error('Error uploading image:', error);
@@ -978,7 +977,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         const nmcli = this.getNmcliPath();
         
@@ -1070,7 +1071,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         let status = {
           connected: false,
@@ -1248,7 +1251,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         const nmcli = this.getNmcliPath();
         
@@ -1450,7 +1455,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         const nmcli = this.getNmcliPath();
         
@@ -1548,7 +1555,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         const nmcli = this.getNmcliPath();
         const connectionName = 'ipray-hotspot';
@@ -1598,7 +1607,9 @@ class ApiServerService {
         
         const { exec } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = promisify(exec);
+        const _execRaw = promisify(exec);
+        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
+        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
         
         const nmcli = this.getNmcliPath();
         let status = {

@@ -262,10 +262,13 @@ async function startServers() {
       timeService // Pass time service reference
     });
     await apiServerService.start(); // Socket.IO akan auto-attach di sini
-    // === TAMBAH DI SINI ===
-    const { startHebahanScheduler } = require('./services/hebahanScheduler');
-    startHebahanScheduler(dataService, socketServerService);
-    // ======================
+    // hebahanScheduler: bungkus dalam try-catch supaya kegagalan scheduler tidak matikan server
+    try {
+      const { startHebahanScheduler } = require('./services/hebahanScheduler');
+      startHebahanScheduler(dataService, socketServerService);
+    } catch (err) {
+      console.error('[hebahanScheduler] Gagal start (server terus berjalan):', err.message);
+    }
 
     console.log(`═══════════════════════════════════════`);
     console.log(`App Mode: ${appMode}`);
@@ -366,6 +369,20 @@ function doShutdown(signal) {
 
 process.on('SIGINT', () => doShutdown('SIGINT'));
 process.on('SIGTERM', () => doShutdown('SIGTERM'));
+
+// Node.js v15+ akan crash bila ada unhandledRejection tanpa handler.
+// Handler ini elak PM2 restart akibat promise reject yang tidak dijangka.
+// JANGAN sembunyikan error sebenar — log untuk debugging tetapi jangan exit.
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[WARN] Unhandled Promise Rejection:', reason instanceof Error ? reason.message : reason);
+  // Jangan process.exit() di sini — biarkan server terus berjalan
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err.message, err.stack);
+  // Uncaught exception biasanya bermakna state tidak konsisten — restart selamat
+  doShutdown('uncaughtException');
+});
 
 // Start servers
 startServers();

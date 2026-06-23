@@ -15,6 +15,22 @@ const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 export const LS_PRAYER_TIMES_KEY = 'ipray-prayer-times';
 export const LS_CURRENT_TIME_KEY = 'ipray-current-time';
 
+/** Simpan prayer times dengan key bertarikh supaya tidak stale lintas hari */
+function savePrayerTimesForToday(todayStr, timesObj) {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    // Simpan dengan key bertarikh (utama)
+    localStorage.setItem(`${LS_PRAYER_TIMES_KEY}-${todayStr}`, JSON.stringify(timesObj));
+    // Simpan juga key lama untuk backward compat dengan PrayerSequencePage
+    localStorage.setItem(LS_PRAYER_TIMES_KEY, JSON.stringify(timesObj));
+    // Buang key hari-hari lama (kekal hanya 2 hari)
+    for (let i = 2; i <= 7; i++) {
+      const past = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
+      localStorage.removeItem(`${LS_PRAYER_TIMES_KEY}-${past}`);
+    }
+  } catch (_) {}
+}
+
 // ─── TEST CONFIG — tukar ke true untuk test. Pastikan false semula sebelum production. ───
 const TEST_PRAYER = false; // test waktu solat (semua 5 waktu) — trigger pada masa sekarang + 1 minit
 const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang + 1 minit
@@ -31,7 +47,12 @@ export function useTimeDriver() {
   const { timeService, PRAYER_TIME_CONFIG } = useData();
   const [time, setTime] = useState(null);
   const [snapshot, setSnapshot] = useState(null);
+  // Simpan config dalam ref supaya perubahan config tidak restart interval setiap kali
+  const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
+  useEffect(() => { prayerTimeConfigRef.current = PRAYER_TIME_CONFIG; }, [PRAYER_TIME_CONFIG]);
   const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
+  const warningSecondsRef = useRef(warningSeconds);
+  useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
   const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
@@ -40,6 +61,8 @@ export function useTimeDriver() {
   const prayerTriggeredRef = useRef({});
   const prayerWarningTriggeredRef = useRef({});
   const syurukTriggeredRef = useRef({});
+  // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
+  const lastCleanDateRef = useRef('');
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
@@ -57,7 +80,7 @@ export function useTimeDriver() {
 
     const update = () => {
       try {
-        const nextPrayerDelayMinutes = (PRAYER_TIME_CONFIG?.IQAMAH_DURATION_MIN ?? 10) + (PRAYER_TIME_CONFIG?.SOLAT_DURATION_MIN ?? 10);
+        const nextPrayerDelayMinutes = (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) + (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10);
         const islamicTime = getCurrentIslamicTime({
           hdata: takwimParsed.hdata,
           wdata: takwimParsed.wdata,
@@ -82,13 +105,24 @@ export function useTimeDriver() {
 
         const { time: t, hijri, gregorian, prayer } = islamicTime;
 
+        // todayStr mesti dideklarasikan AWAL supaya semua kod di bawah boleh gunakannya
+        const todayStr = gregorian ? `${gregorian.year}-${String(gregorian.month).padStart(2, '0')}-${String(gregorian.day).padStart(2, '0')}` : '';
+
         if (prayer?.times) {
           const timesKey = JSON.stringify(prayer.times);
           if (timesKey !== lastSavedTimesRef.current) {
             lastSavedTimesRef.current = timesKey;
-            try { localStorage.setItem(LS_PRAYER_TIMES_KEY, timesKey); } catch (_) {}
+            savePrayerTimesForToday(todayStr, prayer.times);
           }
         }
+
+        // Bersihkan triggered refs apabila hari bertukar — elak warning Subuh skip hari baru
+        if (todayStr && lastCleanDateRef.current && lastCleanDateRef.current !== todayStr) {
+          prayerTriggeredRef.current = {};
+          prayerWarningTriggeredRef.current = {};
+          syurukTriggeredRef.current = {};
+        }
+        if (todayStr) lastCleanDateRef.current = todayStr;
 
         const totalMin = t.hours * 60 + t.minutes;
         if (totalMin !== lastSavedTimeMinRef.current) {
@@ -96,7 +130,6 @@ export function useTimeDriver() {
           try { localStorage.setItem(LS_CURRENT_TIME_KEY, JSON.stringify(t)); } catch (_) {}
         }
 
-        const currentSeconds = t.seconds;
         const currentTotalSeconds = t.hours * 3600 + t.minutes * 60 + t.seconds;
 
         const hijriKey = `${hijri?.day}-${hijri?.month}-${hijri?.year}`;
@@ -105,7 +138,6 @@ export function useTimeDriver() {
         }
         lastHijriKeyRef.current = hijriKey;
 
-        const todayStr = gregorian ? `${gregorian.year}-${String(gregorian.month).padStart(2, '0')}-${String(gregorian.day).padStart(2, '0')}` : '';
         if (todayStr && lastDateStrRef.current && lastDateStrRef.current !== todayStr) {
           dispatchDateChanged(todayStr);
         }
@@ -127,7 +159,7 @@ export function useTimeDriver() {
             const prayerTotalSeconds = ph * 3600 + pm * 60 + ps;
 
             // Trigger HANYA bila kita masih SEBELUM waktu solat (elak beep serta-merta bila tick terlepas)
-            const warnTrigger = prayerTotalSeconds - warningSeconds;
+            const warnTrigger = prayerTotalSeconds - warningSecondsRef.current;
             const warnKey = testPrayerStr ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
@@ -165,7 +197,9 @@ export function useTimeDriver() {
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [takwimParsed, timeService, PRAYER_TIME_CONFIG]);
+  // Sengaja exclude PRAYER_TIME_CONFIG dari deps — dibaca dari ref supaya interval tidak restart
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [takwimParsed, timeService]);
 
   return {
     time,

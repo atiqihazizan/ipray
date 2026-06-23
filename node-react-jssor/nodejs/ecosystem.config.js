@@ -30,7 +30,16 @@ module.exports = {
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     merge_logs: true,
     time: true,
+    // Log rotation — elak fail log membesar tanpa kawalan
+    // Pasang: pm2 install pm2-logrotate
+    // Atau guna cron_restart di atas (log dikosongkan semasa restart)
+    max_size: '20M',   // rotate bila log cecah 20MB
+    retain: 7,         // simpan log 7 hari lepas
     
+    // Restart automatik pada 12:05 AM setiap malam untuk bersihkan memory dan rotate log
+    // (12:05 bukan tepat tengah malam — bagi masa React selesai reload midnight dulu)
+    cron_restart: '5 0 * * *',
+
     // Advanced PM2 features
     min_uptime: '10s', // Minimum uptime sebelum consider sebagai stable
     max_restarts: 10, // Maximum restarts dalam 1 minit

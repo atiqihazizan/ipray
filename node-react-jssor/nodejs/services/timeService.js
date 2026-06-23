@@ -169,7 +169,9 @@ class TimeService {
       this.ntpSyncInterval = setInterval(() => {
         this.tryNtpSync();
       }, this.ntpSyncIntervalMs);
-      
+      // .unref() supaya interval ini tidak halang Node.js exit semasa graceful shutdown
+      if (this.ntpSyncInterval.unref) this.ntpSyncInterval.unref();
+
       console.log(`[TimeService] Auto-sync enabled (interval: ${this.ntpSyncIntervalMs / 1000}s)`);
     }
   }

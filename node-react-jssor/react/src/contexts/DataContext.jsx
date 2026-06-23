@@ -201,17 +201,6 @@ export const DataProvider = ({ children }) => {
     return () => { timeServiceStub.cleanup(); };
   }, []);
 
-  const checkMidnight = useCallback((todayStr) => {
-    const lastLoad = dataLoadDateRef.current
-      ?? (typeof localStorage !== 'undefined' ? localStorage.getItem(DATA_LOAD_DATE_KEY) : null)
-      ?? '';
-    if (lastLoad && todayStr !== lastLoad) {
-      dataLoadDateRef.current = todayStr;
-      try { if (typeof localStorage !== 'undefined') localStorage.setItem(DATA_LOAD_DATE_KEY, todayStr); } catch (_) {}
-      loadAllData();   // refresh tanpa reload penuh; takwim ikut takwim:refresh / loadTakwimOnly
-    }
-  }, [loadAllData]);
-
   /**
    * Load data hanya bila Socket.IO connected
    */
@@ -481,7 +470,6 @@ export const DataProvider = ({ children }) => {
     liveStreamData,
     petugasData,
     refresh: loadAllData,
-    checkMidnight,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
