@@ -31,27 +31,31 @@ class AudioService {
    */
   init() {
     if (this.hasInitialized) return;
-    
+
     this.audioRef = new Audio(AUDIO_SOURCES.beep_once);
     this.audioRef.loop = false; // Default false, akan set berdasarkan playCount
     this.audioRef.volume = this.volume;
     this.audioRef.preload = 'auto';
     this.loadError = false;
-    
+
     // Handle audio events
     this.audioRef.addEventListener('ended', () => {
       this.handleAudioEnded();
     });
-    
+
     this.audioRef.addEventListener('error', () => {
       this.loadError = true;
+      const wasPlaying = this.isPlaying;
       this.isPlaying = false;
       this.cleanupPlayInterval();
-      // Jangan log objek Event yang panjang; log mesej ringkas sahaja
       const msg = this.audioRef?.error?.message || 'Sumber audio gagal dimuat (semak path/format fail)';
-      console.warn('[Audio]', msg);
+      console.warn('[Audio] Error:', msg);
+      // Notify 'stop' supaya subscribers (playBeepThenDo) tidak tunggu 10s fallback
+      if (wasPlaying) {
+        this.notifyListeners('stop');
+      }
     });
-    
+
     this.hasInitialized = true;
   }
 
@@ -73,7 +77,7 @@ class AudioService {
             // Pastikan isPlaying tetap true apabila play lagi
             this.isPlaying = true;
           }).catch((error) => {
-            console.warn('Audio play error:', error);
+            console.warn('[Audio] Play error on repeat:', error);
             this.stop();
           });
         }
@@ -115,9 +119,11 @@ class AudioService {
       this.audioRef.pause();
       this.audioRef.currentTime = 0;
       this.notifyListeners('enabled');
+      console.log('[Audio] Enabled');
     } catch (error) {
       this.audioEnabled = false;
       // NotAllowedError = browser perlukan user interaction (autoplay policy)
+      console.warn('[Audio] enableAudio failed:', error.name, error.message);
       this.notifyListeners('error', error);
       throw error;
     }
@@ -136,12 +142,17 @@ class AudioService {
       this.init();
     }
 
-    if (this.loadError) return;
+    if (this.loadError) {
+      console.warn('[Audio] play() skipped — loadError=true');
+      return;
+    }
 
     const sound = options.sound || 'beep_once';
     const src = AUDIO_SOURCES[sound] || AUDIO_SOURCES.beep_once;
     if (this.currentSound !== sound && this.audioRef) {
       this.audioRef.src = src;
+      // FIX: wajib panggil load() selepas tukar src — tanpa ini browser mungkin play tanpa bunyi
+      this.audioRef.load();
       this.currentSound = sound;
       this.loadError = false;
     }
@@ -170,44 +181,32 @@ class AudioService {
     }
 
     try {
-      if (this.audioEnabled) {
-        await this.audioRef.play();
-        this.isPlaying = true;
-        this.notifyListeners('play');
-        
-        // Set timeout untuk stop audio selepas max duration (hanya jika playCount = null)
-        if (this.playCount === null) {
-          const maxDuration = options.maxDuration || this.maxPlayDuration;
-          if (this.playTimeout) {
-            clearTimeout(this.playTimeout);
-          }
-          this.playTimeout = setTimeout(() => {
-            this.stop();
-            this.notifyListeners('timeout');
-          }, maxDuration);
+      // FIX: panggil play() terus tanpa enableAudio() — enableAudio() menyebabkan double-play
+      // yang boleh interrupt dan produce tiada bunyi. Kiosk menggunakan
+      // --autoplay-policy=no-user-gesture-required jadi play() terus berfungsi.
+      console.log('[Audio] Playing:', sound, 'src:', src);
+      await this.audioRef.play();
+      this.audioEnabled = true;
+      this.isPlaying = true;
+      this.notifyListeners('play');
+
+      // Set timeout untuk stop audio selepas max duration (hanya jika playCount = null)
+      if (this.playCount === null) {
+        const maxDuration = options.maxDuration || this.maxPlayDuration;
+        if (this.playTimeout) {
+          clearTimeout(this.playTimeout);
         }
-      } else {
-        // Cubakan enable audio jika belum
-        await this.enableAudio();
-        await this.audioRef.play();
-        this.isPlaying = true;
-        this.notifyListeners('play');
-        
-        // Set timeout untuk stop audio (hanya jika playCount = null)
-        if (this.playCount === null) {
-          const maxDuration = options.maxDuration || this.maxPlayDuration;
-          if (this.playTimeout) {
-            clearTimeout(this.playTimeout);
-          }
-          this.playTimeout = setTimeout(() => {
-            this.stop();
-            this.notifyListeners('timeout');
-          }, maxDuration);
-        }
+        this.playTimeout = setTimeout(() => {
+          this.stop();
+          this.notifyListeners('timeout');
+        }, maxDuration);
       }
     } catch (error) {
       if (error.name === 'NotAllowedError') {
         this.audioEnabled = false;
+        console.warn('[Audio] NotAllowedError — autoplay blocked. Pastikan --autoplay-policy=no-user-gesture-required diset dalam kiosk launch script.');
+      } else {
+        console.warn('[Audio] play() error:', error.name, error.message);
       }
       this.isPlaying = false;
       this.cleanupPlayInterval();
@@ -224,18 +223,18 @@ class AudioService {
       this.audioRef.pause();
       this.audioRef.currentTime = 0;
     }
-    
+
     if (this.playTimeout) {
       clearTimeout(this.playTimeout);
       this.playTimeout = null;
     }
 
     this.cleanupPlayInterval();
-    
+
     // Reset play count
     this.playCount = null;
     this.currentPlayCount = 0;
-    
+
     if (this.isPlaying) {
       this.isPlaying = false;
       this.notifyListeners('stop');
@@ -249,7 +248,7 @@ class AudioService {
   setVolume(volume) {
     if (volume < 0) volume = 0;
     if (volume > 1) volume = 1;
-    
+
     this.volume = volume;
     if (this.audioRef) {
       this.audioRef.volume = volume;
@@ -283,7 +282,7 @@ class AudioService {
    */
   subscribe(callback) {
     this.listeners.push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       this.listeners = this.listeners.filter(listener => listener !== callback);
@@ -321,4 +320,3 @@ class AudioService {
 const audioService = new AudioService();
 
 export default audioService;
-
