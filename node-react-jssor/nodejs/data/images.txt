@@ -15,14 +15,13 @@ ust-aiman-subri|/images/penceramah/Random_user.svg
 ust-hassan-abd-latif|/images/penceramah/Random_user.svg
 ust-rahimi-rahman|/images/penceramah/Random_user.svg
 ust-taufik-mohd-husin|/images/penceramah/Random_user.svg
-ust-bakar-pelantek|/images/penceramah/Random_user.svg
 ust-mohamad-shakir|/images/penceramah/Random_user.svg
 ust-syamsuri-hassan|/images/penceramah/Random_user.svg
 ustazah-nor-bee-aziz|/images/penceramah/Random_user.svg
 ustazah-siti-hajar-ghazali|/images/penceramah/Random_user.svg
-ust-uzair-abd-hani-albanjari|/images/penceramah/514334589_3871857252960908_4642917422999904082_n.jpg
+ust-uzair-abd-hani-albanjari|/images/penceramah/uzair.png
 ustazah-mardiah-zakaria|/images/penceramah/Random_user.svg
-ust-ridhoudin|/images/penceramah/120136376_182597323395064_8882914084631016457_n.jpg
+ust-ridhoudin|/images/penceramah/ridhauddin.png
 bg-mta|/images/slides/bg-mta.jpg
 picture4|/images/slides/picture4.jpg
 picture4d|/images/slides/picture4d.png
@@ -35,5 +34,5 @@ zakaria-abdul|/images/imambilal/Random_user.svg
 ustaz-hassan-hashim|/images/imambilal/Random_user.svg
 abu-hasan|/images/imambilal/Random_user.svg
 ustaz-zainuddin|/images/imambilal/Random_user.svg
-
 bg-maulid|/images/countdown/maulidnabi.png
+puz-faiz-hafizuddin-bin-rosli|/images/penceramah/pu_faiz.png

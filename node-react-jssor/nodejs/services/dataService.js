@@ -821,17 +821,19 @@ class DataService {
             }
           }
         } else {
-          // Other files: Filter kosong dan comment (#) dulu, kemudian cari ID (countdowns guna #)
-          const skipComment = normalized === 'countdowns';
+          // Konsisten dengan parseFileContent:
+          // - Skip baris kosong untuk SEMUA fail
+          // - Skip baris comment (#) kecuali countdowns (countdowns guna # sebagai separator)
+          const skipComment = normalized !== 'countdowns';
           for (let i = 0; i < allLines.length; i++) {
             const line = allLines[i];
             const trimmed = line.trim();
-            if (trimmed !== '' && (!skipComment || !trimmed.startsWith('#'))) {
-              currentId++;
-              if (currentId === id) {
-                lineIndex = i;
-                break;
-              }
+            if (trimmed === '') continue; // skip baris kosong
+            if (skipComment && trimmed.startsWith('#')) continue; // skip comment
+            currentId++;
+            if (currentId === id) {
+              lineIndex = i;
+              break;
             }
           }
         }
@@ -956,22 +958,22 @@ class DataService {
             }
           }
         } else {
-          // Other files: Filter kosong dan comment (#) dulu (countdowns guna #)
-          const skipComment = normalized === 'countdowns';
+          // Konsisten dengan parseFileContent — skip kosong dan comment untuk semua fail kecuali countdowns
+          const skipComment = normalized !== 'countdowns';
           for (let i = 0; i < allLines.length; i++) {
             const line = allLines[i];
             const trimmed = line.trim();
-            if (trimmed !== '' && (!skipComment || !trimmed.startsWith('#'))) {
-              currentId++;
-              if (currentId === id) {
-                lineIndex = i;
-                lineToDelete = line;
-                break;
-              }
+            if (trimmed === '') continue;
+            if (skipComment && trimmed.startsWith('#')) continue;
+            currentId++;
+            if (currentId === id) {
+              lineIndex = i;
+              lineToDelete = line;
+              break;
             }
           }
         }
-        
+
         if (lineIndex === null || lineIndex < 0 || lineIndex >= allLines.length) {
           return reject(new Error('Invalid row ID'));
         }

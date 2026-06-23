@@ -42,21 +42,29 @@ async function upsertImageEntry(imageCode, imagePath) {
   const imageRaw = reconstructRawLine("images", imageRow);
   const listRes = await fetch(`${API_URL}/data/images`);
   const listJson = await listRes.json();
-  const existing = (listJson.data || []).find(
+  const allMatches = (listJson.data || []).filter(
     (im) => (im.imageCode || "").trim() === imageCode,
   );
-  if (existing && existing.id != null) {
-    await fetch(`${API_URL}/data/images/${existing.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ row: { ...imageRow, raw: imageRaw } }),
-    });
-  } else {
+
+  if (allMatches.length === 0) {
+    // Tiada rekod — insert baru
     await fetch(`${API_URL}/data/images/insert`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ row: { ...imageRow, raw: imageRaw }, position: "end" }),
     });
+  } else {
+    // Update rekod pertama
+    await fetch(`${API_URL}/data/images/${allMatches[0].id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ row: { ...imageRow, raw: imageRaw } }),
+    });
+    // Buang semua rekod duplikat (dari belakang supaya ID tidak bergeser)
+    const duplicates = allMatches.slice(1).sort((a, b) => b.id - a.id);
+    for (const dup of duplicates) {
+      await fetch(`${API_URL}/data/images/${dup.id}`, { method: "DELETE" });
+    }
   }
 }
 
