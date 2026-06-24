@@ -11,7 +11,10 @@ import {
   getCenteredImageStyle,
   applyKuliahTypeBackground,
   DAY_NAMES,
-  getDayCode
+  getDayCode,
+  TYPE_COLORS,
+  TYPE_ORDER,
+  hexToRgba
 } from '../utils/kuliahHelpers';
 import { top, left, right, bottom, getContainerSize, width, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
@@ -27,10 +30,10 @@ function buildTarikhHariHtml() {
   const year = now.getFullYear();
   const dayName = DAY_NAMES[getDayCode(now)] || '';
 
-  const digitSize = Math.round(textSize(100));
-  const stackSize = Math.round(textSize(38));
-  const dayNameSize = Math.round(textSize(100));
-  const sepHeight = Math.round(textSize(90));
+  const digitSize = Math.round(textSize(145));
+  const stackSize = Math.round(textSize(58));
+  const dayNameSize = Math.round(textSize(150));
+  const sepHeight = Math.round(textSize(110));
   const gap = Math.round(textSize(16));
   const innerGap = Math.round(textSize(10));
 
@@ -42,7 +45,7 @@ function buildTarikhHariHtml() {
         <div>${year}</div>
       </div>
     </div>
-    <div style="width:2px;height:${sepHeight}px;background:#fff;flex-shrink:0;"></div>
+    <div style="width:4px;height:${sepHeight}px;background:#fff;flex-shrink:0;"></div>
     <div style="font-size:${dayNameSize}px;line-height:1;font-weight:bold;color:#fff;font-family:'SairaCondensed',sans-serif;">${dayName}</div>
   </div>`;
 }
@@ -108,57 +111,8 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     const categoryData = groupedData[categoryTitle];
     const item = categoryData[0];
     const isReplacement = item && typeof item === 'object' && item.replacementText != null;
-    if (isReplacement) {
-      const replacementText = (item.replacementText || '').trim();
-      const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
-      const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
-      const parent = kuliahSlide.captions[0];
-      if (parent && parent.children && parent.children.length >= 2) {
-        if (parent.children[0]) parent.children[0].content = 'PERISTIWA HARI INI';
-        const isLastCategory = categoryIndex === categoryKeys.length - 1;
-        // if (categoryIndex > 0) parent.transition = null;
-        // parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
-        const BOX_BOTTOM = DEFAULT_BOX_BOTTOM - 80;
-        const BOX_PADDING = 20;
-        const INNER_LEFT_PX = BOX_LEFT + BOX_PADDING;
-        // const boxLayer = createBoxLayer({ bottom: BOX_BOTTOM });
-        // boxLayer.transition = categoryIndex > 0 ? null : 'FADE';
-        // boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT';
-        const replacementChild = {
-          type: 'div',
-          transition: 'CLIP|LR',
-          duration: 2000,
-          delay: 0,
-          content: replacementText.toUpperCase(),
-          style: {
-            position: 'absolute',
-            left: left(INNER_LEFT_PX),
-            right: right(BOX_RIGHT + BOX_PADDING),
-            top: top(BOX_TOP + 28),
-            bottom: bottom(BOX_BOTTOM + 20),
-            textAlign: 'center',
-            fontSize: Math.round(textSize(120)),
-            fontFamily: "'SairaCondensed',sans-serif",
-            color: '#000000',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: 0
-          }
-        };
-        // parent.children[0].transition = categoryIndex > 0 ? null : 'CLIP|LR';
-        // parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
-        // parent.children[0].duration = 2000;
-        // parent.children[0].delay = 0;
-        // parent.children = [boxLayer, parent.children[0], replacementChild];
-        parent.children = [replacementChild];
-      }
-      applyKuliahTypeBackground(kuliahSlide, item.type);
-      // kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
-      kuliahHariSlides.push(kuliahSlide);
-      return;
-    }
+    if (isReplacement) return;
+    if (typeof item !== 'string') return;
     const arr = item.split('|');
     const penceramah = (arr[3] || '').trim();
     const imageCode = (arr[4] || '').trim();
@@ -170,10 +124,6 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     const parent = kuliahSlide.captions[0];
 
     if (parent && parent.children && parent.children.length >= 2) {
-      // const isLastCategory = categoryIndex === categoryKeys.length - 1;
-      // if (categoryIndex > 0) parent.transition = null;
-      // parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
-
       const BOX_BOTTOM = DEFAULT_BOX_BOTTOM - 80;
       const BOX_PADDING = 20;
       const INNER_LEFT_PX = BOX_LEFT + BOX_PADDING;
@@ -187,50 +137,21 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
       const PENCERAMAH_LEFT_PX = 1216;
       const PENCERAMAH_TOP_PX = 877;
       const PENCERAMAH_WIDTH_PX = 583;
-      const KITAB_LEFT_PX = 274;
-      const KITAB_TOP_PX = 605;
-      const KITAB_WIDTH_PX = 779;
+      const KITAB_LEFT_PX = 244;
+      // const KITAB_TOP_PX = 560;
+      const KITAB_TOP_PX = 260;
+      const KITAB_WIDTH_PX = 879;
       const TARIKH_HARI_TOP_PX = 760;
-
-      // const boxLayer = createBoxLayer({ bottom: BOX_BOTTOM });
-
-      // boxLayer.transition = categoryIndex > 0 ? null : 'FADE';
-      // boxLayer.transition2 = isLastCategory ? 'FADE' : 'NO_CLIP_OUT';
-
       const imagePath = resolveImagePath(imageCode, imagesData);
 
-      // parent.children[0].transition = categoryIndex > 0 ? null : 'CLIP|LR';
-      // parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
       parent.children[0].duration = 2000;
       parent.children[0].delay = 0;
 
-      // const typeChild = {
-      //   type: 'div',
-      //   transition: 'CLIP|LR',
-      //   duration: 2000,
-      //   delay: 0,
-      //   content: categoryTitle,
-      //   style: {
-      //     position: 'absolute',
-      //     left: left(INNER_LEFT_PX),
-      //     right: right(BOX_RIGHT + BOX_PADDING),
-      //     top: top(BOX_TOP + 28),
-      //     textAlign: 'center',
-      //     fontSize: Math.round(textSize(72)),
-      //     fontFamily: "'SairaCondensed',sans-serif",
-      //     color: '#fff',
-      //     lineHeight: Math.round(textSize(78)),
-      //     color: '#ffdb00',
-      //     fontWeight: 'bold',
-      //     backgroundColor: 'black',
-      //     height: height(79)
-      //   }
-      // };
       const penceramahChild = {
         type: 'div',
-        transition: 'CLIP|LR',
-        duration: 2000,
-        delay: 0,
+        // transition: 'CLIP|LR',
+        // duration: 2000,
+        // delay: 0,
         content: penceramah.toUpperCase(),
         style: {
           position: 'absolute',
@@ -245,20 +166,51 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
           height: height(150),
           overflow: 'hidden',
           lineHeight: Math.round(textSize(70)),
-          margin: '8px 0'
+          margin: '8px 0',
+          background: 'linear-gradient(to right, transparent 0%, rgba(255,255,255,0.92) 18%, rgba(255,255,255,0.92) 82%, transparent 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }
       };
+
+      const buildTitleKuliah = () => {
+        const parts = categoryTitle.split(' ');
+        const raw = parts[0] || '';
+        const w1 = parts[1] || '';
+        const w0 = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+        const ts = (v) => Math.round(textSize(v));
+        return `<span style="display:block;color:white;line-height:0.7;font-style:italic;font-family:'KaushanScript',cursive;font-size:${ts(120)}px;text-shadow:2px 2px 4px rgba(0,0,0,0.6),4px 4px 10px rgba(0,0,0,0.3);">${w0}</span>
+        <span style="display:block;font-size:${ts(128)}pt;font-family:'FuturaPrimer';font-style:italic;font-weight:900;line-height:1;color:#ffbd59;text-shadow:4px 4px 0px rgba(0,0,0,0.4),6px 6px 14px rgba(0,0,0,0.35);">${w1}</span>`;
+      }
+      
+      const typeChild = {
+        type: 'div',
+        // transition: 'CLIP|LR',
+        // duration: 2000,
+        // delay: 0,
+        content: buildTitleKuliah(categoryTitle),
+        style: {
+          position: 'relative',
+          width: '100%',
+          textAlign: 'left',
+          // fontSize: Math.round(textSize(68)),
+          color: '#000000',
+          fontWeight: 'bold',
+          textWrapStyle: 'balance',
+          marginBottom: '20px',
+        }
+      };
+
       const kitabChild = {
         type: 'div',
-        transition: 'CLIP|LR',
-        duration: 2000,
-        delay: 0,
+        // transition: 'CLIP|LR',
+        // duration: 2000,
+        // delay: 0,
         content: kitab,
         style: {
-          position: 'absolute',
-          left: left(KITAB_LEFT_PX),
-          top: top(KITAB_TOP_PX),
-          width: width(KITAB_WIDTH_PX),
+          position: 'relative',
+          width: '100%',
           textAlign: 'center',
           fontSize: Math.round(textSize(68)),
           fontFamily: "'SairaCondensed',sans-serif",
@@ -266,31 +218,51 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
           fontWeight: 'bold',
           textWrapStyle: 'balance',
           lineHeight: Math.round(textSize(70)),
-          margin: '8px 0'
+          border: `${Math.round(textSize(4))}px solid #d4af37`,
+          borderRadius: `${Math.round(textSize(80))}px / ${Math.round(textSize(100))}px`,
+          padding: `${Math.round(textSize(57))}px ${Math.round(textSize(60))}px`,
+          backgroundColor: 'white',
+          boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
         }
       };
 
       const tarikhHariChild = {
         type: 'div',
-        transition: 'CLIP|LR',
-        duration: 2000,
-        delay: 0,
+        // transition: 'CLIP|LR',
+        // duration: 2000,
+        // delay: 0,
         content: buildTarikhHariHtml(),
         style: {
-          position: 'absolute',
-          left: left(KITAB_LEFT_PX),
-          top: top(TARIKH_HARI_TOP_PX),
-          width: width(KITAB_WIDTH_PX),
+          position: 'relative',
+          width: '100%',
           textAlign: 'center',
           margin: 0
         }
       };
 
+      const kitabWrapperChild = {
+        type: 'div',
+        // transition: 'CLIP|LR',
+        // duration: 2000,
+        // delay: 0,
+        style: {
+          position: 'absolute',
+          left: left(KITAB_LEFT_PX),
+          top: top(KITAB_TOP_PX),
+          width: width(KITAB_WIDTH_PX),
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: Math.round(textSize(20)),
+        },
+        children: [typeChild, kitabChild, tarikhHariChild]
+      };
+
       const imageChild = {
         type: 'img',
-        transition: 'FADE',
-        duration: 1000,
-        delay: 0,
+        // transition: 'auto',
+        // duration: 1000,
+        // delay: 0,
         content: imagePath,
         style: {
           position: 'absolute',
@@ -307,12 +279,36 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
       imageChild.style = { ...imageStyle, top: top(IMAGE_TOP_PX) };
       imageChild.content = imagePath;
 
-      // parent.children = [boxLayer, parent.children[0], typeChild, penceramahChild, kitabChild, imageChild];
-      parent.children = [ penceramahChild, kitabChild, tarikhHariChild, imageChild];
+      const { width: sw, height: sh } = getContainerSize();
+      const frameChild = {
+        type: 'img',
+        // transition: 'FADE',
+        // duration: 1000,
+        // delay: 0,
+        content: '/img/frame.svg',
+        style: {
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: sw,
+          height: sh,
+          objectFit: 'cover',
+
+        }
+      };
+
+      parent.children = [frameChild, penceramahChild, kitabWrapperChild, imageChild];
     }
 
-    applyKuliahTypeBackground(kuliahSlide, arr[2]);
+    // applyKuliahTypeBackground(kuliahSlide, arr[2]);
     kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+    const type = arr[2] || '';
+    if (TYPE_COLORS[type] && kuliahSlide.captions[0]) {
+      kuliahSlide.captions[0].style.backgroundColor = hexToRgba(TYPE_COLORS[type], 0.80);
+      // kuliahSlide.captions[0].style.backgroundImage = 'url(/img/frame.svg)';
+      // kuliahSlide.captions[0].style.backgroundSize = '100% 100%';
+      // kuliahSlide.captions[0].style.backgroundRepeat = 'no-repeat';
+    }
     kuliahHariSlides.push(kuliahSlide);
   });
   return kuliahHariSlides;
