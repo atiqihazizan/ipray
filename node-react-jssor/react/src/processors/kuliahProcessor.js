@@ -11,16 +11,35 @@ import {
   DAY_NAMES,
   resolveImagePath,
   formatShortDate,
-  calculateDateFromCodes
+  calculateDateFromCodes,
+  TYPE_COLORS,
+  TYPE_ORDER,
 } from '../utils/kuliahHelpers';
 import { sz, getRatio, top, getContainerSize, textSize } from '../utils/screenUtils';
 import { escapeHtml } from './slideHelpers';
+import { HIJRI_MONTHS } from '../utils/islamicTimeUtils';
+
+function getHijriMonth(date) {
+  const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
+  const jd = Math.floor((14 - m) / 12);
+  const gy = y + 4800 - jd;
+  const gm = m + 12 * jd - 3;
+  let jdn = d + Math.floor((153 * gm + 2) / 5) + 365 * gy + Math.floor(gy / 4) - Math.floor(gy / 100) + Math.floor(gy / 400) - 32045;
+  const l = jdn - 1948438 + 10632;
+  const n = Math.floor((l - 1) / 10631);
+  const l2 = l - 10631 * n + 354;
+  const j = Math.floor((10985 - l2) / 5316) * Math.floor((50 * l2) / 17719) + Math.floor(l2 / 5670) * Math.floor((43 * l2) / 15238);
+  const l3 = l2 - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+  const hMonth = Math.floor((24 * l3) / 709);
+  const hYear = 30 * n + j - 30;
+  return { month: HIJRI_MONTHS[hMonth] || '', year: hYear };
+}
 
 export { processKuliahMingguan } from './kuliahWeeklyProcessor';
 export { processKuliahHarian } from './kuliahHarianProcessor';
 
-const TYPE_COLORS = { ks: '#42a5f5', km: '#66bb6a', kd: '#ffa726', kk: '#ab47bc' };
-const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kk: 3 };
+// const TYPE_COLORS = { ks: '#42a5f5', km: '#66bb6a', kd: '#ffa726', kk: '#ab47bc' };
+// const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kk: 3 };
 const MALAY_MONTHS = ['JAN', 'FEB', 'MAC', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'];
 const MALAY_DAYS = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
 
@@ -50,6 +69,7 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
   const monthName = MALAY_MONTHS[now.getMonth()];
   const dayName = MALAY_DAYS[now.getDay()];
   const year = now.getFullYear();
+  const hijri = getHijriMonth(now);
 
   const firstDayOfWeek = safeData[0]?.dayOfWeek ?? 0;
   const totalDays = safeData.length;
@@ -97,7 +117,7 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
     if (len <= 1) {
       photoSize = s(125); fontSize = s(25); pad = s(8); gap = sw(1);
     } else if (len === 2) {
-      photoSize = s(90); fontSize = s(23); pad = s(2); gap = sw(6);
+      photoSize = s(80); fontSize = s(23); pad = s(2); gap = sw(6);
     } else {
       photoSize = s(60); fontSize = s(20); pad = s(3); gap = sw(4);
     }
@@ -107,7 +127,7 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
       const isEven = idx % 2 === 1;
       const flexDir = isEven ? 'row-reverse' : 'row';
       const textAlign = isEven ? 'right' : 'left';
-      const textPadd = len > 1 ? `${isEven ? 'padding-right' : 'padding-left'}:${photoSize}px;` : null;
+      const textPadd = len > 1 ? `${isEven ? 'padding-right' : 'padding-left'}:${photoSize-8}px;` : null;
       const imgPosY = idx == len - 1 ? 'bottom' : 'top';
       const imgPosX = isEven ? 'right' : 'left';
       const imgPos = len <= 1 ? 'inherit' : 'absolute';
@@ -126,11 +146,16 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
 
       // return `<div style="display:flex;flex-direction:${flexDir};align-items:center;padding:${pad}px ${pad + sw(2)}px;gap:${gap}px;background:rgba(255,255,255,0.03);border-radius:2px;${len > 1 ? 'flex:1;' : 'height:100%;'}">
       // <img src="${imgSrc}" style="position:absolute;${imgPosY}:1px;${imgPosX}:1px;width:${photoSize}px;height:${photoSize}px;border-radius:50%;border:${bw}px solid ${color};flex-shrink:0;object-fit:cover;object-position:top;background:rgba(0, 0, 0, 0.16);" onerror="this.onerror=null;this.src='/img/Random_user.svg';this.style.objectFit='contain';" />
+      // <div style="font-size:${fontSize}px;color:black;font-weight:600;font-family:'Roboto',sans-serif;overflow:hidden;text-overflow:ellipsis;${whiteSpace}text-align:${textAlign};${textPadd} flex:1;min-width:0;">
+      //     <span style="font-weight:bolder;color:${color};">
+      //       ${entry.type.toUpperCase()}
+      //       <span style="width:3px;height:${fontSize-4}px;margin:0px 1px 0;background:${color};flex-shrink:0;display:inline-flex;"></span>
+      //     </span>${name}
+      //   </div>
       return `<div style="position:relative;display:flex;flex-direction:${flexDir};align-items:center;padding:${pad}px ${pad + sw(2)}px;gap:${gap}px;background:rgba(255,255,255,0.03);border-radius:2px;${len > 1 ? 'flex:1;' : 'height:100%;'}">
-        <img src="${imgSrc}" style="position:${imgPos};${imgPosY}:1px;${imgPosX}:1px;width:${photoSize}px;height:${photoSize}px;flex-shrink:0;object-fit:cover;object-position:top;border-radius:23px;" onerror="this.onerror=null;this.src='/img/Random_user.svg';this.style.objectFit='contain';" />
-        <div style="font-size:${fontSize}px;color:black;font-weight:600;font-family:'Roboto',sans-serif;overflow:hidden;text-overflow:ellipsis;${whiteSpace}text-align:${textAlign};${textPadd} flex:1;min-width:0;">
-          <span style="font-weight:bolder;color:${color};padding-right:4px;border-right:3px solid">${entry.type.toUpperCase()}</span>
-          ${name}
+        <img src="${imgSrc}" style="position:${imgPos};${imgPosY}:1px;${imgPosX}:1px;width:${photoSize}px;flex-shrink:0;object-fit:cover;object-position:top;border-radius:23px;" onerror="this.onerror=null;this.src='/img/Random_user.svg';this.style.objectFit='contain';" />
+        <div style="font-size:${fontSize}px;color:${color};font-weight:600;font-family:'Roboto',sans-serif;overflow:hidden;text-overflow:ellipsis;${whiteSpace}text-align:${textAlign};${textPadd} flex:1;min-width:0;">
+          ${name.toUpperCase()}
         </div>
       </div>`;
     }).join('');
@@ -172,13 +197,16 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
   ).join('');
 
   parent.content = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content: start;overflow:hidden;background:rgba(0, 0, 0, 0.46)">
-    <div style="display:flex;align-items:center;justify-content:space-between;height:${TOP_H}px;padding:0 ${MARGIN}px;flex-shrink:0;background:rgba(0, 0, 0, 0);">
-      <!--div style="font-weight:bold;line-height:1.35;font-family:'SairaCondensed',sans-serif;">
-        <div style="font-size:${s(22)}px;color:#f06292;">${today} ${dayName}</div>
-        <div style="font-size:${s(18)}px;color:#f48fb1;">${monthName} ${year}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:${sw(32)}px;height:${TOP_H}px;padding:0 ${MARGIN}px;flex-shrink:0;">
+      <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
+        <div style="font-size:${s(18)}px;color:#aaa;letter-spacing:1px;">MASIHI</div>
+        <div style="font-size:${s(30)}px;font-weight:bold;color:#fff;">${monthName} ${year}</div>
       </div>
-      <div style="font-size:${s(28)}px;font-weight:bold;color:#fff;letter-spacing:2px;text-align:center;font-family:'SairaCondensed',sans-serif;">JADUAL KULIAH BULAN INI</div>
-      <div style="width:${sw(200)}px;"></div -->
+      <div style="width:${sw(2)}px;height:${s(36)}px;background:rgba(255,255,255,0.25);flex-shrink:0;"></div>
+      <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
+        <div style="font-size:${s(18)}px;color:#aaa;letter-spacing:1px;">HIJRAH</div>
+        <div style="font-size:${s(30)}px;font-weight:bold;color:#ffbd59;">${hijri.month} ${hijri.year}H</div>
+      </div>
     </div>
     
     <!-- div style="display:grid;grid-template-columns:repeat(7,1fr);height:${DAY_H}px;margin:0 ${MARGIN}px;background:rgba(0,0,0,0.3);flex-shrink:0;border-bottom:1px solid #2a2a2a;align-items:center;" -->
