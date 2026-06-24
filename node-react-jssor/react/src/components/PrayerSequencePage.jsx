@@ -133,8 +133,8 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       setCountdown(remaining);
     };
 
-    tick();
     timerRef.current = setInterval(tick, 1000);
+    tick();
     return () => { clearTimer(); clearBeep(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, prayerTimeStr]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref supaya countdown tidak restart
