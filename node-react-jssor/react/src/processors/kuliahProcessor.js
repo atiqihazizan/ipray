@@ -76,11 +76,11 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
   const numRows = Math.ceil((firstDayOfWeek + totalDays) / 7);
 
   const MARGIN = sw(24);
-  const TOP_H = s(50);
-  const DAY_H = s(42);
+  const TOP_H = s(100);
+  const DAY_H = s(34);
   const BOTTOM_H = s(100);
-  const LEGEND_H = s(70);
-  const HEADER_SEP = s(10);
+  const LEGEND_H = s(55);
+  const HEADER_SEP = s(6);
   const GRID_GAP = Math.max(1, Math.round(2 * Math.min(WR, HR)));
   const GRID_H = Math.round(sz().height) - TOP_H - DAY_H - BOTTOM_H - LEGEND_H - HEADER_SEP;
   const CELL_H = Math.floor((GRID_H - GRID_GAP * (numRows - 1)) / numRows);
@@ -199,13 +199,13 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
   parent.content = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content: start;overflow:hidden;background:rgba(0, 0, 0, 0.46)">
     <div style="display:flex;align-items:center;justify-content:center;gap:${sw(32)}px;height:${TOP_H}px;padding:0 ${MARGIN}px;flex-shrink:0;">
       <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
-        <div style="font-size:${s(18)}px;color:#aaa;letter-spacing:1px;">MASIHI</div>
-        <div style="font-size:${s(30)}px;font-weight:bold;color:#fff;">${monthName} ${year}</div>
+        <div style="font-size:${s(22)}px;color:#aaa;letter-spacing:2px;">MASIHI</div>
+        <div style="font-size:${s(52)}px;font-weight:bold;color:#fff;line-height:1;">${monthName} ${year}</div>
       </div>
-      <div style="width:${sw(2)}px;height:${s(36)}px;background:rgba(255,255,255,0.25);flex-shrink:0;"></div>
+      <div style="width:${sw(2)}px;height:${s(60)}px;background:rgba(255,255,255,0.25);flex-shrink:0;"></div>
       <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
-        <div style="font-size:${s(18)}px;color:#aaa;letter-spacing:1px;">HIJRAH</div>
-        <div style="font-size:${s(30)}px;font-weight:bold;color:#ffbd59;">${hijri.month} ${hijri.year}H</div>
+        <div style="font-size:${s(22)}px;color:#aaa;letter-spacing:2px;">HIJRAH</div>
+        <div style="font-size:${s(52)}px;font-weight:bold;color:#ffbd59;line-height:1;">${hijri.month} ${hijri.year}H</div>
       </div>
     </div>
     
