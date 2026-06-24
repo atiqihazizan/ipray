@@ -387,7 +387,7 @@ class ApiServerService {
             entries: (day.entries || []).map((e) => {
               if (!e.penceramah) return e;
               const match = penceramahMap[(e.penceramah || '').trim()];
-              if (match) return { ...e, penceramah: match.namaPenuh };
+              if (match) return { ...e, penceramah: match.namaPenuh, imageCode: match.imageCode || e.imageCode };
               return e;
             })
           }));

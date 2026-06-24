@@ -136,6 +136,7 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
       dayToSlots[dayNum].push({
         type: p.type,
         penceramah: p.speaker,
+        imageCode: p.imageCode,
         kitab: p.kitab,
         isBatal: m.isBatal,
         notes: m.isBatal ? (m.notes || '') : ''

@@ -13,7 +13,7 @@ import { processSlideshow } from '../processors/slideshowProcessor';
  * - Array indeks 0-based (contoh [0, 3] = slide 1 & 4, [1] = slide 2 sahaja, [0, 2] = slide 1 & 3)
  */
 const DEBUG_SLIDES = false;
-// const DEBUG_SLIDES = [1,3];
+// const DEBUG_SLIDES = [4];
 
 /**
  * Custom hook untuk menguruskan slides data.
@@ -82,7 +82,7 @@ export const useSlides = () => {
     const countDownSlides = processCountdowns(countdownsData, slidesConfigData, applyConfig, imagesData);
     const kuliahHariSlides = processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements);
     const kuliahMigguanSlides = processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig);
-    const kuliahBulananSlides = processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, applyConfig);
+    const kuliahBulananSlides = processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesConfigData, applyConfig);
     const slideshowSlides = processSlideshow(slideshowData, slidesConfigData, applyConfig);
 
     const homeGroup    = !slidesConfigData?.home?.hide        ? [homeSlide]          : [];

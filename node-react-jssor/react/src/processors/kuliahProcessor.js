@@ -5,159 +5,196 @@
 import { slidesTemplate, KULIAH_NUM_CARDS } from '../config/sliderConfig';
 import {
   buildKuliahWeeklyCategoryChildren,
-  buildKuliahBulananChildren
 } from '../config/slideBuilders';
 import {
   TYPE_LABELS,
   DAY_NAMES,
+  resolveImagePath,
   formatShortDate,
   calculateDateFromCodes
 } from '../utils/kuliahHelpers';
-import { top, getContainerSize, textSize } from '../utils/screenUtils';
+import { sz, getRatio, top, getContainerSize, textSize } from '../utils/screenUtils';
 import { escapeHtml } from './slideHelpers';
 
 export { processKuliahMingguan } from './kuliahWeeklyProcessor';
 export { processKuliahHarian } from './kuliahHarianProcessor';
 
+const TYPE_COLORS = { ks: '#42a5f5', km: '#66bb6a', kd: '#ffa726', kk: '#ab47bc' };
+const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kk: 3 };
+const MALAY_MONTHS = ['JAN', 'FEB', 'MAC', 'APR', 'MEI', 'JUN', 'JUL', 'OGO', 'SEP', 'OKT', 'NOV', 'DIS'];
+const MALAY_DAYS = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABTU'];
+
 /**
- * @param {Array<{ dayNumber: number, dayOfWeek: number, date: string, entries: Array<{ type?, penceramah?, kitab?, isBatal?, notes?, replacementText? }> }>} kuliahBulananProcessed
+ * @param {Array<{ dayNumber, dayOfWeek, date, entries }>} kuliahBulananProcessed
+ * @param {Object} imagesData - Map imageCode -> imagePath
  */
-export function processKuliahBulanan(kuliahBulananProcessed, slidesConfigData, applyConfig) {
-  const esc = escapeHtml;
-  const safeData = kuliahBulananProcessed && Array.isArray(kuliahBulananProcessed) ? kuliahBulananProcessed : [];
-  const currentDate = new Date();
-  const currentDay = currentDate.getDate();
-  const totalDays = safeData.length;
-  if (totalDays === 0) {
-    const kuliahBulananTemplate = applyConfig(slidesTemplate.kuliahBulanan, 'kuliahBulanan');
-    const slide = JSON.parse(JSON.stringify(kuliahBulananTemplate));
-    if (slide.captions?.[0]?.children?.[0]) slide.captions[0].children[0].content = 'JADUAL KULIAH BULAN INI';
+export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesConfigData, applyConfig) {
+  const safeData = Array.isArray(kuliahBulananProcessed) ? kuliahBulananProcessed : [];
+  const kuliahBulananTemplate = applyConfig(slidesTemplate.kuliahBulanan, 'kuliahBulanan');
+  const slide = JSON.parse(JSON.stringify(kuliahBulananTemplate));
+  const parent = slide.captions[0];
+  if (!parent) return [slide];
+
+  if (safeData.length === 0) {
+    delete parent.children;
+    parent.content = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;font-size:32px;font-family:'SairaCondensed',sans-serif;font-weight:bold;">JADUAL KULIAH BULAN INI</div>`;
     return [slide];
   }
 
+  const { widthRatio: WR, heightRatio: HR } = getRatio();
+  const s = (v) => Math.round(v * HR);
+  const sw = (v) => Math.round(v * WR);
+
+  const now = new Date();
+  const today = now.getDate();
+  const monthName = MALAY_MONTHS[now.getMonth()];
+  const dayName = MALAY_DAYS[now.getDay()];
+  const year = now.getFullYear();
+
   const firstDayOfWeek = safeData[0]?.dayOfWeek ?? 0;
-  const dayOfWeekArray = safeData.map((d) => d.dayOfWeek);
-  const calendarPositions = safeData.map((_, i) => {
-    const dayNum = i + 1;
-    if (dayNum === 1) return { row: 0, col: firstDayOfWeek };
-    const daysFromStart = dayNum - 1;
-    return {
-      row: Math.floor((firstDayOfWeek + daysFromStart) / 7),
-      col: (firstDayOfWeek + daysFromStart) % 7
-    };
-  });
+  const totalDays = safeData.length;
+  const numRows = Math.ceil((firstDayOfWeek + totalDays) / 7);
 
-  const kuliahBulananTemplate = applyConfig(slidesTemplate.kuliahBulanan, 'kuliahBulanan');
-  const kuliahBulananSlide = JSON.parse(JSON.stringify(kuliahBulananTemplate));
-  const parent = kuliahBulananSlide.captions[0];
+  const MARGIN = sw(24);
+  const TOP_H = s(50);
+  const DAY_H = s(42);
+  const BOTTOM_H = s(100);
+  const LEGEND_H = s(70);
+  const HEADER_SEP = s(10);
+  const GRID_GAP = Math.max(1, Math.round(2 * Math.min(WR, HR)));
+  const GRID_H = Math.round(sz().height) - TOP_H - DAY_H - BOTTOM_H - LEGEND_H - HEADER_SEP;
+  const CELL_H = Math.floor((GRID_H - GRID_GAP * (numRows - 1)) / numRows);
 
-  if (parent) {
-    if (parent.children && parent.children.length > 0) {
-      parent.children[0].content = 'JADUAL KULIAH BULAN INI';
+  const hasReplacementOnly = (e) => e.replacementText != null && e.replacementText !== '' && !e.type;
+
+  // Build grid map: "row-col" -> dayData
+  const gridMap = {};
+  for (const day of safeData) {
+    const daysFromStart = day.dayNumber - 1;
+    const row = Math.floor((firstDayOfWeek + daysFromStart) / 7);
+    const col = (firstDayOfWeek + daysFromStart) % 7;
+    gridMap[`${row}-${col}`] = day;
+  }
+
+  function buildCellHtml(dayData) {
+    // if (!dayData) return `<div style="background:rgba(0,0,0,0.15);border-radius:3px;"></div>`;
+    if (!dayData) return `<div style=""></div>`;
+
+    const isToday = dayData.dayNumber === today;
+    const dayNumFs = s(numRows <= 5 ? 96 : 76);
+    const todayBorder = isToday ? `outline:${s(3)}px solid #f44336;outline-offset:-${s(3)}px; background-color:rgb(247, 190, 186) !important` : '';
+
+    const sorted = [...(dayData.entries || [])].sort((a, b) => {
+      if (hasReplacementOnly(a) && hasReplacementOnly(b)) return 0;
+      if (hasReplacementOnly(a)) return 1;
+      if (hasReplacementOnly(b)) return -1;
+      return (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
+    });
+    const len = sorted.length;
+
+    // Size config by entry count
+    let photoSize, fontSize, pad, gap;
+    if (len <= 1) {
+      photoSize = s(125); fontSize = s(25); pad = s(8); gap = sw(1);
+    } else if (len === 2) {
+      photoSize = s(90); fontSize = s(23); pad = s(2); gap = sw(6);
+    } else {
+      photoSize = s(60); fontSize = s(20); pad = s(3); gap = sw(4);
     }
-    const cards = buildKuliahBulananChildren(totalDays, dayOfWeekArray, calendarPositions);
-    parent.children = [parent.children[0], ...cards];
+    const bw = len <= 1 ? s(3) : s(2);
 
-    const dayNumFontSize = Math.round(textSize(117));
-    const KULIAH_BULANAN_FONT_SIZE = Math.round(textSize(24));
-    const KITAB_ITEM_FONT_SIZE = Math.round(textSize(15));
-    const KULIAH_BULANAN_FONT_SIZE_SINGLE = Math.round(textSize(35));
-    const KITAB_ITEM_FONT_SIZE_SINGLE = Math.round(textSize(22));
+    const entriesHtml = sorted.map((entry, idx) => {
+      const isEven = idx % 2 === 1;
+      const flexDir = isEven ? 'row-reverse' : 'row';
+      const textAlign = isEven ? 'right' : 'left';
+      const textPadd = len > 1 ? `${isEven ? 'padding-right' : 'padding-left'}:${photoSize}px;` : null;
+      const imgPosY = idx == len - 1 ? 'bottom' : 'top';
+      const imgPosX = isEven ? 'right' : 'left';
+      const imgPos = len <= 1 ? 'inherit' : 'absolute';
 
-    for (let i = 0; i < totalDays; i++) {
-      const dayData = safeData[i];
-      const base = 1 + i;
-      if (!parent.children[base]) continue;
-
-      const dayNumberStr = String(dayData.dayNumber).padStart(2, '0');
-      const isToday = dayData.dayNumber === currentDay;
-      const dayNumberColor = isToday ? '#cc000040' : '#80808040';
-      const dayNumberStyle = `text-align:right; font-size:${dayNumFontSize}px; font-family:'bebas',sans-serif; color:${dayNumberColor}; position:absolute; right:0; line-height:1.1; bottom:0;`;
-      const dayNumberHtml = `<div style="${dayNumberStyle}">${dayNumberStr}</div>`;
-
-      let contentHtml = '';
-      if (dayData.entries && dayData.entries.length > 0) {
-        // Susunan: ks > kd > km > kh/kk > another event (replacement)
-        const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kh: 3, kk: 3 };
-        const hasReplacementOnly = (e) => e.replacementText != null && e.replacementText !== '' && !e.type;
-        const sortedEntries = [...dayData.entries].sort((a, b) => {
-          if (hasReplacementOnly(a) && hasReplacementOnly(b)) return 0;
-          if (hasReplacementOnly(a)) return 1;
-          if (hasReplacementOnly(b)) return -1;
-          return (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
-        });
-        const isSingleRekod = sortedEntries.length === 1;
-        // Font besar untuk single row/rekod sahaja; selain itu kekal saiz asal (24px / 15px)
-        const fs = isSingleRekod ? KULIAH_BULANAN_FONT_SIZE_SINGLE : KULIAH_BULANAN_FONT_SIZE;
-        const kitabFs = isSingleRekod ? KITAB_ITEM_FONT_SIZE_SINGLE : KITAB_ITEM_FONT_SIZE;
-        const rows = sortedEntries.map((k, rowIndex) => {
-          if (k.replacementText != null && k.replacementText !== '') {
-            const rowGapTop = rowIndex === 0 ? '0' : '1px';
-            const replacementStyle = `font-size:${fs}px; font-weight:bold; vertical-align:top; padding:0; padding-top:${rowGapTop}; color:#ff0000; text-transform:uppercase; text-align:center;`;
-            return `<tr><td colspan="3" style="${replacementStyle}">${esc(k.replacementText)}</td></tr>`;
-          }
-          const typeLabel = (k.type || '').toUpperCase();
-          const isBatal = k.isBatal === true;
-          let kitabHtml = '';
-          if (k.kitab) {
-            const kitabItems = String(k.kitab)
-              .split(',')
-              .map((item) => item.trim())
-              .filter(Boolean);
-            const itemStyle = isBatal
-              ? `font-size:${kitabFs}px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;`
-              : `font-size:${kitabFs}px;word-wrap:break-word;white-space:normal;line-height:1`;
-            const kitabItemsHtml = kitabItems.map((item) => `<li style="${itemStyle}">${esc(item)}</li>`).join('');
-            kitabHtml = `<ul style="margin-top:-3px;margin-left:19px;list-style-type:square">${kitabItemsHtml}</ul>`;
-          }
-          const typeStyle = isBatal
-            ? `font-size:${fs}px;text-decoration:line-through;opacity:0.6;`
-            : `font-size:${fs}px;`;
-          const penceramahStyle = isBatal
-            ? `font-size:${fs}px;text-decoration:line-through;opacity:0.6;`
-            : `font-size:${fs}px;`;
-          const rowGapTop = rowIndex === 0 ? '0' : '1px';
-          const rowHeight = isSingleRekod ? 'auto' : '38px';
-          const wordBreakStyle = isSingleRekod ? 'word-break:break-word;' : 'word-break:break-all;';
-
-          if (isSingleRekod) {
-            const mergedContent = isBatal
-              ? `${typeLabel} | <span style="color:#e00;font-size:${fs}px;">(DITANGGUH)</span>`
-              : `${typeLabel} | <span style="${penceramahStyle} word-wrap:break-word; white-space:normal; margin:0; padding:0; line-height:1.25;">${esc(k.penceramah || '')}</span>`;
-            const cellStyle = `font-size:${fs}px; vertical-align:middle; padding:0; text-align:center; ${wordBreakStyle}`;
-            // return `<tr><td colspan="3" style="${cellStyle}">${mergedContent}${kitabHtml ? `<br/>${kitabHtml}` : ''}</td></tr>`;
-            return `<tr><td colspan="3" style="${cellStyle}">${mergedContent}</td></tr>`;
-          }
-
-          return `<tr>
-            <td style="${typeStyle} vertical-align:top; padding:0 5px; padding-top:${rowGapTop}; white-space:nowrap; width:49.3px">${typeLabel}</td>
-            <td style="font-size:${fs}px; vertical-align:top; padding:0; padding-right: 3px; padding-top:${rowGapTop}; color:#666;">|</td>
-            <td style="vertical-align:top; padding:0; padding-top:${rowGapTop}; text-align:left;">
-              <div style="padding-right:3px; ${wordBreakStyle} height: ${rowHeight}; overflow: hidden;">
-                ${isBatal
-                  ? `<span style="color:#e00;font-size:${fs}px;">(DITANGGUH)</span>`
-                  : `<span style="display:block; ${penceramahStyle} word-wrap:break-word; white-space:normal; margin:0; padding:0; text-align:left; line-height:1.25;padding-top: 4px;">${esc(k.penceramah || '')}</span> `}
-              </div>
-            </td></tr>`;
-        });
-        const wrapperStyle = isSingleRekod
-          ? `font-size:${fs}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; right:0; bottom:0; margin:0; padding:0; display:flex; align-items:center; justify-content:center;`
-          : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; margin:0; padding:0; width:100%`;
-        contentHtml = `<div style="${wrapperStyle}">
-          <table style="border-collapse:collapse; width:100%; margin:0; padding:0;"><tbody>${rows.join('')}</tbody></table>
-          </div>`;
+      if (hasReplacementOnly(entry)) {
+        return `<div style="display:flex;align-items:center;justify-content:center;padding:${pad}px;flex:1;">
+          <span style="font-size:${fontSize}px;color:#f44336;font-weight:bold;text-align:center;font-family:'SairaCondensed',sans-serif;">${escapeHtml((entry.replacementText || '').toUpperCase())}</span>
+        </div>`;
       }
 
-      parent.children[base].content = `${dayNumberHtml}${contentHtml}`;
-      if (isToday) {
-        parent.children[base].style = {
-          ...parent.children[base].style,
-          border: '6px solid rgb(255, 0, 0)',
-          borderRadius: '5px'
-        };
-      }
+      const color = TYPE_COLORS[entry.type] || '#888';
+      const imgSrc = resolveImagePath(entry.imageCode, imagesData);
+      const name = escapeHtml(entry.penceramah || '');
+      // const whiteSpace = len <= 1 ? 'white-space:normal;' : 'white-space:nowrap;';
+      const whiteSpace = 'white-space:normal;line-height:1.2;'
+
+      // return `<div style="display:flex;flex-direction:${flexDir};align-items:center;padding:${pad}px ${pad + sw(2)}px;gap:${gap}px;background:rgba(255,255,255,0.03);border-radius:2px;${len > 1 ? 'flex:1;' : 'height:100%;'}">
+      // <img src="${imgSrc}" style="position:absolute;${imgPosY}:1px;${imgPosX}:1px;width:${photoSize}px;height:${photoSize}px;border-radius:50%;border:${bw}px solid ${color};flex-shrink:0;object-fit:cover;object-position:top;background:rgba(0, 0, 0, 0.16);" onerror="this.onerror=null;this.src='/img/Random_user.svg';this.style.objectFit='contain';" />
+      return `<div style="position:relative;display:flex;flex-direction:${flexDir};align-items:center;padding:${pad}px ${pad + sw(2)}px;gap:${gap}px;background:rgba(255,255,255,0.03);border-radius:2px;${len > 1 ? 'flex:1;' : 'height:100%;'}">
+        <img src="${imgSrc}" style="position:${imgPos};${imgPosY}:1px;${imgPosX}:1px;width:${photoSize}px;height:${photoSize}px;flex-shrink:0;object-fit:cover;object-position:top;border-radius:23px;" onerror="this.onerror=null;this.src='/img/Random_user.svg';this.style.objectFit='contain';" />
+        <div style="font-size:${fontSize}px;color:black;font-weight:600;font-family:'Roboto',sans-serif;overflow:hidden;text-overflow:ellipsis;${whiteSpace}text-align:${textAlign};${textPadd} flex:1;min-width:0;">
+          <span style="font-weight:bolder;color:${color};padding-right:4px;border-right:3px solid">${entry.type.toUpperCase()}</span>
+          ${name}
+        </div>
+      </div>`;
+    }).join('');
+
+    const containerStyle = len <= 1
+      ? `display:flex;align-items:center;height:100%;`
+      : `display:flex;flex-direction:column;height:100%;gap:${s(2)}px;padding:${s(2)}px 0;`;
+
+    return `<div style="background:#ffff;border-radius:23px;position:relative;overflow:hidden;${todayBorder}">
+      <div style="position:absolute;bottom:${s(2)}px;right:${sw(4)}px;font-size:${dayNumFs}px;font-weight:bold;color:rgb(121 121 121 / 36%);font-family:Georgia,serif;line-height:1;pointer-events:none;z-index:0;">${dayData.dayNumber}</div>
+      <div style="${containerStyle}position:relative;z-index:1;">${entriesHtml}</div>
+    </div>`;
+  }
+
+  // All grid cells
+  const cells = [];
+  for (let row = 0; row < numRows; row++) {
+    for (let col = 0; col < 7; col++) {
+      cells.push(buildCellHtml(gridMap[`${row}-${col}`]));
     }
   }
 
-  return [kuliahBulananSlide];
+  // Day headers
+  const dayHeaders = MALAY_DAYS.map((d) =>
+    `<div style="text-align:center;font-size:${s(46)}px;font-weight:bold;color:rgb(255, 162, 0);letter-spacing:0.5px;font-family:'SairaCondensed',sans-serif; background-color:#ed2a2a;border-radius:23px;">${d}</div>`
+  ).join('');
+
+  // Legend
+  const legendHtml = [
+    { label: 'KULIAH SUBUH', color: TYPE_COLORS.ks },
+    { label: 'KULIAH MAGHRIB', color: TYPE_COLORS.km },
+    { label: 'KULIAH DHUHA', color: TYPE_COLORS.kd },
+    // { label: 'KULIAH KHAS', color: TYPE_COLORS.kk }
+  ].map(({ label, color }) =>
+    `<div style="display:flex;align-items:center;gap:${sw(10)}px;">
+      <div style="width:${s(25)}px;height:${s(25)}px;border-radius:50%;border:${s(2)}px solid ${color};background:${color};flex-shrink:0;"></div>
+      <span style="font-size:${s(25)}px;color:#aaa;font-family:'SairaCondensed',sans-serif;letter-spacing:0.9px;font-weight:bolder">${label}</span>
+    </div>`
+  ).join('');
+
+  parent.content = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content: start;overflow:hidden;background:rgba(0, 0, 0, 0.46)">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:${TOP_H}px;padding:0 ${MARGIN}px;flex-shrink:0;background:rgba(0, 0, 0, 0);">
+      <!--div style="font-weight:bold;line-height:1.35;font-family:'SairaCondensed',sans-serif;">
+        <div style="font-size:${s(22)}px;color:#f06292;">${today} ${dayName}</div>
+        <div style="font-size:${s(18)}px;color:#f48fb1;">${monthName} ${year}</div>
+      </div>
+      <div style="font-size:${s(28)}px;font-weight:bold;color:#fff;letter-spacing:2px;text-align:center;font-family:'SairaCondensed',sans-serif;">JADUAL KULIAH BULAN INI</div>
+      <div style="width:${sw(200)}px;"></div -->
+    </div>
+    
+    <!-- div style="display:grid;grid-template-columns:repeat(7,1fr);height:${DAY_H}px;margin:0 ${MARGIN}px;background:rgba(0,0,0,0.3);flex-shrink:0;border-bottom:1px solid #2a2a2a;align-items:center;" -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);height:${DAY_H}px;margin:0 ${MARGIN}px;flex-shrink:0;align-items:center;gap:35px">
+      ${dayHeaders}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:${CELL_H}px;gap:${17}px;margin:${HEADER_SEP + 30}px ${MARGIN}px 0;flex-shrink:0;">
+      ${cells.join('')}
+    </div>
+
+    <!-- div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:0 ${MARGIN}px;background:rgba(0,0,0,0.25);border-top:1px solid #2a2a2a;flex-shrink:0;" -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:0 ${MARGIN}px;flex-shrink:0;">
+      ${legendHtml}
+    </div>
+  </div>`;
+
+  delete parent.children;
+  return [slide];
 }
