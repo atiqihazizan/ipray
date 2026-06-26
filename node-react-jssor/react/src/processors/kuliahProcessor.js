@@ -180,7 +180,7 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
 
   // Day headers
   const dayHeaders = MALAY_DAYS.map((d) =>
-    `<div style="text-align:center;font-size:${s(46)}px;font-weight:bold;color:rgb(255, 162, 0);letter-spacing:0.5px;font-family:'SairaCondensed',sans-serif; background-color:#ed2a2a;border-radius:23px;">${d}</div>`
+    `<div style="text-align:center;font-size:${s(30)}px;font-weight:bold;color:rgb(255, 162, 0);letter-spacing:0.5px;font-family:'SairaCondensed',sans-serif; background-color:#ed2a2a;border-radius:23px;">${d}</div>`
   ).join('');
 
   // Legend
@@ -192,20 +192,18 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
   ].map(({ label, color }) =>
     `<div style="display:flex;align-items:center;gap:${sw(10)}px;">
       <div style="width:${s(25)}px;height:${s(25)}px;border-radius:50%;border:${s(2)}px solid ${color};background:${color};flex-shrink:0;"></div>
-      <span style="font-size:${s(25)}px;color:#aaa;font-family:'SairaCondensed',sans-serif;letter-spacing:0.9px;font-weight:bolder">${label}</span>
+      <span style="font-size:${s(25)}px;color:#fff;font-family:'SairaCondensed',sans-serif;letter-spacing:0.9px;font-weight:bolder">${label}</span>
     </div>`
   ).join('');
 
   parent.content = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content: start;overflow:hidden;background:rgba(0, 0, 0, 0.46)">
     <div style="display:flex;align-items:center;justify-content:center;gap:${sw(32)}px;height:${TOP_H}px;padding:0 ${MARGIN}px;flex-shrink:0;">
       <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
-        <div style="font-size:${s(22)}px;color:#aaa;letter-spacing:2px;">MASIHI</div>
-        <div style="font-size:${s(52)}px;font-weight:bold;color:#fff;line-height:1;">${monthName} ${year}</div>
+        <div style="font-size:${s(72)}px;font-weight:bold;color:#fff;line-height:1;">${monthName} ${year}</div>
       </div>
       <div style="width:${sw(2)}px;height:${s(60)}px;background:rgba(255,255,255,0.25);flex-shrink:0;"></div>
       <div style="text-align:center;font-family:'SairaCondensed',sans-serif;line-height:1.1;">
-        <div style="font-size:${s(22)}px;color:#aaa;letter-spacing:2px;">HIJRAH</div>
-        <div style="font-size:${s(52)}px;font-weight:bold;color:#ffbd59;line-height:1;">${hijri.month} ${hijri.year}H</div>
+        <div style="font-size:${s(72)}px;font-weight:bold;color:#ffbd59;line-height:1;">${hijri.month} ${hijri.year}H</div>
       </div>
     </div>
     
@@ -213,12 +211,12 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
     <div style="display:grid;grid-template-columns:repeat(7,1fr);height:${DAY_H}px;margin:0 ${MARGIN}px;flex-shrink:0;align-items:center;gap:35px">
       ${dayHeaders}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:${CELL_H}px;gap:${17}px;margin:${HEADER_SEP + 30}px ${MARGIN}px 0;flex-shrink:0;">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:${CELL_H}px;gap:${17}px;margin:${HEADER_SEP + 17}px ${MARGIN}px 0;flex-shrink:0;">
       ${cells.join('')}
     </div>
 
-    <!-- div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:0 ${MARGIN}px;background:rgba(0,0,0,0.25);border-top:1px solid #2a2a2a;flex-shrink:0;" -->
-    <div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:0 ${MARGIN}px;flex-shrink:0;">
+    <!-- div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:8px ${MARGIN}px 5px;background:rgba(0,0,0,0.25);border-top:1px solid #2a2a2a;flex-shrink:0;" -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:${sw(24)}px;height:${LEGEND_H}px;margin:6px ${MARGIN}px 5px;flex-shrink:0;">
       ${legendHtml}
     </div>
   </div>`;

@@ -38,3 +38,5 @@ w4|h6|ks|ust-shukor-salleh|Kasyful Ghaibiyyah
 w4|h6|km|ust-syamsuri-hassan|Tajul Arus
 
 w5|h0|ks|ust-hafezol-saad|Misbahul Munir
+
+w4|h6|km|puz-faiz-hafizuddin-bin-rosli|Faridatul Faraid (Tauhid),Bidayatul Tholibin (Tasawuf)

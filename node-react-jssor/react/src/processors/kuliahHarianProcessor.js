@@ -40,8 +40,8 @@ function buildTarikhHariHtml() {
   return `<div style="display:flex;align-items:center;justify-content:center;gap:${gap}px;width:100%;">
     <div style="display:flex;align-items:center;gap:${innerGap}px;">
       <div style="font-size:${digitSize}px;line-height:1;font-weight:bold;color:#fff;font-family:'SairaCondensed',sans-serif;">${day}</div>
-      <div style="display:flex;flex-direction:column;font-size:${stackSize}px;line-height:1.1;font-weight:bold;color:#fff;font-family:'SairaCondensed',sans-serif;">
-        <div>${month}</div>
+      <div style="display:flex;flex-direction:column;font-size:${stackSize}px;line-height:1.1;font-weight:bold;color:#fff;font-family:'SairaCondensed',sans-serif;align-self: center;align-items: stretch;">
+        <div style="letter-spacing:8px">${month}</div>
         <div>${year}</div>
       </div>
     </div>
@@ -180,8 +180,8 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
         const w1 = parts[1] || '';
         const w0 = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
         const ts = (v) => Math.round(textSize(v));
-        return `<span style="display:block;color:white;line-height:0.7;font-style:italic;font-family:'KaushanScript',cursive;font-size:${ts(120)}px;text-shadow:2px 2px 4px rgba(0,0,0,0.6),4px 4px 10px rgba(0,0,0,0.3);">${w0}</span>
-        <span style="display:block;font-size:${ts(128)}pt;font-family:'FuturaPrimer';font-style:italic;font-weight:900;line-height:1;color:#ffbd59;text-shadow:4px 4px 0px rgba(0,0,0,0.4),6px 6px 14px rgba(0,0,0,0.35);">${w1}</span>`;
+        return `<span style="letter-spacing:5px;display:block;color:white;line-height:0.7;font-style:italic;font-family:'KaushanScript',cursive;font-size:${ts(120)}px;text-shadow:2px 2px 4px rgba(0,0,0,0.6),4px 4px 10px rgba(0,0,0,0.3);">${w0}</span>
+        <span style="letter-spacing:5px;display:block;font-size:${ts(128)}pt;font-family:'FuturaPrimer';font-style:italic;font-weight:900;line-height:1;color:#ffbd59;text-shadow:4px 4px 0px rgba(0,0,0,0.4),6px 6px 14px rgba(0,0,0,0.35);">${w1}</span>`;
       }
       
       const typeChild = {
@@ -208,6 +208,7 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
         // duration: 2000,
         // delay: 0,
         content: kitab,
+        // content:'TEXT',
         style: {
           position: 'relative',
           width: '100%',
@@ -220,9 +221,15 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
           lineHeight: Math.round(textSize(70)),
           border: `${Math.round(textSize(4))}px solid #d4af37`,
           borderRadius: `${Math.round(textSize(80))}px / ${Math.round(textSize(100))}px`,
-          padding: `${Math.round(textSize(57))}px ${Math.round(textSize(60))}px`,
+          // padding: `${Math.round(textSize(57))}px ${Math.round(textSize(60))}px`,
+          // padding: `${Math.round(textSize(0))}px ${Math.round(textSize(60))}px`,
           backgroundColor: 'white',
           boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+          textWrapStyle:'nowrap',
+          height: height(158),
+          display:'flex',
+          justifyContent:'center',
+          alignItems:'center'
         }
       };
 
@@ -270,9 +277,9 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
           top: top(IMAGE_TOP_PX),
           width: width(IMAGE_WIDTH),
           height: height(IMAGE_HEIGHT),
-          objectFit: 'fill',
+          objectFit: 'cover',
           borderRadius: 10,
-          boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px'
+          // boxShadow: 'rgba(0, 0, 0, 0.3) 0px 4px 8px'
         }
       };
       const imageStyle = getCenteredImageStyle(imagePath, imageChild.style);
@@ -305,9 +312,6 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     const type = arr[2] || '';
     if (TYPE_COLORS[type] && kuliahSlide.captions[0]) {
       kuliahSlide.captions[0].style.backgroundColor = hexToRgba(TYPE_COLORS[type], 0.80);
-      // kuliahSlide.captions[0].style.backgroundImage = 'url(/img/frame.svg)';
-      // kuliahSlide.captions[0].style.backgroundSize = '100% 100%';
-      // kuliahSlide.captions[0].style.backgroundRepeat = 'no-repeat';
     }
     kuliahHariSlides.push(kuliahSlide);
   });

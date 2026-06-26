@@ -18,8 +18,9 @@ ust-hassan-abd-latif|Ust Hassan Abd Latif|hassan_latif|Minhajul 'Abidin
 ust-rahimi-rahman|Ust Rahimi Rahman|rahimi|Keperibadian Seorang Muslim Menurut Al-Quran & Hadis
 ust-uzair-abd-hani-albanjari|Ust Uzair Abd Hani Albanjari|uzair|Tafsir Al-Quran,Anak Kunci Syurga
 ust-taufik-mohd-husin|Ust Taufik Mohd Husin|taufik|Ayyuhal Walad
-ust-bakar-pelantek|Ust Bakar Pelantek|bakar|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)
 ust-ridhoudin|Ust Ridhoudin|ridhoudin|Hidayatul Mutafakirin
 ustazah-mardiah-zakaria|Ustazah Mardiah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
 ust-mohamad-shakir|Ust Mohamad Shakir|shakir|Ummul Amrad
 ust-syamsuri-hassan|Ust Syamsuri Hassan|syamsuri|Tajul Arus
+
+puz-faiz-hafizuddin-bin-rosli|PUZ Faiz Hafizuddin Rosli|PU Faiz|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)

@@ -57,6 +57,15 @@ export const TYPE_LABELS = {
 
 const KULIAH_TYPE_CODES = new Set(Object.keys(TYPE_LABELS));
 
+export const TYPE_COLORS = { ks: '#133d6a', km: '#007a01', kd: '#137a80', kk: '#ab47bc' };
+export const TYPE_ORDER = { ks: 0, kd: 1, km: 2, kk: 3 };
+export const hexToRgba = (hex, alpha) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
 /**
  * Background slide kuliah harian ikut kod type: /img/bg-ks.png, bg-km.png, dll.
  * @param {string} typeCode - ks, km, kd, kk

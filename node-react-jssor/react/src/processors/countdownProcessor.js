@@ -47,8 +47,8 @@ function buildCaptionChildren(item, isLast) {
     children.push({
       type: 'div',
       // transition: idx === 0 ? 'CLIP|LR' : null,
-      transition: 'auto',
-      duration: 1000,
+      // transition: 'auto',
+      // duration: 1000,
       content: text,
       style: {
         position: 'absolute',
@@ -76,8 +76,8 @@ function buildCaptionChildren(item, isLast) {
       children.push({
         type: 'div',
         // transition: 'CLIP|LR',
-        transition: 'auto',
-        duration: 1000,
+        // transition: 'auto',
+        // duration: 1000,
         content: countdownText,
         style: {
           position: 'absolute',
@@ -87,7 +87,7 @@ function buildCaptionChildren(item, isLast) {
           width: '100%',
           height: 180,
           textAlign: 'center',
-          fontSize: 100,
+          fontSize: 150,
           color: 'rgb(245 206 28)',
           // textShadow: '0 4px 12px rgba(0,0,0,0.9)',
           // textShadow: [
@@ -158,11 +158,11 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig,
     const parent = slide.captions[0];
     if (parent) {
       const isLast = i === active.length - 1;
-      if (i > 0) parent.transition = null;
-      parent.transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
+    //   if (i > 0) parent.transition = null;
+    //   parent.transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
       parent.children = buildCaptionChildren(enrichedItem, isLast);
     }
-    slide.transitionType = i === 0 ? 'auto' : 'static';
+    // slide.transitionType = i === 0 ? 'auto' : 'static';
     return slide;
   });
 }
