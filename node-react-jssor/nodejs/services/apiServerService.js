@@ -7,6 +7,21 @@ const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require
 const { getWeekCode, getDayCode } = require('./kuliahDateUtils');
 
 /**
+ * Escape string untuk selamat dibenamkan dalam petikan dwi-tanda (") shell command.
+ * PENTING: backslash MESTI di-escape DAHULU sebelum aksara lain — kalau tidak, backslash
+ * baharu yang disisipkan oleh escape "/$/` akan turut di-escape semula, merosakkan
+ * petikan dan membenarkan pecah keluar (command injection). Nilai yang dipulangkan
+ * MESTI sentiasa dibenamkan dalam petikan dwi-tanda dalam command string.
+ */
+function escapeShellDoubleQuoted(str) {
+  return String(str ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, '\\$')
+    .replace(/`/g, '\\`');
+}
+
+/**
  * API Server Service
  * Express server untuk API endpoints (port 3001)
  * Socket.IO juga attached ke server ini untuk real-time updates
@@ -133,9 +148,34 @@ class ApiServerService {
       
       next();
     });
-    
+
+    // Auth — lindungi endpoint admin/tulis (panel setting) daripada akses tanpa token.
+    // Laluan baca sahaja yang diperlukan oleh paparan kiosk (tiada sesi log masuk) dikecualikan.
+    this.app.use('/api', this.buildAuthMiddleware());
+
     // Setup all routes
     this.setupRoutes();
+  }
+
+  /**
+   * Middleware auth untuk /api/* — kecuali laluan baca-sahaja yang kiosk (paparan awam,
+   * tiada log masuk) perlukan. Semua laluan lain (tulis fail, reboot, WiFi, dsb) mesti
+   * sertakan header X-Access-Token yang sepadan dengan securityService.getAccessToken().
+   */
+  buildAuthMiddleware() {
+    const PUBLIC_PREFIXES = [
+      '/token',            // perlu boleh diakses tanpa token untuk dapatkan token itu sendiri
+      '/time',             // kiosk baca jam (GET /api/time, /api/time/sync tidak termasuk — mutate, dikecualikan di bawah)
+      '/data/app',         // GET /api/data/app, /api/data/app/takwim, /api/data/app/takwim/full — dibaca kiosk
+    ];
+    return (req, res, next) => {
+      if (req.method === 'OPTIONS') return next();
+      const isPublicGet = req.method === 'GET' && PUBLIC_PREFIXES.some(p => req.path === p || req.path.startsWith(p + '/'));
+      if (isPublicGet) return next();
+      const token = req.get('x-access-token') || req.get('X-Access-Token') || '';
+      if (token && this.securityService && token === this.securityService.getAccessToken()) return next();
+      return res.status(401).json({ error: 'Unauthorized — sila sertakan header X-Access-Token yang sah (dapatkan dari GET /api/token)' });
+    };
   }
 
   /**
@@ -1271,12 +1311,12 @@ class ApiServerService {
         }
         
         // Escape SSID and password untuk security (handle special characters)
-        const escapedSsid = ssid.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\');
-        const escapedPassword = password ? password.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\') : '';
-        
+        const escapedSsid = escapeShellDoubleQuoted(ssid);
+        const escapedPassword = password ? escapeShellDoubleQuoted(password) : '';
+
         // Generate connection name (remove special chars untuk connection name)
         const connectionName = `netplan-wlan0-${ssid.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-        const escapedConnectionName = connectionName.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
         
         // Delete existing connection with same name if exists
         try {
@@ -1397,10 +1437,10 @@ class ApiServerService {
           const execAsync = promisify(exec);
           
           const connectionName = 'ipray-hotspot';
-          const escapedConnectionName = connectionName.replace(/"/g, '\\"');
-          
+          const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
+
           const nmcli = this.getNmcliPath();
-          
+
           // Check if hotspot already exists
           let hotspotExists = false;
           try {
@@ -1475,11 +1515,11 @@ class ApiServerService {
         }
         
         // Escape SSID and password
-        const escapedSsid = ssid.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\');
-        const escapedPassword = password.replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`').replace(/\\/g, '\\\\');
-        
+        const escapedSsid = escapeShellDoubleQuoted(ssid);
+        const escapedPassword = escapeShellDoubleQuoted(password);
+
         const connectionName = 'ipray-hotspot';
-        const escapedConnectionName = connectionName.replace(/"/g, '\\"');
+        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
         
         // Delete existing hotspot connection if exists
         try {
@@ -1558,8 +1598,8 @@ class ApiServerService {
         
         const nmcli = this.getNmcliPath();
         const connectionName = 'ipray-hotspot';
-        const escapedConnectionName = connectionName.replace(/"/g, '\\"');
-        
+        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
+
         // Disconnect hotspot
         try {
           await execAsync(`sudo ${nmcli} connection down "${escapedConnectionName}" 2>/dev/null || true`);

@@ -14,6 +14,11 @@ const PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 // generus supaya tidak potong beep.wav (~13s) sebelum habis; bila durasi diketahui, guna durasi sebenar + buffer.
 const BEEP_FALLBACK_TIMEOUT_MS = 20_000;
 const BEEP_FALLBACK_BUFFER_MS = 2_000;
+// Jaring keselamatan mutlak jika promise play() sendiri tidak pernah resolve/reject
+// (jarang, tapi dilaporkan berlaku pada sesetengah browser Chromium terbenam) — tanpa ini,
+// urutan boleh tersangkut di skrin Azan selama-lamanya kerana fallback biasa hanya bermula
+// SELEPAS play() selesai.
+const BEEP_HARD_CEILING_MS = 30_000;
 
 function formatCountdown(totalSeconds) {
   const s = Math.max(0, totalSeconds);
@@ -38,6 +43,7 @@ function playBeepThenDo(onDone) {
     if (done) return;
     done = true;
     if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+    if (hardCeilingTimer) { clearTimeout(hardCeilingTimer); hardCeilingTimer = null; }
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     onDone();
   };
@@ -46,9 +52,13 @@ function playBeepThenDo(onDone) {
     if (event === 'stop') finish();
   });
 
+  // Bermula SERTA-MERTA (bukan selepas play() selesai) — jaring keselamatan mutlak.
+  let hardCeilingTimer = setTimeout(finish, BEEP_HARD_CEILING_MS);
+
   audioService.play({ sound: 'beep', volume: 1, playCount: 1 })
     .then(() => {
       if (done) return;
+      if (hardCeilingTimer) { clearTimeout(hardCeilingTimer); hardCeilingTimer = null; }
       // Fallback hanya sebagai jaringan keselamatan jika event 'stop' tidak fired langsung.
       // Guna durasi sebenar audio + buffer supaya skrin tidak bertukar sebelum beep habis main.
       const durationMs = audioService.getDurationMs();
@@ -60,6 +70,7 @@ function playBeepThenDo(onDone) {
   return () => {
     done = true;
     if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+    if (hardCeilingTimer) { clearTimeout(hardCeilingTimer); hardCeilingTimer = null; }
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   };
 }
@@ -75,7 +86,7 @@ function getDebugStartScreen() {
  * Sentiasa mulakan dari screen azan tanpa mengira warningSeconds.
  */
 export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComplete, overlayOverride = null }) {
-  const { PRAYER_TIME_CONFIG } = useData();
+  const { PRAYER_TIME_CONFIG, timeService } = useData();
   const debugStart = getDebugStartScreen();
 
   const [screen, setScreen] = useState(debugStart || 'azan');
@@ -136,7 +147,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       const parts = prayerTimeStr.split(':').map(Number);
       const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
       const ptTotalSeconds = ph * 3600 + pm * 60 + ps;
-      const now = new Date();
+      const now = new Date(timeService?.now ? timeService.now() : Date.now());
       const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
       const remaining = ptTotalSeconds - currentTotalSeconds;
 
@@ -206,7 +217,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     clearSafeReloadTimer();
 
     const tryReload = () => {
-      const now = new Date();
+      const now = new Date(timeService?.now ? timeService.now() : Date.now());
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
       const ptMinutes = prayerTimeStr
@@ -217,7 +228,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       // Guna key bertarikh supaya tidak stale lintas hari
       let nextPtMinutes = 24 * 60;
       try {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = now.toISOString().slice(0, 10);
         const stored = JSON.parse(localStorage.getItem(`${LS_PRAYER_TIMES_KEY}-${today}`) || 'null')
           ?? JSON.parse(localStorage.getItem(LS_PRAYER_TIMES_KEY) || 'null');
         const idx = PRAYERS.indexOf(prayerName);
@@ -245,7 +256,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     };
 
     tryReload();
-  }, [prayerName, prayerTimeStr, onComplete, clearSafeReloadTimer]);
+  }, [prayerName, prayerTimeStr, onComplete, clearSafeReloadTimer, timeService]);
 
   if (!screen) return <div style={bgSolatStyle} />;
 

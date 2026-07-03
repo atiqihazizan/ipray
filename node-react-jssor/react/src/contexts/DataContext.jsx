@@ -369,7 +369,8 @@ export const DataProvider = ({ children }) => {
           // if (isMounted) setDeathAnnouncementData(null);
           if (isMounted) {
             setDeathAnnouncementData(null);
-            window.location.reload();
+            // Jangan ganggu urutan azan/iqamah/solat — tangguh reload sehingga selesai
+            runAfterPrayerSequence(() => { if (isMounted) window.location.reload(); });
           }
           kematianTimerRef.current = null;
         }, durasi * 1000);
@@ -379,7 +380,7 @@ export const DataProvider = ({ children }) => {
       if (!isMounted) return;
       if (kematianTimerRef.current) { clearTimeout(kematianTimerRef.current); kematianTimerRef.current = null; }
       // setDeathAnnouncementData(null);
-      window.location.reload();
+      runAfterPrayerSequence(() => { if (isMounted) window.location.reload(); });
     });
 
     // Live streaming
@@ -398,7 +399,7 @@ export const DataProvider = ({ children }) => {
       // if (isMounted) setLiveStreamData(null);
       if (isMounted) {
         // setLiveStreamData(null);
-        window.location.reload();
+        runAfterPrayerSequence(() => { if (isMounted) window.location.reload(); });
       }
     });
 

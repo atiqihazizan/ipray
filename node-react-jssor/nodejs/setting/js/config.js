@@ -25,3 +25,45 @@ if (typeof window !== 'undefined') {
         SOCKET_URL
     };
 }
+
+/**
+ * Auth token untuk panel setting — server (apiServerService.js) kini wajibkan header
+ * X-Access-Token untuk semua endpoint /api/* tulis/admin (WiFi, reboot, CRUD data, dsb).
+ * Dibungkus di sini (satu tempat) supaya SEMUA panggilan fetch() sedia ada di seluruh
+ * panel setting (api.js, dialog.js, table.js, wifi.js, dll — 70+ tempat) automatik
+ * hantar token tanpa perlu ubah setiap satu.
+ */
+if (typeof window !== 'undefined' && !window.__fetchTokenPatched) {
+    window.__fetchTokenPatched = true;
+    // PENTING: nativeFetch (bukan window.fetch) dipakai untuk dapatkan token itu sendiri —
+    // kalau guna window.fetch di sini, ia panggil versi wrapped semula (sebab dah dipatch di
+    // bawah), yang cuba dapatkan token dahulu... sebelum token pertama sempat di-cache = rekursi.
+    const nativeFetch = window.fetch.bind(window);
+    const TOKEN_URL = `${API_URL}/token`;
+
+    let _accessTokenPromise = null;
+    function ensureAccessToken() {
+        if (!_accessTokenPromise) {
+            _accessTokenPromise = nativeFetch(TOKEN_URL)
+                .then(res => res.json())
+                .then(data => data.token)
+                .catch(() => null);
+        }
+        return _accessTokenPromise;
+    }
+
+    window.fetch = async (input, init = {}) => {
+        const url = typeof input === 'string' ? input : (input?.url || '');
+        // Hanya sisip token untuk permintaan ke API kita sendiri (same-origin API), bukan CDN/pihak
+        // ketiga — dan bukan /api/token itu sendiri (elak rekursi + memang tak perlukan token).
+        if ((url.startsWith(API_URL) || url.startsWith('/api')) && url !== TOKEN_URL) {
+            const token = await ensureAccessToken();
+            if (token) {
+                const headers = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined));
+                headers.set('X-Access-Token', token);
+                init = { ...init, headers };
+            }
+        }
+        return nativeFetch(input, init);
+    };
+}

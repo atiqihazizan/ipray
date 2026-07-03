@@ -51,6 +51,7 @@ const HlsPlayer = ({ url }) => {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -59,6 +60,7 @@ const HlsPlayer = ({ url }) => {
 
     retryCountRef.current = 0;
     setError(null);
+    if (retryTimeoutRef.current) { clearTimeout(retryTimeoutRef.current); retryTimeoutRef.current = null; }
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -79,7 +81,10 @@ const HlsPlayer = ({ url }) => {
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
             if (retryCountRef.current < HLS_RETRY_MAX) {
               retryCountRef.current += 1;
-              setTimeout(() => hls.startLoad(), HLS_RETRY_DELAY_MS);
+              retryTimeoutRef.current = setTimeout(() => {
+                retryTimeoutRef.current = null;
+                if (hlsRef.current === hls) hls.startLoad();
+              }, HLS_RETRY_DELAY_MS);
             } else {
               setError('Ralat memuat siaran (sambungan gagal)');
             }
@@ -91,6 +96,7 @@ const HlsPlayer = ({ url }) => {
         }
       });
       return () => {
+        if (retryTimeoutRef.current) { clearTimeout(retryTimeoutRef.current); retryTimeoutRef.current = null; }
         hls.destroy();
         hlsRef.current = null;
       };

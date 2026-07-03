@@ -10,6 +10,7 @@ import {
   dispatchSyurukTime,
   dispatchDateChanged
 } from '../utils/timeEvents';
+import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 export const LS_PRAYER_TIMES_KEY = 'ipray-prayer-times';
@@ -161,6 +162,11 @@ export function useTimeDriver() {
             // Trigger HANYA bila kita masih SEBELUM waktu solat (elak beep serta-merta bila tick terlepas)
             const warnTrigger = prayerTotalSeconds - warningSecondsRef.current;
             const warnKey = testPrayerStr ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
+            // Sengaja TIDAK padam warnKey selepas waktu solat berlalu — key sudah bertarikh unik
+            // (dibersihkan betul bila hari bertukar di atas), dan pemadaman awal ini boleh buka
+            // lubang replay: jika jam sistem melompat ke belakang (contoh OS betulkan RTC) dan
+            // jatuh semula dalam tingkap amaran, seluruh urutan azan-beep-iqamah-solat akan
+            // tercetus SEKALI LAGI pada hari yang sama.
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
@@ -168,8 +174,6 @@ export function useTimeDriver() {
                 dispatchPrayerWarning(displayName, timeStr);
               }
               if (testPrayerStr) break; // Test mode: satu dispatch sahaja
-            } else if (currentTotalSeconds >= prayerTotalSeconds) {
-              delete prayerWarningTriggeredRef.current[warnKey];
             }
           }
 
@@ -178,14 +182,17 @@ export function useTimeDriver() {
             const [sh, sm] = syurukStr.split(':').map(Number);
             const currentMinutes = t.hours * 60 + t.minutes;
             const syurukMinutes = sh * 60 + sm;
-            if (currentMinutes === syurukMinutes) {
-              const syurukKey = `Syuruk-${new Date().toDateString()}`;
-              if (!syurukTriggeredRef.current[syurukKey]) {
+            const syurukKey = `Syuruk-${todayStr}`;
+            // Tingkap 60 minit (bukan 1 minit) — jika Syuruk jatuh semasa urutan azan/iqamah/solat
+            // Subuh sedang aktif (PrayerTimeController di-unmount, tiada yang dengar), tangguh
+            // dispatch sehingga urutan itu selesai supaya bip Syuruk tidak hilang terus untuk hari itu.
+            if (currentMinutes >= syurukMinutes && currentMinutes < syurukMinutes + 60) {
+              if (!syurukTriggeredRef.current[syurukKey] && !isPrayerSequenceActive()) {
                 syurukTriggeredRef.current[syurukKey] = true;
                 dispatchSyurukTime();
               }
-            } else if (currentMinutes > syurukMinutes + 1) {
-              delete syurukTriggeredRef.current[`Syuruk-${new Date().toDateString()}`];
+            } else if (currentMinutes >= syurukMinutes + 60) {
+              delete syurukTriggeredRef.current[syurukKey];
             }
           }
         }

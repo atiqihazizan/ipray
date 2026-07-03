@@ -27,8 +27,16 @@ export const PRAYER_NAMES = [
   "MASA", "SUBUH", "SYURUK", "ZOHOR", "ASAR", "MAGHRIB", "ISYAK"
 ];
 
-// Jumlah hari dalam bulan
+// Jumlah hari dalam bulan (Februari 28 — guna getMonthDays(year) untuk versi sedar tahun lompat)
 const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+/** Tahun lompat Gregorian: boleh bahagi 4, kecuali abad yang tak boleh bahagi 400 */
+export const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+/** Jumlah hari setiap bulan untuk tahun tertentu (Februari 29 jika tahun lompat) */
+const getMonthDays = (year) => (
+  isLeapYear(year) ? [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] : MONTH_DAYS
+);
 
 /**
  * Parse fail takwim.txt
@@ -140,9 +148,10 @@ export const minutesToTime = (minutes) => {
  * @returns {Array} [days dalam tahun, daysm sejak epoch]
  */
 export const getYearDays = (year, month, day) => {
+  const monthDays = getMonthDays(year);
   let days = day;
   for (let i = 1; i < month; i++) {
-    days += MONTH_DAYS[i];
+    days += monthDays[i];
   }
   
   let daysm = days;
@@ -225,7 +234,9 @@ export const calculateHijri = ({ hdata, daysm, maghrib = 0, currentMinutes = 0 }
  * @returns {Object} Maklumat lengkap tarikh, waktu, dan waktu solat
  */
 export const getCurrentIslamicTime = ({ hdata, wdata, timeService, nextPrayerDelayMinutes }) => {
-  const timestamp = Date.now();
+  // Guna masa dikalibrasi (offset NTP dari backend) jika tersedia — penting untuk kiosk dengan
+  // CMOS/RTC rosak di mana jam sistem tempatan mungkin salah.
+  const timestamp = timeService?.now ? timeService.now() : Date.now();
   const now = new Date(timestamp);
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -240,11 +251,13 @@ export const getCurrentIslamicTime = ({ hdata, wdata, timeService, nextPrayerDel
   
   // Dapatkan waktu solat untuk hari ini
   // Jika data tidak ada untuk hari ini (contoh: tahun 2026 tapi data untuk 2021),
-  // cuba guna data dari hari yang sama dalam tahun data (modulo 365)
+  // cuba guna data dari hari yang sama dalam tahun data. Guna wdata.length sebenar
+  // (bukan hardcode 365) supaya tidak tersasar bila tahun data ialah tahun lompat (366 baris).
   let todayPrayer = wdata[days] || [];
   if (!todayPrayer || todayPrayer.length === 0) {
     // Guna data dari hari yang sama dalam tahun (untuk tahun yang berbeza)
-    const dayInDataYear = ((days - 1) % 365) + 1;
+    const dataYearLength = Math.max(1, wdata.length - 1); // wdata[0] tak digunakan
+    const dayInDataYear = ((days - 1) % dataYearLength) + 1;
     todayPrayer = wdata[dayInDataYear] || [];
   }
   
