@@ -1,6 +1,13 @@
 import { io } from 'socket.io-client';
 import { getSocketUrl } from './apiBase';
 import audioService from './audioService.js';
+import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
+
+/** Elak chime 'notify' mengganggu paparan azan/iqamah/solat yang sedang aktif */
+function playNotifyIfIdle() {
+  if (isPrayerSequenceActive()) return;
+  audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+}
 
 /**
  * Socket.IO Service untuk React Frontend
@@ -94,7 +101,7 @@ class SocketService {
 
     // Listen for data updates
     this.socket.on('data:updated', (data) => {
-      audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+      playNotifyIfIdle();
       // Hantar ACK ke server sebelum reload supaya Setting panel tahu React sudah terima
       if (this.socket && this.socket.connected) {
         this.socket.emit('data:ack', {
@@ -108,7 +115,7 @@ class SocketService {
 
     // Listen for takwim refresh
     this.socket.on('takwim:refresh', (data) => {
-      audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+      playNotifyIfIdle();
       // Hantar ACK untuk takwim refresh
       if (this.socket && this.socket.connected) {
         this.socket.emit('data:ack', {
@@ -122,7 +129,7 @@ class SocketService {
 
     // Listen for reboot
     this.socket.on('reboot', (data) => {
-      audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+      playNotifyIfIdle();
       this.notifyListeners('reboot', data);
     });
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../contexts/DataContext';
 import audioService from '../services/audioService';
 import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
+import { setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import AzanScreen from './prayer-screens/AzanScreen';
 import IqamahScreen from './prayer-screens/IqamahScreen';
 import SolatScreen from './prayer-screens/SolatScreen';
@@ -9,8 +10,10 @@ import DateTimeOverlay from './DateTimeOverlay';
 import { bgSolatStyle } from './prayer-screens/styles';
 
 const PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
-// Fallback timeout jika audio 'stop' event tidak diterima (contoh: autoplay suspend)
-const BEEP_FALLBACK_TIMEOUT_MS = 10_000;
+// Fallback timeout jika durasi audio tidak dapat dikesan (contoh: autoplay suspend) — guna nilai
+// generus supaya tidak potong beep.wav (~13s) sebelum habis; bila durasi diketahui, guna durasi sebenar + buffer.
+const BEEP_FALLBACK_TIMEOUT_MS = 20_000;
+const BEEP_FALLBACK_BUFFER_MS = 2_000;
 
 function formatCountdown(totalSeconds) {
   const s = Math.max(0, totalSeconds);
@@ -43,10 +46,16 @@ function playBeepThenDo(onDone) {
     if (event === 'stop') finish();
   });
 
-  // Fallback: jika audio tidak selesai atau 'stop' tidak fired, teruskan selepas timeout
-  fallbackTimer = setTimeout(finish, BEEP_FALLBACK_TIMEOUT_MS);
-
-  audioService.play({ sound: 'beep', volume: 1, playCount: 1 }).catch(finish);
+  audioService.play({ sound: 'beep', volume: 1, playCount: 1 })
+    .then(() => {
+      if (done) return;
+      // Fallback hanya sebagai jaringan keselamatan jika event 'stop' tidak fired langsung.
+      // Guna durasi sebenar audio + buffer supaya skrin tidak bertukar sebelum beep habis main.
+      const durationMs = audioService.getDurationMs();
+      const timeoutMs = durationMs ? durationMs + BEEP_FALLBACK_BUFFER_MS : BEEP_FALLBACK_TIMEOUT_MS;
+      fallbackTimer = setTimeout(finish, timeoutMs);
+    })
+    .catch(finish);
 
   return () => {
     done = true;
@@ -101,6 +110,13 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       clearSafeReloadTimer();
     };
   }, [clearTimer, clearBeep, clearSafeReloadTimer]);
+
+  // Tandakan urutan solat sedang aktif — proses lain (contoh: reload data:updated)
+  // akan tangguh sehingga urutan ini selesai (unmount)
+  useEffect(() => {
+    setPrayerSequenceActive(true);
+    return () => setPrayerSequenceActive(false);
+  }, []);
 
   // Sentiasa mulakan dari screen azan apabila prayerTimeStr tersedia (kecuali debug via ?debugScreen=)
   useEffect(() => {

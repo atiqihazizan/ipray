@@ -913,13 +913,10 @@ class ApiServerService {
     // System control - Reload React app
     this.app.post('/api/system/reload-react', async (req, res) => {
       try {
-        // Broadcast data:updated untuk semua data types untuk trigger React reload
-        const dataTypes = ['slides', 'kuliah', 'images', 'announcements', 'countdowns', 'takwim', 'config', 'petugas', 'jadual-petugas'];
-        
-        dataTypes.forEach(filename => {
-          this.socketServerService.broadcastDataUpdate(filename, { action: 'reload:react' });
-        });
-        
+        // SATU broadcast data:updated (fileName bukan 'slides') sudah cukup untuk cetus reload React —
+        // elak broadcast berganda yang menyebabkan beberapa reload/bip berturut-turut untuk satu tindakan
+        this.socketServerService.broadcastDataUpdate('system', { action: 'reload:react' });
+
         const takwimContent = await this.dataService.readFile('takwim').catch(() => '');
         const takwim = this.dataService.getTakwimForApp(takwimContent);
         this.socketServerService.broadcastTakwimRefresh({ takwimArray: takwim.takwimArray, takwimParsed: takwim.takwimParsed });

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { getApiBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeServiceStub from '../services/timeServiceStub';
+import { runAfterPrayerSequence } from '../utils/prayerSequenceState';
 
 /**
  * Default constants untuk timing configuration (fallback jika file config.txt tidak wujud)
@@ -226,10 +227,16 @@ export const DataProvider = ({ children }) => {
     let takwimReloadDebounceTimer;
     let isMounted = true;
 
+    // Debounce data:updated: beberapa event berturut-turut (contoh: reload-react broadcast
+    // banyak fileName sekaligus) digabung jadi SATU reload. Jika urutan azan/iqamah/solat
+    // sedang aktif, tangguh reload sehingga urutan itu selesai — elak paparan terganggu/berulang.
     const debouncedReload = () => {
       if (reloadDebounceTimer) clearTimeout(reloadDebounceTimer);
       reloadDebounceTimer = setTimeout(() => {
-        if (isMounted && socketConnected) loadAllData();
+        if (!isMounted) return;
+        runAfterPrayerSequence(() => {
+          if (isMounted) window.location.reload();
+        });
       }, 500);
     };
 
@@ -343,7 +350,7 @@ export const DataProvider = ({ children }) => {
     // Bila fileName === 'slides' (flag paparan sahaja), jangan reload - paparan dikemas kini via screen-flags:updated
     const unsubscribeDataUpdated = socketService.on('data:updated', (data) => {
       if (data?.fileName === 'slides') return;
-      window.location.reload();
+      debouncedReload();
     });
 
     // Reboot - reload window

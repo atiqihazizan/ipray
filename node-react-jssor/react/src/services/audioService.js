@@ -263,6 +263,14 @@ class AudioService {
   }
 
   /**
+   * Dapatkan durasi audio semasa (ms), atau null jika belum diketahui (metadata belum load)
+   */
+  getDurationMs() {
+    const d = this.audioRef?.duration;
+    return Number.isFinite(d) && d > 0 ? d * 1000 : null;
+  }
+
+  /**
    * Check jika audio sedang play
    */
   getIsPlaying() {
