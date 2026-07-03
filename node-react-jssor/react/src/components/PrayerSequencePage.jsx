@@ -3,6 +3,7 @@ import { useData } from '../contexts/DataContext';
 import audioService from '../services/audioService';
 import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
 import { setPrayerSequenceActive } from '../utils/prayerSequenceState';
+import { logKioskEvent } from '../services/clientLogger';
 import AzanScreen from './prayer-screens/AzanScreen';
 import IqamahScreen from './prayer-screens/IqamahScreen';
 import SolatScreen from './prayer-screens/SolatScreen';
@@ -32,12 +33,14 @@ function formatCountdown(totalSeconds) {
  * Fallback: jika 'stop' tidak diterima dalam BEEP_FALLBACK_TIMEOUT_MS, teruskan juga.
  * Returns cleanup function untuk unsubscribe jika komponen unmount.
  */
-function playBeepThenDo(onDone) {
+function playBeepThenDo(onDone, prayerName) {
   if (audioService.getIsPlaying()) audioService.stop();
 
   let unsubscribe = null;
   let done = false;
   let fallbackTimer = null;
+
+  logKioskEvent('beep-start', { prayer: prayerName });
 
   const finish = () => {
     if (done) return;
@@ -45,6 +48,7 @@ function playBeepThenDo(onDone) {
     if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
     if (hardCeilingTimer) { clearTimeout(hardCeilingTimer); hardCeilingTimer = null; }
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    logKioskEvent('beep-done', { prayer: prayerName });
     onDone();
   };
 
@@ -126,7 +130,12 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // akan tangguh sehingga urutan ini selesai (unmount)
   useEffect(() => {
     setPrayerSequenceActive(true);
-    return () => setPrayerSequenceActive(false);
+    logKioskEvent('sequence-start', { prayer: prayerName, time: prayerTimeStr });
+    return () => {
+      setPrayerSequenceActive(false);
+      logKioskEvent('sequence-end', { prayer: prayerName });
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sentiasa mulakan dari screen azan apabila prayerTimeStr tersedia (kecuali debug via ?debugScreen=)
@@ -154,7 +163,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       if (remaining <= 0) {
         clearTimer();
         setCountdown(0);
-        beepCleanupRef.current = playBeepThenDo(() => setScreen('iqamah'));
+        beepCleanupRef.current = playBeepThenDo(() => setScreen('iqamah'), prayerName);
         return;
       }
       setCountdown(remaining);
@@ -179,6 +188,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       setCountdown(remaining);
       if (remaining <= 0) {
         clearTimer();
+        logKioskEvent('iqamah-done', { prayer: prayerName });
         setScreen('solat');
       }
     }, 1000);
@@ -241,6 +251,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
 
       // Reload jika sudah lepas waktu solat dan belum sampai solat seterusnya
       if (ptMinutes !== null && currentMinutes > ptMinutes && currentMinutes < nextPtMinutes) {
+        logKioskEvent('solat-done-reload', { prayer: prayerName });
         window.location.reload();
       } else {
         // Cuba semula dalam 30s — tapi hanya jika masih dalam window yang munasabah

@@ -98,7 +98,7 @@ async function startServers() {
               const src = path.join(initialDataPath, file);
               const dest = path.join(dataPath, file);
               fs.copyFileSync(src, dest);
-              console.log(`  ✓ Copied: ${file}`);
+              console.log(`  OK: Copied: ${file}`);
             } catch (error) {
               console.error(`  ✗ Failed to copy ${file}:`, error.message);
             }
@@ -130,7 +130,7 @@ async function startServers() {
               const dest = path.join(penceramahPath, file);
               if (fs.statSync(src).isFile()) {
                 fs.copyFileSync(src, dest);
-                console.log(`  ✓ Copied: penceramah/${file}`);
+                console.log(`  OK: Copied: penceramah/${file}`);
               }
             } catch (error) {
               console.error(`  ✗ Failed to copy penceramah/${file}:`, error.message);
@@ -147,7 +147,7 @@ async function startServers() {
               const dest = path.join(slidesPath, file);
               if (fs.statSync(src).isFile()) {
                 fs.copyFileSync(src, dest);
-                console.log(`  ✓ Copied: slides/${file}`);
+                console.log(`  OK: Copied: slides/${file}`);
               }
             } catch (error) {
               console.error(`  ✗ Failed to copy slides/${file}:`, error.message);
@@ -277,9 +277,9 @@ async function startServers() {
     console.log(`Public Server: http://localhost:${PUBLIC_PORT}`);
     console.log(`API Server: http://localhost:${SETTING_PORT}`);
     if (ELECTRON_MODE) {
-      console.log(`✓ Electron mode (data & images di luar asar)`);
+      console.log(`OK: Electron mode (data & images di luar asar)`);
     } else if (PROD_MODE) {
-      console.log(`✓ Production mode`);
+      console.log(`OK: Production mode`);
     } else {
       console.log(`ℹ️  Development mode (set PROD_MODE=true for production)`);
     }

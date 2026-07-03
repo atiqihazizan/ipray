@@ -31,7 +31,7 @@ silverbackground|/images/penceramah/SilverBackground4.jpg
 picture1b|/images/penceramah/picture1b.png
 picture3|/images/slides/picture3.jpg
 zakaria-abdul|/images/imambilal/Random_user.svg
-ustaz-hassan-hashim|/images/imambilal/Random_user.svg
+ustaz-hassan-hashim|/images/imambilal/ustaz_hassan_hashim.png
 abu-hasan|/images/imambilal/Random_user.svg
 ustaz-zainuddin|/images/imambilal/Random_user.svg
 

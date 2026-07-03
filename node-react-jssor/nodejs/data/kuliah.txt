@@ -40,3 +40,4 @@ w4|h6|km|ust-syamsuri-hassan|Tajul Arus
 w5|h0|ks|ust-hafezol-saad|Misbahul Munir
 
 w4|h6|km|puz-faiz-hafizuddin-bin-rosli|Faridatul Faraid (Tauhid),Bidayatul Tholibin (Tasawuf)
+w5|h3|km|ust-hassan-hj-hashim|Wi Shahul Afrah Wa Isbahul Falah

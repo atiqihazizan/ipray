@@ -129,14 +129,14 @@ class TimeService {
       this.isOnline = true;
       // if (this.setSystemClock(Date.now() + offset)) {
       //   this.ntpOffset = 0;
-      //   console.log('[TimeService] ✓ System clock updated');
+      //   console.log('[TimeService] OK: System clock updated');
       // }
       // Guna offset dalam app sahaja; tiada setSystemClock() supaya tidak minta password (sudo) di mana-mana platform.
       this.updateTimeSource();
-      console.log(`[TimeService] ✓ NTP sync successful, offset: ${offset}ms`);
+      console.log(`[TimeService] OK: NTP sync successful, offset: ${offset}ms`);
       
       if (this.cmosIssue && this.cmosIssue.detected) {
-        console.log('[TimeService] ✓ Time fixed via NTP sync');
+        console.log('[TimeService] OK: Time fixed via NTP sync');
       }
     } catch (error) {
       console.warn(`[TimeService] NTP sync failed: ${error.message}`);
@@ -148,7 +148,7 @@ class TimeService {
         if (this.manualOffset !== 0) {
           console.log('[TimeService] ⚠️  Using manual offset (offline mode)');
         } else {
-          console.error('[TimeService] 🔴 CRITICAL: Invalid time & no calibration available');
+          console.error('[TimeService] CRITICAL: Invalid time & no calibration available');
         }
       }
     }

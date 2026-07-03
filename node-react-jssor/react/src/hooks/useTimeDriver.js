@@ -11,6 +11,7 @@ import {
   dispatchDateChanged
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
+import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 export const LS_PRAYER_TIMES_KEY = 'ipray-prayer-times';
@@ -172,6 +173,7 @@ export function useTimeDriver() {
                 prayerWarningTriggeredRef.current[warnKey] = true;
                 const displayName = (testPrayerStr && resolvedNextPrayer) ? resolvedNextPrayer : name;
                 dispatchPrayerWarning(displayName, timeStr);
+                logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
               }
               if (testPrayerStr) break; // Test mode: satu dispatch sahaja
             }
@@ -190,6 +192,7 @@ export function useTimeDriver() {
               if (!syurukTriggeredRef.current[syurukKey] && !isPrayerSequenceActive()) {
                 syurukTriggeredRef.current[syurukKey] = true;
                 dispatchSyurukTime();
+                logKioskEvent('syuruk-time', { time: syurukStr });
               }
             } else if (currentMinutes >= syurukMinutes + 60) {
               delete syurukTriggeredRef.current[syurukKey];
@@ -198,6 +201,7 @@ export function useTimeDriver() {
         }
       } catch (err) {
         console.error('[useTimeDriver]', err);
+        logKioskEvent('time-driver-error', { message: err?.message });
       }
     };
 

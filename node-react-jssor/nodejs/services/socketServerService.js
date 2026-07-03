@@ -2,6 +2,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const rtspToHlsService = require('./rtspToHlsService');
 const modbusRemoteSwitchService = require('./modbusRemoteSwitchService');
+const logger = require('../utils/logger');
 
 /**
  * Socket.IO Server Service
@@ -67,7 +68,7 @@ class SocketServerService {
 
   startLiveStream(data) {
     if (!this.io) return;
-    console.log(`📡 Live stream start:`, data?.url ? '(url ada)' : data);
+    console.log(`Live stream start:`, data?.url ? '(url ada)' : data);
     let url = (data && data.url) ? String(data.url).trim() : '';
     const isRtsp = rtspToHlsService.isRtsp(url);
     if (isRtsp) {
@@ -87,7 +88,7 @@ class SocketServerService {
 
   stopLiveStream() {
     if (!this.io) return;
-    console.log(`📡 Live stream stopped`);
+    console.log(`Live stream stopped`);
     rtspToHlsService.stop();
     this.liveStreamData = null;
     const payload = { timestamp: Date.now() };
@@ -220,11 +221,11 @@ class SocketServerService {
    */
   setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`🔌 Socket.IO client connected: ${socket.id}`);
+      console.log(`[SOCKET] client connected: ${socket.id}`);
       
       // Handle data update from setting panel
       socket.on('data:update', async (data) => {
-        console.log(`📡 Data update received:`, data);
+        console.log(`Data update received:`, data);
         const fileName = data.fileName || data.filename;
         if (fileName === 'takwim') {
           if (this.dataService) {
@@ -296,12 +297,12 @@ class SocketServerService {
       
       // Handle kematian announcement
       socket.on('kematian:update', (data) => {
-        console.log(`📡 Kematian update received:`, data);
+        console.log(`Kematian update received:`, data);
         this.setKematianAnnouncement(data);
       });
 
       socket.on('kematian:clear', () => {
-        console.log(`📡 Kematian cleared`);
+        console.log(`Kematian cleared`);
         this.clearKematianAnnouncement();
       });
 
@@ -319,6 +320,17 @@ class SocketServerService {
         modbusRemoteSwitchService.setKioskSlideIndex(idx);
       });
 
+      // Event penting dari paparan kiosk (amaran waktu solat, beep mula/selesai,
+      // peralihan skrin azan/iqamah/solat, ralat) — direkod di sini supaya boleh
+      // disemak semula via `pm2 logs`/log fail, tanpa perlu buka console browser
+      // kiosk secara terus (yang selalunya tak boleh diakses tanpa pergi ke tapak).
+      socket.on('client:log', (payload) => {
+        if (!payload || typeof payload.event !== 'string') return;
+        const event = payload.event.slice(0, 100);
+        const detail = payload.detail != null ? JSON.stringify(payload.detail).slice(0, 300) : '';
+        logger.client(socket.id.slice(0, 8), event, detail);
+      });
+
       // Send current state to newly connected client
       if (this.deathAnnouncementData) {
         socket.emit('kematian:updated', this.deathAnnouncementData);
@@ -329,12 +341,12 @@ class SocketServerService {
 
       // Handle disconnect
       socket.on('disconnect', () => {
-        console.log(`🔌 Socket.IO client disconnected: ${socket.id}`);
+        console.log(`[SOCKET] client disconnected: ${socket.id}`);
       });
       
       // Handle errors
       socket.on('error', (error) => {
-        console.error(`Socket.IO error:`, error);
+        console.error(`[SOCKET][ERROR]`, error);
       });
     });
   }
@@ -354,7 +366,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log(`📡 Broadcast data update: ${fileName}`);
+    console.log(`[BROADCAST] data update: ${fileName}`);
   }
 
   /**
@@ -371,7 +383,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log('📡 Broadcast home-title:updated');
+    console.log('[BROADCAST] home-title:updated');
   }
 
   /**
@@ -387,7 +399,7 @@ class SocketServerService {
       slidesMarqueeShow: slidesMarqueeShow !== false,
       timestamp: Date.now()
     });
-    console.log('📡 Broadcast screen-flags:updated');
+    console.log('[BROADCAST] screen-flags:updated');
   }
 
   /**
@@ -404,7 +416,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log('📡 Broadcast marquee-config:updated');
+    console.log('[BROADCAST] marquee-config:updated');
   }
 
   /**
@@ -421,7 +433,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log('📡 Broadcast color-config:updated');
+    console.log('[BROADCAST] color-config:updated');
   }
 
   /**
@@ -438,7 +450,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log('📡 Broadcast hebahan:updated');
+    console.log('[BROADCAST] hebahan:updated');
   }
 
   /**
@@ -450,7 +462,7 @@ class SocketServerService {
     if (this.liveStreamData) {
       this.liveStreamData = { ...this.liveStreamData, overlayConfig };
       this.io.emit('livestream:overlay-config', { overlayConfig, timestamp: Date.now() });
-      console.log('📡 Broadcast livestream:overlay-config');
+      console.log('[BROADCAST] livestream:overlay-config');
     }
   }
 
@@ -462,7 +474,7 @@ class SocketServerService {
     if (this.deathAnnouncementData) {
       this.deathAnnouncementData = { ...this.deathAnnouncementData, overlayConfig };
       this.io.emit('kematian:overlay-config', { overlayConfig, timestamp: Date.now() });
-      console.log('📡 Broadcast kematian:overlay-config');
+      console.log('[BROADCAST] kematian:overlay-config');
     }
   }
 
@@ -498,7 +510,7 @@ class SocketServerService {
       : { timestamp: Date.now() }
     );
 
-    console.log('📡 Broadcast takwim refresh' + (hasPayload ? ' (dengan data hari semasa)' : ''));
+    console.log('[BROADCAST] takwim refresh' + (hasPayload ? ' (dengan data hari semasa)' : ''));
   }
 
   /**
@@ -515,7 +527,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log(`📡 Broadcast event: ${eventName}`);
+    console.log(`[BROADCAST] event: ${eventName}`);
   }
 
   /**
@@ -532,7 +544,7 @@ class SocketServerService {
       timestamp: Date.now()
     });
 
-    console.log('📡 Broadcast reboot - kiosk akan reload window');
+    console.log('[BROADCAST] reboot - kiosk akan reload window');
   }
 
   /**

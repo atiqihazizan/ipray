@@ -107,7 +107,7 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
   }
 
   const kuliahHariSlides = [];
-  categoryKeys.forEach((categoryTitle, categoryIndex) => {
+  categoryKeys.forEach((categoryTitle) => {
     const categoryData = groupedData[categoryTitle];
     const item = categoryData[0];
     const isReplacement = item && typeof item === 'object' && item.replacementText != null;
@@ -308,7 +308,11 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     }
 
     // applyKuliahTypeBackground(kuliahSlide, arr[2]);
-    kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+    // Sebelum ini hanya kuliah pertama (categoryIndex 0) dapat 'auto' — kuliah
+    // kedua/ketiga (contoh Maghrib selepas Subuh) dapat 'static' yang matikan
+    // transition sepenuhnya (lihat useJssorSlider.js $SlideTransitionMap).
+    // Samakan dengan slideshowProcessor.js — semua slide guna 'auto'.
+    kuliahSlide.transitionType = 'auto';
     const type = arr[2] || '';
     if (TYPE_COLORS[type] && kuliahSlide.captions[0]) {
       kuliahSlide.captions[0].style.backgroundColor = hexToRgba(TYPE_COLORS[type], 0.80);
