@@ -25,10 +25,12 @@ export const bgStyle = {
   paddingTop: "100px",
 };
 
+// Latar hitam pekat (bukan gambar masjid) khas untuk skrin SEDANG SOLAT — kurangkan
+// gangguan visual supaya jemaah lebih khusyuk semasa solat.
 export const bgSolatStyle = {
   ...bgStyle,
-  // backgroundImage: "url(/img/SOLAT.png)",
-  // backgroundColor: "#000000",
+  backgroundImage: "none",
+  backgroundColor: "#000000",
 };
 
 export const titleStyle = {
@@ -53,7 +55,7 @@ export const countdownStyle = {
 
 export const countdownStyleIqamah = {
   color: "#FFFFFF",
-  fontSize: `${textSize(145)}px`,
+  fontSize: `${textSize(256)}px`,
   fontFamily: "'bebas-neue', sans-serif",
   fontWeight: "bold",
   textAlign: "center",
@@ -87,6 +89,7 @@ export const rightColumnCenterStyle = {
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
+  gap: `${textSize(200)}px`,
 };
 
 export const pegawaiTitleStyle = () => ({
@@ -109,15 +112,17 @@ export const pegawaiSmallStyle = {
   margin: 0,
 };
 
-export const countdownBoxStyle = {
-  backgroundColor: "black",
-  borderRadius: "16px",
-};
+// Kotak hitam latar countdown dibuang — gantikan dengan sapuan tepi (stroke) tebal
+// (sama pendekatan macam tajuk Jawi أذان/اقامة) supaya angka tetap jelas dibaca dari
+// jarak jauh tanpa perlu latar pepejal.
+export const countdownBoxStyle = {};
 
 export const countdownBoxTextStyle = {
   color: "red",
-  margin: "6rem 2rem",
-  WebkitTextStroke: "1px #FFFFFF",
+  margin: 0, // Jarak tajuk-ke-countdown kini dikawal oleh gap rightColumnCenterStyle
+  WebkitTextStroke: `${Math.max(1, Math.round(textSize(10)))}px #FFFFFF`,
+  paintOrder: "stroke fill",
+  textShadow: "0 0 24px rgba(0,0,0,0.9), 0 6px 12px rgba(0,0,0,0.85)",
 };
 
 /** Baris pegawai (imej + label : nama) — kongsi Azan & Iqamah */

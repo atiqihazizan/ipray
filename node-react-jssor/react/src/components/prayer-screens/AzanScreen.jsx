@@ -1,4 +1,3 @@
-import { textSize } from '../../utils/screenUtils';
 import { useData } from '../../contexts/DataContext';
 import { PegawaiTable, PEGAWAI_LIST } from './OfficerRow';
 import {
@@ -48,7 +47,7 @@ export default function AzanScreen({ prayerName, countdown }) {
         <br />
         <PegawaiTable list={pegawaiList} />
       </div>
-      <div style={{...rightColumnCenterStyle, gap: `${textSize(56)}px`}}>
+      <div style={rightColumnCenterStyle}>
         <h1 style={jawiTitleStyleAzan()}>{getAzanJawiText(prayerName)}</h1>
         <div style={countdownBoxStyle}>
           <p style={{ ...countdownStyleIqamah, ...countdownBoxTextStyle }}>{countdown}</p>
