@@ -38,6 +38,11 @@ backup/
 *_bak/
 **/*_bak
 **/*_bak/
+*-bak
+*-bak*
+*-bak/
+**/*-bak
+**/*-bak/
 * bak
 * bak/
 * bak*
@@ -53,6 +58,7 @@ backup/
 *.swp
 *.swo
 *~
+*.zip
 
 # -----------------------------------------------------------------------------
 # C/C++ – compiled & build (v1 macos, macos_raspi, windows)
