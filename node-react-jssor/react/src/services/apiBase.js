@@ -28,3 +28,28 @@ export function getSocketUrl() {
   if (import.meta.env.DEV) return window.location?.origin ?? '';
   return getOriginForApiAndSocket() || 'http://localhost:3001';
 }
+
+/**
+ * Base host:port untuk asset statik (imej) yang datang dari data server (images.txt, dll),
+ * BUKAN dari /api. Perlu berasingan dari getApiBase() sebab path imej dari server (contoh
+ * "/images/penceramah/xxx.png") adalah root-relative dan akan resolve ke origin dev server
+ * (localhost:5173) bukan backend sebenar bila VITE_API_BASE tunjuk ke host lain (contoh
+ * ujian terus ke RPi produksi).
+ */
+export function getAssetBase() {
+  const envSocket = import.meta.env.VITE_SOCKET_URL;
+  const envApi = import.meta.env.VITE_API_BASE;
+  const envBase = envSocket || envApi;
+  if (envBase) return envBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  if (import.meta.env.DEV) return '';
+  return getOriginForApiAndSocket();
+}
+
+/** Sambungkan base host ke path root-relative (contoh "/images/x.png") jika base disediakan */
+export function withAssetBase(path) {
+  if (!path || typeof path !== 'string') return path;
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = getAssetBase();
+  if (!base) return path;
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+}

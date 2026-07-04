@@ -2,6 +2,7 @@
  * Process data slideshow ke slides (satu slide per imej).
  */
 import { slidesTemplate } from '../config/sliderConfig';
+import { withAssetBase } from '../services/apiBase';
 
 const DEFAULT_SLIDESHOW_IMAGES = [
   '/img/slideshow/mountant0.jpeg',
@@ -20,7 +21,7 @@ export function processSlideshow(slideshowData, slidesConfigData, applyConfig) {
       .map((item) => {
         const imagePath = item?.image ? item.image : typeof item === 'string' ? item : '';
         const path = imagePath && imagePath.startsWith('/') ? imagePath : `/${imagePath || ''}`;
-        return { image: path };
+        return { image: withAssetBase(path) };
       })
       .filter((item) => item.image);
   } else {

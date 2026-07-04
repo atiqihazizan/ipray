@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getApiBase } from '../services/apiBase';
+import { getApiBase, withAssetBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeServiceStub from '../services/timeServiceStub';
 import { runAfterPrayerSequence } from '../utils/prayerSequenceState';
@@ -146,7 +146,7 @@ export const DataProvider = ({ children }) => {
       setSlidesConfigData(data.slidesConfig ?? {});
       setSlidesMarqueeShow(data.slidesMarqueeShow !== false);
       setSlideshowData(data.slideshow ?? []);
-      setPetugasData(data.petugasData ?? []);
+      setPetugasData((data.petugasData ?? []).map((p) => ({ ...p, imageSrc: withAssetBase(p.imageSrc) })));
       setConfigData(data.config ?? {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
         COLOR_CONFIG: DEFAULT_COLOR_CONFIG,

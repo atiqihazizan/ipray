@@ -6,6 +6,7 @@ import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils'
 // Import build functions dan constants dari slideBuilders
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 import { MOSQUE_NAME, MOSQUE_LOCATION, HOME_SLIDE_BACKGROUND } from './mosqueInfo';
+import { withAssetBase } from '../services/apiBase';
 
 // ============================================================================
 // HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
@@ -159,7 +160,7 @@ export const slidesTemplate = {
     type: 'announce',
     transitionType: 'auto',
     datetime: [],
-    image: { src: "/images/slides/picture4.jpg", alt: "Slide 2" },
+    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Slide 2" },
     // Captions struktur parent-child (sama konsep kuliah)
     // Parent: kategori (PENGUMUMAN/PEMBERITAHUAN) - play in pertama, play out terakhir
     // Children: 8 (tajuk, penceramah, tema, tarikh, masa, lokasi, sasaran, countdown)
@@ -239,7 +240,7 @@ export const slidesTemplate = {
     type: 'kuliahHari',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
-    image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Harian" },
+    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Harian" },
     captions: [
       {
         // Parent container - di-control PlayIn/PlayOut dalam useSlides (sama konsep announcement)
@@ -273,7 +274,7 @@ export const slidesTemplate = {
     type: 'kuliahWeekly',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
-    image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Mingguan" },
+    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Mingguan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
     // Children: 1 kategori + 6×3=18 (kategori, 6 cards: tajuk kategori + image + teks gabungan). Teks gabungan = penceramah + hari.
@@ -305,7 +306,7 @@ export const slidesTemplate = {
     type: 'kuliahBulanan',
     transitionType: 'auto',
     datetime: ['solat-time-small'],
-    image: { src: "/images/slides/picture4.jpg", alt: "Kuliah Bulanan" },
+    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Bulanan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
     // Children: 1 kategori + 6×3=18 (kategori, 6 cards: tajuk kategori + image + teks gabungan). Teks gabungan = penceramah + hari.

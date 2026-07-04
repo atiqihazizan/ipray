@@ -123,6 +123,7 @@ export function useTimeDriver() {
           prayerTriggeredRef.current = {};
           prayerWarningTriggeredRef.current = {};
           syurukTriggeredRef.current = {};
+          try { localStorage.removeItem(`ipray-syuruk-triggered-${lastCleanDateRef.current}`); } catch (_) {}
         }
         if (todayStr) lastCleanDateRef.current = todayStr;
 
@@ -185,12 +186,22 @@ export function useTimeDriver() {
             const currentMinutes = t.hours * 60 + t.minutes;
             const syurukMinutes = sh * 60 + sm;
             const syurukKey = `Syuruk-${todayStr}`;
+            const lsSyurukKey = `ipray-syuruk-triggered-${todayStr}`;
             // Tingkap 60 minit (bukan 1 minit) — jika Syuruk jatuh semasa urutan azan/iqamah/solat
             // Subuh sedang aktif (PrayerTimeController di-unmount, tiada yang dengar), tangguh
             // dispatch sehingga urutan itu selesai supaya bip Syuruk tidak hilang terus untuk hari itu.
+            //
+            // PENTING: guard "sudah trigger" disimpan dalam localStorage (bukan sekadar ref dalam
+            // memori) — reload/restart (deploy, PM2 restart, admin action) boleh berlaku BILA-BILA
+            // dalam tingkap 60 minit ni, dan reload wipe ref dalam memori. Tanpa guard berterusan,
+            // bip Syuruk yang dah main sebelum reload akan main SEMULA lepas reload (disahkan
+            // berlaku sebenar).
             if (currentMinutes >= syurukMinutes && currentMinutes < syurukMinutes + 60) {
-              if (!syurukTriggeredRef.current[syurukKey] && !isPrayerSequenceActive()) {
+              let alreadyTriggeredPersisted = false;
+              try { alreadyTriggeredPersisted = localStorage.getItem(lsSyurukKey) === '1'; } catch (_) {}
+              if (!syurukTriggeredRef.current[syurukKey] && !alreadyTriggeredPersisted && !isPrayerSequenceActive()) {
                 syurukTriggeredRef.current[syurukKey] = true;
+                try { localStorage.setItem(lsSyurukKey, '1'); } catch (_) {}
                 dispatchSyurukTime();
                 logKioskEvent('syuruk-time', { time: syurukStr });
               }

@@ -2,6 +2,7 @@
  * Kuliah Helpers
  * Utility functions untuk memproses data jadual kuliah
  */
+import { withAssetBase } from '../services/apiBase';
 
 // Default image untuk penceramah jika image tidak wujud atau error
 export const DEFAULT_PENCERAMAH_IMAGE = '/img/Random_user.svg';
@@ -15,7 +16,8 @@ export const DEFAULT_PENCERAMAH_IMAGE = '/img/Random_user.svg';
 export const resolveImagePath = (imageCode, imagesMap) => {
   if (!imageCode || !imagesMap) return DEFAULT_PENCERAMAH_IMAGE;
   const trimmedCode = imageCode.trim();
-  return imagesMap[trimmedCode] || DEFAULT_PENCERAMAH_IMAGE;
+  const path = imagesMap[trimmedCode];
+  return path ? withAssetBase(path) : DEFAULT_PENCERAMAH_IMAGE;
 };
 
 /**

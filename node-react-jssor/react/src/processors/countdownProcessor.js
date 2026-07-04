@@ -5,6 +5,7 @@
 import { slidesTemplate } from '../config/sliderConfig';
 import { top, bottom } from '../utils/screenUtils';
 import { getCountdown, getCountdownDays } from '../utils/dateFormatter';
+import { withAssetBase } from '../services/apiBase';
 
 function normalizeDateTime(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return '';
@@ -151,7 +152,7 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig,
       let imagePath = imagesData[item.background] || item.background;
       if (imagePath && !imagePath.startsWith('/')) imagePath = `/${imagePath}`;
       if (imagePath) {
-        slide.image = { src: imagePath, alt: item.event || 'Countdown' };
+        slide.image = { src: withAssetBase(imagePath), alt: item.event || 'Countdown' };
       }
     }
 

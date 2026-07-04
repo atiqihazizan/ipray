@@ -5,6 +5,7 @@ import { processAnnouncements } from '../processors/announcementProcessor';
 import { processCountdowns } from '../processors/countdownProcessor';
 import { processKuliahMingguan, processKuliahHarian, processKuliahBulanan } from '../processors/kuliahProcessor';
 import { processSlideshow } from '../processors/slideshowProcessor';
+import { withAssetBase } from '../services/apiBase';
 
 /**
  * Debug: pilih slide untuk test.
@@ -57,7 +58,7 @@ export const useSlides = () => {
         } else if (cfg.image) {
           let imagePath = imagesData && imagesData[cfg.image] ? imagesData[cfg.image] : cfg.image;
           if (imagePath && !imagePath.startsWith('/')) imagePath = '/' + imagePath;
-          updated.image = { ...updated.image, src: imagePath };
+          updated.image = { ...updated.image, src: withAssetBase(imagePath) };
         }
       }
 
