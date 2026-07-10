@@ -1,0 +1,428 @@
+/**
+ * Process data kuliah ke slides: mingguan, harian, bulanan.
+ */
+import { slidesTemplate, KULIAH_NUM_CARDS } from '../config/sliderConfig';
+import {
+  buildKuliahWeeklyCategoryChildren,
+  buildKuliahBulananChildren,
+  buildKuliahHariSingleCardChildren
+} from '../config/slideBuilders';
+import {
+  TYPE_LABELS,
+  DAY_NAMES,
+  getWeekCode,
+  getDayCode,
+  formatShortDate,
+  calculateDateFromCodes,
+  resolveImagePath,
+  getCenteredImageStyle
+} from '../utils/kuliahHelpers';
+import { top, getContainerSize } from '../utils/screenUtils';
+import { escapeHtml, isKuliahBatal, isKuliahBatalByWeekDay } from './slideHelpers';
+
+const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH DHUHA', 'KULIAH SUBUH', 'KULIAH KHAS'];
+
+export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
+  const esc = escapeHtml;
+  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const currentDate = new Date();
+  const currentWeek = getWeekCode(currentDate);
+  const currentDay = getDayCode(currentDate);
+
+  let dataToDisplay = safeKuliahData.filter((item) => {
+    const arr = item.split('|');
+    return arr[0] === currentWeek;
+  });
+
+  if (dataToDisplay.length === 0) {
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahWeekly, 'kuliahWeekly');
+    const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahSlide.captions[0];
+    if (parent && parent.children && parent.children.length >= 2) {
+      parent.children[0].content = 'JADUAL KULIAH MINGGU INI';
+      const bodyMsg = parent.children[1];
+      bodyMsg.content = 'Tiada Kuliah minggu ini...';
+      bodyMsg.style = {
+        ...bodyMsg.style,
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: top(350),
+        width: getContainerSize().width,
+        height: 300,
+        textAlign: 'center',
+        fontSize: 200,
+        color: '#000000',
+        fontFamily: "'SairaCondensed', sans-serif",
+        fontWeight: 'bold',
+        lineHeight: 120,
+        margin: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      };
+      parent.children = [parent.children[0], bodyMsg];
+    }
+    kuliahSlide.transitionType = 'auto';
+    return [kuliahSlide];
+  }
+
+  dataToDisplay = dataToDisplay
+    .map((item) => {
+      const arr = item.split('|');
+      const calculatedDate = calculateDateFromCodes(arr[0], arr[1]);
+      return { item, date: calculatedDate };
+    })
+    .sort((a, b) => a.date - b.date)
+    .map((entry) => entry.item);
+
+  const groupedData = {};
+  dataToDisplay.forEach((item) => {
+    const arr = item.split('|');
+    const type = arr[2];
+    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push(item);
+  });
+
+  const kuliahMigguanSlides = [];
+  const categoryKeys = CATEGORY_ORDER.filter((cat) => groupedData[cat]);
+
+  categoryKeys.forEach((categoryTitle, categoryIndex) => {
+    if (categoryIndex > 0) return;
+    const categoryData = groupedData[categoryTitle];
+    const numCards = Math.min(categoryData.length, KULIAH_NUM_CARDS);
+
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahWeekly, 'kuliahWeekly');
+    const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahSlide.captions[0];
+
+    if (parent) {
+      const isLastCategory = categoryIndex === categoryKeys.length - 1;
+      if (categoryIndex > 0) parent.transition = null;
+      parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+
+      if (parent.children && parent.children.length > 0) {
+        parent.children[0].content = 'JADUAL KULIAH MINGGU INI';
+        if (categoryIndex > 0) parent.children[0].transition = null;
+        parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+      }
+      if (parent.children && parent.children.length > 1) {
+        parent.children[1].content = categoryTitle;
+      }
+
+      const cards = buildKuliahWeeklyCategoryChildren(numCards);
+      parent.children = [parent.children[0], parent.children[1], ...cards];
+
+      for (let i = 0; i < numCards; i++) {
+        const arr = categoryData[i].split('|');
+        const base = 2 + i * 2;
+        const day = arr[1];
+        const penceramah = (arr[3] || '').trim();
+        const imageCode = (arr[4] || '').trim();
+        const kitab = (arr[5] || '').trim();
+        const batalInfo = isKuliahBatal(categoryData[i], kuliahBatalData);
+
+        if (!penceramah) continue;
+
+        const isCol1 = i < 3;
+        const dayName = DAY_NAMES[day] || '';
+        const calculatedDate = calculateDateFromCodes(arr[0], day);
+        const shortDate = formatShortDate(calculatedDate);
+        const hariTarikh = dayName && shortDate ? `${dayName} | ${shortDate}` : '';
+
+        if (parent.children[base + 0]) {
+          const imagePath = resolveImagePath(imageCode, imagesData);
+          parent.children[base + 0].content = imagePath;
+          parent.children[base + 0].style = getCenteredImageStyle(imagePath, parent.children[base + 0].style);
+        }
+
+        const textAlign = isCol1 ? 'left' : 'right';
+        const isBatal = batalInfo.isBatal && day === currentDay;
+        const isActive = day === currentDay && !isBatal;
+        const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+        const activeStyle = isActive ? 'color:red;' : '';
+
+        if (parent.children[base + 1]) {
+          const penceramahHtml = `<span style="display:block;font-size:46px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${batalStyle}${activeStyle}">${esc(penceramah)}</span>`;
+          const kitabHtml = kitab
+            ? `<div style="font-size:25px;word-wrap:break-word;white-space:normal;line-height:1.4;font-family:'Anton',sans-serif;text-align:${textAlign};${batalStyle}${activeStyle}">${esc(kitab)}</div>`
+            : '';
+          const dateHtml = hariTarikh
+            ? `<span style="display:block;font-size:34px;line-height:1.35;font-family:'Anton',sans-serif;text-align:${textAlign};${activeStyle}">${esc(hariTarikh)}</span>`
+            : '';
+          let statusHtml = '';
+          if (isBatal) {
+            const notes = (batalInfo.notes || '').trim();
+            statusHtml = notes
+              ? `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;">${esc(notes).toUpperCase()}</div>`
+              : `<div style="font-size:28px;color:#ff0000;font-weight:bold;text-align:${textAlign};margin-top:5px;">KULIAH DIBATALKAN</div>`;
+          }
+          parent.children[base + 1].content = `${penceramahHtml}${kitabHtml}${dateHtml}${statusHtml}`;
+        }
+      }
+    }
+
+    kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+    kuliahMigguanSlides.push(kuliahSlide);
+  });
+
+  return kuliahMigguanSlides;
+}
+
+export function processKuliahHarian(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
+  const esc = escapeHtml;
+  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const currentDate = new Date();
+  const currentWeek = getWeekCode(currentDate);
+  const currentDay = getDayCode(currentDate);
+
+  const dataToDisplay = safeKuliahData.filter((item) => {
+    const arr = item.split('|');
+    return arr[0] === currentWeek && arr[1] === currentDay;
+  });
+
+  if (dataToDisplay.length === 0) {
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahHari, 'kuliahHari');
+    const kuliahHariSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahHariSlide.captions[0];
+    if (parent && parent.children && parent.children.length >= 1) {
+      parent.children[0].content = 'KULIAH HARI INI';
+      const bodyMsg = {
+        type: 'div',
+        transition: 'auto',
+        duration: 1000,
+        content: 'Tiada kuliah hari ini...',
+        style: {
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: top(350),
+          width: getContainerSize().width,
+          height: 300,
+          textAlign: 'center',
+          fontSize: 200,
+          color: '#000000',
+          fontFamily: "'SairaCondensed', sans-serif",
+          fontWeight: 'bold',
+          lineHeight: 120,
+          margin: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }
+      };
+      parent.children = [parent.children[0], bodyMsg];
+    }
+    kuliahHariSlide.transitionType = 'auto';
+    return [kuliahHariSlide];
+  }
+
+  const groupedData = {};
+  dataToDisplay.forEach((item) => {
+    const arr = item.split('|');
+    const type = arr[2];
+    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push(item);
+  });
+
+  const kuliahHariSlides = [];
+  const categoryKeys = CATEGORY_ORDER.filter((cat) => groupedData[cat]);
+
+  categoryKeys.forEach((categoryTitle, categoryIndex) => {
+    const categoryData = groupedData[categoryTitle];
+    const item = categoryData[0];
+    const arr = item.split('|');
+    const penceramah = (arr[3] || '').trim();
+    const imageCode = (arr[4] || '').trim();
+    const kitab = (arr[5] || '').trim();
+    if (!penceramah) return;
+
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahWeekly, 'kuliahHari');
+    const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahSlide.captions[0];
+
+    if (parent && parent.children && parent.children.length >= 2) {
+      const isLastCategory = categoryIndex === categoryKeys.length - 1;
+      if (categoryIndex > 0) parent.transition = null;
+      parent.transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+
+      parent.children[0].content = 'KULIAH HARI INI';
+      if (categoryIndex > 0) parent.children[0].transition = null;
+      parent.children[0].transition2 = isLastCategory ? 'CLIP|LR' : 'NO_CLIP_OUT';
+      parent.children[1].content = categoryTitle;
+
+      const cards = buildKuliahHariSingleCardChildren();
+      parent.children = [parent.children[0], parent.children[1], ...cards];
+
+      const base = 2;
+      const batalInfo = isKuliahBatal(item, kuliahBatalData);
+      const imagePath = resolveImagePath(imageCode, imagesData);
+
+      if (parent.children[base]) {
+        parent.children[base].content = imagePath;
+        parent.children[base].style = getCenteredImageStyle(imagePath, parent.children[base].style);
+      }
+      if (parent.children[base + 1]) {
+        const penceramahHtml = `<span style="display:block;font-size:72px;line-height:1.35;font-family:'Anton',sans-serif;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(penceramah)}</span>`;
+        const kitabHtml = kitab
+          ? `<div style="font-size:42px;word-wrap:break-word;white-space:normal;line-height:1.4;font-family:'Anton',sans-serif;text-align:left;">${esc(kitab)}</div>`
+          : '';
+        let statusHtml = '';
+        if (batalInfo.isBatal) {
+          const notes = (batalInfo.notes || '').trim();
+          statusHtml = notes
+            ? `<div style="font-size:42px;color:#ff0000;font-weight:bold;text-align:left;margin-top:10px;font-family:'Anton',sans-serif;">KULIAH DIBATALKAN DAN DIGANTIKAN DENGAN ${esc(notes).toUpperCase()}</div>`
+            : `<div style="font-size:42px;color:#ff0000;font-weight:bold;text-align:left;margin-top:10px;font-family:'Anton',sans-serif;">KULIAH DIBATALKAN</div>`;
+        }
+        parent.children[base + 1].content = `${penceramahHtml}${kitabHtml}${statusHtml}`;
+      }
+    }
+
+    kuliahSlide.transitionType = categoryIndex === 0 ? 'auto' : 'static';
+    kuliahHariSlides.push(kuliahSlide);
+  });
+
+  return kuliahHariSlides;
+}
+
+export function processKuliahBulanan(kuliahData, kuliahBatalData, slidesConfigData, applyConfig) {
+  const esc = escapeHtml;
+  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const currentDay = currentDate.getDate();
+
+  const dataWithDates = safeKuliahData
+    .filter((item) => item.trim() !== '')
+    .map((item) => {
+      const arr = item.split('|');
+      const week = arr[0];
+      const day = arr[1];
+      const type = arr[2];
+      const penceramah = (arr[3] || '').trim();
+      const kitab = (arr[5] || '').trim();
+      const isBatal = isKuliahBatal(item, kuliahBatalData);
+      const calculatedDate = calculateDateFromCodes(week, day);
+      const dayNumber = calculatedDate.getDate();
+      const dayOfWeek = calculatedDate.getDay();
+      return {
+        date: calculatedDate,
+        dayNumber: dayNumber,
+        dayOfWeek: dayOfWeek,
+        type: type,
+        typeLabel: TYPE_LABELS[type] || type.toUpperCase(),
+        penceramah: penceramah,
+        kitab: kitab,
+        isBatal: isBatal,
+        original: item
+      };
+    })
+    .filter((item) => item.date.getFullYear() === currentYear && item.date.getMonth() === currentMonth)
+    .sort((a, b) => a.date - b.date);
+
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+  const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const calendarGrid = [];
+  const calendarPositions = [];
+
+  for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+    const date = new Date(currentYear, currentMonth, dayNum);
+    const dayOfWeek = date.getDay();
+    let row = 0;
+    let col = dayOfWeek;
+    if (dayNum === 1) {
+      col = firstDayOfWeek;
+    } else {
+      const daysFromStart = dayNum - 1;
+      row = Math.floor((firstDayOfWeek + daysFromStart) / 7);
+      col = (firstDayOfWeek + daysFromStart) % 7;
+    }
+    const kuliahForDay = dataWithDates.filter((item) => item.dayNumber === dayNum);
+    calendarGrid.push({ dayNumber: dayNum, dayOfWeek: dayOfWeek, date: date, kuliah: kuliahForDay });
+    calendarPositions.push({ row, col });
+  }
+
+  const kuliahBulananTemplate = applyConfig(slidesTemplate.kuliahBulanan, 'kuliahBulanan');
+  const kuliahBulananSlide = JSON.parse(JSON.stringify(kuliahBulananTemplate));
+  const parent = kuliahBulananSlide.captions[0];
+
+  if (parent) {
+    if (parent.children && parent.children.length > 0) {
+      parent.children[0].content = 'JADUAL KULIAH BULAN INI';
+    }
+    const dayOfWeekArray = calendarGrid.map((d) => d.dayOfWeek);
+    const cards = buildKuliahBulananChildren(totalDays, dayOfWeekArray, calendarPositions);
+    parent.children = [parent.children[0], ...cards];
+
+    for (let i = 0; i < totalDays; i++) {
+      const dayData = calendarGrid[i];
+      const base = 1 + i;
+
+      if (parent.children[base]) {
+        const dayNumberStr = String(dayData.dayNumber).padStart(2, '0');
+        const isToday = dayData.dayNumber === currentDay;
+        const dayNumberColor = isToday ? '#cc000040' : '#80808040';
+        const dayNumberStyle = `text-align:right; font-size:117px; font-family:'bebas',sans-serif; color:${dayNumberColor}; position:absolute; right:0; line-height:1.1; bottom:0;`;
+        const dayNumberHtml = `<div style="${dayNumberStyle}">${dayNumberStr}</div>`;
+
+        let contentHtml = '';
+        if (dayData.kuliah && dayData.kuliah.length > 0) {
+          const KULIAH_BULANAN_FONT_SIZE = 24; // type & penceramah - senang adjust
+          const allKuliah = dayData.kuliah
+            .map((k, rowIndex) => {
+              const typeLabel = k.type.toUpperCase();
+              const batalInfo = isKuliahBatalByWeekDay(k.original, kuliahBatalData);
+              let kitabHtml = '';
+              if (k.kitab) {
+                const kitabItems = k.kitab
+                  .split(',')
+                  .map((item) => item.trim())
+                  .filter(Boolean);
+                const itemStyle = batalInfo.isBatal
+                  ? 'font-size:15px;word-wrap:break-word;white-space:normal;line-height:1;text-decoration:line-through;opacity:0.6;'
+                  : 'font-size:15px;word-wrap:break-word;white-space:normal;line-height:1';
+                const kitabItemsHtml = kitabItems.map((item) => `<li style="${itemStyle}">${esc(item)}</li>`).join('');
+                kitabHtml = `<ul style="margin-top:-3px;margin-left:19px;list-style-type:square">${kitabItemsHtml}</ul>`;
+              }
+              const typeStyle = batalInfo.isBatal
+                ? `font-size:${KULIAH_BULANAN_FONT_SIZE}px;text-decoration:line-through;opacity:0.6;`
+                : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;`;
+              const penceramahStyle = batalInfo.isBatal
+                ? `font-size:${KULIAH_BULANAN_FONT_SIZE}px;text-decoration:line-through;opacity:0.6;`
+                : `font-size:${KULIAH_BULANAN_FONT_SIZE}px;`;
+              const rowGapTop = rowIndex === 0 ? '0' : '1px';
+              return `<tr>
+              <td style="${typeStyle} vertical-align:top; padding:0 2px; padding-top:${rowGapTop}; white-space:nowrap;">${typeLabel}</td>
+              <td style="font-size:${KULIAH_BULANAN_FONT_SIZE}px; vertical-align:top; padding:0; padding-right: 3px; padding-top:${rowGapTop}; color:#666;">|</td>
+              <td style="vertical-align:top; padding:0; padding-top:${rowGapTop}; text-align:left;">
+                <div style="display:flex; padding-right:3px">
+                  <span style="display:block; ${penceramahStyle} word-wrap:break-word; white-space:normal; margin:0; padding:0; text-align:left; line-height:1.25;padding-top: 4px;">${esc(k.penceramah)}</span> 
+                  ${batalInfo.isBatal ? ' <span style="color:#e00; font-size:14pt">(Ditangguh)</span>' : ''}</span>
+                </div>
+              </td></tr>`;
+            })
+            .join('');
+          contentHtml = `<div style="font-size:${KULIAH_BULANAN_FONT_SIZE}px;font-family:'Roboto',sans-serif;font-weight:bold; position:absolute; top:0; left:0; margin:0; padding:0;">
+          <table style="border-collapse:collapse; width:100%; margin:0; padding:0;"><tbody>${allKuliah}</tbody></table>
+          </div>`;
+        }
+
+        parent.children[base].content = `${dayNumberHtml}${contentHtml}`;
+        if (isToday) {
+          parent.children[base].style = {
+            ...parent.children[base].style,
+            border: '6px solid rgb(255, 0, 0)',
+            borderRadius: '5px'
+          };
+        }
+      }
+    }
+  }
+
+  return [kuliahBulananSlide];
+}
