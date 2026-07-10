@@ -1,0 +1,17 @@
+[Unit]
+Description=Kiosk Backend
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /home/ipray/apps/main.js
+WorkingDirectory=/home/ipray/apps
+Restart=always
+RestartSec=5
+User=ipray
+Environment=NODE_ENV=production
+StartLimitIntervalSec=60
+StartLimitBurst=10
+
+[Install]
+WantedBy=multi-user.target

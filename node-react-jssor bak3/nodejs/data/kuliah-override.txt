@@ -1,0 +1,6 @@
+hijri||8|15|km|1|Malam Nisfu Sya`ban
+hijri||9|1-30|km|1|Solat Sunat Tarawih
+hijri||10|1-3|kd|1|Hari Raya Aidilfitri
+hijri||10|1-3|ks|1|Hari Raya Aidilfitri
+hijri||12|10-13|kd|1|Hari Raya Adha/Qurban
+hijri||12|10-13|ks|1|Hari Raya Adha/Qurban
