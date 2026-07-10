@@ -1,0 +1,39 @@
+import 'package:flutter/material.dart';
+
+import '../../config/app_config.dart';
+import '../../widgets/list_tab_bar.dart';
+import 'config_sub_screen.dart';
+import 'config_tabs_def.dart';
+
+/// Skrin Konfigurasi (menu sahaja): paparkan senarai tab dan buka `ConfigSubScreen`.
+class ConfigScreen extends StatelessWidget {
+  const ConfigScreen({
+    super.key,
+    this.config,
+    this.refreshTrigger = 0,
+  });
+
+  final AppConfig? config;
+  final int refreshTrigger;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: ListTabBar(
+        items: ConfigTabsDef.tabs,
+        onTap: (tabId) {
+          final tab = ConfigTabsDef.tabOf(tabId);
+          ConfigSubScreen.push(
+            context,
+            config: config,
+            tabId: tabId,
+            title: tab.title,
+            refreshTrigger: refreshTrigger,
+          );
+        },
+        iconColorForId: ConfigTabsDef.iconColorForId,
+      ),
+    );
+  }
+}

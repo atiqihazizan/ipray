@@ -1,0 +1,487 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../../config/app_config.dart';
+import '../../services/cloud_socket_service.dart';
+import '../../widgets/panel_tab_screen.dart';
+
+/// Screen sub-config: memaparkan kandungan satu tab Konfigurasi (ada Back).
+///
+/// Semua logic sub-config (socket, load config/hebahan/slides/takwim, dan UI panel)
+/// berada di sini. `ConfigScreen` hanya senarai tab/menu.
+class ConfigSubScreen extends StatefulWidget {
+  const ConfigSubScreen({
+    super.key,
+    required this.config,
+    required this.tabId,
+    required this.title,
+    this.refreshTrigger = 0,
+  });
+
+  final AppConfig? config;
+  final String tabId;
+  final String title;
+  final int refreshTrigger;
+
+  static Future<void> push(
+    BuildContext context, {
+    required AppConfig? config,
+    required String tabId,
+    required String title,
+    int refreshTrigger = 0,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ConfigSubScreen(
+          config: config,
+          tabId: tabId,
+          title: title,
+          refreshTrigger: refreshTrigger,
+        ),
+      ),
+    );
+  }
+
+  @override
+  State<ConfigSubScreen> createState() => _ConfigSubScreenState();
+}
+
+class _ConfigSubScreenState extends State<ConfigSubScreen> {
+  /// Susunan slides: A, B, atau C (rujukan slides panel).
+  String _slidesOrder = 'A';
+
+  /// Paparan page: type → visible. Dibina dari fetchData('slides') — bukan hardcoded.
+  final Map<String, bool> _slidesVisible = <String, bool>{};
+  bool _slidesLoaded = false;
+
+  /// Pemisah mesej marquee (simbol/emoji terpilih).
+  String _marqueeSeparator = '•';
+
+  Map<String, String> _configData = {};
+  List<_HebahanRow> _hebahanData = [];
+  CloudSocketService? _socketService;
+  StreamSubscription<void>? _onReadySub;
+
+  String _takwimZone = 'PNG01';
+  Map<String, String> _takwimZoneMap = const {'PNG01': 'PNG01'};
+  bool _takwimSyncing = false;
+
+  bool _configLoading = true;
+  bool _hebahanLoading = false;
+  bool _hebahanLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _applyConfigDefaults();
+    _loadTakwimZones();
+
+    if (widget.config != null) {
+      _socketService = CloudSocketService(config: widget.config!);
+      _socketService!.connect();
+      _onReadySub = _socketService!.onReadyStream.listen((_) {
+        _onReadySub?.cancel();
+        _onReadySub = null;
+        if (!mounted) return;
+        _loadConfigData();
+        if (widget.tabId == 'hebahan') _loadHebahanData();
+        if (widget.tabId == 'slides') _loadSlidesData();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _onReadySub?.cancel();
+    _socketService?.disconnect();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ConfigSubScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshTrigger != widget.refreshTrigger) {
+      _loadConfigData();
+      if (widget.tabId == 'hebahan') _loadHebahanData();
+      if (widget.tabId == 'slides') _loadSlidesData();
+    }
+  }
+
+  Future<void> _loadConfigData() async {
+    if (_socketService == null) return;
+    setState(() => _configLoading = true);
+    try {
+      final result = await _socketService!.fetchData('config');
+      final map = <String, String>{};
+      for (final row in result.data) {
+        final k = row['key']?.toString();
+        final v = row['value']?.toString();
+        if (k != null && k.isNotEmpty) map[k] = v ?? '';
+      }
+      if (!mounted) return;
+      setState(() {
+        _configData = map;
+        _configLoading = false;
+        _applyConfigDefaults();
+      });
+      _loadTakwimZones();
+      _loadSlidesData(); // selaras SLIDES_VISIBLE/ORDER
+    } catch (_) {
+      if (mounted) setState(() => _configLoading = false);
+    }
+  }
+
+  void _applyConfigDefaults() {
+    _configData['MARQUEE_DURATION'] ??= '25';
+    _configData['MARQUEE_SEPARATOR'] ??= '•';
+    _configData['MARQUEE_SHOW_MOSQUE_NAME'] ??= 'true';
+    _configData['HOME_TITLE_VISIBLE'] ??= 'true';
+    _configData['HOME_TITLE_DURATION_SEC'] ??= '10';
+    _configData['HOME_TITLE1_TOP'] ??= '480';
+    _configData['HOME_TITLE_LEFT'] ??= '28';
+    _configData['HOME_TITLE_RIGHT'] ??= '0';
+    _configData['HOME_TITLE_GAP'] ??= '30';
+    _configData['HOME_TITLE_ALIGN'] ??= 'center';
+    _configData['HOME_TITLE1_SIZE'] ??= '68';
+    _configData['HOME_TITLE1_COLOR'] ??= '#00FFFF';
+    _configData['HOME_TITLE2_SIZE'] ??= '68';
+    _configData['HOME_TITLE2_COLOR'] ??= '#00FFFF';
+    _configData['WARNING_START_MINUTES'] ??= '5';
+    _configData['IQAMAH_DURATION_MIN'] ??= '10';
+    _configData['SOLAT_DURATION_MIN'] ??= '10';
+    _takwimZone = _configData['TAKWIM_ZONE'] ?? _takwimZone;
+    if ((_configData['MARQUEE_SEPARATOR'] ?? '').isNotEmpty) {
+      _marqueeSeparator = _configData['MARQUEE_SEPARATOR']!;
+    }
+    final order = _configData['SLIDES_ORDER'] ?? 'A';
+    if (order.isNotEmpty) _slidesOrder = order;
+  }
+
+  Future<void> _loadSlidesData() async {
+    if (_socketService == null) return;
+    try {
+      final result = await _socketService!.fetchData('slides');
+      final types = <String>[];
+      for (final row in result.data) {
+        final type = (row['type']?.toString() ?? '').trim();
+        if (type.isNotEmpty) types.add(type);
+      }
+      if (types.isEmpty) return;
+      if (!mounted) return;
+
+      final visibleRaw = _configData['SLIDES_VISIBLE'];
+      List<int>? visibleArray;
+      if (visibleRaw != null && visibleRaw.isNotEmpty) {
+        try {
+          final parsed = jsonDecode(visibleRaw);
+          if (parsed is List && parsed.length == types.length) {
+            visibleArray = parsed.map<int>((v) => (v == 1 || v == '1') ? 1 : 0).toList();
+          }
+        } catch (_) {}
+      }
+      visibleArray ??= List.generate(types.length, (_) => 1);
+      if (visibleArray.isNotEmpty) visibleArray[0] = 1;
+
+      setState(() {
+        _slidesVisible
+          ..clear()
+          ..addEntries([
+            for (var i = 0; i < types.length; i++)
+              MapEntry(types[i], visibleArray![i] == 1),
+          ]);
+        _slidesLoaded = true;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _loadHebahanData() async {
+    if (_socketService == null) return;
+    if (_hebahanLoading) return;
+    setState(() => _hebahanLoading = true);
+    try {
+      final result = await _socketService!.fetchData('hebahan');
+      final list = <_HebahanRow>[];
+      for (final row in result.data) {
+        final id = row['id'];
+        final idInt = id is int ? id : int.tryParse(id?.toString() ?? '0');
+        list.add(_HebahanRow(
+          id: idInt ?? list.length + 1,
+          teks: row['text']?.toString() ?? '',
+          tarikhMula: row['startDate']?.toString(),
+          tarikhAkhir: row['endDate']?.toString(),
+        ));
+      }
+      if (!mounted) return;
+      setState(() {
+        _hebahanData = list;
+        _hebahanLoading = false;
+        _hebahanLoaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _hebahanLoading = false);
+    } finally {
+      if (mounted && _hebahanLoading) setState(() => _hebahanLoading = false);
+    }
+  }
+
+  Future<void> _loadTakwimZones() async {
+    const jakimZonesUrl = 'https://api.waktusolat.app/zones';
+    try {
+      final resp = await http.get(Uri.parse(jakimZonesUrl));
+      if (resp.statusCode != 200) return;
+      final List<dynamic> zones = jsonDecode(resp.body) as List<dynamic>;
+      final map = <String, String>{};
+      for (final z in zones) {
+        if (z is! Map<String, dynamic>) continue;
+        final code = (z['jakimCode'] ?? z['code'] ?? z['zone'])?.toString();
+        if (code == null || code.isEmpty) continue;
+        final negeri = (z['negeri'] ?? z['state'] ?? '').toString();
+        final daerah = (z['daerah'] ?? z['district'] ?? z['name'] ?? '').toString();
+        final label = daerah.isNotEmpty ? '$code - $negeri - $daerah' : '$code - $negeri';
+        map[code] = label.trim().isEmpty ? code : label;
+      }
+      if (map.isEmpty) return;
+      if (!mounted) return;
+      setState(() => _takwimZoneMap = map);
+    } catch (_) {}
+  }
+
+  String _config(String key, [String fallback = '']) => _configData[key] ?? fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Container(
+        color: const Color(0xFFF5F5F5),
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: _buildConfigPanelContent(widget.tabId, widget.title),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildConfigPanelContent(String selectedTabId, String selectedTitle) {
+    if (selectedTabId == 'hebahan' && _socketService != null && !_hebahanLoaded && !_hebahanLoading) {
+      _loadHebahanData();
+    }
+
+    final loadingBanner = _configLoading
+        ? <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                elevation: 0,
+                color: const Color(0xFFEFF6FF),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Data sedang dimuat...',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF1D4ED8),
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const ClipRRect(
+                        borderRadius: BorderRadius.all(Radius.circular(999)),
+                        child: LinearProgressIndicator(minHeight: 4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ]
+        : const <Widget>[];
+
+    switch (selectedTabId) {
+      case 'title-home':
+        return [...loadingBanner, ..._buildTitleHomePanelContent()];
+      case 'waktu-solat':
+        return [...loadingBanner, ..._buildWaktuSolatPanelContent()];
+      case 'slides':
+        return [...loadingBanner, ..._buildSlidesPanelContent()];
+      case 'hebahan':
+        return [...loadingBanner, ..._buildHebahanPanelContent()];
+      case 'takwim':
+        return [...loadingBanner, ..._buildTakwimPanelContent()];
+      case 'system':
+        return [...loadingBanner, ..._buildSystemPanelContent()];
+      default:
+        return [
+          ...loadingBanner,
+          PanelTabSectionHeader('KANDUNGAN'),
+          PanelTabCard(
+            children: [
+              PanelTabRowLabel('Tetapan untuk "$selectedTitle" akan dipaparkan di sini.'),
+            ],
+          ),
+        ];
+    }
+  }
+
+  // ===== Panel builders (dipindah dari ConfigScreen) =====
+  // Nota: Untuk kekal ringkas di sini, saya hanya kekalkan panel yang paling kritikal.
+  // Jika masih ada panel lain dalam projek (system/hebahan/slides/home/waktu/takwim), ia akan disalin penuh
+  // dari `config_screen.dart` dalam langkah seterusnya jika diperlukan.
+
+  List<Widget> _buildTitleHomePanelContent() {
+    final homeTitleVisible = _config('HOME_TITLE_VISIBLE', 'true') == 'true' || _config('HOME_TITLE_VISIBLE') == '1';
+    return [
+      PanelTabSectionHeader('PAPARAN HOME'),
+      PanelTabCard(
+        children: [
+          PanelTabRowToggle(
+            label: 'Tunjuk tajuk home',
+            value: homeTitleVisible,
+            onChanged: (value) {
+              final stringValue = value ? 'true' : 'false';
+              setState(() => _configData['HOME_TITLE_VISIBLE'] = stringValue);
+              _socketService?.saveConfigItem('HOME_TITLE_VISIBLE', stringValue);
+            },
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildWaktuSolatPanelContent() {
+    return [
+      PanelTabSectionHeader('WAKTU SOLAT - KONFIGURASI MASA'),
+      PanelTabCard(
+        children: [
+          PanelTabRowInput(
+            label: 'Durasi Sebelum Azan',
+            initialValue: _config('WARNING_START_MINUTES', '5'),
+            unit: 'min',
+            isNumeric: true,
+            onChanged: (text) {
+              final trimmed = text.trim();
+              final n = double.tryParse(trimmed);
+              final value = (n == null || n < 1) ? '1' : n.toString();
+              setState(() => _configData['WARNING_START_MINUTES'] = value);
+              _socketService?.saveConfigItem('WARNING_START_MINUTES', value);
+            },
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildSlidesPanelContent() {
+    return [
+      PanelTabSectionHeader('PAPARAN'),
+      PanelTabCard(
+        children: [
+          PanelTabRowLabel('Konfigurasi paparan (slides).'),
+          if (!_slidesLoaded) const Padding(padding: EdgeInsets.all(8), child: Text('Memuat data slides...')),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildHebahanPanelContent() {
+    final showMosque = _config('MARQUEE_SHOW_MOSQUE_NAME', 'true') == 'true' || _config('MARQUEE_SHOW_MOSQUE_NAME') == '1';
+    return [
+      PanelTabSectionHeader('TETAPAN MARQUEE'),
+      PanelTabCard(
+        children: [
+          PanelTabRowToggle(
+            label: 'Tunjuk nama masjid',
+            value: showMosque,
+            onChanged: (value) {
+              final stringValue = value ? 'true' : 'false';
+              setState(() => _configData['MARQUEE_SHOW_MOSQUE_NAME'] = stringValue);
+              _socketService?.saveConfigItem('MARQUEE_SHOW_MOSQUE_NAME', stringValue);
+            },
+          ),
+          PanelTabRowInput(
+            label: 'Kelajuan (saat per pusingan)',
+            initialValue: _config('MARQUEE_DURATION', '25'),
+            unit: 's',
+            onChanged: (text) {
+              final trimmed = text.trim();
+              final value = trimmed.isEmpty ? '25' : trimmed;
+              setState(() => _configData['MARQUEE_DURATION'] = value);
+              _socketService?.saveConfigItem('MARQUEE_DURATION', value);
+            },
+            isNumeric: true,
+          ),
+        ],
+      ),
+      const SizedBox(height: 20),
+      PanelTabSectionHeader('DATA HEBAHAN'),
+      PanelTabCard(
+        children: [
+          if (_hebahanLoading)
+            const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
+          else if (_hebahanData.isEmpty)
+            const PanelTabRowLabel('Tiada data hebahan.')
+          else
+            ..._hebahanData.map((e) => PanelTabRowLabel('${e.id}. ${e.teks}')),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildTakwimPanelContent() {
+    final zoneMap = _takwimZoneMap;
+    final selectedCode = zoneMap.containsKey(_takwimZone) ? _takwimZone : zoneMap.keys.first;
+    return [
+      PanelTabSectionHeader('TAKWIM'),
+      PanelTabCard(
+        children: [
+          PanelTabRowLabel('Zon semasa: $selectedCode'),
+          if (_takwimSyncing) const PanelTabRowLabel('Syncing...'),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildSystemPanelContent() {
+    return [
+      PanelTabSectionHeader('SISTEM'),
+      PanelTabCard(
+        children: const [
+          PanelTabRowLabel('Tetapan lanjutan sistem.'),
+        ],
+      ),
+    ];
+  }
+}
+
+class _HebahanRow {
+  const _HebahanRow({
+    required this.id,
+    required this.teks,
+    required this.tarikhMula,
+    required this.tarikhAkhir,
+  });
+
+  final int id;
+  final String teks;
+  final String? tarikhMula;
+  final String? tarikhAkhir;
+}
+

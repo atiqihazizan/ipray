@@ -1,0 +1,7 @@
+home|null|1000|11|0
+announce|picture4|5000|9|0
+countDown|picture3|5000|0|0
+kuliahHari|picture1b|3000|13|0
+kuliahWeekly|picture1b|4000|13|0
+kuliahBulanan|picture4e|10000|13|0
+slideshow|bg-mta|10000|12|0
