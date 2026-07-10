@@ -1,0 +1,138 @@
+<div class="content-card">
+	<nav id="config-subnav" class="config-subnav settings-list">
+		<button
+			type="button"
+			class="config-subtab settings-list-item active"
+			data-config-tab="title-home"
+			onclick="showConfigSubTab('title-home')"
+		>
+			<div class="settings-list-icon">🏠</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Paparan Home</div>
+				<div class="settings-list-subtitle">Tajuk & gaya skrin utama</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="waktu-solat"
+			onclick="showConfigSubTab('waktu-solat')"
+		>
+			<div class="settings-list-icon">🕒</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Waktu Solat</div>
+				<div class="settings-list-subtitle">Konfigurasi jadual solat harian</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="slides"
+			onclick="showConfigSubTab('slides')"
+		>
+			<div class="settings-list-icon">🖼️</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Paparan</div>
+				<div class="settings-list-subtitle">Template & layout paparan skrin</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="hebahan"
+			onclick="showConfigSubTab('hebahan')"
+		>
+			<div class="settings-list-icon">📢</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Hebahan</div>
+				<div class="settings-list-subtitle">Teks hebahan untuk paparan</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="takwim"
+			onclick="showConfigSubTab('takwim')"
+		>
+			<div class="settings-list-icon">📅</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Takwim</div>
+				<div class="settings-list-subtitle">Zon & takwim solat</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="masa-sistem"
+			onclick="showConfigSubTab('masa-sistem')"
+		>
+			<div class="settings-list-icon">⏱️</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Masa Sistem</div>
+				<div class="settings-list-subtitle">Tetapan tarikh & masa peranti</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="wifi"
+			onclick="showConfigSubTab('wifi')"
+		>
+			<div class="settings-list-icon">📶</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Wi‑Fi</div>
+				<div class="settings-list-subtitle">Sambungan rangkaian Wi‑Fi</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="hotspot"
+			onclick="showConfigSubTab('hotspot')"
+		>
+			<div class="settings-list-icon">📡</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Hotspot</div>
+				<div class="settings-list-subtitle">Tetapan hotspot peranti</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+
+		<button
+			type="button"
+			class="config-subtab settings-list-item"
+			data-config-tab="system"
+			onclick="showConfigSubTab('system')"
+		>
+			<div class="settings-list-icon">⚙️</div>
+			<div class="settings-list-text">
+				<div class="settings-list-title">Sistem</div>
+				<div class="settings-list-subtitle">Tetapan lanjutan & sistem</div>
+			</div>
+			<div class="settings-list-chevron">›</div>
+		</button>
+	</nav>
+	<div id="config-form" class="config-form config-form-hidden" style="flex: 1; overflow-y: auto; min-height: 0; flex-direction: column; display: none;">
+		<div class="config-form-header">
+			<button type="button" class="btn-back config-form-back" onclick="configFormBack()" aria-label="Kembali">
+				<span class="btn-back-icon">←</span>
+				<span class="btn-back-label">Kembali</span>
+			</button>
+		</div>
+		<div id="config-tab-panel" class="config-tab-panel"></div>
+	</div>
+</div>

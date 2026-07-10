@@ -1,0 +1,83 @@
+... 7 lines not shown ...
+L8:import { MOSQUE_NAME, MOSQUE_LOCATION, HOME_SLIDE_BACKGROUND } from './mosqueInfo';
+L9:
+L10:// ============================================================================
+L11:// HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
+L12:// ============================================================================
+L13:/**
+L14: * Build home template dengan styling dinamik dari HOME_TITLE_CONFIG
+L15: * TEKS adalah HARDCODED untuk protect dari cetak rompak
+L16: * @param {Object} homeTitleConfig - Config untuk styling title home (tanpa text)
+L17: * @returns {Object} Home slide template
+L18: */
+L19:export const buildHomeTemplate = (homeTitleConfig = {}) => {
+L20:  const {
+L21:    SHOW_TITLE = true,
+L22:    TITLE1_TOP = 120,
+L23:    TITLE_LEFT = 0,
+L24:    TITLE_RIGHT = 0,
+L25:    TITLE_BG = 'transparent',
+L26:    TITLE_GAP = 30,
+L27:    TITLE_ALIGN = 'center',
+L28:    TITLE1_SIZE = 88,
+L29:    TITLE1_COLOR = '#00FFFF',
+L30:    TITLE2_SIZE = 88,
+L31:    TITLE2_COLOR = '#00FFFF'
+L32:  } = homeTitleConfig;
+L33:
+L34:  const showTitle = SHOW_TITLE !== false;
+L35:
+L36:  const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
+L37:
+L38:  const captions = showTitle ? [
+L39:      {
+L40:        type: "div", transition: "CLIP|LR", duration: 1500,
+L41:        style: { 
+L42:          left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP), //width: sz().width,
+L43:          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
+L44:          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px',
+L45:          backgroundColor: TITLE_BG,
+          // '-webkit-text-stroke': '1px red',
+L47:          // webkitTextStrokeColor: 'red',
+L48:          // webkittextstrokewidth: '1px',
+L49:          clip: 'auto'
+L50:        },
+L51:        content: `<div style="display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
+L52:        <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>
+L53:        <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
+L54:        </div>`
+L55:      },
+L56:    ] : [];
+L57:
+L58:  return {
+L59:    type: 'home',
+L60:    duration: 1000,
+L61:    transitionType: 'auto',
+L62:    image: { src: HOME_SLIDE_BACKGROUND, alt: "Slide 1" },
+L63:    captions,
+L64:    datetime: ['date', 'solat-time']
+L65:  };
+L66:};
+L67:
+L68:
+L69:// ============================================================================
+L70:// CONSTANTS
+L71:// ============================================================================
+L72:// Debug mode: set true untuk development, false untuk production
+L73:// DEBUG: true = autoPlay false, loop 0 | DEBUG: false = autoPlay true, loop 1
+L74:const DEBUG = false;
+L75:
+L76:// Urutan caption untuk convert object captions kepada array (jika guna flat)
+L77:export const CAPTION_ORDER = ['kategori', 'tajuk', 'penceramah', 'tema', 'tarikh', 'masa', 'lokasi', 'sasaran', 'countdown'];
+L78:
+L79:// Order children dalam parent announce (indeks = item[] selepas restructure)
+L80:// item[1]=tajuk, [2]=penceramah, [3]=tema, [4]=tarikh, [5]=masa, [6]=lokasi, [7]=sasaran, [8]=countdown
+L81:export const ANNOUNCE_CHILDREN_ORDER = ['tajuk', 'penceramah', 'tema', 'tarikh', 'masa', 'lokasi', 'sasaran', 'countdown'];
+L82:
+L83:// Order untuk kuliah subs (children dalam parent)
+L84:// Data: image|penceramah|hari,dd mmm|kitab — paparan hari: "hari | dd mmm"
+L85:export const KULIAH_SUBS_ORDER = ['imagePenceramah', 'teksGabungan'];
+L86:
+L87:// Template 1 card: image + 1 div text gabungan (penceramah + hari)
+... 252 lines not shown ...
+
