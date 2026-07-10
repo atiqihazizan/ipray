@@ -1,0 +1,43 @@
+directories:
+  output: dist-electron
+  buildResources: build
+appId: app.ipray.kiosk
+productName: iPray
+copyright: Copyright © 2026 iPray Team
+asar: true
+files:
+  - filter:
+      - main.js
+      - electron-main.js
+      - services/**/*
+      - utils/**/*
+      - public/**/*
+      - setting/**/*
+      - package.json
+      - node_modules/**/*
+      - '!node_modules/electron/**'
+      - '!node_modules/electron-builder/**'
+      - '!node_modules/nodemon/**'
+extraResources:
+  - from: data/
+    to: ../data/
+    filter:
+      - '**/*'
+  - from: images/
+    to: ../images/
+    filter:
+      - '**/*'
+win:
+  target:
+    - target: dir
+      arch:
+        - x64
+  icon: public/img/icon.png
+linux:
+  target:
+    - target: dir
+      arch:
+        - x64
+        - arm64
+  icon: public/img/icon.png
+electronVersion: 35.7.5
