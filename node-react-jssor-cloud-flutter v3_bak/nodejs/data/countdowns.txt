@@ -1,0 +1,11 @@
+# Countdown sokong MASIHI dan HIJRI (sekali atau ulang setiap tahun).
+# windowDays: papar countdown hanya bila baki hari <= windowDays (0 = papar bila-bila masa). Contoh: 30 = papar bila 30 hari atau kurang lagi.
+# MASIHI sekali: COUNTDOWN|YYYY-MM-DD [HH:mm]|event|windowDays
+# MASIHI ulang tahun: COUNTDOWN_MASIHI|bulan|hari|event|windowDays
+# HIJRI ulang tahun: COUNTDOWN_HIJRI|tahun|bulan|hari|event|windowDays (tahun kosong = setiap tahun)
+COUNTDOWN_HIJRI||10|1|HARI RAYA AIDILFITRI|10
+COUNTDOWN_MASIHI|8|31|HARI KEMERDEKAAN MALAYSIA|30
+# Contoh tarikh tetap (sekali sahaja). windowDays 90 = papar hanya bila 90 hari atau kurang lagi
+COUNTDOWN|2027-01-01 00:00|TAHUN BARU 2027|90
+
+COUNTDOWN_HIJRI||12|10|Hari Raya Aidiladha|30

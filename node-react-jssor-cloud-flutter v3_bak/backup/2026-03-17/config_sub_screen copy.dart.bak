@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+
+import '../../config/app_config.dart';
+import 'config_screen.dart';
+
+/// Screen sub-config: buka satu tab Config sebagai page berasingan (ada Back).
+class ConfigSubScreen extends StatelessWidget {
+  const ConfigSubScreen({
+    super.key,
+    required this.config,
+    required this.tabId,
+    required this.title,
+  });
+
+  final AppConfig? config;
+  final String tabId;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: ConfigScreen(
+        config: config,
+        forcedTabId: tabId,
+      ),
+    );
+  }
+}
+

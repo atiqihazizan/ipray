@@ -1,0 +1,773 @@
+import 'package:flutter/material.dart';
+
+import 'dart:async';
+
+import '../../config/app_config.dart';
+import '../../services/cloud_socket_service.dart';
+
+class _LivestreamItem {
+  const _LivestreamItem({
+    required this.id,
+    required this.title,
+    required this.urlOrIp,
+    required this.type,
+  });
+
+  final int id;
+  final String title;
+  final String urlOrIp;
+  final String type; // contoh: youtube, hls, mp4, webm, rtsp
+}
+
+/// Sub-skrin Siaran Langsung (1 page sahaja, tiada sub page).
+class LivestreamScreen extends StatefulWidget {
+  const LivestreamScreen({
+    super.key,
+    required this.config,
+    this.socketService,
+  });
+
+  final AppConfig config;
+  final CloudSocketService? socketService;
+
+  @override
+  State<LivestreamScreen> createState() => _LivestreamScreenState();
+}
+
+class _LivestreamScreenState extends State<LivestreamScreen> {
+  bool _isLiveActive = false;
+  bool _showTarikh = true;
+  bool _showJamKecil = true;
+  bool _showMarquee = true;
+
+  CloudSocketService? _socketService;
+  StreamSubscription<void>? _readySub;
+  bool _ownsSocket = false;
+
+  bool _loading = false;
+  String? _error;
+  List<_LivestreamItem> _items = <_LivestreamItem>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _initSocketAndLoad();
+  }
+
+  void _initSocketAndLoad() {
+    _socketService = widget.socketService;
+    if (_socketService == null) {
+      _ownsSocket = true;
+      _socketService = CloudSocketService(config: widget.config);
+      _socketService!.connect();
+    }
+
+    if (_socketService!.isReady) {
+      unawaited(_loadLivestreamData());
+      return;
+    }
+
+    _readySub?.cancel();
+    _readySub = _socketService!.onReadyStream.listen((_) {
+      if (!mounted) return;
+      unawaited(_loadLivestreamData());
+    });
+  }
+
+  @override
+  void dispose() {
+    _readySub?.cancel();
+    if (_ownsSocket) _socketService?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFF5F5F5),
+      child: RefreshIndicator(
+        onRefresh: _loadLivestreamData,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            _TopBar(
+              isLiveActive: _isLiveActive,
+              onAdd: _onAddPressed,
+              onRefresh: _onRefreshPressed,
+            ),
+            const SizedBox(height: 12),
+            _OverlayCard(
+              showTarikh: _showTarikh,
+              showJamKecil: _showJamKecil,
+              showMarquee: _showMarquee,
+              onChangedTarikh: (v) => setState(() => _showTarikh = v),
+              onChangedJamKecil: (v) => setState(() => _showJamKecil = v),
+              onChangedMarquee: (v) => setState(() => _showMarquee = v),
+            ),
+            const SizedBox(height: 12),
+            // Info format URL tidak diperlukan buat masa ini.
+            // Simpan untuk kegunaan kedepan.
+            // _InfoCard(
+            //   borderColor: Theme.of(context).colorScheme.primary.withAlpha((0.25 * 255).toInt()),
+            // ),
+            // const SizedBox(height: 16),
+            if (_loading) const _LoadingCard(),
+            if (_error != null) _ErrorCard(message: _error!, onRetry: _loadLivestreamData),
+            if (!_loading && _error == null && _items.isEmpty) const _EmptyCard(),
+            if (!_loading && _error == null && _items.isNotEmpty)
+              _LivestreamTable(
+                items: _items,
+                onStart: _onStartPressed,
+                onEdit: _onEditPressed,
+                onDelete: _onDeletePressed,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onAddPressed() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tambah siaran: belum disambungkan ke API.')),
+    );
+  }
+
+  void _onRefreshPressed() {
+    unawaited(_loadLivestreamData());
+  }
+
+  void _onStartPressed(_LivestreamItem item) {
+    setState(() => _isLiveActive = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Memulakan siaran: ${item.title}')),
+    );
+  }
+
+  void _onEditPressed(_LivestreamItem item) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Edit siaran: ${item.title} (belum ada subpage).')),
+    );
+  }
+
+  void _onDeletePressed(_LivestreamItem item) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Padam siaran: ${item.title} (belum disambungkan).')),
+    );
+  }
+
+  Future<void> _loadLivestreamData() async {
+    final svc = _socketService;
+    if (svc == null) return;
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
+
+    try {
+      if (!svc.isConnected) svc.connect();
+      final result = await svc.fetchData('livestream');
+      final next = <_LivestreamItem>[];
+      for (final row in result.data) {
+        final id = int.tryParse(row['id']?.toString() ?? '') ?? 0;
+        final tajuk = row['tajuk']?.toString() ?? '';
+        final url = row['url']?.toString() ?? '';
+        final jenis = row['jenis']?.toString() ?? '';
+        if (id <= 0) continue;
+        next.add(_LivestreamItem(
+          id: id,
+          title: tajuk,
+          urlOrIp: url,
+          type: jenis,
+        ));
+      }
+      if (!mounted) return;
+      setState(() {
+        _items = next;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = e.toString();
+      });
+    }
+  }
+}
+
+class _TopBar extends StatelessWidget {
+  const _TopBar({
+    required this.isLiveActive,
+    required this.onAdd,
+    required this.onRefresh,
+  });
+
+  final bool isLiveActive;
+  final VoidCallback onAdd;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Text(
+          'Status Siaran:',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF374151),
+              ),
+        ),
+        const SizedBox(width: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isLiveActive ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: isLiveActive ? const Color(0xFF22C55E) : const Color(0xFFE5E7EB),
+            ),
+          ),
+          child: Text(
+            isLiveActive ? 'Aktif' : 'Tidak Aktif',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isLiveActive ? const Color(0xFF166534) : const Color(0xFF6B7280),
+                ),
+          ),
+        ),
+        const Spacer(),
+        _SquareIconButton(
+          tooltip: 'Tambah',
+          icon: Icons.add,
+          background: const Color(0xFF16A34A),
+          foreground: Colors.white,
+          onPressed: onAdd,
+        ),
+        const SizedBox(width: 10),
+        _SquareIconButton(
+          tooltip: 'Refresh',
+          icon: Icons.refresh_rounded,
+          background: scheme.primary,
+          foreground: scheme.onPrimary,
+          onPressed: onRefresh,
+        ),
+      ],
+    );
+  }
+}
+
+class _SquareIconButton extends StatelessWidget {
+  const _SquareIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Material(
+        color: background,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onPressed,
+          child: Tooltip(
+            message: tooltip,
+            child: Icon(icon, color: foreground),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayCard extends StatelessWidget {
+  const _OverlayCard({
+    required this.showTarikh,
+    required this.showJamKecil,
+    required this.showMarquee,
+    required this.onChangedTarikh,
+    required this.onChangedJamKecil,
+    required this.onChangedMarquee,
+  });
+
+  final bool showTarikh;
+  final bool showJamKecil;
+  final bool showMarquee;
+  final ValueChanged<bool> onChangedTarikh;
+  final ValueChanged<bool> onChangedJamKecil;
+  final ValueChanged<bool> onChangedMarquee;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Paparan Overlay Semasa Siaran',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF1F2937),
+                ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 14,
+            runSpacing: 8,
+            children: [
+              _CheckItem(label: 'Tarikh', value: showTarikh, onChanged: onChangedTarikh),
+              _CheckItem(label: 'Jam Kecil', value: showJamKecil, onChanged: onChangedJamKecil),
+              _CheckItem(label: 'Marquee', value: showMarquee, onChanged: onChangedMarquee),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckItem extends StatelessWidget {
+  const _CheckItem({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () => onChanged(!value),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Checkbox(
+            value: value,
+            onChanged: (v) => onChanged(v ?? false),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+          ),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF374151),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+@pragma('vm:entry-point')
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.borderColor});
+
+  final Color borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(12);
+    final borderSide = BorderSide(color: Colors.black.withValues(alpha: 0.06));
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: radius,
+        border: Border.all(color: borderSide.color),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.05),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 6, color: borderColor),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Format URL yang disokong:',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: const [
+                        _FormatChip(label: 'HLS', value: 'http://ip/stream.m3u8'),
+                        _FormatChip(label: 'YouTube', value: 'https://youtube.com/watch?v=...'),
+                        _FormatChip(label: 'Facebook', value: 'https://facebook.com/.../videos/...'),
+                        _FormatChip(label: 'Video', value: '.mp4'),
+                        _FormatChip(label: 'Video', value: '.webm'),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Tekan butang Mula pada baris yang dikehendaki untuk memulakan siaran langsung.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF4B5563),
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FormatChip extends StatelessWidget {
+  const _FormatChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(
+        '$label: $value',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: const Color(0xFF374151),
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+class _LivestreamTable extends StatelessWidget {
+  const _LivestreamTable({
+    required this.items,
+    required this.onStart,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<_LivestreamItem> items;
+  final void Function(_LivestreamItem item) onStart;
+  final void Function(_LivestreamItem item) onEdit;
+  final void Function(_LivestreamItem item) onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 10),
+      itemBuilder: (context, idx) {
+        final e = items[idx];
+        return _LivestreamListTile(
+          item: e,
+          onStart: () => onStart(e),
+          onEdit: () => onEdit(e),
+          onDelete: () => onDelete(e),
+        );
+      },
+    );
+  }
+}
+
+class _LivestreamListTile extends StatelessWidget {
+  const _LivestreamListTile({
+    required this.item,
+    required this.onStart,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final _LivestreamItem item;
+  final VoidCallback onStart;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title.isEmpty ? '-' : item.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827),
+                      ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.urlOrIp.isEmpty ? '-' : item.urlOrIp,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF4B5563),
+                      ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _TypeBadge(type: item.type),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _MiniActionButton(
+                          tooltip: 'Edit',
+                          icon: Icons.edit_rounded,
+                          color: const Color(0xFF2563EB),
+                          onPressed: onEdit,
+                        ),
+                        const SizedBox(width: 6),
+                        _MiniActionButton(
+                          tooltip: 'Padam',
+                          icon: Icons.delete_outline_rounded,
+                          color: const Color(0xFFEF4444),
+                          onPressed: onDelete,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          _PlayButtonLarge(onPressed: onStart),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlayButtonLarge extends StatelessWidget {
+  const _PlayButtonLarge({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Material(
+        color: const Color(0xFF16A34A),
+        borderRadius: BorderRadius.circular(16),
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onPressed,
+          child: const Tooltip(
+            message: 'Mula',
+            child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: 34),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniActionButton extends StatelessWidget {
+  const _MiniActionButton({
+    required this.tooltip,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFFF9FAFB),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onPressed,
+        child: Tooltip(
+          message: tooltip,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 20, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypeBadge extends StatelessWidget {
+  const _TypeBadge({required this.type});
+
+  final String type;
+
+  @override
+  Widget build(BuildContext context) {
+    final normalized = type.trim().toLowerCase();
+    final label = normalized.isEmpty ? '-' : normalized;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF374151),
+            ),
+      ),
+    );
+  }
+}
+
+class _CardShell extends StatelessWidget {
+  const _CardShell({
+    required this.child,
+    this.padding = const EdgeInsets.all(14),
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.05),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _CardShell(
+      child: Row(
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 12),
+          Text('Memuat data siaran langsung...'),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyCard extends StatelessWidget {
+  const _EmptyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _CardShell(
+      child: Text('Tiada data siaran langsung.'),
+    );
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Gagal get data: $message',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 10),
+          TextButton(
+            onPressed: () => unawaited(onRetry()),
+            child: const Text('Cuba lagi'),
+          ),
+        ],
+      ),
+    );
+  }
+}

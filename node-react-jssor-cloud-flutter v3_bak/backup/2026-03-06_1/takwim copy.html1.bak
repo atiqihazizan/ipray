@@ -1,0 +1,11 @@
+<div class="config-group takwim-group">
+	<div class="config-group-header">
+		<h3 class="config-group-header-title">Jadual Solat Hari Ini</h3>
+		<div class="config-group-header-actions">
+			<button type="button" class="today-takwim-btn-sync-jakim" onclick="syncJakimToday()" title="Sync waktu solat JAKIM (PNG01)">
+				Sync JAKIM
+			</button>
+		</div>
+	</div>
+	<div id="takwim-table-container"></div>
+</div>
