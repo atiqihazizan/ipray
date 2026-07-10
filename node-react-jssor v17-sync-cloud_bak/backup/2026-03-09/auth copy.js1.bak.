@@ -1,0 +1,39 @@
+const AUTH_TOKEN = process.env.AUTH_TOKEN || null;
+
+function isTokenValid(providedToken) {
+  if (!AUTH_TOKEN) {
+    // Jika tiada AUTH_TOKEN ditetapkan, anggap semua permintaan sah
+    return true;
+  }
+  return providedToken && providedToken === AUTH_TOKEN;
+}
+
+function extractTokenFromRequest(req) {
+  return (
+    req.headers['x-auth-token'] ||
+    (req.body && req.body.authToken) ||
+    null
+  );
+}
+
+function requireAuth(req, res, next) {
+  const token = extractTokenFromRequest(req);
+  if (!isTokenValid(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  return next();
+}
+
+function validateSocketAuth(payload) {
+  const token =
+    (payload && payload.authToken) ||
+    null;
+
+  return isTokenValid(token);
+}
+
+module.exports = {
+  requireAuth,
+  validateSocketAuth
+};
+
