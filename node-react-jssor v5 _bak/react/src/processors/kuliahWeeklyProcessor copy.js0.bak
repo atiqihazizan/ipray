@@ -1,0 +1,264 @@
+/**
+ * Process data kuliah mingguan ke slides dengan layout 2 kolom
+ * Layout:
+ * - Col 1 (Kiri): Kuliah Maghrib (6-7 kuliah)
+ * - Col 2 (Kanan): Dibahagi 2 row
+ *   - Row 1: Kuliah Subuh (≤3 kuliah)
+ *   - Row 2: Kuliah Dhuha (≤4 kuliah)
+ */
+import { slidesTemplate } from '../config/sliderConfig';
+import { buildKuliahWeeklyTwoColumnChildren, getWeeklyLayoutInfo } from '../config/weeklyLayoutBuilder';
+import {
+  TYPE_LABELS,
+  DAY_NAMES,
+  getWeekCode,
+  getDayCode,
+  formatShortDate,
+  calculateDateFromCodes
+} from '../utils/kuliahHelpers';
+import { top, getContainerSize } from '../utils/screenUtils';
+import { createBoxLayer } from '../utils/boxLayerUtils';
+import { escapeHtml, isKuliahBatal } from './slideHelpers';
+
+/** Bottom box untuk weekly (lebih kecil = height box lebih) */
+const WEEKLY_BOX_BOTTOM = 200;
+
+const CATEGORY_ORDER = ['KULIAH MAGHRIB', 'KULIAH SUBUH', 'KULIAH DHUHA', 'KULIAH KHAS'];
+
+export function processKuliahMingguan(kuliahData, kuliahBatalData, imagesData, slidesConfigData, applyConfig) {
+  const esc = escapeHtml;
+  const safeKuliahData = kuliahData && Array.isArray(kuliahData) ? kuliahData : [];
+  const currentDate = new Date();
+  const currentWeek = getWeekCode(currentDate);
+  const currentDay = getDayCode(currentDate);
+
+  // Filter data untuk minggu semasa
+  let dataToDisplay = safeKuliahData.filter((item) => {
+    const arr = item.split('|');
+    return arr[0] === currentWeek;
+  });
+
+  // Jika tiada data, paparkan mesej
+  if (dataToDisplay.length === 0) {
+    const kuliahTemplate = applyConfig(slidesTemplate.kuliahWeekly, 'kuliahWeekly');
+    const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+    const parent = kuliahSlide.captions[0];
+    if (parent && parent.children && parent.children.length >= 2) {
+      parent.children[0].content = 'JADUAL KULIAH MINGGU INI';
+      const bodyMsg = parent.children[1];
+      bodyMsg.content = 'Tiada Kuliah minggu ini...';
+      bodyMsg.style = {
+        ...bodyMsg.style,
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: top(350),
+        width: getContainerSize().width,
+        height: 300,
+        textAlign: 'center',
+        fontSize: 200,
+        color: '#000000',
+        fontFamily: "'SairaCondensed', sans-serif",
+        fontWeight: 'bold',
+        lineHeight: 120,
+        margin: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      };
+      parent.children = [parent.children[0], bodyMsg];
+    }
+    kuliahSlide.transitionType = 'auto';
+    return [kuliahSlide];
+  }
+
+  // Sort data mengikut tarikh
+  dataToDisplay = dataToDisplay
+    .map((item) => {
+      const arr = item.split('|');
+      const calculatedDate = calculateDateFromCodes(arr[0], arr[1]);
+      return { item, date: calculatedDate };
+    })
+    .sort((a, b) => a.date - b.date)
+    .map((entry) => entry.item);
+
+  // Group data mengikut kategori
+  const groupedData = {};
+  dataToDisplay.forEach((item) => {
+    const arr = item.split('|');
+    const type = arr[2];
+    const typeLabel = TYPE_LABELS[type] || type.toUpperCase();
+    if (!groupedData[typeLabel]) groupedData[typeLabel] = [];
+    groupedData[typeLabel].push(item);
+  });
+
+  // Pad Kuliah Maghrib dengan dummy supaya sentiasa 7 slot
+  const COL1_MAX_ITEMS = 7;
+  if (!groupedData['KULIAH MAGHRIB']) groupedData['KULIAH MAGHRIB'] = [];
+  while (groupedData['KULIAH MAGHRIB'].length < COL1_MAX_ITEMS) {
+    groupedData['KULIAH MAGHRIB'].push('');
+  }
+
+  // Buat slide dengan layout 2 kolom
+  const kuliahTemplate = applyConfig(slidesTemplate.kuliahWeekly, 'kuliahWeekly');
+  const kuliahSlide = JSON.parse(JSON.stringify(kuliahTemplate));
+  const parent = kuliahSlide.captions[0];
+
+  if (parent) {
+    // Set header
+    if (parent.children && parent.children.length > 0) {
+      parent.children[0].content = 'JADUAL KULIAH MINGGU INI';
+    }
+    
+    // Remove header kategori (children[1]) kerana kita akan guna layout baru
+    if (parent.children && parent.children.length > 1) {
+      parent.children.splice(1, 1);
+    }
+
+    // Build layout 2 kolom (kandungan dalam box, height box lebih dengan bottom 200)
+    const boxLayer = createBoxLayer({ bottom: WEEKLY_BOX_BOTTOM });
+    const layoutChildren = buildKuliahWeeklyTwoColumnChildren(groupedData, { boxBottom: WEEKLY_BOX_BOTTOM });
+    const layoutInfo = getWeeklyLayoutInfo(groupedData);
+
+    // Set children: header, boxLayer, cards
+    parent.children = [parent.children[0], boxLayer, ...layoutChildren];
+
+    // Fill content untuk Kuliah Maghrib (Col 1) - slot dummy papar "TIADA KULIAH"
+    layoutInfo.maghrib.data.forEach((item, i) => {
+      const arr = item.split('|');
+      const childIndex = 1 + layoutInfo.maghrib.startIndex + layoutInfo.maghrib.labelOffset + i; // +1 kerana children[0] adalah header
+      
+      const day = arr[1];
+      const penceramah = (arr[3] || '').trim();
+      const batalInfo = isKuliahBatal(item, kuliahBatalData);
+      const isDummy = !penceramah;
+
+      const cardEl = parent.children[childIndex];
+      const contentEl = cardEl?.children?.[0] || cardEl;
+      if (!contentEl) return;
+
+      if (isDummy) {
+        const dummyStyle = 'color:#999;';
+        contentEl.content = `<div style="font-size:40px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;${dummyStyle}">${esc('TIADA KULIAH')}</div><div style="font-size:22px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;${dummyStyle}">—</div>`;
+        return;
+      }
+
+      const dayName = DAY_NAMES[day] || '';
+      const calculatedDate = calculateDateFromCodes(arr[0], day);
+      const shortDate = formatShortDate(calculatedDate);
+      const hariTarikh = dayName && shortDate ? `${dayName} | ${shortDate}` : '';
+
+      const isBatal = batalInfo.isBatal && day === currentDay;
+      const isActive = day === currentDay && !isBatal;
+      const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+      const activeStyle = isActive ? 'color:#ff4444;' : '';
+      const defaultPenceramahColor = !batalStyle && !activeStyle ? 'color:#1a1a1a;' : '';
+      const dateColor = isActive ? 'color:#ff4444;' : 'color:#555;';
+
+      const penceramahHtml = `<div style="font-size:40px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${defaultPenceramahColor}${batalStyle}${activeStyle}">${esc(penceramah.toUpperCase())}</div>`;
+      const dateHtml = hariTarikh
+        ? `<div style="font-size:22px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;${dateColor}">${esc(hariTarikh)}</div>`
+        : '';
+      let statusHtml = '';
+      if (isBatal) {
+        const notes = (batalInfo.notes || '').trim();
+        statusHtml = notes
+          ? `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">${esc(notes).toUpperCase()}</div>`
+          : `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">KULIAH DITANGGUH</div>`;
+      }
+      contentEl.content = `${penceramahHtml}${dateHtml}${statusHtml}`;
+    });
+
+    // Fill content untuk Kuliah Subuh (Col 2 Row 1)
+    layoutInfo.subuh.data.forEach((item, i) => {
+      const arr = item.split('|');
+      const childIndex = 1 + layoutInfo.subuh.startIndex + layoutInfo.subuh.labelOffset + i;
+      
+      const day = arr[1];
+      const penceramah = (arr[3] || '').trim();
+      // const kitab = (arr[5] || '').trim(); // kitab dikomentkan
+      const batalInfo = isKuliahBatal(item, kuliahBatalData);
+
+      if (!penceramah) return;
+
+      const dayName = DAY_NAMES[day] || '';
+      const calculatedDate = calculateDateFromCodes(arr[0], day);
+      const shortDate = formatShortDate(calculatedDate);
+      const hariTarikh = dayName && shortDate ? `${dayName} | ${shortDate}` : '';
+
+      const isBatal = batalInfo.isBatal && day === currentDay;
+      const isActive = day === currentDay && !isBatal;
+      const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+      const activeStyle = isActive ? 'color:#ff4444;' : '';
+      const defaultPenceramahColor = !batalStyle && !activeStyle ? 'color:#1a1a1a;' : '';
+      // const defaultKitabColor = ...; // kitab dikomentkan
+      const dateColor = isActive ? 'color:#ff4444;' : 'color:#555;';
+
+      const cardEl = parent.children[childIndex];
+      const contentEl = cardEl?.children?.[0] || cardEl;
+      if (contentEl) {
+        const penceramahHtml = `<div style="font-size:40px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${defaultPenceramahColor}${batalStyle}${activeStyle}">${esc(penceramah.toUpperCase())}</div>`;
+        const dateHtml = hariTarikh
+          ? `<div style="font-size:22px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;${dateColor}">${esc(hariTarikh)}</div>`
+          : '';
+        let statusHtml = '';
+        if (isBatal) {
+          const notes = (batalInfo.notes || '').trim();
+          statusHtml = notes
+            ? `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">${esc(notes).toUpperCase()}</div>`
+            : `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">KULIAH DIBATALKAN</div>`;
+        }
+        contentEl.content = `${penceramahHtml}${dateHtml}${statusHtml}`;
+      }
+    });
+
+    // Fill content untuk Kuliah Dhuha (Col 2 Row 2)
+    layoutInfo.dhuha.data.forEach((item, i) => {
+      const arr = item.split('|');
+      const childIndex = 1 + layoutInfo.dhuha.startIndex + layoutInfo.dhuha.labelOffset + i;
+      
+      const day = arr[1];
+      const penceramah = (arr[3] || '').trim();
+      // const kitab = (arr[5] || '').trim(); // kitab dikomentkan
+      const batalInfo = isKuliahBatal(item, kuliahBatalData);
+
+      if (!penceramah) return;
+
+      const dayName = DAY_NAMES[day] || '';
+      const calculatedDate = calculateDateFromCodes(arr[0], day);
+      const shortDate = formatShortDate(calculatedDate);
+      const hariTarikh = dayName && shortDate ? `${dayName} | ${shortDate}` : '';
+
+      const isBatal = batalInfo.isBatal && day === currentDay;
+      const isActive = day === currentDay && !isBatal;
+      const batalStyle = isBatal ? 'text-decoration:line-through;color:gray;' : '';
+      const activeStyle = isActive ? 'color:#ff4444;' : '';
+      const defaultPenceramahColor = !batalStyle && !activeStyle ? 'color:#1a1a1a;' : '';
+      // const defaultKitabColor = ...; // kitab dikomentkan
+      const dateColor = isActive ? 'color:#ff4444;' : 'color:#555;';
+
+      const cardEl = parent.children[childIndex];
+      const contentEl = cardEl?.children?.[0] || cardEl;
+      if (contentEl) {
+        const penceramahHtml = `<div style="font-size:40px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${defaultPenceramahColor}${batalStyle}${activeStyle}">${esc(penceramah.toUpperCase())}</div>`;
+        const dateHtml = hariTarikh
+          ? `<div style="font-size:22px;line-height:1.2;font-family:'SairaCondensed',sans-serif;font-weight:bold;${dateColor}">${esc(hariTarikh)}</div>`
+          : '';
+        let statusHtml = '';
+        if (isBatal) {
+          const notes = (batalInfo.notes || '').trim();
+          statusHtml = notes
+            ? `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">${esc(notes).toUpperCase()}</div>`
+            : `<div style="font-size:18px;color:#ff0000;font-weight:bold;margin-top:5px;">KULIAH DIBATALKAN</div>`;
+        }
+        // contentEl.content = `${penceramahHtml}${dateHtml}${statusHtml}`;
+        contentEl.content = `<div style="display:flex;justify-content:space-between;">
+          ${penceramahHtml}${statusHtml}${dateHtml}
+        </div>`;
+      }
+    });
+  }
+
+  kuliahSlide.transitionType = 'auto';
+  return [kuliahSlide];
+}
