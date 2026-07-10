@@ -1,0 +1,88 @@
+╔═══════════════════════════════════════════════════════════════════════════════════╗
+║                         JADUAL KULIAH MINGGU INI                                  ║
+╠═══════════════════════════════════════╦═══════════════════════════════════════════╣
+║         KULIAH MAGHRIB                ║           KULIAH SUBUH                    ║
+╠═══════════════════════════════════════╬═══════════════════════════════════════════╣
+║ ┌───────────────────────────────────┐ ║ ┌───────────────────────────────────────┐ ║
+║ │ Ustaz Ahmad bin Abdullah          │ ║ │ Ustaz Zainudin bin Omar           │ ║
+║ │ Kitab Riyadhus Solihin            │ ║ │ Kitab Tafsir Ibnu Kathir          │ ║
+║ │ Isnin | 17 Feb                    │ ║ │ Isnin | 17 Feb                    │ ║
+║ └───────────────────────────────────┘ ║ └───────────────────────────────────────┘ ║
+╠═══════════════════════════════════════╬═══════════════════════════════════════════╣
+║ ┌───────────────────────────────────┐ ║ ┌───────────────────────────────────────┐ ║
+║ │ Ustaz Muhammad bin Yusof          │ ║ │ Ustaz Hassan bin Ali              │ ║
+║ │ Kitab Bulughul Maram              │ ║ │ Kitab Fiqh Sunnah                 │ ║
+║ │ Selasa | 18 Feb                   │ ║ │ Selasa | 18 Feb                   │ ║
+║ └───────────────────────────────────┘ ║ └───────────────────────────────────────┘ ║
+╠═══════════════════════════════════════╬═══════════════════════════════════════════╣
+║ ┌───────────────────────────────────┐ ║ ┌───────────────────────────────────────┐ ║
+║ │ Ustaz Ibrahim bin Ismail          │ ║ │ Ustaz Kamal bin Ahmad             │ ║
+║ │ Kitab Tauhid                      │ ║ │ Kitab Hadis Arbain Nawawi         │ ║
+║ │ Rabu | 19 Feb                     │ ║ │ Rabu | 19 Feb                     │ ║
+║ └───────────────────────────────────┘ ║ └───────────────────────────────────────┘ ║
+╠═══════════════════════════════════════╬═══════════════════════════════════════════╣
+║ ┌───────────────────────────────────┐ ║           KULIAH DHUHA                    ║
+║ │ Ustaz Razak bin Hamid             │ ╠═══════════════════════════════════════════╣
+║ │ Kitab Sirah Nabawiyyah            │ ║ ┌───────────────────────────────────────┐ ║
+║ │ Khamis | 20 Feb                   │ ║ │ Ustaz Farid bin Mahmud            │ ║
+║ └───────────────────────────────────┘ ║ │ Kitab Akhlak Islamiyyah           │ ║
+╠═══════════════════════════════════════╣ │ Isnin | 17 Feb                    │ ║
+║ ┌───────────────────────────────────┐ ║ └───────────────────────────────────────┘ ║
+║ │ Ustaz Aziz bin Rahman             │ ╠═══════════════════════════════════════════╣
+║ │ Kitab Fiqh Muamalat               │ ║ ┌───────────────────────────────────────┐ ║
+║ │ Jumaat | 21 Feb                   │ ║ │ Ustaz Nasir bin Abdullah          │ ║
+║ └───────────────────────────────────┘ ║ │ Kitab Ulum Al-Quran               │ ║
+╠═══════════════════════════════════════╣ │ Selasa | 18 Feb                   │ ║
+║ ┌───────────────────────────────────┐ ║ └───────────────────────────────────────┘ ║
+║ │ Ustaz Halim bin Sulaiman          │ ╠═══════════════════════════════════════════╣
+║ │ Kitab Tafsir Jalalain             │ ║ ┌───────────────────────────────────────┐ ║
+║ │ Sabtu | 22 Feb                    │ ║ │ Ustaz Idris bin Yaakob            │ ║
+║ └───────────────────────────────────┘ ║ │ Kitab Usul Fiqh                   │ ║
+╠═══════════════════════════════════════╣ │ Rabu | 19 Feb                     │ ║
+║ ┌───────────────────────────────────┐ ║ └───────────────────────────────────────┘ ║
+║ │ Ustaz Jamal bin Hassan            │ ╠═══════════════════════════════════════════╣
+║ │ Kitab Adab Islamiyyah             │ ║ ┌───────────────────────────────────────┐ ║
+║ │ Ahad | 23 Feb                     │ ║ │ Ustaz Khalid bin Umar             │ ║
+║ └───────────────────────────────────┘ ║ │ Kitab Tarikh Islam                │ ║
+║                                       ║ │ Khamis | 20 Feb                   │ ║
+║                                       ║ └───────────────────────────────────────┘ ║
+╚═══════════════════════════════════════╩═══════════════════════════════════════════╝
+
+NOTA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. KOLOM KIRI (KULIAH MAGHRIB):
+   - Maksimum: 7 kuliah
+   - Biasanya: 6-7 kuliah (satu untuk setiap hari dalam seminggu)
+   - Lebar: 50% dari lebar screen (tolak margin)
+
+2. KOLOM KANAN - BAHAGIAN ATAS (KULIAH SUBUH):
+   - Maksimum: 3 kuliah
+   - Biasanya: 2-3 kuliah
+   - Lebar: 50% dari lebar screen (tolak margin)
+
+3. KOLOM KANAN - BAHAGIAN BAWAH (KULIAH DHUHA):
+   - Maksimum: 4 kuliah
+   - Biasanya: 3-4 kuliah
+   - Lebar: 50% dari lebar screen (tolak margin)
+
+4. MAKLUMAT YANG DIPAPARKAN:
+   ✓ Nama Pensyarah (font besar, bold)
+   ✓ Nama Kitab (font sederhana)
+   ✓ Hari dan Tarikh (font kecil, warna kelabu)
+   ✗ Gambar Pensyarah (TIDAK dipaparkan dalam layout baru)
+
+5. STATUS KULIAH:
+   - Kuliah Hari Ini: Teks berwarna MERAH
+   - Kuliah Dibatalkan: Teks dengan line-through dan warna kelabu
+   - Kuliah Biasa: Teks warna putih
+
+6. ANIMATION:
+   - Kolom Kiri: Masuk dari kiri (CLIP|L)
+   - Kolom Kanan: Masuk dari kanan (CLIP|R)
+   - Delay: Berurutan (100ms setiap card)
+
+7. RESPONSIVE:
+   - Semua saiz dan posisi menggunakan screen utilities
+   - Auto-scaling mengikut resolusi screen
+   - Tested pada: 1920x1080 (Full HD)
