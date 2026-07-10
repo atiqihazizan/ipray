@@ -1,0 +1,83 @@
+... 23 lines not shown ...
+L24:};
+L25:
+L26:const DEFAULT_MARQUEE_CONFIG = {
+L27:  ENABLED: true,
+L28:  DURATION: 25,
+L29:  SEPARATOR: ' • ',
+L30:  SHOW_MOSQUE_NAME: true,
+L31:};
+L32:
+L33:const DEFAULT_HOME_TITLE_CONFIG = {
+L34:  SHOW_TITLE: true,
+L35:  TITLE1_TOP: 120,
+L36:  TITLE_LEFT: 0,
+L37:  TITLE_RIGHT: 0,
+L38:  TITLE_BG: 'transparent',
+L39:  TITLE_GAP: 30,
+L40:  TITLE_ALIGN: 'center',
+L41:  TITLE1_SIZE: 88,
+L42:  TITLE1_COLOR: '#00FFFF',
+L43:  TITLE2_SIZE: 88,
+L44:  TITLE2_COLOR: '#00FFFF'
+L45:};
+L46:
+L47:const DEFAULT_SLIDES_CONFIG = {
+L48:  ORDER: 'A'
+L49:};
+L50:
+L51:const DATA_LOAD_DATE_KEY = 'dataLoadDate';
+L52:const RELOAD_DELAY_MS = 15000;
+L53:
+L54:/**
+L55: * Data Context untuk menyimpan semua data dalam memory
+L56: * Fetch sekali sahaja untuk elakkan fetch berulang kali
+L57: */
+L58:const DataContext = createContext(null);
+L59:
+L60:export const useData = () => {
+L61:  const context = useContext(DataContext);
+L62:  if (!context) {
+L63:    throw new Error('useData must be used within DataProvider');
+L64:  }
+L65:  return context;
+L66:};
+L67:
+L68:export const DataProvider = ({ children }) => {
+L69:  const [takwimArray, setTakwimArray] = useState(null);
+L70:  const [takwimParsed, setTakwimParsed] = useState(null);
+L71:  const [announcementsData, setAnnouncementsData] = useState(null);
+L72:  const [countdownsData, setCountdownsData] = useState(null);
+L73:  const [hebahanData, setHebahanData] = useState([]);
+L74:  const [kuliahHariProcessed, setKuliahHariProcessed] = useState([]);
+L75:  const [kuliahHariReplacements, setKuliahHariReplacements] = useState([]);
+L76:  const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
+L77:  const [kuliahBulananProcessed, setKuliahBulananProcessed] = useState([]);
+L78:  const [imagesData, setImagesData] = useState(null);
+L79:  const [midnightReloadMessage, setMidnightReloadMessage] = useState(null);
+L80:  const [slidesConfigData, setSlidesConfigData] = useState(null);
+L81:  const [slideshowData, setSlideshowData] = useState(null);
+L82:  const [configData, setConfigData] = useState({
+L83:    PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
+L84:    COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
+L85:    MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
+L86:    HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
+L87:  });
+L88:  const [loading, setLoading] = useState(true);
+L89:  const [error, setError] = useState(null);
+L90:  const [socketConnected, setSocketConnected] = useState(false);
+L91:  const [socketReady, setSocketReady] = useState(false);
+L92:  const [isReloading, setIsReloading] = useState(false);
+L93:  const [reloadCounter, setReloadCounter] = useState(0);
+L94:  const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
+L95:  const [liveStreamData, setLiveStreamData] = useState(null);
+L96:  const [petugasData, setPetugasData] = useState([]);
+L97:  const dataLoadDateRef = useRef(null);
+L98:  const kematianTimerRef = useRef(null);
+L99:
+L100:  /**
+L101:   * Load semua data sekali sahaja dari API (parsed di server, tiada parsing di client)
+L102:   */
+L103:  const loadAllData = useCallback(async () => {
+... 328 lines not shown ...
+

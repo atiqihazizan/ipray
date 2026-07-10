@@ -1,0 +1,83 @@
+... 1479 lines not shown ...
+L1480:        MANUAL_OFFSET_MS: 0,
+L1481:        NTP_ENABLED: true,
+L1482:        NTP_SERVER: 'pool.ntp.org',
+L1483:        NTP_SYNC_INTERVAL_MS: 3600000
+L1484:      },
+L1485:      MARQUEE_CONFIG: {
+L1486:        ENABLED: true,
+L1487:        DURATION: 25,
+L1488:        SEPARATOR: '•',
+L1489:        SHOW_MOSQUE_NAME: true
+L1490:      },
+L1491:      HOME_TITLE_CONFIG: {
+L1492:        SHOW_TITLE: true,
+L1493:        TITLE1_TOP: 120,
+L1494:        TITLE_LEFT: 0,
+L1495:        TITLE_RIGHT: 0,
+L1496:        TITLE_BG: 'transparent',
+L1497:        TITLE_GAP: 30,
+L1498:        TITLE_ALIGN: 'center',
+L1499:        TITLE1_SIZE: 88,
+L1500:        TITLE1_COLOR: '#00FFFF',
+L1501:        TITLE2_SIZE: 88,
+L1502:        TITLE2_COLOR: '#00FFFF'
+L1503:      },
+L1504:      SLIDES_CONFIG: {
+L1505:        ORDER: 'A',
+L1506:        VISIBLE: null
+L1507:      }
+L1508:    };
+L1509:    if (!content || typeof content !== 'string' || !content.trim()) return parsed;
+L1510:    content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0).forEach(line => {
+L1511:      const parts = line.split('|').map(s => s.trim());
+L1512:      const key = parts[0];
+L1513:      const value = parts[1];
+L1514:      if (!key || !value) return;
+L1515:      if (key === 'BEEP_COUNT') parsed.PRAYER_TIME_CONFIG.BEEP_COUNT = parseInt(value, 10);
+L1516:      else if (key === 'WARNING_START_MINUTES') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = parseFloat(value) || 5;
+L1517:      else if (key === 'WARNING_START_SECONDS') parsed.PRAYER_TIME_CONFIG.WARNING_START_MINUTES = (parseInt(value, 10) || 30) / 60;
+L1518:      else if (key === 'IQAMAH_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.IQAMAH_DURATION_MIN = parseFloat(value) || 10;
+L1519:      else if (key === 'SOLAT_DURATION_MIN') parsed.PRAYER_TIME_CONFIG.SOLAT_DURATION_MIN = parseFloat(value) || 10;
+L1520:      else if (key === 'COLOR_CURRENT_TIME') parsed.COLOR_CONFIG.CURRENT_TIME = value;
+L1521:      else if (key === 'COLOR_DEFAULT') parsed.COLOR_CONFIG.DEFAULT = value;
+L1522:      else if (key === 'COLOR_NEXT_PRAYER') parsed.COLOR_CONFIG.NEXT_PRAYER = value;
+L1523:      else if (key === 'COLOR_WARNING_PRAYER') parsed.COLOR_CONFIG.WARNING_PRAYER = value;
+L1524:      else if (key === 'DATETIME_MANUAL_OFFSET_MS') parsed.DATETIME_CONFIG.MANUAL_OFFSET_MS = parseInt(value, 10) || 0;
+L1525:      else if (key === 'DATETIME_NTP_ENABLED') parsed.DATETIME_CONFIG.NTP_ENABLED = value.toLowerCase() === 'true';
+L1526:      else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;
+L1527:      else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
+L1528:      else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
+L1529:      else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
+L1530:      else if (key === 'MARQUEE_SEPARATOR') parsed.MARQUEE_CONFIG.SEPARATOR = value;
+L1531:      else if (key === 'MARQUEE_SHOW_MOSQUE_NAME') parsed.MARQUEE_CONFIG.SHOW_MOSQUE_NAME = value.toLowerCase() === 'true' || value === '1';
+L1532:      else if (key === 'HOME_TITLE_VISIBLE') parsed.HOME_TITLE_CONFIG.SHOW_TITLE = value.toLowerCase() === 'true' || value === '1';
+L1533:      else if (key === 'HOME_TITLE1_TOP') parsed.HOME_TITLE_CONFIG.TITLE1_TOP = parseInt(value, 10) || 120;
+L1534:      else if (key === 'HOME_TITLE_LEFT') parsed.HOME_TITLE_CONFIG.TITLE_LEFT = parseInt(value, 10) || 0;
+L1535:      else if (key === 'HOME_TITLE_RIGHT') parsed.HOME_TITLE_CONFIG.TITLE_RIGHT = parseInt(value, 10) || 0;
+L1536:      else if (key === 'HOME_TITLE_BG') parsed.HOME_TITLE_CONFIG.TITLE_BG = value;
+L1537:      else if (key === 'HOME_TITLE_GAP') parsed.HOME_TITLE_CONFIG.TITLE_GAP = parseInt(value, 10) || 30;
+L1538:      else if (key === 'HOME_TITLE_ALIGN') parsed.HOME_TITLE_CONFIG.TITLE_ALIGN = ['left', 'center', 'right'].includes(value) ? value : 'center';
+L1539:      else if (key === 'HOME_TITLE1_SIZE') parsed.HOME_TITLE_CONFIG.TITLE1_SIZE = parseInt(value, 10) || 88;
+L1540:      else if (key === 'HOME_TITLE1_COLOR') parsed.HOME_TITLE_CONFIG.TITLE1_COLOR = value;
+L1541:      else if (key === 'HOME_TITLE2_SIZE') parsed.HOME_TITLE_CONFIG.TITLE2_SIZE = parseInt(value, 10) || 88;
+L1542:      else if (key === 'HOME_TITLE2_COLOR') parsed.HOME_TITLE_CONFIG.TITLE2_COLOR = value;
+L1543:      else if (key === 'SLIDES_ORDER') parsed.SLIDES_CONFIG.ORDER = ['A', 'B', 'C'].includes(value.toUpperCase()) ? value.toUpperCase() : 'A';
+L1544:      else if (key === 'SLIDES_VISIBLE') {
+L1545:        try {
+L1546:          const arr = JSON.parse(value);
+L1547:          if (Array.isArray(arr)) parsed.SLIDES_CONFIG.VISIBLE = arr.map((v) => (v === 1 || v === '1' ? 1 : 0));
+L1548:          else parsed.SLIDES_CONFIG.VISIBLE = null;
+L1549:        } catch (_) {
+L1550:          parsed.SLIDES_CONFIG.VISIBLE = null;
+L1551:        }
+L1552:      }
+L1553:    });
+L1554:    return parsed;
+L1555:  }
+L1556:
+L1557:  /**
+L1558:   * Build takwim for app: single day (dd-mm = today), format { takwimArray, takwimParsed }.
+L1559:   * takwimParsed.wdata is indexed by day-of-year (days) so getCurrentIslamicTime(wdata[days]) works.
+... 174 lines not shown ...
+
