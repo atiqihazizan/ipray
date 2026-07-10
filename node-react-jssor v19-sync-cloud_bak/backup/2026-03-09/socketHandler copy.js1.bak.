@@ -1,0 +1,24 @@
+function registerSocketHandlers(io) {
+  io.on('connection', socket => {
+    socket.on('registerClient', payload => {
+      const { clientId } = payload || {};
+      if (!clientId) {
+        return;
+      }
+
+      const room = `client_${clientId}`;
+      socket.join(room);
+      socket.data = socket.data || {};
+      socket.data.clientId = clientId;
+    });
+
+    socket.on('disconnect', () => {
+      // Future: handle cleanup if necessary
+    });
+  });
+}
+
+module.exports = {
+  registerSocketHandlers
+};
+
