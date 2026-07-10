@@ -1,0 +1,53 @@
+<div class="system-control-section" style="margin-top: 32px;">
+	<h3 class="system-control-title">
+		<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+		</svg>
+		Hotspot (Access Point) - Fallback Mode
+	</h3>
+	<div class="system-control-content">
+		<div class="system-control-item" style="margin-bottom: 20px;">
+			<div class="system-control-info">
+				<div class="system-control-label">Status Hotspot</div>
+				<div class="system-control-description" id="hotspot-status-text" style="color: #64748b;">Memuatkan...</div>
+				<div class="system-control-description" style="margin-top: 8px; font-size: 12px; color: #64748b;">💡 Hotspot akan auto-aktifkan jika WiFi connection gagal atau tiada WiFi tersedia.</div>
+			</div>
+			<button type="button" class="btn-reboot" onclick="refreshHotspotStatus()" title="Refresh Status" style="background: #6b7280;">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+				</svg>
+				<span>Refresh</span>
+			</button>
+		</div>
+		<div class="system-control-item">
+			<div class="system-control-info" style="flex: 1;">
+				<div class="system-control-label">Konfigurasi Hotspot</div>
+				<div class="system-control-description" style="margin-bottom: 15px;">Aktifkan hotspot sebagai access point. Default: SSID "iPray-Hotspot", Password "ipray2026"</div>
+				<div style="display: flex; flex-direction: column; gap: 12px;">
+					<div>
+						<label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; color: #1e293b;">SSID:</label>
+						<input type="text" id="hotspot-ssid" placeholder="iPray-Hotspot" value="iPray-Hotspot" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: white;">
+					</div>
+					<div>
+						<label style="display: block; margin-bottom: 5px; font-size: 14px; font-weight: 500; color: #1e293b;">Password:</label>
+						<input type="password" id="hotspot-password" placeholder="ipray2026" value="ipray2026" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: white;">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+			<button type="button" onclick="enableHotspot()" class="btn-reboot" style="background: #f59e0b;">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+				</svg>
+				<span>Enable Hotspot</span>
+			</button>
+			<button type="button" onclick="disableHotspot()" class="btn-reboot" style="background: #ef4444;">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+				</svg>
+				<span>Disable Hotspot</span>
+			</button>
+		</div>
+	</div>
+</div>
