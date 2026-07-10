@@ -1,0 +1,7 @@
+# Tajuk apps (satu sumber). Ubah `display_name` di bawah, kemudian dari folder `flutter` jalankan:
+#   dart run tool/sync_app_display_name.dart
+#
+# Skrip akan kemas kini: lib/config/app_display_name.dart, Android strings.xml,
+# serta web / iOS / macOS / Linux jika folder tersebut wujud dalam projek.
+
+display_name: "MIDM"
