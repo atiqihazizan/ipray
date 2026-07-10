@@ -1,0 +1,23 @@
+Host github.com
+    AddKeysToAgent yes
+    UseKeychain yes
+    IdentityFile ~/.ssh/id_ed25519
+    User git
+
+Host mahsites
+    HostName 178.128.48.114
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    AddKeysToAgent yes
+    UseKeychain yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+Host mahsites.net
+    HostName 178.128.48.114
+    User root
+    IdentityFile ~/.ssh/id_ed25519
+    AddKeysToAgent yes
+    UseKeychain yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
