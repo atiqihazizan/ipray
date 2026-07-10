@@ -1,0 +1,48 @@
+<div class="content-card">
+	<nav id="kuliah-subnav" class="config-subnav">
+		<button type="button" class="config-subtab active" data-kuliah-tab="jadual" onclick="showKuliahTab('jadual')">Jadual Kuliah</button>
+		<button type="button" class="config-subtab" data-kuliah-tab="pengkuliah" onclick="showKuliahTab('pengkuliah')">Pengkuliah</button>
+		<button type="button" class="config-subtab" data-kuliah-tab="paparan" onclick="showKuliahTab('paparan')">List Paparan</button>
+	</nav>
+
+	<!-- Panel: Jadual Kuliah -->
+	<div id="kuliah-panel-jadual" class="kuliah-panel" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Kuliah">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="kuliah-table" class="data-table">
+				<thead id="kuliah-thead"></thead>
+				<tbody id="kuliah-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Panel: Pengkuliah (Penceramah) -->
+	<div id="kuliah-panel-pengkuliah" class="kuliah-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div class="flex justify-between items-center gap-2 mb-3" style="flex-shrink:0;margin-bottom:10px;">
+			<div class="flex gap-2">
+				<button class="btn-icon btn-add" onclick="openAddDialog()" title="Tambah Pengkuliah">
+					<span><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+				</button>
+			</div>
+		</div>
+		<div class="table-container">
+			<table id="penceramah-table" class="data-table">
+				<thead id="penceramah-thead"></thead>
+				<tbody id="penceramah-tbody"></tbody>
+			</table>
+		</div>
+	</div>
+
+	<!-- Panel: List Paparan -->
+	<div id="kuliah-panel-paparan" class="kuliah-panel" style="display:none;flex:1;flex-direction:column;min-height:0;">
+		<div id="kuliah-paparan-container" class="gallery-container" style="margin-top:12px;flex:1;min-height:0;">
+			<div id="kuliah-paparan-grid" class="gallery-grid slides-gallery-grid"></div>
+		</div>
+	</div>
+</div>

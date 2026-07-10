@@ -1,0 +1,42 @@
+const express = require('express');
+const multer = require('multer');
+const { uploadQueue } = require('../queue/uploadQueue');
+
+const router = express.Router();
+
+const upload = multer({
+  storage: multer.memoryStorage()
+});
+
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    const { clientId } = req.body;
+    const file = req.file;
+
+    if (!clientId) {
+      return res.status(400).json({ error: 'clientId is required' });
+    }
+
+    if (!file) {
+      return res.status(400).json({ error: 'file is required' });
+    }
+
+    const job = await uploadQueue.add('upload', {
+      clientId,
+      originalName: file.originalname,
+      buffer: file.buffer
+    });
+
+    return res.status(202).json({
+      message: 'Upload queued',
+      jobId: job.id
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[UploadRoute] Error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+module.exports = router;
+

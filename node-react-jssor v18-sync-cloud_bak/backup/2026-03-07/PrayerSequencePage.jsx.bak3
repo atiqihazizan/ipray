@@ -1,0 +1,230 @@
+import { useState, useEffect, useRef } from 'react';
+import { useData } from '../contexts/DataContext';
+import audioService from '../services/audioService';
+import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
+
+const PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
+
+function formatCountdown(totalSeconds) {
+  const s = Math.max(0, totalSeconds);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function getPtMinutes(prayerTimes, name) {
+  if (!prayerTimes?.[name]) return null;
+  const [h, m] = prayerTimes[name].split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getPtTotalSeconds(prayerTimes, name) {
+  if (!prayerTimes?.[name]) return null;
+  const [h, m] = prayerTimes[name].split(':').map(Number);
+  return h * 3600 + m * 60;
+}
+
+function safeReload(prayerName, effectivePrayerTimeStr, prayerTimes) {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const ptMinutes = effectivePrayerTimeStr
+    ? (() => { const [h, m] = effectivePrayerTimeStr.split(':').map(Number); return h * 60 + m; })()
+    : getPtMinutes(prayerTimes, prayerName);
+
+  const idx = PRAYERS.indexOf(prayerName);
+  const nextName = PRAYERS[idx + 1] ?? null;
+  const nextPtMinutes = nextName ? getPtMinutes(prayerTimes, nextName) : 24 * 60;
+
+  if (ptMinutes !== null && currentMinutes > ptMinutes && currentMinutes < nextPtMinutes) {
+    window.location.reload();
+  } else {
+    setTimeout(() => safeReload(prayerName, effectivePrayerTimeStr, prayerTimes), 30 * 1000);
+  }
+}
+
+const bgStyle = {
+  width: '100vw',
+  height: '100vh',
+  backgroundImage: 'url(/img/bg-page4.jpg)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  zIndex: 9999,
+};
+
+const bgSolatStyle = {
+  ...bgStyle,
+  backgroundImage: 'none',
+  backgroundColor: '#000000',
+};
+
+const titleStyle = {
+  color: '#FFFFFF',
+  fontSize: '120px',
+  fontFamily: "'Anton', sans-serif",
+  fontWeight: 'normal',
+  textAlign: 'center',
+  margin: 0,
+  lineHeight: 1.2,
+};
+
+const countdownStyle = {
+  color: '#FFFFFF',
+  fontSize: '80px',
+  fontFamily: "'Roboto Mono', monospace",
+  fontWeight: 'bold',
+  textAlign: 'center',
+  margin: '20px 0 0 0',
+  letterSpacing: '4px',
+};
+
+const subtitleStyle = {
+  color: '#FFFFFF',
+  fontSize: '26px',
+  fontFamily: "'Roboto', sans-serif",
+  textAlign: 'center',
+  margin: '16px 0 0 0',
+  maxWidth: '90vw',
+};
+
+/**
+ * Urutan waktu solat: azan countdown → iqamah countdown → solat → window.reload (selamat).
+ * Jika dibuka tepat/selepas waktu solat, skip terus ke iqamah countdown.
+ * prayerTimeStr: override waktu solat (digunakan untuk TEST atau jika berbeza dari localStorage).
+ */
+export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComplete }) {
+  const { PRAYER_TIME_CONFIG } = useData();
+
+  const [prayerTimes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_PRAYER_TIMES_KEY) || 'null'); } catch { return null; }
+  });
+
+  // Guna prayerTimeStr prop jika ada, jika tidak guna dari localStorage
+  const effectivePrayerTimeStr = prayerTimeStr || prayerTimes?.[prayerName] || null;
+
+  const [screen, setScreen] = useState(null);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
+
+  const clearTimer = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  };
+
+  // Tentukan screen awal berdasarkan masa semasa vs waktu solat
+  useEffect(() => {
+    if (!effectivePrayerTimeStr) return;
+    const [ph, pm] = effectivePrayerTimeStr.split(':').map(Number);
+    const ptTotalSeconds = ph * 3600 + pm * 60;
+
+    const now = new Date();
+    const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+    setScreen(currentTotalSeconds < ptTotalSeconds ? 'azan' : 'iqamah');
+  }, [effectivePrayerTimeStr]);
+
+  // Screen AZAN: beep + countdown masa sebenar sehingga waktu solat
+  useEffect(() => {
+    if (screen !== 'azan') return;
+    clearTimer();
+
+    const beepCount = PRAYER_TIME_CONFIG?.BEEP_COUNT ?? 5;
+    if (beepCount > 0) {
+      if (audioService.getIsPlaying()) audioService.stop();
+      audioService.play({ volume: 1, playCount: beepCount }).catch(() => {});
+    }
+
+    const tick = () => {
+      if (!effectivePrayerTimeStr) return;
+      const [ph, pm] = effectivePrayerTimeStr.split(':').map(Number);
+      const ptTotalSeconds = ph * 3600 + pm * 60;
+      const now = new Date();
+      const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const remaining = ptTotalSeconds - currentTotalSeconds;
+
+      if (remaining <= 0) {
+        clearTimer();
+        setScreen('iqamah');
+        return;
+      }
+      setCountdown(remaining);
+    };
+
+    tick();
+    timerRef.current = setInterval(tick, 1000);
+    return clearTimer;
+  }, [screen, effectivePrayerTimeStr]);
+
+  // Screen IQAMAH: countdown dari config
+  useEffect(() => {
+    if (screen !== 'iqamah') return;
+    clearTimer();
+
+    let remaining = Math.max(1, Math.floor((PRAYER_TIME_CONFIG?.IQAMAH_DURATION_MIN ?? 2) * 60));
+    setCountdown(remaining);
+
+    timerRef.current = setInterval(() => {
+      remaining -= 1;
+      setCountdown(remaining);
+      if (remaining <= 0) {
+        clearTimer();
+        setScreen('solat');
+      }
+    }, 1000);
+    return clearTimer;
+  }, [screen, PRAYER_TIME_CONFIG]);
+
+  // Screen SOLAT: countdown dari config, kemudian safe reload
+  useEffect(() => {
+    if (screen !== 'solat') return;
+    clearTimer();
+
+    let remaining = Math.max(1, Math.floor((PRAYER_TIME_CONFIG?.SOLAT_DURATION_MIN ?? 3) * 60));
+    setCountdown(remaining);
+
+    timerRef.current = setInterval(() => {
+      remaining -= 1;
+      setCountdown(remaining);
+      if (remaining <= 0) {
+        clearTimer();
+        safeReload(prayerName, effectivePrayerTimeStr, prayerTimes);
+      }
+    }, 1000);
+    return clearTimer;
+  }, [screen, PRAYER_TIME_CONFIG, prayerName, effectivePrayerTimeStr, prayerTimes]);
+
+  if (!screen) return <div style={{ ...bgSolatStyle }} />;
+
+  if (screen === 'azan') {
+    return (
+      <div style={bgStyle}>
+        <h1 style={titleStyle}>WAKTU SOLAT</h1>
+        <p style={{ ...titleStyle, fontSize: '90px' }}>{prayerName?.toUpperCase()}</p>
+        <p style={countdownStyle}>{formatCountdown(countdown)}</p>
+      </div>
+    );
+  }
+
+  if (screen === 'iqamah') {
+    return (
+      <div style={bgStyle}>
+        <h1 style={titleStyle}>IQAMAH</h1>
+        <p style={subtitleStyle}>Diminta para hadirin bersiap untuk mendirikan solat.</p>
+        <p style={countdownStyle}>{formatCountdown(countdown)}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={bgSolatStyle}>
+      <h1 style={titleStyle}>SEDANG SOLAT</h1>
+      <p style={countdownStyle}>{formatCountdown(countdown)}</p>
+    </div>
+  );
+}
