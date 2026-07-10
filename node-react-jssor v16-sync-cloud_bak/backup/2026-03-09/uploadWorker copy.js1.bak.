@@ -1,0 +1,45 @@
+const path = require('path');
+const { Worker } = require('bullmq');
+const { redisConfig } = require('../config/redis');
+const { UPLOAD_QUEUE_NAME } = require('../queue/uploadQueue');
+const { saveUploadedFile } = require('../services/fileService');
+
+// Worker process to handle upload jobs asynchronously
+const worker = new Worker(
+  UPLOAD_QUEUE_NAME,
+  async job => {
+    const { clientId, originalName, buffer } = job.data;
+    if (!clientId || !originalName || !buffer) {
+      throw new Error('Invalid upload job payload');
+    }
+
+    const saved = await saveUploadedFile({
+      clientId,
+      originalName,
+      buffer: Buffer.from(buffer.data || buffer)
+    });
+
+    return {
+      clientId: saved.clientId,
+      fileName: saved.fileName,
+      path: path.relative(process.cwd(), saved.path),
+      fileId: saved.fileId
+    };
+  },
+  {
+    connection: redisConfig.connection
+  }
+);
+
+worker.on('completed', job => {
+  // eslint-disable-next-line no-console
+  console.log('[UploadWorker] Completed job', job.id);
+});
+
+worker.on('failed', (job, err) => {
+  // eslint-disable-next-line no-console
+  console.error('[UploadWorker] Failed job', job && job.id, err);
+});
+
+module.exports = worker;
+

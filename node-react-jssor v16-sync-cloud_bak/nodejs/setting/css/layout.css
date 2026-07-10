@@ -1,0 +1,634 @@
+/**
+ * Layout styles for Setting Panel: sidebar, main content, tabs, config, today-takwim
+ */
+
+/* Sidebar Styles */
+.sidebar {
+	width: 280px;
+	background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+	color: white;
+	position: fixed;
+	left: 0;
+	top: 0;
+	height: 100vh;
+	overflow-y: auto;
+	z-index: 100;
+	transition: transform 0.3s ease;
+	box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+	padding: 24px 20px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-logo {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.sidebar-menu {
+	padding: 16px 0;
+}
+
+.menu-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 20px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border-left: 3px solid transparent;
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 15px;
+	font-weight: 500;
+}
+
+.menu-item:hover {
+	background: rgba(255, 255, 255, 0.05);
+	color: white;
+	border-left-color: #6366f1;
+}
+
+.menu-item.active {
+	background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, transparent 100%);
+	color: white;
+	border-left-color: #6366f1;
+	font-weight: 600;
+}
+
+.menu-item-icon {
+	font-size: 20px;
+	width: 24px;
+	text-align: center;
+}
+
+.menu-item-text {
+	flex: 1;
+}
+
+/* Config sub-tabs (tab dalam halaman Config) */
+#config-subnav,
+.config-subnav {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #e2e8f0;
+}
+.config-subtab {
+	padding: 8px 16px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #475569;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.config-subtab:hover {
+	background: #e2e8f0;
+	color: #334155;
+}
+.config-subtab.active {
+	background: #6366f1;
+	color: white;
+	border-color: #6366f1;
+}
+.config-subtab.active:hover {
+	background: #4f46e5;
+	border-color: #4f46e5;
+}
+/* Jarak antara config-group dalam panel (kandungan dimuat dinamik) */
+#config-tab-panel .config-group + .config-group {
+	margin-top: 24px;
+}
+
+/* Main Content Area */
+.main-content {
+	margin-left: 280px;
+	min-height: 100vh;
+	background: #f8fafc;
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+}
+
+.top-header {
+	background: white;
+	padding: 20px 32px;
+	border-bottom: 1px solid #e2e8f0;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	position: sticky;
+	top: 0;
+	z-index: 50;
+}
+
+.top-header-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.page-title {
+	font-size: 28px;
+	font-weight: 700;
+	color: #1e293b;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.connection-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	background: #f1f5f9;
+	border-radius: 20px;
+	font-size: 14px;
+	color: #64748b;
+}
+
+.status-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #22c55e;
+	animation: pulse 2s infinite;
+}
+
+.content-wrapper {
+	padding: 32px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	height: calc(100vh - 84px);
+}
+
+.tab-content {
+	display: none;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.tab-content.active {
+	display: flex;
+}
+
+.content-card {
+	background: white;
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
+.info-box {
+	background: linear-gradient(135deg, #eff6ff 0%, #faf5ff 100%);
+	border-left: 4px solid #6366f1;
+	padding: 16px;
+	border-radius: 8px;
+	margin-bottom: 24px;
+}
+
+.info-box p {
+	margin: 4px 0;
+	font-size: 14px;
+	color: #475569;
+}
+
+.info-box strong {
+	color: #1e293b;
+}
+
+/* Mobile Sidebar Toggle */
+.sidebar-toggle {
+	display: none;
+	position: fixed;
+	top: 20px;
+	left: 20px;
+	z-index: 200;
+	background: #6366f1;
+	color: white;
+	border: none;
+	padding: 12px;
+	border-radius: 8px;
+	cursor: pointer;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1024px) {
+	.sidebar {
+		transform: translateX(-100%);
+	}
+
+	.sidebar.open {
+		transform: translateX(0);
+	}
+
+	.main-content {
+		margin-left: 0;
+	}
+
+	.sidebar-toggle {
+		display: block;
+	}
+}
+
+/* Phone / tablet optimizations */
+@media (max-width: 768px) {
+	.content-wrapper {
+		padding: 16px;
+	}
+
+	.content-card {
+		padding: 16px;
+		margin-bottom: 16px;
+	}
+
+	.connection-status {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
+	}
+
+	.table-container {
+		flex: 1;
+		min-height: 200px;
+		max-height: none;
+	}
+
+	/* Config form: elak overflow di telefon */
+	.config-group-items {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.config-item-control {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.config-item-control input,
+	.config-item-control .color-text-input {
+		width: 100%;
+	}
+
+	.config-item-control .config-unit {
+		align-self: flex-start;
+	}
+
+	.config-item-control .btn-icon {
+		width: 100%;
+		justify-content: center;
+	}
+}
+
+/* Scrollbar untuk sidebar */
+.sidebar::-webkit-scrollbar {
+	width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.3);
+}
+
+/* Button Styles */
+.btn-add {
+	background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+	color: white;
+	padding: 12px 24px;
+	border: none;
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.btn-add:hover {
+	background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-delete {
+	padding: 6px 12px;
+	background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.btn-delete:hover {
+	background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.action-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	width: 114px;
+}
+
+/* Today Takwim Configuration Layout */
+.today-takwim-container {
+	width: 100%;
+}
+
+.today-takwim-header {
+	border-bottom: 1px solid #e2e8f0;
+	padding-bottom: 16px;
+	margin-bottom: 24px;
+}
+
+.today-takwim-title {
+	font-size: 20px;
+	font-weight: 600;
+	color: #1e293b;
+	margin: 0 0 8px 0;
+}
+
+.today-takwim-dates {
+	font-size: 14px;
+	color: #64748b;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.today-takwim-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.today-takwim-field {
+	display: flex;
+	align-items: center;
+	padding: 12px 12px;
+	border-bottom: 1px solid #f1f5f9;
+	gap: 12px;
+}
+
+.takwim-group .config-group-header {
+	background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
+}
+.today-takwim-field:last-of-type {
+	border-bottom: none;
+}
+
+.today-takwim-label {
+	width: 120px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #475569;
+	flex-shrink: 0;
+}
+
+.today-takwim-input {
+	flex: 1;
+	padding: 8px 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	font-size: 14px;
+	color: #1e293b;
+	background-color: #ffffff;
+	transition: all 0.2s ease;
+}
+
+.today-takwim-input:focus {
+	outline: none;
+	border-color: #6366f1;
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.today-takwim-btn-field-save {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background-color: #22c55e;
+	color: white;
+	flex-shrink: 0;
+}
+
+.today-takwim-btn-field-save:hover {
+	background-color: #16a34a;
+}
+
+.today-takwim-btn-field-save:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.today-takwim-btn-sync-jakim {
+	padding: 8px 16px;
+	border: none;
+	border-radius: 23px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	background-color: #3b82f6;
+	color: white;
+	flex-shrink: 0;
+}
+
+.today-takwim-btn-sync-jakim:hover {
+	background-color: #2563eb;
+}
+
+.today-takwim-btn-sync-jakim:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.today-takwim-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	margin-top: 24px;
+	padding-top: 16px;
+	border-top: 1px solid #e2e8f0;
+}
+
+.today-takwim-btn {
+	padding: 10px 20px;
+	border: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.today-takwim-btn-reload {
+	background-color: #f1f5f9;
+	color: #475569;
+}
+
+.today-takwim-btn-reload:hover {
+	background-color: #e2e8f0;
+}
+
+.today-takwim-empty {
+	text-align: center;
+	padding: 48px 20px;
+	color: #64748b;
+}
+
+.today-takwim-empty p {
+	margin: 0;
+}
+
+/* ── Config group items layout ───────────────────────────────── */
+.config-group-items {
+	display: flex;
+	flex-direction: column;
+	/* gap: 16px; */
+	padding: 0px;
+}
+
+.config-item {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.config-item-label {
+	min-width: 160px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #374151;
+	flex-shrink: 0;
+}
+
+.config-item-control {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+	flex-wrap: wrap;
+}
+
+/* ── Select dropdown ───────────────────────────────────────────── */
+.config-select {
+	flex: 1;
+	min-width: 200px;
+	padding: 8px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 14px;
+	color: #1e293b;
+	background-color: #ffffff;
+	cursor: pointer;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	appearance: auto;
+}
+
+.config-select:focus {
+	outline: none;
+	border-color: #6366f1;
+	box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* ── File input ────────────────────────────────────────────────── */
+.config-file-input {
+	flex: 1;
+	padding: 6px 0;
+	font-size: 14px;
+	color: #374151;
+	cursor: pointer;
+}
+
+.config-file-input::file-selector-button {
+	padding: 6px 12px;
+	margin-right: 10px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	background: #f9fafb;
+	font-size: 13px;
+	color: #374151;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.config-file-input::file-selector-button:hover {
+	background: #e5e7eb;
+}
+
+/* ── Toggle button ─────────────────────────────────────────────── */
+.btn-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 18px;
+	border-radius: 999px;
+	border: none;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+	min-width: 110px;
+}
+
+.btn-toggle--on {
+	background: #6366f1;
+	color: #ffffff;
+	box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.btn-toggle--on:hover {
+	background: #4f46e5;
+}
+
+.btn-toggle--off {
+	background: #e5e7eb;
+	color: #6b7280;
+}
+
+.btn-toggle--off:hover {
+	background: #d1d5db;
+}

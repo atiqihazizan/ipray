@@ -1,0 +1,275 @@
+/**
+ * Takwim (Jadual Solat) - fungsi berkaitan paparan dan sync waktu solat hari ini
+ */
+
+const JAKIM_API_ZONE = "PNG01";
+const JAKIM_API_BASE = "https://api.waktusolat.app/v2/solat";
+
+/**
+ * Format masa untuk input time (HH:MM)
+ * @param {string} timeStr
+ * @returns {string}
+ */
+function formatTimeForInput(timeStr) {
+  if (!timeStr) return "";
+  const trimmed = timeStr.trim();
+  if (!trimmed) return "";
+  const timeRegex = /^(\d{1,2}):(\d{2})$/;
+  const match = trimmed.match(timeRegex);
+  if (match) {
+    const hours = match[1].padStart(2, "0");
+    const minutes = match[2];
+    return `${hours}:${minutes}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Tukar unix timestamp ke HH:MM
+ * @param {number} ts - Unix timestamp (saat)
+ * @returns {string}
+ */
+function timestampToTime(ts) {
+  const d = new Date(ts * 1000);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+/**
+ * Sync waktu solat hari ini dari API waktusolat.app (sumber JAKIM) zon PNG01
+ * dan kemaskini baris takwim hari ini di backend.
+ */
+export async function syncJakimToday() {
+  const API_URL = window.Config?.API_URL;
+  if (!API_URL) throw new Error("Config.API_URL tidak diset");
+
+  const btn = document.querySelector(".today-takwim-btn-sync-jakim");
+  const origText = btn ? btn.textContent : "";
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Syncing...";
+    }
+
+    const now = new Date();
+    const todayDay = now.getDate();
+    const resp = await fetch(`${JAKIM_API_BASE}/${JAKIM_API_ZONE}`);
+    if (!resp.ok) throw new Error(`API waktusolat: ${resp.status}`);
+    const json = await resp.json();
+
+    const entry = json.prayers?.find((p) => p.day === todayDay);
+    if (!entry) throw new Error("Data hari ini tiada dalam respons JAKIM");
+
+    const jakim = {
+      imsak: timestampToTime(entry.fajr - 10 * 60),
+      subuh: timestampToTime(entry.fajr),
+      syuruk: timestampToTime(entry.syuruk),
+      zohor: timestampToTime(entry.dhuhr),
+      asar: timestampToTime(entry.asr),
+      maghrib: timestampToTime(entry.maghrib),
+      isyak: timestampToTime(entry.isha),
+    };
+
+    const todayRes = await fetch(`${API_URL}/data/takwim/today`);
+    if (!todayRes.ok) throw new Error("Gagal dapatkan takwim hari ini dari server");
+    const todayResult = await todayRes.json();
+    const data = todayResult.data;
+    if (!data) throw new Error("Tiada data takwim hari ini di server");
+
+    const allDataRes = await fetch(`${API_URL}/data/takwim`);
+    const allData = await allDataRes.json();
+    const todayRow = allData.data?.find((row) => row.date === data.date);
+    if (!todayRow) throw new Error("Baris takwim hari ini tidak dijumpai");
+
+    const rawLine = `${data.date} ${data.hijri}\t${jakim.imsak}\t${jakim.subuh}\t${jakim.syuruk}\t${jakim.zohor}\t${jakim.asar}\t${jakim.maghrib}\t${jakim.isyak}`;
+
+    const updateRes = await fetch(`${API_URL}/data/takwim/${todayRow.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ row: { raw: rawLine } }),
+    });
+    if (!updateRes.ok) throw new Error("Gagal kemaskini takwim");
+
+    if (window.NotificationUtils) {
+      window.NotificationUtils.showNotification("Waktu solat JAKIM berjaya di-sync", "success");
+    }
+
+    await loadTodayTakwim();
+  } catch (err) {
+    console.error("Sync JAKIM error:", err);
+    if (window.NotificationUtils) {
+      window.NotificationUtils.showNotification("Gagal sync JAKIM: " + err.message, "error");
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
+}
+
+/**
+ * Muat paparan jadual solat hari ini (config layout dengan field edit)
+ */
+export async function loadTodayTakwim() {
+  const container = document.getElementById("takwim-table-container");
+  if (!container) return;
+
+  const API_URL = window.Config?.API_URL;
+  if (!API_URL) {
+    container.innerHTML = '<div class="text-center py-8 text-red-500">Config.API_URL tidak diset</div>';
+    return;
+  }
+
+  container.innerHTML =
+    '<div class="text-center py-8 text-gray-500">Loading today\'s prayer schedule...</div>';
+
+  try {
+    const response = await fetch(`${API_URL}/data/takwim/today`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result.data) {
+      const today = new Date();
+      const gregorianDate = today
+        .toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })
+        .replace(/\//g, "-");
+
+      container.innerHTML = `
+        <div class="today-takwim-container">
+          <header class="today-takwim-header">
+            <h2 class="today-takwim-title">Jadual Solat Hari Ini</h2>
+            <div class="today-takwim-dates">
+              <div>Tarikh Masihi: ${gregorianDate}</div>
+              <div>Tarikh Hijri: Tiada data</div>
+            </div>
+          </header>
+          <div class="today-takwim-empty">
+            <p class="text-lg mb-2">Tiada data jadual solat untuk hari ini.</p>
+            <p class="text-sm">Sila pastikan fail takwim mengandungi data untuk tarikh hari ini.</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const data = result.data;
+    let formData = {
+      imsak: data.imsak || "",
+      subuh: data.subuh || "",
+      syuruk: data.syuruk || "",
+      zohor: data.zohor || "",
+      asar: data.asar || "",
+      maghrib: data.maghrib || "",
+      isyak: data.isyak || "",
+    };
+
+    const saveField = async (fieldName, inputElement, saveButton) => {
+      const newValue = inputElement.value;
+      formData[fieldName] = newValue;
+
+      try {
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        const allDataResponse = await fetch(`${API_URL}/data/takwim`);
+        const allData = await allDataResponse.json();
+        const todayRow = allData.data?.find((row) => row.date === data.date);
+
+        if (!todayRow) {
+          throw new Error("Today's row not found");
+        }
+
+        const rawLine = `${data.date} ${data.hijri}\t${formData.imsak}\t${formData.subuh}\t${formData.syuruk}\t${formData.zohor}\t${formData.asar}\t${formData.maghrib}\t${formData.isyak}`;
+
+        const updateResponse = await fetch(`${API_URL}/data/takwim/${todayRow.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ row: { raw: rawLine } }),
+        });
+
+        if (!updateResponse.ok) {
+          throw new Error("Failed to save");
+        }
+
+        data[fieldName] = newValue;
+      } catch (err) {
+        console.error("Error saving:", err);
+        if (window.NotificationUtils) {
+          window.NotificationUtils.showNotification(
+            "Gagal menyimpan waktu " + fieldName + ": " + err.message,
+            "error",
+          );
+        }
+        inputElement.value = formatTimeForInput(data[fieldName] || "");
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save";
+      }
+    };
+
+    const prayerTimes = [
+      { key: "imsak", label: "Imsak" },
+      { key: "subuh", label: "Subuh" },
+      { key: "syuruk", label: "Syuruk" },
+      { key: "zohor", label: "Zohor" },
+      { key: "asar", label: "Asar" },
+      { key: "maghrib", label: "Maghrib" },
+      { key: "isyak", label: "Isyak" },
+    ];
+
+    container.innerHTML = `
+      <div class="today-takwim-container">
+        <div class="today-takwim-fields">
+          ${prayerTimes
+            .map(
+              (prayer) => `
+            <div class="today-takwim-field">
+              <label class="today-takwim-label">${prayer.label}</label>
+              <input type="time" class="today-takwim-input" value="${formatTimeForInput(formData[prayer.key])}" 
+                data-field="${prayer.key}" />
+              <button class="today-takwim-btn-field-save" data-field="${prayer.key}">Simpan</button>
+            </div>
+          `,
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+
+    container.querySelectorAll(".today-takwim-btn-field-save").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const fieldName = e.target.dataset.field;
+        const inputElement = container.querySelector(`input[data-field="${fieldName}"]`);
+        if (inputElement) {
+          await saveField(fieldName, inputElement, e.target);
+        }
+      });
+    });
+
+    const reloadBtn = container.querySelector('[data-action="reload"]');
+    if (reloadBtn) {
+      reloadBtn.addEventListener("click", () => loadTodayTakwim());
+    }
+  } catch (error) {
+    console.error("Error loading today takwim:", error);
+    container.innerHTML = `
+      <div class="text-center py-8 text-red-500">
+        Error: ${error.message}
+      </div>
+    `;
+    if (window.NotificationUtils) {
+      window.NotificationUtils.showNotification("✗ Gagal memuat data hari ini", "error");
+    }
+  }
+}
