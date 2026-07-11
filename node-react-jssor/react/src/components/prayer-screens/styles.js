@@ -56,7 +56,7 @@ export const countdownStyle = {
 export const countdownStyleIqamah = {
   color: "#FFFFFF",
   fontSize: `${textSize(256)}px`,
-  fontFamily: "'bebas-neue', sans-serif",
+  fontFamily: "'Bebas', sans-serif",
   fontWeight: "bold",
   textAlign: "center",
   margin: `${textSize(16)}px 0 0 0`,

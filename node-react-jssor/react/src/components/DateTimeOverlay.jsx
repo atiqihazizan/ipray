@@ -8,7 +8,6 @@ import { useTakwimData } from '../hooks/useTakwimData';
 import prayerTimeService from '../services/prayerTimeService';
 import { OVERLAY_PRAYER_TIMES } from '../utils/prayerUtils';
 import { TIME_EVENTS } from '../utils/timeEvents';
-import { top as topPx, left as leftPx, right as rightPx, bottom as bottomPx } from '../utils/screenUtils';
 import { MOSQUE_NAME } from '../config/mosqueInfo';
 import { isHebahanActive } from '../utils/hebahanActive';
 
@@ -28,7 +27,8 @@ const resolveOverlay = (dt, key) => {
 
 const DateTimeOverlay = ({ overlayOverride = null }) => {
   const dtRef = useRef(null);
-  const [, forceRender, minuteTick, setMinuteTick] = useState(0);
+  const [minuteTick, setMinuteTick] = useState(0);
+  const [, forceRender] = useState(0);
   const { takwimArray, takwimParsed } = useTakwimData();
   const { MARQUEE_CONFIG, hebahanData, COLOR_CONFIG, slidesMarqueeShow } = useData();
   const currentTimeColor = COLOR_CONFIG?.CURRENT_TIME ?? '#FFFF00';

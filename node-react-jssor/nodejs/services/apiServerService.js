@@ -21,6 +21,11 @@ function escapeShellDoubleQuoted(str) {
     .replace(/`/g, '\\`');
 }
 
+const HOTSPOT_DEFAULTS = {
+  SSID: 'iPray-Hotspot',
+  PASSWORD: 'ipray2026'
+};
+
 /**
  * API Server Service
  * Express server untuk API endpoints (port 3001)
@@ -1448,7 +1453,7 @@ class ApiServerService {
             hotspotExists = true;
           } catch (err) {
             // Hotspot doesn't exist, create it
-            const hotspotCommand = `sudo ${nmcli} connection add type wifi ifname wlan0 con-name "${escapedConnectionName}" autoconnect yes ssid "iPray-Hotspot" mode ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "ipray2026" ipv4.method shared`;
+            const hotspotCommand = `sudo ${nmcli} connection add type wifi ifname wlan0 con-name "${escapedConnectionName}" autoconnect yes ssid "${HOTSPOT_DEFAULTS.SSID}" mode ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${HOTSPOT_DEFAULTS.PASSWORD}" ipv4.method shared`;
             await execAsync(hotspotCommand);
             hotspotExists = true;
           }
@@ -1459,11 +1464,11 @@ class ApiServerService {
             
             return res.status(200).json({
               success: true,
-              message: `WiFi connection gagal. Hotspot "iPray-Hotspot" telah diaktifkan sebagai fallback. Password: ipray2026`,
+              message: `WiFi connection gagal. Hotspot "${HOTSPOT_DEFAULTS.SSID}" telah diaktifkan sebagai fallback. Password: ${HOTSPOT_DEFAULTS.PASSWORD}`,
               fallback: true,
               hotspot: {
-                ssid: 'iPray-Hotspot',
-                password: 'ipray2026'
+                ssid: HOTSPOT_DEFAULTS.SSID,
+                password: HOTSPOT_DEFAULTS.PASSWORD
               }
             });
           }
@@ -1488,7 +1493,7 @@ class ApiServerService {
           });
         }
         
-        const { ssid = 'iPray-Hotspot', password = 'ipray2026' } = req.body;
+        const { ssid = HOTSPOT_DEFAULTS.SSID, password = HOTSPOT_DEFAULTS.PASSWORD } = req.body;
         
         const { exec } = require('child_process');
         const { promisify } = require('util');

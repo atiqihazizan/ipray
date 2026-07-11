@@ -5,13 +5,13 @@ import { slidesTemplate } from '../config/sliderConfig';
 import { withAssetBase } from '../services/apiBase';
 
 const DEFAULT_SLIDESHOW_IMAGES = [
-  '/img/slideshow/mountant0.jpeg',
-  '/img/slideshow/mountant1.jpg',
-  '/img/slideshow/mountant2.jpeg',
-  '/img/slideshow/mountant3.jpeg',
-  '/img/slideshow/mountant4.jpg',
-  '/img/slideshow/mountant5.jpg',
-  '/img/slideshow/mountant6.jpg'
+  '/img/slideshow/slide01.jpg',
+  '/img/slideshow/slide02.jpg',
+  '/img/slideshow/slide03.jpg',
+  '/img/slideshow/slide04.jpg',
+  '/img/slideshow/slide05.jpg',
+  '/img/slideshow/slide06.jpg',
+  '/img/slideshow/slide07.jpg'
 ];
 
 export function processSlideshow(slideshowData, slidesConfigData, applyConfig) {

@@ -1749,32 +1749,7 @@ class DataService {
     return labels[m] || '';
   }
 
-  /**
-   * Cari tarikh Hijri untuk tarikh Gregorian refDate daripada kandungan takwim.
-   * Baris takwim format: "DD-MM-YYYY DD-MM-YYYY\t..." (Gregorian lalu Hijri)
-   * Pulangkan { day, month, year } atau null jika tidak dijumpai.
-   */
-  getHijriForDate(takwimContent, refDate) {
-    if (!takwimContent || !refDate) return null;
-    const date = refDate instanceof Date ? refDate : new Date(refDate);
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const gregStr = `${dd}-${mm}-${yyyy}`;
-    const lines = takwimContent.split(/\r?\n/);
-    for (const line of lines) {
-      if (!line.startsWith(gregStr)) continue;
-      const parts = line.trim().split(/\s+/);
-      if (parts.length < 2) continue;
-      const hijriParts = parts[1].split('-');
-      if (hijriParts.length !== 3) continue;
-      const [hDay, hMonth, hYear] = hijriParts.map(Number);
-      if (!isNaN(hDay) && !isNaN(hMonth) && !isNaN(hYear)) {
-        return { day: hDay, month: hMonth, year: hYear };
-      }
-    }
-    return null;
-  }
+  // (simple string-lookup version removed — duplicate of getHijriForDate above)
 
   /**
    * Semak sama ada tarikh refDate memenuhi syarat showOn.

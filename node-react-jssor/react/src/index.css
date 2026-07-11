@@ -323,6 +323,9 @@
   font-display: swap;
 }
 
+/* Roboto — regular, medium, bold (for titles & body) */
+/* Roboto Mono not bundled — falls back to system monospace */
+
 /* Roboto Variable */
 @font-face {
   font-family: 'RobotoVariable';
