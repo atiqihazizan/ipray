@@ -1,9 +1,0 @@
-# Allow user ipray to manage kiosk.service without password.
-# Tanpa fail ini, systemctl reload/restart kiosk akan minta auth.
-# Copy ke /etc/sudoers.d/ipray-kiosk dan chmod 440.
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl reload kiosk
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl restart kiosk
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl start kiosk
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl stop kiosk
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl status kiosk
-ipray ALL=(ALL) NOPASSWD: /bin/systemctl daemon-reload
