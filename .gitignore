@@ -240,6 +240,10 @@ history-development/
 **/history-development/
 *.pdn
 
+# Claude Code project settings (track launch.json sahaja)
+.claude/*
+!.claude/launch.json
+
 # FFmpeg binary dalam nodejs/bin/ — perlu di-track untuk build Electron
 !node-react-jssor/nodejs/bin/
 !node-react-jssor/nodejs/bin/ffmpeg
