@@ -1,5 +1,8 @@
 import DisplayTime from './DisplayTime';
 import { DEFAULT_PENCERAMAH_IMAGE, getCenteredImageStyle } from '../utils/kuliahHelpers';
+import DOMPurify from 'dompurify';
+
+const sanitize = (html) => DOMPurify.sanitize(html ?? '');
 
 const Caption = ({ caption }) => {
   const getStyle = () => {
@@ -80,7 +83,7 @@ const Caption = ({ caption }) => {
         href={caption.href}
         target={caption.target || "_blank"}
         rel={caption.rel || "noopener noreferrer"}
-        dangerouslySetInnerHTML={{ __html: caption.content }}
+        dangerouslySetInnerHTML={{ __html: sanitize(caption.content) }}
       />
     );
   }
@@ -139,7 +142,7 @@ const Caption = ({ caption }) => {
       {...attrs}
       className={className}
       style={styleObj}
-      dangerouslySetInnerHTML={{ __html: caption.content }}
+      dangerouslySetInnerHTML={{ __html: sanitize(caption.content) }}
     />
   );
 };
