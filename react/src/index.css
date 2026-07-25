@@ -414,3 +414,11 @@ body {
   0%   { transform: translateX(100vw); }
   100% { transform: translateX(-100%); }
 }
+
+@keyframes ipray-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.ipray-blink-colon {
+  animation: ipray-blink 2s step-end infinite;
+}

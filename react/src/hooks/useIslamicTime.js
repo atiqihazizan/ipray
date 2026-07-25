@@ -8,24 +8,34 @@ import { useTakwimData } from './useTakwimData';
  */
 function useIslamicTimeFromEvents() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
-  const [payload, setPayload] = useState(null);
+  // Read snapshot from window.data_ipray (written every second by useTimeDriver).
+  // Only trigger re-render when the DATE changes — not every second.
+  const [snapshot, setSnapshot] = useState(() => window.data_ipray?.snapshot ?? null);
 
   useEffect(() => {
-    const handler = (e) => setPayload(e.detail || null);
-    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
-    return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+    // Init from window.data_ipray if already available (e.g. after hot reload)
+    if (window.data_ipray?.snapshot) setSnapshot(window.data_ipray.snapshot);
+
+    const handler = () => {
+      // DATE_CHANGED fires once per day — safe to setState here
+      setSnapshot(window.data_ipray?.snapshot ?? null);
+    };
+    window.addEventListener(TIME_EVENTS.DATE_CHANGED, handler);
+    window.addEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
+    return () => {
+      window.removeEventListener(TIME_EVENTS.DATE_CHANGED, handler);
+      window.removeEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
+    };
   }, []);
 
-  const { time, snapshot } = payload || {};
-  const islamicTime =
-    time != null && snapshot
-      ? {
-          time,
-          gregorian: snapshot.gregorian,
-          hijri: snapshot.hijri,
-          prayer: snapshot.prayer
-        }
-      : null;
+  const islamicTime = snapshot
+    ? {
+        time: window.data_ipray?.time ?? null,
+        gregorian: snapshot.gregorian,
+        hijri: snapshot.hijri,
+        prayer: snapshot.prayer
+      }
+    : null;
 
   return {
     islamicTime,

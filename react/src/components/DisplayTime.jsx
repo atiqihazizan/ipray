@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { useDisplayTime } from '../hooks/useDisplayTime';
 import { useData } from '../contexts/DataContext';
 import {
@@ -40,7 +40,25 @@ const DisplayTime = ({
 }) => {
   // Get config from context
   const { COLOR_CONFIG } = useData();
-  
+
+  // Type=1 (current clock): update DOM directly, bypass React re-render
+  const clockRef = useRef(null);
+  useEffect(() => {
+    if (type !== 1) return;
+    const handler = (e) => {
+      if (!clockRef.current) return;
+      const t = e.detail?.time ?? window.data_ipray?.time;
+      if (!t) return;
+      const h = format === '12h' ? (t.hours % 12 || 12) : t.hours;
+      const m = String(t.minutes).padStart(2, '0');
+      const s = showSeconds ? `:${String(t.seconds).padStart(2, '0')}` : '';
+      const ampm = (format === '12h' && showAmPm) ? ` ${t.hours >= 12 ? 'PM' : 'AM'}` : '';
+      clockRef.current.textContent = `${h}:${m}${s}${ampm}`;
+    };
+    window.addEventListener('time-update', handler);
+    return () => window.removeEventListener('time-update', handler);
+  }, [type, format, showSeconds, showAmPm]);
+
   // Tentukan isCurrentTime berdasarkan type
   const isCurrentTimeMode = type === 1;
   const isPrayerTimeMode = type === 2;
@@ -63,17 +81,17 @@ const DisplayTime = ({
     const parts = displayTime.split(':');
     if (parts.length === 1) return displayTime;
 
-    const colonStyle = effectiveShouldBlink ? { opacity: blink ? 1 : 0, transition: 'opacity 0.35s ease' } : { opacity: 1 };
+    const colonClass = effectiveShouldBlink ? 'ipray-blink-colon' : undefined;
 
     if (showSeconds && parts.length === 3) {
       const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
       const seconds = parts[2].replace(/\s*(AM|PM)/, '');
-      return <>{parts[0]}<span style={colonStyle}>:</span>{parts[1]}<span style={colonStyle}>:</span>{seconds}{ampm}</>;
+      return <>{parts[0]}<span className={colonClass}>:</span>{parts[1]}<span className={colonClass}>:</span>{seconds}{ampm}</>;
     }
 
     const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
     const minutes = parts[1].replace(/\s*(AM|PM)/, '');
-    return <>{parts[0]}<span style={colonStyle}>:</span>{minutes}{ampm}</>;
+    return <>{parts[0]}<span className={colonClass}>:</span>{minutes}{ampm}</>;
   };
 
   const attrs = getCaptionAttributes({ transition, transition2, delay, duration });
@@ -86,7 +104,9 @@ const DisplayTime = ({
   return (
     <div {...attrs} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>
       {label && <div style={labelStyle}>{label}</div>}
-      <div style={timeTextStyle}>{formatTimeWithBlink()}</div>
+      <div ref={type === 1 ? clockRef : null} style={timeTextStyle}>
+        {type === 1 ? (displayTime || '') : formatTimeWithBlink()}
+      </div>
     </div>
   );
 };
