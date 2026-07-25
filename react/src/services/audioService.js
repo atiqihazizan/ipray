@@ -144,6 +144,9 @@ class AudioService {
 
     if (this.loadError) {
       console.warn('[Audio] play() skipped — loadError=true');
+      window.dispatchEvent(new CustomEvent('audio:failed', {
+        detail: { sound: options.sound || 'beep_once' }
+      }));
       return;
     }
 
