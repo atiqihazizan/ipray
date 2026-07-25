@@ -41,42 +41,28 @@ export const useDisplayTime = ({
   const liveTimes = islamicTime?.prayer?.times;
   const effectiveTimes = liveTimes ?? getCachedPrayerTimes();
 
-  const [prayerHighlight, setPrayerHighlight] = useState({
-    isPrayerTime: false,
-    isInPrayerMinute: false,
-    is30SecondsBeforePrayer: false
-  });
+  const prayerState = useMemo(() => {
+    if (!prayerName || !islamicTime?.time || !effectiveTimes) {
+      return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false };
+    }
+    const times = effectiveTimes;
+    const prayerIdx = getPrayerIndex(prayerName);
+    if (prayerIdx == null) return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false };
+    const timeStr = getPrayerTimeByIndex(times, prayerIdx);
+    if (!timeStr) return { is30SecondsBeforePrayer: false, isPrayerTime: false, isInPrayerMinute: false };
+    const [ph, pm] = timeStr.split(':').map(Number);
+    const prayerTotalSeconds = ph * 3600 + pm * 60;
+    const { hours, minutes, seconds } = islamicTime.time;
+    const currentTotalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const is30SecondsBeforePrayer = currentTotalSeconds >= prayerTotalSeconds - warningSeconds && currentTotalSeconds < prayerTotalSeconds;
+    const isInPrayerMinute = currentTotalSeconds >= prayerTotalSeconds && currentTotalSeconds < prayerTotalSeconds + 60;
+    const isPrayerTime = currentTotalSeconds === prayerTotalSeconds;
+    return { is30SecondsBeforePrayer, isPrayerTime, isInPrayerMinute };
+  }, [prayerName, warningSeconds, islamicTime?.time?.hours, islamicTime?.time?.minutes, islamicTime?.time?.seconds, effectiveTimes]);
 
-  useEffect(() => {
-    if (!prayerName || isCurrentTime) return;
-    const handler = () => {
-      const t = window.data_ipray?.time;
-      const times = window.data_ipray?.snapshot?.prayer?.times;
-      if (!t || !times) return;
-      const prayerIdx = getPrayerIndex(prayerName);
-      if (prayerIdx == null) return;
-      const timeStr = getPrayerTimeByIndex(times, prayerIdx);
-      if (!timeStr) return;
-      const [ph, pm] = timeStr.split(':').map(Number);
-      const prayerTotalSeconds = ph * 3600 + pm * 60;
-      const currentTotalSeconds = t.hours * 3600 + t.minutes * 60 + t.seconds;
-      const newHighlight = {
-        isPrayerTime: currentTotalSeconds === prayerTotalSeconds,
-        isInPrayerMinute: currentTotalSeconds >= prayerTotalSeconds && currentTotalSeconds < prayerTotalSeconds + 60,
-        is30SecondsBeforePrayer: currentTotalSeconds >= prayerTotalSeconds - warningSeconds && currentTotalSeconds < prayerTotalSeconds
-      };
-      setPrayerHighlight(prev => {
-        if (prev.isPrayerTime === newHighlight.isPrayerTime &&
-            prev.isInPrayerMinute === newHighlight.isInPrayerMinute &&
-            prev.is30SecondsBeforePrayer === newHighlight.is30SecondsBeforePrayer) return prev;
-        return newHighlight;
-      });
-    };
-    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
-    return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
-  }, [prayerName, isCurrentTime, warningSeconds]);
-
-  const { isPrayerTime, isInPrayerMinute, is30SecondsBeforePrayer } = prayerHighlight;
+  const isPrayerTime = prayerState.isPrayerTime;
+  const isInPrayerMinute = prayerState.isInPrayerMinute;
+  const is30SecondsBeforePrayer = prayerState.is30SecondsBeforePrayer;
 
   const shouldBlink = !showSeconds && isCurrentTime;
   const isSyuruk = isSyurukIndex(getPrayerIndex(prayerName));

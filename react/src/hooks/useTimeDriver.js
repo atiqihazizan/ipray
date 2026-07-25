@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCurrentIslamicTime } from '../utils/islamicTimeUtils';
 import { useTakwimData } from './useTakwimData';
 import { useData } from '../contexts/DataContext';
@@ -47,13 +47,15 @@ const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang +
 export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
   const { timeService, PRAYER_TIME_CONFIG } = useData();
-  // No React state — data goes to window.data_ipray
+  const [time, setTime] = useState(null);
+  const [snapshot, setSnapshot] = useState(null);
   // Simpan config dalam ref supaya perubahan config tidak restart interval setiap kali
   const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
   useEffect(() => { prayerTimeConfigRef.current = PRAYER_TIME_CONFIG; }, [PRAYER_TIME_CONFIG]);
   const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
   const warningSecondsRef = useRef(warningSeconds);
   useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
+  const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
   const lastSavedTimesRef = useRef('');
@@ -89,16 +91,17 @@ export function useTimeDriver() {
         });
         if (!islamicTime) return;
 
+        setTime(islamicTime.time);
+
         const snapshotData = {
           gregorian: islamicTime.gregorian,
           hijri: islamicTime.hijri,
           prayer: islamicTime.prayer
         };
-
-        window.data_ipray = {
-          time: islamicTime.time,
-          snapshot: snapshotData
-        };
+        if (!snapshotSetRef.current) {
+          snapshotSetRef.current = true;
+          setSnapshot(snapshotData);
+        }
 
         dispatchTimeUpdate({ time: islamicTime.time, snapshot: snapshotData });
 
@@ -221,7 +224,9 @@ export function useTimeDriver() {
   }, [takwimParsed, timeService]);
 
   return {
+    time,
     loading: takwimLoading,
+    snapshot,
     zone: takwimParsed?.zone || ''
   };
 }
