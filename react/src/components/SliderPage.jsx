@@ -12,6 +12,7 @@ const SliderPage = ({ onReady }) => {
   const { slideData, loading: slidesLoading } = useSlides();
   const { takwimArray, loading: takwimLoading } = useTakwimData();
   const { isReloading } = useData();
+  // sliderState: pause/resume feature not yet implemented — shouldHold always false
   const sliderState = { shouldHold: false, shouldGoToHome: false, resumeAtMs: null };
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
