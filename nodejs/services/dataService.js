@@ -391,26 +391,33 @@ class DataService {
       const filePath = this.getFilePath(normalized);
       const skipCloudSync = options && options.skipCloudSync === true;
 
-      fs.writeFile(filePath, content, 'utf8', (err) => {
+      const tmpPath = filePath + '.tmp';
+      fs.writeFile(tmpPath, content, 'utf8', (err) => {
         if (err) {
-          console.error('Error writing file:', err);
+          console.error('Error writing temp file:', err);
           return reject(new Error('Failed to write file'));
         }
-        if (!skipCloudSync) {
-          (async () => {
-            try {
-              await this.syncTextFileToCloud(normalized);
-            } catch (syncError) {
-              if (isCloudUnavailableError(syncError)) return;
-              // eslint-disable-next-line no-console
-              console.error('[CloudSync] Gagal trigger sync txt ke cloud:', syncError.message || syncError);
-            }
-          })();
-        }
-
-        resolve({
-          success: true,
-          filename: `${normalized}.txt`
+        fs.rename(tmpPath, filePath, (renameErr) => {
+          if (renameErr) {
+            console.error('Error renaming temp file:', renameErr);
+            fs.unlink(tmpPath, () => {});
+            return reject(new Error('Failed to write file'));
+          }
+          if (!skipCloudSync) {
+            (async () => {
+              try {
+                await this.syncTextFileToCloud(normalized);
+              } catch (syncError) {
+                if (isCloudUnavailableError(syncError)) return;
+                // eslint-disable-next-line no-console
+                console.error('[CloudSync] Gagal trigger sync txt ke cloud:', syncError.message || syncError);
+              }
+            })();
+          }
+          resolve({
+            success: true,
+            filename: `${normalized}.txt`
+          });
         });
       });
     });
