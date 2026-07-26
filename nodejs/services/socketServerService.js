@@ -167,54 +167,29 @@ class SocketServerService {
     console.log(`Socket.IO CORS: All origins allowed`);
   }
 
-  /**
-   * Start Socket.IO server (standalone mode - for backward compatibility)
-   * @deprecated Use attachToServer() instead
-   */
-  start() {
-    return new Promise((resolve, reject) => {
-      this.httpServer = http.createServer();
-      this.isAttached = false; // Mark as standalone server
-      
-      this.io = new Server(this.httpServer, {
-        cors: {
-          origin: '*', // Allow all origins untuk access dari luar
-          methods: ['GET', 'POST'],
-          credentials: false
-        },
-        transports: ['websocket', 'polling'],
-        allowEIO3: true,
-        pingTimeout: 60000,
-        pingInterval: 25000
-      });
-
-      rtspToHlsService.on('playlistReady', (data) => {
-        if (this.io) this.io.emit('hls:playlistReady', data || {});
-        if (this.liveStreamData) {
-          this.io.emit('live:started', { ...this.liveStreamData, timestamp: Date.now() });
-        }
-      });
-      rtspToHlsService.on('error', (err) => {
-        if (this.io) this.io.emit('hls:error', { message: (err && err.message) ? err.message : String(err) });
-      });
-      
-      // Setup event handlers
-      this.setupEventHandlers();
-      
-      // Listen on 0.0.0.0 to allow access from network
-      const host = '0.0.0.0';
-      this.httpServer.listen(this.port, host, () => {
-        // console.log(`Socket.IO Server running at http://${host}:${this.port}`);
-        // console.log(`Real-time updates enabled for data synchronization`);
-        // console.log(`Socket.IO CORS: All origins allowed`);
-        resolve();
-      });
-
-      this.httpServer.on('error', (error) => {
-        reject(error);
-      });
-    });
-  }
+  // start() — @deprecated, guna attachToServer() sebaliknya
+  // start() {
+  //   return new Promise((resolve, reject) => {
+  //     this.httpServer = http.createServer();
+  //     this.isAttached = false;
+  //     this.io = new Server(this.httpServer, {
+  //       cors: { origin: '*', methods: ['GET', 'POST'], credentials: false },
+  //       transports: ['websocket', 'polling'],
+  //       allowEIO3: true, pingTimeout: 60000, pingInterval: 25000
+  //     });
+  //     rtspToHlsService.on('playlistReady', (data) => {
+  //       if (this.io) this.io.emit('hls:playlistReady', data || {});
+  //       if (this.liveStreamData) this.io.emit('live:started', { ...this.liveStreamData, timestamp: Date.now() });
+  //     });
+  //     rtspToHlsService.on('error', (err) => {
+  //       if (this.io) this.io.emit('hls:error', { message: (err && err.message) ? err.message : String(err) });
+  //     });
+  //     this.setupEventHandlers();
+  //     const host = '0.0.0.0';
+  //     this.httpServer.listen(this.port, host, () => resolve());
+  //     this.httpServer.on('error', (error) => reject(error));
+  //   });
+  // }
 
   /**
    * Setup Socket.IO event handlers

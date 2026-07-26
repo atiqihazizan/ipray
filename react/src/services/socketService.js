@@ -75,13 +75,13 @@ class SocketService {
     this.socket.on('disconnect', (reason) => {
       // Suppress disconnect logs untuk normal disconnects atau transport issues
       // (React StrictMode akan cause temporary disconnects during development)
-      const suppressReasons = [
-        'io client disconnect',
-        'transport close',
-        'transport error',
-        'ping timeout'
-      ];
-      
+      // const suppressReasons = [
+      //   'io client disconnect',
+      //   'transport close',
+      //   'transport error',
+      //   'ping timeout'
+      // ];
+
       this.isConnected = false;
       this.notifyListeners('disconnect', { reason });
     });

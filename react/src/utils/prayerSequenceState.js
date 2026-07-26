@@ -6,14 +6,14 @@
  * di tengah jalan.
  */
 let active = false;
-let onDeactivate = null;
+let onDeactivateQueue = [];
 
 export function setPrayerSequenceActive(value) {
   active = value;
-  if (!value && onDeactivate) {
-    const cb = onDeactivate;
-    onDeactivate = null;
-    cb();
+  if (!value && onDeactivateQueue.length > 0) {
+    const queue = onDeactivateQueue;
+    onDeactivateQueue = [];
+    queue.forEach(cb => cb());
   }
 }
 
@@ -23,12 +23,12 @@ export function isPrayerSequenceActive() {
 
 /**
  * Jalankan callback serta-merta jika urutan solat tidak aktif.
- * Jika aktif, tangguh dan jalankan SEKALI sahaja bila urutan solat tamat.
+ * Jika aktif, queue dan jalankan semua callbacks bila urutan solat tamat.
  */
 export function runAfterPrayerSequence(callback) {
   if (!active) {
     callback();
     return;
   }
-  onDeactivate = callback;
+  onDeactivateQueue.push(callback);
 }

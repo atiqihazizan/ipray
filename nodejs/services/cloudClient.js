@@ -21,7 +21,7 @@ const CLIENT_TOKEN = process.env.CLIENT_TOKEN;
 const CLOUD_URL = process.env.CLOUD_URL || 'http://ipray-cloud.mahsites.net';
 
 let isConnected = false;
-let _onRegisteredCallback = null;
+let _onRegisteredCallbacks = [];
 const REGISTERED_DELAY_MS = 800;
 // Guard untuk elak double-sync (connect event + setOnRegisteredCallback boleh fire serentak)
 let _syncScheduled = false;
@@ -29,7 +29,8 @@ let _syncTimer = null;
 
 function runOnRegisteredCallback() {
   _syncScheduled = false;
-  if (typeof _onRegisteredCallback === 'function') _onRegisteredCallback();
+  const queue = _onRegisteredCallbacks.slice();
+  queue.forEach(cb => { if (typeof cb === 'function') cb(); });
 }
 
 function scheduleSyncOnConnect() {
@@ -198,7 +199,7 @@ async function sendAck(fileName, status = 'synced') {
 }
 
 function setOnRegisteredCallback(cb) {
-  _onRegisteredCallback = cb;
+  _onRegisteredCallbacks.push(cb);
   if (isConnected && socket.connected) scheduleSyncOnConnect();
 }
 
