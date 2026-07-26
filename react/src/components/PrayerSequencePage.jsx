@@ -256,7 +256,8 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       } else {
         // Cuba semula dalam 30s — tapi hanya jika masih dalam window yang munasabah
         // Elak retry bila masa jauh dari solat (contoh: Isyak selesai, masa 11 PM)
-        const minutesSincePrayer = ptMinutes !== null ? currentMinutes - ptMinutes : 999;
+        let minutesSincePrayer = ptMinutes !== null ? currentMinutes - ptMinutes : 999;
+        if (minutesSincePrayer < -60) minutesSincePrayer += 24 * 60; // midnight rollover
         if (minutesSincePrayer < 120) { // hanya retry dalam 2 jam selepas waktu solat
           safeReloadTimerRef.current = setTimeout(tryReload, 30_000);
         } else {
