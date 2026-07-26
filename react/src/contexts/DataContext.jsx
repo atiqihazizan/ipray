@@ -89,6 +89,8 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const socketConnectedRef = useRef(socketConnected);
+  useEffect(() => { socketConnectedRef.current = socketConnected; }, [socketConnected]);
   const [socketReady, setSocketReady] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
@@ -225,7 +227,7 @@ export const DataProvider = ({ children }) => {
     const debouncedLoadTakwimOnly = () => {
       if (takwimReloadDebounceTimer) clearTimeout(takwimReloadDebounceTimer);
       takwimReloadDebounceTimer = setTimeout(() => {
-        if (isMounted && socketConnected) loadTakwimOnly();
+        if (isMounted && socketConnectedRef.current) loadTakwimOnly();
       }, 500);
     };
 
@@ -246,7 +248,7 @@ export const DataProvider = ({ children }) => {
 
     // Timeout untuk declare socket ready (after attempting connection)
     readyTimeout = setTimeout(() => {
-      if (isMounted && !socketConnected) {
+      if (isMounted && !socketConnectedRef.current) {
         // After 5 seconds, jika masih tidak connected, declare ready tapi fail
         setSocketReady(true);
         setSocketConnected(false);
@@ -282,7 +284,7 @@ export const DataProvider = ({ children }) => {
 
     // Takwim sahaja dikemas kini - guna payload hari semasa jika ada (tiada fetch); jika tiada payload, fetch API
     const unsubscribeTakwimRefresh = socketService.on('takwim:refresh', (data) => {
-      if (!isMounted || !socketConnected) return;
+      if (!isMounted || !socketConnectedRef.current) return;
       const hasPayload = data && Array.isArray(data.takwimArray) && data.takwimParsed != null;
       if (hasPayload) {
         if (takwimReloadDebounceTimer) clearTimeout(takwimReloadDebounceTimer);
@@ -428,7 +430,8 @@ export const DataProvider = ({ children }) => {
       unsubscribeHlsError();
       if (hlsNotificationTimerRef.current) clearTimeout(hlsNotificationTimerRef.current);
     };
-  }, [socketConnected, loadAllData, loadTakwimOnly]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = {
     takwimArray,
