@@ -2155,8 +2155,8 @@ class DataService {
    * Get today's takwim data only
    * Returns single row for today's date (filter by day and month only, ignore year)
    */
-  getTodayTakwim(content) {
-    const today = new Date();
+  getTodayTakwim(content, nowMs = null) {
+    const today = nowMs ? new Date(nowMs) : new Date();
     const todayDay = String(today.getDate()).padStart(2, '0');
     const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
     

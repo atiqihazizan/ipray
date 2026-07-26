@@ -602,7 +602,7 @@ class ApiServerService {
     this.app.get('/api/data/takwim/today', async (req, res) => {
       try {
         const content = await this.dataService.readFile('takwim');
-        const todayData = this.dataService.getTodayTakwim(content);
+        const todayData = this.dataService.getTodayTakwim(content, this.timeService?.now());
         
         if (!todayData) {
           return res.json({ data: null, message: 'No data found for today' });
