@@ -2,10 +2,6 @@ import { useState } from 'react'
 import SliderPage from './SliderPage'
 import LoadingPage from './LoadingPage'
 import PrayerSequencePage from './PrayerSequencePage'
-
-// Set true untuk debug: papar PrayerSequencePage sahaja
-const DEBUG_SHOW_PRAYER_SEQUENCE_ONLY = false
-
 import DateTimeOverlay from './DateTimeOverlay'
 import DeathAnnouncementOverlay from './DeathAnnouncementOverlay'
 import LiveStreamOverlay from './LiveStreamOverlay'
@@ -38,20 +34,6 @@ const AppContent = () => {
   }
   
   if (!socketConnected) return <LoadingPage />
-
-  if (DEBUG_SHOW_PRAYER_SEQUENCE_ONLY) {
-    const now = new Date()
-    const in2Min = new Date(now.getTime() + 2 * 60 * 1000)
-    const debugTimeStr = `${String(in2Min.getHours()).padStart(2, '0')}:${String(in2Min.getMinutes()).padStart(2, '0')}:00`
-    return (
-      <PrayerSequencePage
-        prayerName="Subuh"
-        prayerTimeStr={debugTimeStr}
-        onComplete={() => {}}
-        overlayOverride={{ showDate: true, showSmallTime: true, showMarquee: true, showTimeSmallClock: false }}
-      />
-    )
-  }
 
   if (currentView === 'prayer') {
     return (

@@ -6,7 +6,6 @@ import {
   dispatchTimeUpdate,
   dispatchHijriDateChanged,
   dispatchPrayerWarning,
-  dispatchPrayerTime,
   dispatchSyurukTime,
   dispatchDateChanged
 } from '../utils/timeEvents';
@@ -32,11 +31,6 @@ function savePrayerTimesForToday(todayStr, timesObj) {
     }
   } catch (_) {}
 }
-
-// ─── TEST CONFIG — tukar ke true untuk test. Pastikan false semula sebelum production. ───
-const TEST_PRAYER = false; // test waktu solat (semua 5 waktu) — trigger pada masa sekarang + 1 minit
-const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang + 1 minit
-// ─────────────────────────────────────────────────────────────────────────────────────────
 
 /**
  * Hook untuk driver masa — satu interval sahaja, fokus pada time.
@@ -68,17 +62,6 @@ export function useTimeDriver() {
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
-
-    // Test: masa solat = now + max(60, warningSeconds+15) supaya cukup runway bila warningSeconds > 60
-    const _testTimeStr = (() => {
-      const n = new Date();
-      const offsetSec = Math.max(60, warningSeconds + 15);
-      const t = new Date(n.getTime() + offsetSec * 1000);
-      const h = t.getHours(), m = t.getMinutes(), s = t.getSeconds();
-      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    })();
-    const testPrayerStr = TEST_PRAYER ? _testTimeStr : null;
-    const testSyurukStr = TEST_SYURUK ? _testTimeStr : null;
 
     const update = () => {
       try {
@@ -148,14 +131,8 @@ export function useTimeDriver() {
 
         const prayerTimes = prayer?.times;
         if (prayerTimes) {
-          // Bila TEST_PRAYER: semua 5 guna masa sama — gunakan prayer.next untuk nama betul (elak sentiasa Isyak)
-          const nextPrayerDisplay = prayer?.next
-            ? (prayer.next.charAt(0).toUpperCase() + prayer.next.slice(1).toLowerCase())
-            : null;
-          const resolvedNextPrayer = nextPrayerDisplay && ACTIVE_PRAYERS.includes(nextPrayerDisplay) ? nextPrayerDisplay : null;
-
           for (const name of ACTIVE_PRAYERS) {
-            const timeStr = testPrayerStr || prayerTimes[name];
+            const timeStr = prayerTimes[name];
             if (!timeStr) continue;
             const parts = timeStr.split(':').map(Number);
             const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
@@ -163,7 +140,7 @@ export function useTimeDriver() {
 
             // Trigger HANYA bila kita masih SEBELUM waktu solat (elak beep serta-merta bila tick terlepas)
             const warnTrigger = prayerTotalSeconds - warningSecondsRef.current;
-            const warnKey = testPrayerStr ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
+            const warnKey = `${name}-${todayStr}-warn`;
             // Sengaja TIDAK padam warnKey selepas waktu solat berlalu — key sudah bertarikh unik
             // (dibersihkan betul bila hari bertukar di atas), dan pemadaman awal ini boleh buka
             // lubang replay: jika jam sistem melompat ke belakang (contoh OS betulkan RTC) dan
@@ -172,15 +149,13 @@ export function useTimeDriver() {
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                const displayName = (testPrayerStr && resolvedNextPrayer) ? resolvedNextPrayer : name;
-                dispatchPrayerWarning(displayName, timeStr);
-                logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
+                dispatchPrayerWarning(name, timeStr);
+                logKioskEvent('prayer-warning', { prayer: name, time: timeStr });
               }
-              if (testPrayerStr) break; // Test mode: satu dispatch sahaja
             }
           }
 
-          const syurukStr = testSyurukStr || prayerTimes.Syuruk;
+          const syurukStr = prayerTimes.Syuruk;
           if (syurukStr) {
             const [sh, sm] = syurukStr.split(':').map(Number);
             const currentMinutes = t.hours * 60 + t.minutes;

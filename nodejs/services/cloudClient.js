@@ -80,18 +80,6 @@ socket.on('connect_error', err => {
   console.error('[cloudClient] Connect error:', err.message || err);
 });
 
-socket.on('fileChanged', payload => {
-  // Di sini tuan boleh trigger logic sync download dari cloud
-  // eslint-disable-next-line no-console
-  // console.log('[cloudClient] fileChanged', payload);
-});
-
-socket.on('fileDeleted', payload => {
-  // Di sini tuan boleh padam fail local yang berkaitan
-  // eslint-disable-next-line no-console
-  // console.log('[cloudClient] fileDeleted', payload);
-});
-
 socket.on('syncRequest', payload => {
   // eslint-disable-next-line no-console
   console.log('[cloudClient] syncRequest', payload);
@@ -113,22 +101,6 @@ async function uploadFile(actualFilePath, folder) {
 
   return res.data;
 }
-
-// async function deleteFile(fileName) {
-//   console.log(fileName)
-//   // const res = await axios.delete(`${CLOUD_URL}/upload/${arr}`, {
-//   const res = await axios.delete(`${CLOUD_URL}/upload`, {
-//     headers: {
-//       'x-auth-token': CLIENT_TOKEN,
-//       'Content-Type': 'application/json'
-//     },
-//     data: {
-//       clientId: CLIENT_ID,
-//       filename: fileName.split('/')
-//     }
-//   });
-//   return res.data;
-// }
 
 async function deleteFile(fileName) {
   const parts = fileName.split('/').filter(p => p); // buang empty string

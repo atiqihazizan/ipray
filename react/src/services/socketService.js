@@ -73,15 +73,6 @@ class SocketService {
     });
 
     this.socket.on('disconnect', (reason) => {
-      // Suppress disconnect logs untuk normal disconnects atau transport issues
-      // (React StrictMode akan cause temporary disconnects during development)
-      // const suppressReasons = [
-      //   'io client disconnect',
-      //   'transport close',
-      //   'transport error',
-      //   'ping timeout'
-      // ];
-
       this.isConnected = false;
       this.notifyListeners('disconnect', { reason });
     });
@@ -213,8 +204,6 @@ class SocketService {
    */
   disconnect() {
     if (this.socket) {
-      // Suppress disconnect errors during cleanup (React StrictMode double-invoke)
-      const wasConnected = this.socket.connected;
       try {
         this.socket.disconnect();
       } catch (error) {
@@ -246,21 +235,6 @@ class SocketService {
         }
       }
     };
-  }
-
-  /**
-   * Unsubscribe from event
-   * @param {string} event - Event name
-   * @param {function} callback - Callback function
-   */
-  off(event, callback) {
-    const callbacks = this.listeners.get(event);
-    if (callbacks) {
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
-      }
-    }
   }
 
   /**

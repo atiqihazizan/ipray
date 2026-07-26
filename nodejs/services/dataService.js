@@ -160,7 +160,7 @@ class DataService {
     // Sync ke cloud (fire-and-forget) – ikut implementasi asal di apiServerService
     (async () => {
       try {
-        const cloudResult = await uploadFile(actualPath, folder);
+        await uploadFile(actualPath, folder);
         await sendAck(sanitizedName, 'uploaded');
       } catch (cloudError) {
         if (isCloudUnavailableError(cloudError)) return;
@@ -1192,7 +1192,7 @@ class DataService {
                 (async () => {
                   try {
                     const fileNameOnly = imagePath.split('/').filter(Boolean).pop();
-                    const cloudResult = await deleteFile(imagePath);
+                    await deleteFile(imagePath);
                     await sendAck(fileNameOnly, 'deleted');
                   } catch (cloudError) {
                     if (isCloudUnavailableError(cloudError)) return;

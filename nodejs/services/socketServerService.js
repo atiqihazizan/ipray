@@ -167,30 +167,6 @@ class SocketServerService {
     console.log(`Socket.IO CORS: All origins allowed`);
   }
 
-  // start() — @deprecated, guna attachToServer() sebaliknya
-  // start() {
-  //   return new Promise((resolve, reject) => {
-  //     this.httpServer = http.createServer();
-  //     this.isAttached = false;
-  //     this.io = new Server(this.httpServer, {
-  //       cors: { origin: '*', methods: ['GET', 'POST'], credentials: false },
-  //       transports: ['websocket', 'polling'],
-  //       allowEIO3: true, pingTimeout: 60000, pingInterval: 25000
-  //     });
-  //     rtspToHlsService.on('playlistReady', (data) => {
-  //       if (this.io) this.io.emit('hls:playlistReady', data || {});
-  //       if (this.liveStreamData) this.io.emit('live:started', { ...this.liveStreamData, timestamp: Date.now() });
-  //     });
-  //     rtspToHlsService.on('error', (err) => {
-  //       if (this.io) this.io.emit('hls:error', { message: (err && err.message) ? err.message : String(err) });
-  //     });
-  //     this.setupEventHandlers();
-  //     const host = '0.0.0.0';
-  //     this.httpServer.listen(this.port, host, () => resolve());
-  //     this.httpServer.on('error', (error) => reject(error));
-  //   });
-  // }
-
   /**
    * Setup Socket.IO event handlers
    */
@@ -252,15 +228,6 @@ class SocketServerService {
           timestamp: Date.now()
         });
         
-        // Execute reboot command after delay (to allow React to reload window first)
-        // setTimeout(() => {
-        //   const { exec } = require('child_process');
-        //   exec('sudo reboot', (error, stdout, stderr) => {
-        //     if (error) {
-        //       console.error('Reboot error:', error);
-        //     }
-        //   });
-        // }, 2000); // Delay 2 seconds untuk React reload window dulu
       });
 
       // Handle test sound request from admin panel
@@ -559,13 +526,6 @@ class SocketServerService {
    */
   getIO() {
     return this.io;
-  }
-
-  /**
-   * Get HTTP server instance
-   */
-  getHttpServer() {
-    return this.httpServer;
   }
 
   /**

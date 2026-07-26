@@ -36,55 +36,15 @@ function useIslamicTimeFromEvents() {
   };
 }
 
-/**
- * Custom Hook untuk menguruskan waktu Islam (Hijri, Masehi, Waktu Solat).
- * Data masa dari window event time-update (satu interval dalam useTimeDriver); tiada TimeProvider.
- *
- * @param {Object} externalTakwimParsed - Tidak digunakan; disimpan untuk API
- * @returns {Object} { islamicTime, loading, error, refresh, zone }
- */
-export const useIslamicTime = (externalTakwimParsed = null) => {
-  return useIslamicTimeFromEvents(externalTakwimParsed);
-};
-
-/**
- * Hook mudah untuk dapatkan waktu semasa sahaja
- */
-export const useCurrentTime = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    time: islamicTime?.time || null,
-    loading
-  };
-};
-
-/**
- * Hook untuk dapatkan tarikh Hijri semasa (initial dari event; update lepas Maghrib via hijri-date-changed di DisplayDate)
- */
-export const useHijriDate = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    hijri: islamicTime?.hijri || null,
-    loading
-  };
-};
-
-/**
- * Hook untuk dapatkan tarikh Masehi semasa
- */
-export const useGregorianDate = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    gregorian: islamicTime?.gregorian || null,
-    loading
-  };
+export const useIslamicTime = () => {
+  return useIslamicTimeFromEvents();
 };
 
 /**
  * Hook untuk dapatkan waktu solat
  */
-export const usePrayerTimes = (externalTakwimParsed = null) => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents(externalTakwimParsed);
+export const usePrayerTimes = () => {
+  const { islamicTime, loading } = useIslamicTimeFromEvents();
   const prayer = islamicTime?.prayer || null;
 
   const nextPrayerData =
@@ -99,31 +59,6 @@ export const usePrayerTimes = (externalTakwimParsed = null) => {
     nextPrayerData,
     nextPrayerName
   };
-};
-
-/**
- * Hook dengan callback apabila minit berubah
- */
-export const useIslamicTimeWithCallback = (onMinuteChange) => {
-  const { islamicTime, loading, error, refresh, zone } = useIslamicTimeFromEvents();
-  const [prevMinute, setPrevMinute] = useState(null);
-
-  useEffect(() => {
-    if (islamicTime?.time) {
-      const currentMinute = islamicTime.time.minutes;
-      if (prevMinute !== null && prevMinute !== currentMinute && typeof onMinuteChange === 'function') {
-        onMinuteChange({
-          time: islamicTime.time,
-          hijri: islamicTime.hijri,
-          gregorian: islamicTime.gregorian,
-          prayer: islamicTime.prayer
-        });
-      }
-      setPrevMinute(currentMinute);
-    }
-  }, [islamicTime, prevMinute, onMinuteChange]);
-
-  return { islamicTime, loading, error, refresh, zone };
 };
 
 export default useIslamicTime;
