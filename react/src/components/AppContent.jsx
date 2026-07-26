@@ -17,7 +17,6 @@ const AppContent = () => {
     loading: dataLoading,
     socketConnected,
     socketReady,
-    midnightReloadMessage,
     deathAnnouncementData,
     liveStreamData,
   } = useData()
@@ -71,11 +70,6 @@ const AppContent = () => {
   return (
     <>
       <PrayerTimeController setCurrentView={setCurrentView} setPrayerName={setCurrentPrayerName} setPrayerTimeStr={setCurrentPrayerTimeStr} />
-      {midnightReloadMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <p className="text-white text-2xl font-bold">{midnightReloadMessage}</p>
-        </div>
-      )}
       {(dataLoading || (!sliderReady && !hasDeathAnnouncement)) && <LoadingPage />}
       <div 
         className="relative bg-black flex items-center justify-center" 
