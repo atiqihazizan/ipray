@@ -84,7 +84,13 @@ const DEFAULT_COLOR_CONFIG = {
 };
 
 /** Hari dalam bulan (index 0 unused, 1=Jan..12=Dec) untuk getYearDays */
-const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+function isLeapYear(year) {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+function getMonthDays(year) {
+  return [0, 31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+}
 
 /**
  * Data Service
@@ -1240,9 +1246,10 @@ class DataService {
    * Hari dalam tahun (1-365) dan daysm sejak epoch
    */
   getYearDays(year, month, day) {
+    const monthDays = getMonthDays(year);
     let days = day;
     for (let i = 1; i < month; i++) {
-      days += MONTH_DAYS[i];
+      days += monthDays[i];
     }
     let daysm = days;
     const yy = year % 100;
