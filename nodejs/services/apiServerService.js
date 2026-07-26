@@ -2,29 +2,46 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
+const rateLimit = require('express-rate-limit');
 const { parseKuliahOverride } = require('./kuliahOverrideParser');
 const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require('./kuliahProcessor');
 const { getWeekCode, getDayCode } = require('./kuliahDateUtils');
-
-/**
- * Escape string untuk selamat dibenamkan dalam petikan dwi-tanda (") shell command.
- * PENTING: backslash MESTI di-escape DAHULU sebelum aksara lain — kalau tidak, backslash
- * baharu yang disisipkan oleh escape "/$/` akan turut di-escape semula, merosakkan
- * petikan dan membenarkan pecah keluar (command injection). Nilai yang dipulangkan
- * MESTI sentiasa dibenamkan dalam petikan dwi-tanda dalam command string.
- */
-function escapeShellDoubleQuoted(str) {
-  return String(str ?? '')
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-    .replace(/\$/g, '\\$')
-    .replace(/`/g, '\\`');
-}
 
 const HOTSPOT_DEFAULTS = {
   SSID: 'iPray-Hotspot',
   PASSWORD: 'ipray2026'
 };
+
+function runSudo(args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('sudo', args, { stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000, ...opts });
+    let stdout = '', stderr = '';
+    child.stdout.on('data', d => { stdout += d; });
+    child.stderr.on('data', d => { stderr += d; });
+    child.on('close', code => {
+      if (code === 0) resolve({ stdout, stderr });
+      else if (opts.allowNonZero) resolve({ stdout, stderr, code });
+      else reject(Object.assign(new Error(stderr.trim() || `Exit code ${code}`), { stdout, stderr, code }));
+    });
+    child.on('error', reject);
+  });
+}
+
+function runCommand(cmd, args, opts = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000, ...opts });
+    let stdout = '', stderr = '';
+    child.stdout.on('data', d => { stdout += d; });
+    child.stderr.on('data', d => { stderr += d; });
+    child.on('close', code => {
+      if (code === 0) resolve({ stdout, stderr });
+      else if (opts.allowNonZero) resolve({ stdout, stderr, code });
+      else reject(Object.assign(new Error(stderr.trim() || `Exit code ${code}`), { stdout, stderr, code }));
+    });
+    child.on('error', reject);
+  });
+}
 
 /**
  * API Server Service
@@ -154,6 +171,20 @@ class ApiServerService {
       next();
     });
 
+    // Rate limiting — elak abuse/DoS
+    const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, message: { error: 'Terlalu banyak request. Sila tunggu.' } });
+    const wifiLimiter = rateLimit({ windowMs: 60 * 1000, max: 5, message: { error: 'Terlalu banyak request WiFi. Sila tunggu.' } });
+    const rebootLimiter = rateLimit({ windowMs: 60 * 1000, max: 1, message: { error: 'Reboot sudah dimulakan. Sila tunggu.' } });
+    const tokenLimiter = rateLimit({ windowMs: 60 * 1000, max: 3, message: { error: 'Terlalu banyak cubaan dapatkan token. Sila tunggu.' } });
+    const writeLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, message: { error: 'Terlalu banyak request tulis. Sila tunggu.' } });
+
+    this.app.use('/api', apiLimiter);
+    this.app.use('/api/wifi', wifiLimiter);
+    this.app.use('/api/system/reboot', rebootLimiter);
+    this.app.use('/api/token', tokenLimiter);
+    this.app.use('/api/files', writeLimiter);
+    this.app.use('/api/data', writeLimiter);
+
     // Auth — lindungi endpoint admin/tulis (panel setting) daripada akses tanpa token.
     // Laluan baca sahaja yang diperlukan oleh paparan kiosk (tiada sesi log masuk) dikecualikan.
     this.app.use('/api', this.buildAuthMiddleware());
@@ -199,11 +230,8 @@ class ApiServerService {
         this._isRPiCached = false;
         return false;
       }
-      const { exec } = require('child_process');
-      const { promisify } = require('util');
-      const execAsync = promisify(exec);
       try {
-        await execAsync('/usr/bin/nmcli --version 2>/dev/null', { timeout: 3000 });
+        await runCommand('/usr/bin/nmcli', ['--version'], { timeout: 3000 });
         this._isRPiCached = true;
       } catch (_) {
         this._isRPiCached = false;
@@ -988,15 +1016,11 @@ class ApiServerService {
           message: 'Reboot command initiated'
         });
         
-        // Execute reboot after response (delay sedikit untuk React reload window dulu)
         setTimeout(() => {
-          const { exec } = require('child_process');
-          exec('sudo reboot', (error, stdout, stderr) => {
-            if (error) {
-              console.error('Reboot error:', error);
-            }
+          spawn('sudo', ['reboot'], { stdio: 'ignore', timeout: 10000 }).on('error', err => {
+            console.error('Reboot error:', err);
           });
-        }, 2000); // Delay 2 seconds untuk React reload window dulu
+        }, 2000);
       } catch (error) {
         console.error('Error initiating reboot:', error);
         res.status(500).json({ error: error.message || 'Failed to initiate reboot' });
@@ -1017,32 +1041,24 @@ class ApiServerService {
           });
         }
         
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
         const nmcli = this.getNmcliPath();
         
-        // First check if WiFi device is available
         try {
-          const { stdout: devices } = await execAsync(`${nmcli} -t -f DEVICE device status`);
+          const { stdout: devices } = await runSudo([nmcli, '-t', '-f', 'DEVICE', 'device', 'status']);
           if (!devices.includes('wlan0')) {
             return res.status(400).json({ 
               error: 'WiFi device (wlan0) tidak tersedia atau telah di-unplug',
               deviceAvailable: false
             });
           }
-        } catch (err) {
+        } catch (_) {
           return res.status(400).json({ 
             error: 'WiFi device tidak tersedia',
             deviceAvailable: false
           });
         }
         
-        // Scan WiFi networks
-        const { stdout, stderr } = await execAsync(`${nmcli} -t -f SSID,SIGNAL,SECURITY,IN-USE device wifi list`);
+        const { stdout, stderr } = await runSudo([nmcli, '-t', '-f', 'SSID,SIGNAL,SECURITY,IN-USE', 'device', 'wifi', 'list']);
         
         if (stderr) {
           console.error('WiFi scan error:', stderr);
@@ -1111,12 +1127,6 @@ class ApiServerService {
           });
         }
         
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
         let status = {
           connected: false,
           ssid: null,
@@ -1129,114 +1139,90 @@ class ApiServerService {
         
         const nmcli = this.getNmcliPath();
         
-        // Method 1: Check active WiFi connections
         try {
-          const { stdout: activeConnections } = await execAsync(`${nmcli} -t -f NAME,DEVICE,TYPE connection show --active | grep 802-11-wireless`);
+          const { stdout: activeConnections } = await runSudo([nmcli, '-t', '-f', 'NAME,DEVICE,TYPE', 'connection', 'show', '--active']);
+          const wifiLines = (activeConnections || '').split('\n').filter(l => l.includes(':802-11-wireless'));
           
-          if (activeConnections.trim()) {
-            const lines = activeConnections.trim().split('\n');
-            for (const line of lines) {
-              const parts = line.split(':');
-              if (parts.length >= 3 && parts[2] === '802-11-wireless') {
-                status.connected = true;
-                status.connectionName = parts[0];
-                status.device = parts[1];
-                
-                // Get SSID from connection
-                try {
-                  const { stdout: connInfo } = await execAsync(`${nmcli} -t -f 802-11-wireless.ssid connection show "${parts[0]}"`);
-                  const ssidMatch = connInfo.match(/802-11-wireless\.ssid:(.+)/);
-                  if (ssidMatch) {
-                    status.ssid = ssidMatch[1].trim();
-                  } else {
-                    // Fallback: extract SSID from connection name (format: netplan-wlan0-SSID)
-                    const nameMatch = parts[0].match(/netplan-wlan0-(.+)/);
-                    if (nameMatch) {
-                      status.ssid = nameMatch[1];
-                    }
-                  }
-                } catch (err) {
-                  console.error('Error getting SSID from connection:', err);
-                  // Fallback: extract SSID from connection name
+          for (const line of wifiLines) {
+            const parts = line.split(':');
+            if (parts.length >= 3) {
+              status.connected = true;
+              status.connectionName = parts[0];
+              status.device = parts[1];
+              
+              try {
+                const { stdout: connInfo } = await runSudo([nmcli, '-t', '-f', '802-11-wireless.ssid', 'connection', 'show', parts[0]]);
+                const ssidMatch = connInfo.match(/802-11-wireless\.ssid:(.+)/);
+                if (ssidMatch) {
+                  status.ssid = ssidMatch[1].trim();
+                } else {
                   const nameMatch = parts[0].match(/netplan-wlan0-(.+)/);
-                  if (nameMatch) {
-                    status.ssid = nameMatch[1];
-                  }
+                  if (nameMatch) status.ssid = nameMatch[1];
                 }
-                break;
+              } catch (_) {
+                const nameMatch = parts[0].match(/netplan-wlan0-(.+)/);
+                if (nameMatch) status.ssid = nameMatch[1];
               }
+              break;
             }
           }
-        } catch (err) {
-          // If no active connections found, check device status as fallback
+        } catch (_) {
           console.log('No active WiFi connections found, checking device status...');
         }
         
-        // Method 2: Fallback - Check device status directly
         if (!status.connected) {
           try {
-            // First check if wlan0 device exists
             let deviceExists = false;
             try {
-              const { stdout: allDevices } = await execAsync(`${nmcli} -t -f DEVICE device status`);
+              const { stdout: allDevices } = await runSudo([nmcli, '-t', '-f', 'DEVICE', 'device', 'status']);
               if (allDevices.includes('wlan0')) {
                 deviceExists = true;
                 status.deviceAvailable = true;
               }
-            } catch (err) {
-              console.error('Error checking devices:', err);
+            } catch (_) {
+              console.error('Error checking devices:', _);
             }
             
             if (!deviceExists) {
-              // Device not available (unplugged or not present)
               status.device = null;
               status.deviceAvailable = false;
               status.error = 'WiFi device (wlan0) tidak tersedia atau telah di-unplug';
             } else {
-              // Device exists, check status
-              const { stdout: deviceStatus } = await execAsync(`${nmcli} -t -f DEVICE,TYPE,STATE device status | grep "^wlan0:"`);
+              const { stdout: deviceStatus } = await runSudo([nmcli, '-t', '-f', 'DEVICE,TYPE,STATE', 'device', 'status']);
+              const wlan0Line = (deviceStatus || '').split('\n').find(l => l.startsWith('wlan0:'));
               
-              if (deviceStatus.trim()) {
-                const parts = deviceStatus.trim().split(':');
+              if (wlan0Line) {
+                const parts = wlan0Line.split(':');
                 if (parts.length >= 3) {
                   status.device = 'wlan0';
                   
                   if (parts[2] === 'connected') {
                     status.connected = true;
                     
-                    // Get connection name from device
                     try {
-                      const { stdout: deviceInfo } = await execAsync(`${nmcli} -t -f GENERAL.CONNECTION device show wlan0`);
+                      const { stdout: deviceInfo } = await runSudo([nmcli, '-t', '-f', 'GENERAL.CONNECTION', 'device', 'show', 'wlan0']);
                       const connectionMatch = deviceInfo.match(/GENERAL\.CONNECTION:(.+)/);
                       
                       if (connectionMatch) {
                         const connectionName = connectionMatch[1].trim();
                         status.connectionName = connectionName;
                         
-                        // Get SSID from connection
                         try {
-                          const { stdout: connInfo } = await execAsync(`${nmcli} -t -f 802-11-wireless.ssid connection show "${connectionName}"`);
+                          const { stdout: connInfo } = await runSudo([nmcli, '-t', '-f', '802-11-wireless.ssid', 'connection', 'show', connectionName]);
                           const ssidMatch = connInfo.match(/802-11-wireless\.ssid:(.+)/);
                           if (ssidMatch) {
                             status.ssid = ssidMatch[1].trim();
                           } else {
-                            // Fallback: extract from connection name
                             const nameMatch = connectionName.match(/netplan-wlan0-(.+)/);
-                            if (nameMatch) {
-                              status.ssid = nameMatch[1];
-                            }
+                            if (nameMatch) status.ssid = nameMatch[1];
                           }
-                        } catch (err) {
-                          console.error('Error getting SSID:', err);
-                          // Fallback: extract from connection name
+                        } catch (_) {
                           const nameMatch = connectionName.match(/netplan-wlan0-(.+)/);
-                          if (nameMatch) {
-                            status.ssid = nameMatch[1];
-                          }
+                          if (nameMatch) status.ssid = nameMatch[1];
                         }
                       }
-                    } catch (err) {
-                      console.error('Error getting connection name:', err);
+                    } catch (_) {
+                      console.error('Error getting connection name:', _);
                     }
                   } else if (parts[2] === 'unavailable' || parts[2] === 'unmanaged') {
                     status.deviceAvailable = false;
@@ -1252,7 +1238,6 @@ class ApiServerService {
             }
           } catch (err) {
             console.error('Error checking device status:', err);
-            // Check if it's a device not found error
             if (err.message && (err.message.includes('unplug') || err.message.includes('not found') || err.message.includes('No such device'))) {
               status.deviceAvailable = false;
               status.error = 'WiFi device tidak tersedia atau telah di-unplug';
@@ -1290,18 +1275,13 @@ class ApiServerService {
         if (!ssid) {
           return res.status(400).json({ error: 'SSID diperlukan' });
         }
-        
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
+
         const nmcli = this.getNmcliPath();
-        
+        const nmcliArgs = [nmcli];
+
         // Check if WiFi device is available
         try {
-          const { stdout: devices } = await execAsync(`${nmcli} -t -f DEVICE device status`);
+          const { stdout: devices } = await runSudo([...nmcliArgs, '-t', '-f', 'DEVICE', 'device', 'status']);
           if (!devices.includes('wlan0')) {
             return res.status(400).json({ 
               error: 'WiFi device (wlan0) tidak tersedia atau telah di-unplug. Sila pastikan WiFi adapter tersambung.',
@@ -1314,385 +1294,209 @@ class ApiServerService {
             deviceAvailable: false
           });
         }
-        
-        // Escape SSID and password untuk security (handle special characters)
-        const escapedSsid = escapeShellDoubleQuoted(ssid);
-        const escapedPassword = password ? escapeShellDoubleQuoted(password) : '';
 
-        // Generate connection name (remove special chars untuk connection name)
         const connectionName = `netplan-wlan0-${ssid.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
-        
+
         // Delete existing connection with same name if exists
-        try {
-          await execAsync(`sudo ${nmcli} connection delete "${escapedConnectionName}" 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error if connection doesn't exist
-        }
-        
+        try { await runSudo([...nmcliArgs, 'connection', 'delete', connectionName], { allowNonZero: true }); } catch (_) {}
+
         // Disconnect current WiFi connection if any
-        try {
-          await execAsync(`sudo ${nmcli} device disconnect wlan0 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error if no active connection
-        }
-        
-        // Create and connect to WiFi network
-        let command;
+        try { await runSudo([...nmcliArgs, 'device', 'disconnect', 'wlan0'], { allowNonZero: true }); } catch (_) {}
+
+        // Create and connect to WiFi network (args array — no shell injection)
+        const addArgs = ['connection', 'add', 'type', 'wifi', 'con-name', connectionName, 'ifname', 'wlan0', 'ssid', ssid];
         if (password) {
-          // For secured networks: create connection with key-mgmt and password
-          command = `sudo ${nmcli} connection add type wifi con-name "${escapedConnectionName}" ifname wlan0 ssid "${escapedSsid}" wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${escapedPassword}"`;
-        } else {
-          // For open networks: create connection without security
-          command = `sudo ${nmcli} connection add type wifi con-name "${escapedConnectionName}" ifname wlan0 ssid "${escapedSsid}"`;
+          addArgs.push('wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', password);
         }
-        
-        // First, create the connection
-        const { stdout: addStdout, stderr: addStderr } = await execAsync(command);
-        
-        // Remove ANSI escape codes
-        const cleanAddStdout = addStdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        const cleanAddStderr = addStderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        
-        // Check for errors when adding connection
-        if (cleanAddStderr && !cleanAddStderr.includes('successfully') && !cleanAddStderr.includes('Connection')) {
-          if (cleanAddStderr.includes('connection already exists')) {
-            // Connection already exists, try to activate it
+
+        try {
+          const { stdout: addStdout, stderr: addStderr } = await runSudo([...nmcliArgs, ...addArgs]);
+          const cleanAddStdout = addStdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
+          const cleanAddStderr = addStderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
+
+          if (cleanAddStderr && !cleanAddStderr.includes('successfully') && !cleanAddStderr.includes('Connection')) {
+            if (cleanAddStderr.includes('connection already exists')) {
+              console.log('Connection already exists, activating...');
+            } else {
+              console.error('Error adding connection:', cleanAddStderr);
+              return res.status(500).json({ error: cleanAddStderr || 'Gagal menambah connection WiFi' });
+            }
+          }
+        } catch (err) {
+          if (err.stderr && err.stderr.includes('already exists')) {
             console.log('Connection already exists, activating...');
           } else {
-            console.error('Error adding connection:', cleanAddStderr);
-            return res.status(500).json({ error: cleanAddStderr || 'Gagal menambah connection WiFi' });
+            throw err;
           }
         }
-        
-        // Now activate the connection
-        const activateCommand = `sudo ${nmcli} connection up "${escapedConnectionName}"`;
-        const { stdout: activateStdout, stderr: activateStderr } = await execAsync(activateCommand);
-        
-        // Remove ANSI escape codes
+
+        // Activate the connection
+        const { stdout: activateStdout, stderr: activateStderr } = await runSudo([...nmcliArgs, 'connection', 'up', connectionName]);
         const cleanActivateStdout = activateStdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
         const cleanActivateStderr = activateStderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        
-        // Combine output for checking
         const combinedOutput = (cleanActivateStdout + ' ' + cleanActivateStderr).toLowerCase();
-        
-        // Check for permission errors first
+
         if (combinedOutput.includes('insufficient privileges') || 
             combinedOutput.includes('permission denied') ||
             combinedOutput.includes('sudo: a password is required') ||
             combinedOutput.includes('not authorized')) {
           return res.status(500).json({ 
-            error: 'Tidak mempunyai permission. Pastikan user ipray mempunyai sudo privileges tanpa password untuk nmcli commands. Sila setup sudoers file untuk allow nmcli tanpa password.' 
+            error: 'Tidak mempunyai permission. Pastikan user ipray mempunyai sudo privileges tanpa password untuk nmcli commands.'
           });
         }
-        
-        // Check for success messages
+
         if (combinedOutput.includes('successfully') || 
             combinedOutput.includes('connection activated') ||
             combinedOutput.includes('device') && combinedOutput.includes('activated')) {
-          res.json({
-            success: true,
-            message: `Berjaya menyambung ke ${ssid}`,
-            ssid: ssid
-          });
-          return;
+          return res.json({ success: true, message: `Berjaya menyambung ke ${ssid}`, ssid });
         }
-        
-        // Check for specific error messages
+
         if (cleanActivateStderr && !cleanActivateStderr.includes('successfully') && !cleanActivateStderr.includes('Connection activated')) {
-          // Common error messages
           if (cleanActivateStderr.includes('No network with SSID') || cleanActivateStderr.includes('network not found')) {
-            return res.status(400).json({ error: `Network "${ssid}" tidak ditemui. Sila pastikan SSID betul dan dalam range.` });
+            return res.status(400).json({ error: `Network "${ssid}" tidak ditemui.` });
           }
           if (cleanActivateStderr.includes('Secrets were required') || cleanActivateStderr.includes('password required')) {
-            return res.status(400).json({ error: 'Password diperlukan untuk network ini.' });
+            return res.status(400).json({ error: 'Password diperlukan.' });
           }
           if (cleanActivateStderr.includes('802-11-wireless-security') || cleanActivateStderr.includes('key-mgmt')) {
-            return res.status(400).json({ error: 'Password tidak sah atau format security tidak disokong.' });
+            return res.status(400).json({ error: 'Password tidak sah.' });
           }
           if (cleanActivateStderr.includes('connection activation failed')) {
             return res.status(500).json({ error: 'Gagal activate connection. Sila pastikan SSID dan password betul.' });
           }
-          
-          console.error('WiFi connect error:', cleanActivateStderr);
           return res.status(500).json({ error: cleanActivateStderr || 'Gagal menyambung ke WiFi' });
         }
-        
-        // If we reach here, assume success (no error messages found)
-        res.json({
-          success: true,
-          message: `Berjaya menyambung ke ${ssid}`,
-          ssid: ssid
-        });
+
+        res.json({ success: true, message: `Berjaya menyambung ke ${ssid}`, ssid });
       } catch (error) {
         console.error('Error configuring WiFi:', error);
-        
-        // Check for permission errors
         if (error.message && (error.message.includes('Insufficient privileges') || error.message.includes('permission denied'))) {
-          return res.status(500).json({ 
-            error: 'Tidak mempunyai permission. Pastikan user ipray mempunyai sudo privileges tanpa password untuk nmcli commands.' 
-          });
+          return res.status(500).json({ error: 'Tidak mempunyai permission.' });
         }
-        
-        // Auto-fallback to hotspot jika WiFi connection gagal
+
+        // Auto-fallback to hotspot
         console.log('WiFi connection failed, attempting to enable hotspot as fallback...');
         try {
-          const { exec } = require('child_process');
-          const { promisify } = require('util');
-          const execAsync = promisify(exec);
-          
-          const connectionName = 'ipray-hotspot';
-          const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
-
           const nmcli = this.getNmcliPath();
-
-          // Check if hotspot already exists
+          const hotspotName = 'ipray-hotspot';
           let hotspotExists = false;
           try {
-            await execAsync(`${nmcli} -t -f NAME connection show | grep "${connectionName}"`);
-            hotspotExists = true;
-          } catch (err) {
-            // Hotspot doesn't exist, create it
-            const hotspotCommand = `sudo ${nmcli} connection add type wifi ifname wlan0 con-name "${escapedConnectionName}" autoconnect yes ssid "${HOTSPOT_DEFAULTS.SSID}" mode ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${HOTSPOT_DEFAULTS.PASSWORD}" ipv4.method shared`;
-            await execAsync(hotspotCommand);
-            hotspotExists = true;
-          }
-          
+            await runSudo([nmcli, '-t', '-f', 'NAME', 'connection', 'show', '--active'], { allowNonZero: true });
+            try {
+              await runSudo([nmcli, 'connection', 'show', hotspotName], { allowNonZero: true });
+              hotspotExists = true;
+            } catch (_) {
+              await runSudo([nmcli, 'connection', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', hotspotName, 'autoconnect', 'yes', 'ssid', HOTSPOT_DEFAULTS.SSID, 'mode', 'ap', 'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', HOTSPOT_DEFAULTS.PASSWORD, 'ipv4.method', 'shared']);
+              hotspotExists = true;
+            }
+          } catch (_) {}
           if (hotspotExists) {
-            // Activate hotspot
-            await execAsync(`sudo ${nmcli} connection up "${escapedConnectionName}"`);
-            
+            await runSudo([nmcli, 'connection', 'up', hotspotName]);
             return res.status(200).json({
               success: true,
-              message: `WiFi connection gagal. Hotspot "${HOTSPOT_DEFAULTS.SSID}" telah diaktifkan sebagai fallback. Password: ${HOTSPOT_DEFAULTS.PASSWORD}`,
+              message: `WiFi gagal. Hotspot "${HOTSPOT_DEFAULTS.SSID}" diaktifkan. Password: ${HOTSPOT_DEFAULTS.PASSWORD}`,
               fallback: true,
-              hotspot: {
-                ssid: HOTSPOT_DEFAULTS.SSID,
-                password: HOTSPOT_DEFAULTS.PASSWORD
-              }
+              hotspot: { ssid: HOTSPOT_DEFAULTS.SSID, password: HOTSPOT_DEFAULTS.PASSWORD }
             });
           }
-        } catch (hotspotError) {
-          console.error('Error enabling hotspot fallback:', hotspotError);
-          // Continue to return original error
-        }
-        
+        } catch (_) {}
         res.status(500).json({ error: error.message || 'Gagal configure WiFi' });
       }
     });
-    
-    // WiFi Hotspot - Enable hotspot mode (fallback jika WiFi gagal)
+
+    // WiFi Hotspot - Enable hotspot mode
     this.app.post('/api/wifi/hotspot/enable', async (req, res) => {
       try {
-        // Check if running in Raspberry Pi/Linux environment
         const isRPi = await this.isRaspberryPiEnvironment();
-        if (!isRPi) {
-          return res.status(400).json({ 
-            error: 'Hotspot configuration hanya tersedia dalam Raspberry Pi/Linux environment',
-            available: false
-          });
-        }
-        
+        if (!isRPi) return res.status(400).json({ error: 'Hanya untuk Raspberry Pi/Linux', available: false });
+
         const { ssid = HOTSPOT_DEFAULTS.SSID, password = HOTSPOT_DEFAULTS.PASSWORD } = req.body;
-        
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
         const nmcli = this.getNmcliPath();
-        
-        // Check if WiFi device is available
+
         try {
-          const { stdout: devices } = await execAsync(`${nmcli} -t -f DEVICE device status`);
-          if (!devices.includes('wlan0')) {
-            return res.status(400).json({ 
-              error: 'WiFi device (wlan0) tidak tersedia atau telah di-unplug. Sila pastikan WiFi adapter tersambung.',
-              deviceAvailable: false
-            });
-          }
-        } catch (err) {
-          return res.status(400).json({ 
-            error: 'WiFi device tidak tersedia',
-            deviceAvailable: false
-          });
+          const { stdout: devices } = await runSudo([nmcli, '-t', '-f', 'DEVICE', 'device', 'status']);
+          if (!devices.includes('wlan0')) return res.status(400).json({ error: 'WiFi device (wlan0) tidak tersedia.', deviceAvailable: false });
+        } catch (_) {
+          return res.status(400).json({ error: 'WiFi device tidak tersedia', deviceAvailable: false });
         }
-        
-        // Escape SSID and password
-        const escapedSsid = escapeShellDoubleQuoted(ssid);
-        const escapedPassword = escapeShellDoubleQuoted(password);
 
         const connectionName = 'ipray-hotspot';
-        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
-        
-        // Delete existing hotspot connection if exists
-        try {
-          await execAsync(`sudo ${nmcli} connection delete "${escapedConnectionName}" 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error
-        }
-        
-        // Disconnect current WiFi connection
-        try {
-          await execAsync(`sudo ${nmcli} device disconnect wlan0 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error
-        }
-        
-        // Create hotspot connection (access point mode)
-        const command = `sudo ${nmcli} connection add type wifi ifname wlan0 con-name "${escapedConnectionName}" autoconnect yes ssid "${escapedSsid}" mode ap wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${escapedPassword}" ipv4.method shared`;
-        
-        const { stdout: addStdout, stderr: addStderr } = await execAsync(command);
-        
-        // Remove ANSI escape codes
+
+        try { await runSudo([nmcli, 'connection', 'delete', connectionName], { allowNonZero: true }); } catch (_) {}
+        try { await runSudo([nmcli, 'device', 'disconnect', 'wlan0'], { allowNonZero: true }); } catch (_) {}
+
+        const { stdout: addStdout, stderr: addStderr } = await runSudo([
+          nmcli, 'connection', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', connectionName,
+          'autoconnect', 'yes', 'ssid', ssid, 'mode', 'ap',
+          'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', password,
+          'ipv4.method', 'shared'
+        ]);
         const cleanAddStdout = addStdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
         const cleanAddStderr = addStderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        
-        // Check for errors
         if (cleanAddStderr && !cleanAddStdout.includes('successfully')) {
-          console.error('Error creating hotspot:', cleanAddStderr);
           return res.status(500).json({ error: cleanAddStderr || 'Gagal create hotspot' });
         }
-        
-        // Activate hotspot
-        const activateCommand = `sudo ${nmcli} connection up "${escapedConnectionName}"`;
-        const { stdout: activateStdout, stderr: activateStderr } = await execAsync(activateCommand);
-        
-        // Remove ANSI escape codes
-        const cleanActivateStdout = activateStdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        const cleanActivateStderr = activateStderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
-        
-        const combinedOutput = (cleanActivateStdout + ' ' + cleanActivateStderr).toLowerCase();
-        
-        if (combinedOutput.includes('successfully') || combinedOutput.includes('activated')) {
-          res.json({
-            success: true,
-            message: `Hotspot "${ssid}" telah diaktifkan`,
-            ssid: ssid,
-            password: password
-          });
+
+        const activateResult = await runSudo([nmcli, 'connection', 'up', connectionName]);
+        const cleanActivateStdout = activateResult.stdout.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
+        const cleanActivateStderr = activateResult.stderr.replace(/\x1B\[[0-9;]*[JKmsu]/g, '').trim();
+        const combined = (cleanActivateStdout + ' ' + cleanActivateStderr).toLowerCase();
+
+        if (combined.includes('successfully') || combined.includes('activated')) {
+          res.json({ success: true, message: `Hotspot "${ssid}" telah diaktifkan`, ssid, password });
         } else {
-          console.error('Error activating hotspot:', cleanActivateStderr);
           res.status(500).json({ error: cleanActivateStderr || 'Gagal activate hotspot' });
         }
       } catch (error) {
-        console.error('Error enabling hotspot:', error);
         res.status(500).json({ error: error.message || 'Gagal enable hotspot' });
       }
     });
-    
+
     // WiFi Hotspot - Disable hotspot mode
     this.app.post('/api/wifi/hotspot/disable', async (req, res) => {
       try {
-        // Check if running in Raspberry Pi/Linux environment
         const isRPi = await this.isRaspberryPiEnvironment();
-        if (!isRPi) {
-          return res.json({
-            success: true,
-            message: 'Hotspot configuration hanya tersedia dalam Raspberry Pi/Linux environment',
-            available: false
-          });
-        }
-        
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
+        if (!isRPi) return res.json({ success: true, message: 'Hanya untuk Raspberry Pi/Linux', available: false });
+
         const nmcli = this.getNmcliPath();
         const connectionName = 'ipray-hotspot';
-        const escapedConnectionName = escapeShellDoubleQuoted(connectionName);
 
-        // Disconnect hotspot
-        try {
-          await execAsync(`sudo ${nmcli} connection down "${escapedConnectionName}" 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error
-        }
-        
-        // Delete hotspot connection
-        try {
-          await execAsync(`sudo ${nmcli} connection delete "${escapedConnectionName}" 2>/dev/null || true`);
-        } catch (err) {
-          // Ignore error
-        }
-        
-        res.json({
-          success: true,
-          message: 'Hotspot telah dinyahaktifkan'
-        });
+        try { await runSudo([nmcli, 'connection', 'down', connectionName], { allowNonZero: true }); } catch (_) {}
+        try { await runSudo([nmcli, 'connection', 'delete', connectionName], { allowNonZero: true }); } catch (_) {}
+
+        res.json({ success: true, message: 'Hotspot telah dinyahaktifkan' });
       } catch (error) {
-        console.error('Error disabling hotspot:', error);
         res.status(500).json({ error: error.message || 'Gagal disable hotspot' });
       }
     });
-    
+
     // WiFi Hotspot - Get hotspot status
     this.app.get('/api/wifi/hotspot/status', async (req, res) => {
       try {
-        // Check if running in Raspberry Pi/Linux environment
         const isRPi = await this.isRaspberryPiEnvironment();
-        if (!isRPi) {
-          return res.json({
-            success: true,
-            status: {
-              enabled: false,
-              ssid: null,
-              connectionName: null,
-              available: false,
-              message: 'Hotspot configuration hanya tersedia dalam Raspberry Pi/Linux environment'
-            }
-          });
-        }
-        
-        const { exec } = require('child_process');
-        const { promisify } = require('util');
-        const _execRaw = promisify(exec);
-        // Timeout 15s untuk semua nmcli calls — elak request stuck selama-lamanya
-        const execAsync = (cmd, opts) => _execRaw(cmd, { timeout: 15000, ...opts });
-        
+        if (!isRPi) return res.json({ success: true, status: { enabled: false, ssid: null, connectionName: null, available: false, message: 'Hanya untuk Raspberry Pi/Linux' } });
+
         const nmcli = this.getNmcliPath();
-        let status = {
-          enabled: false,
-          ssid: null,
-          connectionName: null,
-          available: true
-        };
-        
+        let status = { enabled: false, ssid: null, connectionName: null, available: true };
+
         try {
-          const { stdout } = await execAsync(`${nmcli} -t -f NAME,TYPE connection show | grep ipray-hotspot`);
-          if (stdout.trim()) {
-            const parts = stdout.trim().split(':');
-            if (parts.length >= 2) {
-              status.connectionName = parts[0];
-              
-              // Check if connection is active
-              try {
-                const { stdout: activeConnections } = await execAsync(`${nmcli} -t -f NAME connection show --active`);
-                if (activeConnections.includes(status.connectionName)) {
-                  status.enabled = true;
-                  
-                  // Get SSID from connection
-                  try {
-                    const { stdout: connInfo } = await execAsync(`${nmcli} -t -f 802-11-wireless.ssid connection show "${status.connectionName}"`);
-                    const ssidMatch = connInfo.match(/802-11-wireless\.ssid:(.+)/);
-                    if (ssidMatch) {
-                      status.ssid = ssidMatch[1].trim();
-                    }
-                  } catch (err) {
-                    // Ignore error
-                  }
-                }
-              } catch (err) {
-                // Ignore error
+          const { stdout } = await runSudo([nmcli, '-t', '-f', 'NAME,TYPE', 'connection', 'show'], { allowNonZero: true });
+          const line = (stdout || '').split('\n').find(l => l.startsWith('ipray-hotspot:'));
+          if (line) {
+            status.connectionName = 'ipray-hotspot';
+            try {
+              const { stdout: active } = await runSudo([nmcli, '-t', '-f', 'NAME', 'connection', 'show', '--active'], { allowNonZero: true });
+              if (active.includes('ipray-hotspot')) {
+                status.enabled = true;
+                try {
+                  const { stdout: connInfo } = await runSudo([nmcli, '-t', '-f', '802-11-wireless.ssid', 'connection', 'show', 'ipray-hotspot'], { allowNonZero: true });
+                  const match = connInfo.match(/802-11-wireless\.ssid:(.+)/);
+                  if (match) status.ssid = match[1].trim();
+                } catch (_) {}
               }
-            }
+            } catch (_) {}
           }
-        } catch (err) {
-          // Hotspot connection doesn't exist
-        }
+        } catch (_) {}
         
         res.json({
           success: true,

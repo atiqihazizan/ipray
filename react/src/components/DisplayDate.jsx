@@ -39,10 +39,7 @@ const DisplayDate = ({
   // Format hari - guna dayFormatted jika ada (2 digit), jika tidak guna padZero
   const daySingle = dateData.dayFormatted || (dateData.day < 10 ? `0${dateData.day}` : `${dateData.day}`);
 
-  // Pendekkan nama bulan kepada 3 huruf pertama hanya untuk gregorian, hijri tetap full
-  const displayMonthName = dateType === 'hijri' 
-    ? dateData.monthName 
-    : dateData.monthName;
+  const displayMonthName = dateData.monthName;
 
   const getStyle = () => {
     return {

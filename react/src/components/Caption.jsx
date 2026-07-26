@@ -93,10 +93,9 @@ const Caption = ({ caption }) => {
     
     // Tambah cache-busting untuk images yang bukan default (untuk force reload selepas upload)
     if (imageSrc && imageSrc !== DEFAULT_PENCERAMAH_IMAGE && !imageSrc.includes('Random_user.svg')) {
-      // Tambah timestamp query parameter untuk cache-bust jika belum ada
-      if (!imageSrc.includes('?t=')) {
+      if (!imageSrc.includes('?cb=')) {
         const separator = imageSrc.includes('?') ? '&' : '?';
-        imageSrc = `${imageSrc}${separator}t=${Date.now()}`;
+        imageSrc = `${imageSrc}${separator}cb=${import.meta.env.VITE_APP_VERSION || '1'}`;
       }
     }
     

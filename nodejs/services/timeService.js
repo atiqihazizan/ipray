@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const { syncTimeWithRetry } = require('../utils/ntpClient');
 
 /**
@@ -108,7 +108,7 @@ class TimeService {
         String(d.getHours()).padStart(2, '0') + ':' +
         String(d.getMinutes()).padStart(2, '0') + ':' +
         String(d.getSeconds()).padStart(2, '0');
-      execSync(`sudo date -s "${str}"`, { stdio: 'pipe', timeout: 5000 });
+      spawnSync('sudo', ['date', '-s', str], { stdio: 'pipe', timeout: 5000 });
       this.systemClockSet = true;
       return true;
     } catch (e) {
