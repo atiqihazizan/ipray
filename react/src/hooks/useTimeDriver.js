@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { getCurrentIslamicTime } from '../utils/islamicTimeUtils';
 import { useTakwimData } from './useTakwimData';
 import { useData } from '../contexts/DataContext';
@@ -36,20 +36,17 @@ function savePrayerTimesForToday(todayStr, timesObj) {
  * Hook untuk driver masa — satu interval sahaja, fokus pada time.
  * Setiap tick: update time, dispatch time-update (flag/data pada window event), dan dispatch event lain (hijri, prayer, midnight).
  * Panggil hook ini di SATU tempat sahaja (e.g. komponen TimeDriver) supaya hanya satu interval wujud.
- * @returns {Object} { time, loading, snapshot, zone }
+ * @returns {Object} { loading, zone }
  */
 export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
   const { timeService, PRAYER_TIME_CONFIG } = useData();
-  const [time, setTime] = useState(null);
-  const [snapshot, setSnapshot] = useState(null);
   // Simpan config dalam ref supaya perubahan config tidak restart interval setiap kali
   const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
   useEffect(() => { prayerTimeConfigRef.current = PRAYER_TIME_CONFIG; }, [PRAYER_TIME_CONFIG]);
   const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
   const warningSecondsRef = useRef(warningSeconds);
   useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
-  const snapshotSetRef = useRef(false);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
   const lastSavedTimesRef = useRef('');
@@ -74,17 +71,11 @@ export function useTimeDriver() {
         });
         if (!islamicTime) return;
 
-        setTime(islamicTime.time);
-
         const snapshotData = {
           gregorian: islamicTime.gregorian,
           hijri: islamicTime.hijri,
           prayer: islamicTime.prayer
         };
-        if (!snapshotSetRef.current) {
-          snapshotSetRef.current = true;
-          setSnapshot(snapshotData);
-        }
 
         dispatchTimeUpdate({ time: islamicTime.time, snapshot: snapshotData });
 
@@ -199,9 +190,7 @@ export function useTimeDriver() {
   }, [takwimParsed, timeService]);
 
   return {
-    time,
     loading: takwimLoading,
-    snapshot,
     zone: takwimParsed?.zone || ''
   };
 }
