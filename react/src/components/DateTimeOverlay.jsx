@@ -110,10 +110,13 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             <div className={`flex justify-between items-center`}>
               <div className="flex gap-[20px]">
                 {OVERLAY_PRAYER_TIMES.map((waktu, index) => (
-                  <DisplayTime key={index} type={2} label={waktu.label} size={95} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={39} labelColor={prayerTimeColor} prayerName={waktu.prayerName} nextPrayerName={nextPrayerName} style={{ position: 'relative' }} />
+                  <DisplayTime key={index} type={2} label={waktu.label} size={95} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={39} labelColor={prayerTimeColor} prayerName={waktu.prayerName} nextPrayerName={nextPrayerName}
+                    elementId={`ipray-time-${waktu.prayerName.toLowerCase()}`}
+                    labelElementId={`ipray-label-${waktu.prayerName.toLowerCase()}`}
+                    style={{ position: 'relative' }} />
                 ))}
               </div>
-              <DisplayTime type={1} size={148} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{ borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem', ...STANDARD_DARK_BACKGROUND_STYLE, position: 'relative' }} />
+              <DisplayTime type={1} elementId="ipray-clock" size={148} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{ borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem', ...STANDARD_DARK_BACKGROUND_STYLE, position: 'relative' }} />
             </div>
           )}
         
@@ -121,6 +124,8 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             {showOverlay('solat-time-small') && nextPrayerData && (
                 <div style={{ clipPath: 'polygon(80% 0, 100% 25%, 100% 100%, 0 100%, 0 0)', ...STANDARD_DARK_BACKGROUND_STYLE, padding: '0' }}>
                     <DisplayTime key="next-solat" type={3} label={nextPrayerData.next} nextPrayerTime={nextPrayerData.nextTime} nextPrayerName={nextPrayerName} size={70} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={20} labelColor={prayerTimeColor}
+                      elementId="ipray-next-time"
+                      labelElementId="ipray-next-name"
                       style={{ position: 'relative'}} />
                 </div>
               )}
@@ -130,7 +135,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             </div>
 
             {showOverlay('solat-time-small')  && nextPrayerData && (
-              <DisplayTime key="clock-small" type={1} size={100} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{
+              <DisplayTime key="clock-small" type={1} elementId="ipray-clock-sm" size={100} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{
                 bottom: 0, right: 0, padding: '14px', paddingLeft: '1.5rem', position: 'relative',
                 clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%', ...STANDARD_DARK_BACKGROUND_STYLE
               }} />

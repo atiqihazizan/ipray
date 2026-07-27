@@ -1,4 +1,4 @@
-import { memo, useRef, useEffect } from 'react';
+import { memo } from 'react';
 import { useDisplayTime } from '../hooks/useDisplayTime';
 import { useData } from '../contexts/DataContext';
 import {
@@ -28,6 +28,8 @@ const DisplayTime = ({
   nextPrayerName = null,
   // Next prayer time props (untuk type=3)
   nextPrayerTime = null,
+  elementId = null,      // id untuk time text div
+  labelElementId = null, // id untuk label div
   // Type: 1 = clock/masa semasa, 2 = waktu solat, 3 = next solat
   type = 1,
   // Caption attributes
@@ -40,24 +42,6 @@ const DisplayTime = ({
 }) => {
   // Get config from context
   const { COLOR_CONFIG } = useData();
-
-  // Type=1 (current clock): update DOM directly, bypass React re-render
-  const clockRef = useRef(null);
-  useEffect(() => {
-    if (type !== 1) return;
-    const handler = (e) => {
-      if (!clockRef.current) return;
-      const t = e.detail?.time ?? window.data_ipray?.time;
-      if (!t) return;
-      const h = format === '12h' ? (t.hours % 12 || 12) : t.hours;
-      const m = String(t.minutes).padStart(2, '0');
-      const s = showSeconds ? `:${String(t.seconds).padStart(2, '0')}` : '';
-      const ampm = (format === '12h' && showAmPm) ? ` ${t.hours >= 12 ? 'PM' : 'AM'}` : '';
-      clockRef.current.textContent = `${h}:${m}${s}${ampm}`;
-    };
-    window.addEventListener('time-update', handler);
-    return () => window.removeEventListener('time-update', handler);
-  }, [type, format, showSeconds, showAmPm]);
 
   // Tentukan isCurrentTime berdasarkan type
   const isCurrentTimeMode = type === 1;
@@ -103,8 +87,8 @@ const DisplayTime = ({
 
   return (
     <div {...attrs} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>
-      {label && <div style={labelStyle}>{label}</div>}
-      <div ref={type === 1 ? clockRef : null} style={timeTextStyle}>
+      {label && <div id={labelElementId || undefined} style={labelStyle}>{label}</div>}
+      <div id={elementId || undefined} style={timeTextStyle}>
         {type === 1 ? (displayTime || '') : formatTimeWithBlink()}
       </div>
     </div>

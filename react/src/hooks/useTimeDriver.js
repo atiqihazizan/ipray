@@ -46,7 +46,7 @@ const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang +
  */
 export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
-  const { timeService, PRAYER_TIME_CONFIG } = useData();
+  const { timeService, PRAYER_TIME_CONFIG, COLOR_CONFIG } = useData();
   // No React state — data goes to window.data_ipray
   // Simpan config dalam ref supaya perubahan config tidak restart interval setiap kali
   const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
@@ -54,6 +54,8 @@ export function useTimeDriver() {
   const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
   const warningSecondsRef = useRef(warningSeconds);
   useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
+  const colorConfigRef = useRef(COLOR_CONFIG);
+  useEffect(() => { colorConfigRef.current = COLOR_CONFIG; }, [COLOR_CONFIG]);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
   const lastSavedTimesRef = useRef('');
@@ -63,6 +65,21 @@ export function useTimeDriver() {
   const syurukTriggeredRef = useRef({});
   // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
   const lastCleanDateRef = useRef('');
+
+  const PRAYER_IDS = ['subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
+
+  function fmt12h(t) {
+    if (!t) return '';
+    const h = t.hours % 12 || 12;
+    const m = String(t.minutes).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function fmtPrayerTime12h(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')}`;
+  }
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
@@ -101,6 +118,46 @@ export function useTimeDriver() {
         };
 
         dispatchTimeUpdate({ time: islamicTime.time, snapshot: snapshotData });
+
+        // --- DOM UPDATE VIA ID ---
+        try {
+          const colorConfig = colorConfigRef.current;
+          const nextPrayer = islamicTime.prayer?.next?.toLowerCase();
+          const prayerTimes = islamicTime.prayer?.times;
+          const nextColor = colorConfig?.NEXT_PRAYER ?? '#FFD700';
+          const defaultColor = colorConfig?.DEFAULT ?? '#FFFF00';
+
+          const clockEl = document.getElementById('ipray-clock');
+          if (clockEl) clockEl.textContent = fmt12h(islamicTime.time);
+
+          const clockSmEl = document.getElementById('ipray-clock-sm');
+          if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
+
+          for (const name of PRAYER_IDS) {
+            const isNext = nextPrayer === name;
+            const labelEl = document.getElementById(`ipray-label-${name}`);
+            const timeEl = document.getElementById(`ipray-time-${name}`);
+            if (labelEl) labelEl.style.color = isNext ? nextColor : defaultColor;
+            if (timeEl) timeEl.style.color = isNext ? nextColor : '';
+          }
+
+          const nextNameEl = document.getElementById('ipray-next-name');
+          if (nextNameEl && islamicTime.prayer?.next) {
+            const n = islamicTime.prayer.next;
+            nextNameEl.textContent = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+          }
+
+          const nextTimeEl = document.getElementById('ipray-next-time');
+          if (nextTimeEl && nextPrayer && prayerTimes) {
+            const capitalNext = nextPrayer.charAt(0).toUpperCase() + nextPrayer.slice(1);
+            const tStr = fmtPrayerTime12h(prayerTimes[capitalNext]);
+            if (tStr) {
+              const [hPart, mPart] = tStr.split(':');
+              nextTimeEl.innerHTML = `${hPart}<span class="ipray-blink-colon">:</span>${mPart}`;
+            }
+          }
+        } catch (domErr) {
+        }
 
         const { time: t, hijri, gregorian, prayer } = islamicTime;
 
