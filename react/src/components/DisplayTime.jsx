@@ -52,7 +52,7 @@ const DisplayTime = ({
   // Jika type 2 atau 3, pastikan isCurrentTime = false
   const effectiveIsCurrentTime = isCurrentTimeMode ? isCurrentTime : false;
   
-  const { blink, loading, displayTime, effectiveIsPrayerTime, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, effectiveShouldBlink, isNextPrayer, effectiveIsSyurukInFirst10Sec } = useDisplayTime({
+  const { blink, /* loading, */ displayTime, effectiveIsPrayerTime, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, effectiveShouldBlink, isNextPrayer, effectiveIsSyurukInFirst10Sec } = useDisplayTime({
     format,
     showSeconds,
     showAmPm,

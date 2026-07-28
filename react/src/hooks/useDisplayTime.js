@@ -222,14 +222,14 @@ export const useDisplayTime = ({
     prayerName?.toLowerCase() === nextPrayerName.toLowerCase();
 
   return {
-    time: formattedTime,
-    currentTime: islamicTime?.time || null,
-    prayerTime: prayerTimeValue,
+    // time: formattedTime,        // tidak digunakan oleh caller
+    // currentTime: islamicTime?.time || null, // tidak digunakan oleh caller
+    // prayerTime: prayerTimeValue, // tidak digunakan oleh caller
     blink: (shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyurukBeepBlink) ? blink : true,
-    shouldBlink: shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyurukBeepBlink,
-    isPrayerTime,
-    isInPrayerMinute,
-    is30SecondsBeforePrayer,
+    // shouldBlink: shouldBlink || isPrayerTime || use30sBeforeForBlink || useSyurukBeepBlink, // tidak digunakan oleh caller
+    // isPrayerTime,               // tidak digunakan oleh caller
+    // isInPrayerMinute,           // tidak digunakan oleh caller
+    // is30SecondsBeforePrayer,    // tidak digunakan oleh caller
     loading,
     displayTime,
     effectiveIsPrayerTime,
