@@ -30,6 +30,7 @@ const DisplayTime = ({
   nextPrayerTime = null,
   elementId = null,      // id untuk time text div
   labelElementId = null, // id untuk label div
+  wrapperId = null,      // id untuk outer wrapper div
   // Type: 1 = clock/masa semasa, 2 = waktu solat, 3 = next solat
   type = 1,
   // Caption attributes
@@ -58,7 +59,8 @@ const DisplayTime = ({
     isCurrentTime: effectiveIsCurrentTime,
     prayerName: isPrayerTimeMode ? prayerName : (isNextPrayerMode ? label : null),
     nextPrayerTime: isNextPrayerMode ? nextPrayerTime : null,
-    nextPrayerName: isPrayerTimeMode ? nextPrayerName : null
+    nextPrayerName: isPrayerTimeMode ? nextPrayerName : null,
+    disablePrayerTracking: isPrayerTimeMode || isNextPrayerMode
   });
 
   const formatTimeWithBlink = () => {
@@ -86,7 +88,7 @@ const DisplayTime = ({
   const timeTextStyle = getDisplayTimeTextStyle({ isNextPrayer, effectiveIsInPrayerMinute, effectiveIs30SecondsBeforePrayer, type, effectiveIsSyurukInFirst10Sec, effectiveIsPrayerTime, COLOR_CONFIG });
 
   return (
-    <div {...attrs} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>
+    <div {...attrs} id={wrapperId || undefined} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>
       {label && <div id={labelElementId || undefined} style={labelStyle}>{label}</div>}
       <div id={elementId || undefined} style={timeTextStyle}>
         {type === 1 ? (displayTime || '') : formatTimeWithBlink()}

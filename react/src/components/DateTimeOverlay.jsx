@@ -111,6 +111,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
               <div className="flex gap-[20px]">
                 {OVERLAY_PRAYER_TIMES.map((waktu, index) => (
                   <DisplayTime key={index} type={2} label={waktu.label} size={95} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={39} labelColor={prayerTimeColor} prayerName={waktu.prayerName} nextPrayerName={nextPrayerName}
+                    wrapperId={`ipray-wrap-${waktu.prayerName.toLowerCase()}`}
                     elementId={`ipray-time-${waktu.prayerName.toLowerCase()}`}
                     labelElementId={`ipray-label-${waktu.prayerName.toLowerCase()}`}
                     style={{ position: 'relative' }} />

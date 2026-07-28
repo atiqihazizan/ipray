@@ -8,7 +8,8 @@ import {
   dispatchPrayerWarning,
   dispatchPrayerTime,
   dispatchSyurukTime,
-  dispatchDateChanged
+  dispatchDateChanged,
+  TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { logKioskEvent } from '../services/clientLogger';
@@ -56,6 +57,8 @@ export function useTimeDriver() {
   useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
   const colorConfigRef = useRef(COLOR_CONFIG);
   useEffect(() => { colorConfigRef.current = COLOR_CONFIG; }, [COLOR_CONFIG]);
+  const isSyurukBeepBlinkingRef = useRef(false);
+  const blinkToggleRef = useRef(true);
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
   const lastSavedTimesRef = useRef('');
@@ -80,6 +83,17 @@ export function useTimeDriver() {
     const [h, m] = timeStr.split(':').map(Number);
     return `${h % 12 || 12}:${String(m).padStart(2, '0')}`;
   }
+
+  useEffect(() => {
+    const onStart = () => { isSyurukBeepBlinkingRef.current = true; };
+    const onStop = () => { isSyurukBeepBlinkingRef.current = false; };
+    window.addEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
+    window.addEventListener(TIME_EVENTS.SYURUK_BEEP_STOP, onStop);
+    return () => {
+      window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
+      window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_STOP, onStop);
+    };
+  }, []);
 
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
@@ -133,12 +147,62 @@ export function useTimeDriver() {
           const clockSmEl = document.getElementById('ipray-clock-sm');
           if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
 
+          blinkToggleRef.current = !blinkToggleRef.current;
+          const blink = blinkToggleRef.current;
+
+          const warningSecs = warningSecondsRef.current;
+          const t = islamicTime.time;
+          const currentTotalSec = t.hours * 3600 + t.minutes * 60 + t.seconds;
+          const warningColor = colorConfig?.WARNING_PRAYER ?? '#FF6600';
+
           for (const name of PRAYER_IDS) {
+            const capitalName = name.charAt(0).toUpperCase() + name.slice(1);
+            const timeStr = prayerTimes?.[capitalName];
+            const isSyuruk = name === 'syuruk';
+
+            let isPrayerExactTime = false;
+            let isInPrayerMinute = false;
+            let is30SecBefore = false;
+
+            if (timeStr) {
+              const [ph, pm] = timeStr.split(':').map(Number);
+              const prayerTotalSec = ph * 3600 + pm * 60;
+              isPrayerExactTime = currentTotalSec === prayerTotalSec;
+              isInPrayerMinute = currentTotalSec >= prayerTotalSec && currentTotalSec < prayerTotalSec + 60;
+              is30SecBefore = !isSyuruk && currentTotalSec >= prayerTotalSec - warningSecs && currentTotalSec < prayerTotalSec;
+            }
+
+            const isSyurukBeeping = isSyuruk && isSyurukBeepBlinkingRef.current;
             const isNext = nextPrayer === name;
+
+            let labelColor, timeColor;
+            if (isSyurukBeeping || (!isSyuruk && (isInPrayerMinute || is30SecBefore))) {
+              labelColor = warningColor;
+              timeColor = warningColor;
+            } else if (isNext) {
+              labelColor = nextColor;
+              timeColor = nextColor;
+            } else {
+              labelColor = defaultColor;
+              timeColor = '';
+            }
+
             const labelEl = document.getElementById(`ipray-label-${name}`);
             const timeEl = document.getElementById(`ipray-time-${name}`);
-            if (labelEl) labelEl.style.color = isNext ? nextColor : defaultColor;
-            if (timeEl) timeEl.style.color = isNext ? nextColor : '';
+            if (labelEl) labelEl.style.color = labelColor;
+            if (timeEl) timeEl.style.color = timeColor;
+
+            const wrapEl = document.getElementById(`ipray-wrap-${name}`);
+            if (wrapEl) {
+              const shouldBlink = isPrayerExactTime || is30SecBefore || isSyurukBeeping;
+              if (shouldBlink) {
+                wrapEl.style.opacity = blink ? '1' : '0';
+                wrapEl.style.transition = 'opacity 0.35s ease';
+              } else {
+                wrapEl.style.opacity = '1';
+                wrapEl.style.transition = '';
+              }
+            }
           }
 
           const nextNameEl = document.getElementById('ipray-next-name');

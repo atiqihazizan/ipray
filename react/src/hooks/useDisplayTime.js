@@ -30,7 +30,8 @@ export const useDisplayTime = ({
   isCurrentTime = true,
   prayerName = null,
   nextPrayerTime = null,
-  nextPrayerName = null
+  nextPrayerName = null,
+  disablePrayerTracking = false
 }) => {
   const { islamicTime, loading } = useIslamicTime();
   const { PRAYER_TIME_CONFIG } = useData();
@@ -48,7 +49,7 @@ export const useDisplayTime = ({
   });
 
   useEffect(() => {
-    if (!prayerName || isCurrentTime) return;
+    if (!prayerName || isCurrentTime || disablePrayerTracking) return;
     const handler = () => {
       const t = window.data_ipray?.time;
       const times = window.data_ipray?.snapshot?.prayer?.times;
@@ -74,7 +75,7 @@ export const useDisplayTime = ({
     };
     window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
     return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
-  }, [prayerName, isCurrentTime, warningSeconds]);
+  }, [prayerName, isCurrentTime, warningSeconds, disablePrayerTracking]);
 
   const { isPrayerTime, isInPrayerMinute, is30SecondsBeforePrayer } = prayerHighlight;
 
@@ -84,6 +85,7 @@ export const useDisplayTime = ({
   const useSyurukBeepBlink = isSyuruk && isSyurukBeepBlinking;
 
   useEffect(() => {
+    if (disablePrayerTracking) return;
     const onStart = () => setIsSyurukBeepBlinking(true);
     const onStop = () => setIsSyurukBeepBlinking(false);
     window.addEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
@@ -92,7 +94,7 @@ export const useDisplayTime = ({
       window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
       window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_STOP, onStop);
     };
-  }, []);
+  }, [disablePrayerTracking]);
 
   // Kelipan: driven oleh event time-update. Syuruk: blink sepanjang beep.wav dimainkan; lain: 30s sebelum + masuk waktu.
   useEffect(() => {
