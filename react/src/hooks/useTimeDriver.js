@@ -254,6 +254,25 @@ export function useTimeDriver() {
               nextTimeEl.innerHTML = `${hPart}<span class="ipray-blink-colon">:</span>${mPart}`;
             }
           }
+
+          const g = islamicTime.gregorian;
+          if (g) {
+            const gDay = g.dayFormatted || (g.day < 10 ? `0${g.day}` : `${g.day}`);
+            const setG = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setG('ipray-date-g-day', gDay);
+            setG('ipray-date-g-dayname', g.dayName);
+            setG('ipray-date-g-month', g.monthName);
+            setG('ipray-date-g-year', g.year);
+          }
+
+          const h = islamicTime.hijri;
+          if (h) {
+            const hDay = h.day < 10 ? `0${h.day}` : `${h.day}`;
+            const setH = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setH('ipray-date-h-day', hDay);
+            setH('ipray-date-h-month', h.monthName);
+            setH('ipray-date-h-year', h.year);
+          }
         } catch (domErr) {
         }
 
