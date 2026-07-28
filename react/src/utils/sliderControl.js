@@ -9,7 +9,11 @@ let _externalPause = false;
 
 export function sliderInit(instance) {
   _instance = instance || null;
-  _externalPause = false;
+  // _externalPause kekal — tidak reset bila instance berubah
+  // Jika pause masih aktif, pause instance baru serta-merta
+  if (_externalPause && _instance && typeof _instance.$Pause === 'function') {
+    try { _instance.$Pause(); } catch (_) {}
+  }
 }
 
 export function sliderPause() {
