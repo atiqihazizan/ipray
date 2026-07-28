@@ -149,7 +149,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // Apabila countdown = 0: play beep, tunggu beep habis, BARU tukar ke iqamah
   useEffect(() => {
     if (screen !== 'azan') return;
-    clearTimer();
+    // clearTimer();
     clearBeep();
 
     const handler = () => {
@@ -183,7 +183,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // Screen IQAMAH: countdown dari config (baca dari ref, bukan state — elak restart bila config berubah)
   useEffect(() => {
     if (screen !== 'iqamah') return;
-    clearTimer();
+    // clearTimer();
 
     const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60));
     const startTime = timeService?.now ? timeService.now() : Date.now();
@@ -209,7 +209,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // Screen SOLAT: countdown dari config, kemudian safe reload
   useEffect(() => {
     if (screen !== 'solat') return;
-    clearTimer();
+    // clearTimer();
     clearSafeReloadTimer();
 
     const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60));
