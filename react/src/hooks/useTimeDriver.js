@@ -142,11 +142,11 @@ export function useTimeDriver() {
           const nextColor = colorConfig?.NEXT_PRAYER ?? '#FFD700';
           const defaultColor = colorConfig?.DEFAULT ?? '#FFFF00';
 
-          const clockEl = document.getElementById('ipray-clock');
-          if (clockEl) clockEl.textContent = fmt12h(islamicTime.time);
-
-          const clockSmEl = document.getElementById('ipray-clock-sm');
-          if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
+          // const clockEl = document.getElementById('ipray-clock');
+          // if (clockEl) clockEl.textContent = fmt12h(islamicTime.time);
+          //
+          // const clockSmEl = document.getElementById('ipray-clock-sm');
+          // if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
 
           blinkToggleRef.current = !blinkToggleRef.current;
           const blink = blinkToggleRef.current;
