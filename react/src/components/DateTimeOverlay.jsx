@@ -145,6 +145,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             hourId="ipray-clock-h"
             minuteId="ipray-clock-m"
             format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor}
+            size={showOverlay('solat-time') ? 148 : 100}
             className={showOverlay('solat-time') ? 'ipray-clock-lg' : 'ipray-clock-sm'}
             style={{ ...STANDARD_DARK_BACKGROUND_STYLE }} />
         )}

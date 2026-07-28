@@ -424,14 +424,12 @@ body {
 }
 
 .ipray-clock-lg {
-  font-size: 148px;
   padding: 4px 18px 17px 1.5rem;
   border-top-left-radius: 10px;
   position: relative;
 }
 
 .ipray-clock-sm {
-  font-size: 100px;
   padding: 14px;
   padding-left: 1.5rem;
   clip-path: polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%);
