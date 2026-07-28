@@ -7,6 +7,7 @@ import { useSlides } from '../hooks/useSlides';
 import { useTakwimData } from '../hooks/useTakwimData';
 import { useData } from '../contexts/DataContext';
 import socketService from '../services/socketService';
+import { sliderPlay } from '../utils/sliderControl';
 
 const SliderPage = ({ onReady }) => {
   const { slideData, loading: slidesLoading } = useSlides();
@@ -82,11 +83,7 @@ const SliderPage = ({ onReady }) => {
       if (resumeAtMs != null && resumeAtMs > 0 && resumeTimerRef.current === null) {
         resumeTimerRef.current = setTimeout(() => {
           resumeTimerRef.current = null;
-          if (sliderRef.current && typeof sliderRef.current.$Play === 'function') {
-            try {
-              sliderRef.current.$Play();
-            } catch (e) {}
-          }
+          sliderPlay();
         }, resumeAtMs);
       }
     } else {
@@ -94,10 +91,7 @@ const SliderPage = ({ onReady }) => {
         clearTimeout(resumeTimerRef.current);
         resumeTimerRef.current = null;
       }
-      if (!sliderRef.current) return;
-      try {
-        if (typeof sliderRef.current.$Play === 'function') sliderRef.current.$Play();
-      } catch (e) {}
+      sliderPlay();
     }
   }, [sliderState, sliderRef]);
 
@@ -124,11 +118,7 @@ const SliderPage = ({ onReady }) => {
         slider.$Pause();
       } else if (wasPlayingRef.current && !sliderState.shouldHold) {
         setTimeout(() => {
-          if (sliderRef.current && typeof sliderRef.current.$Play === 'function') {
-            try {
-              sliderRef.current.$Play();
-            } catch (e) {}
-          }
+          sliderPlay();
         }, 50);
       }
     } catch (error) {}
