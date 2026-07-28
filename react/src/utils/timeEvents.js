@@ -12,7 +12,8 @@ export const TIME_EVENTS = {
   SYURUK_BEEP_START: 'syuruk-beep-start',
   SYURUK_BEEP_STOP: 'syuruk-beep-stop',
   DATE_CHANGED: 'date-changed',
-  SLIDE_CHANGED: 'slide-changed'
+  SLIDE_CHANGED: 'slide-changed',
+  MINUTE_CHANGED: 'minute-changed'
 };
 
 export function dispatchTimeUpdate(payload) {

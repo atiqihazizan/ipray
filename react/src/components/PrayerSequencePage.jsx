@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useData } from '../contexts/DataContext';
 import audioService from '../services/audioService';
 import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
+import { TIME_EVENTS } from '../utils/timeEvents';
 import { setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { logKioskEvent } from '../services/clientLogger';
 import AzanScreen from './prayer-screens/AzanScreen';
@@ -151,17 +152,18 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     clearTimer();
     clearBeep();
 
-    const tick = () => {
+    const handler = () => {
       if (!prayerTimeStr) return;
+      const t = window.data_ipray?.time;
+      if (!t) return;
       const parts = prayerTimeStr.split(':').map(Number);
       const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
       const ptTotalSeconds = ph * 3600 + pm * 60 + ps;
-      const now = new Date(timeService?.now ? timeService.now() : Date.now());
-      const currentTotalSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const currentTotalSeconds = t.hours * 3600 + t.minutes * 60 + t.seconds;
       const remaining = ptTotalSeconds - currentTotalSeconds;
 
       if (remaining <= 0) {
-        clearTimer();
+        window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
         setCountdown(0);
         beepCleanupRef.current = playBeepThenDo(() => setScreen('iqamah'), prayerName);
         return;
@@ -169,9 +171,12 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       setCountdown(remaining);
     };
 
-    timerRef.current = setInterval(tick, 1000);
-    tick();
-    return () => { clearTimer(); clearBeep(); };
+    handler();
+    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+    return () => {
+      window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+      clearBeep();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, prayerTimeStr]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref supaya countdown tidak restart
 
@@ -180,19 +185,24 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     if (screen !== 'iqamah') return;
     clearTimer();
 
-    let remaining = Math.max(1, Math.floor((prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60));
-    setCountdown(remaining);
+    const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60));
+    const startTime = timeService?.now ? timeService.now() : Date.now();
+    setCountdown(duration);
 
-    timerRef.current = setInterval(() => {
-      remaining -= 1;
-      setCountdown(remaining);
+    const handler = () => {
+      const now = timeService?.now ? timeService.now() : Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const remaining = duration - elapsed;
+      setCountdown(Math.max(0, remaining));
       if (remaining <= 0) {
-        clearTimer();
+        window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
         logKioskEvent('iqamah-done', { prayer: prayerName });
         setScreen('solat');
       }
-    }, 1000);
-    return clearTimer;
+    };
+
+    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+    return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref
 
@@ -202,18 +212,26 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     clearTimer();
     clearSafeReloadTimer();
 
-    let remaining = Math.max(1, Math.floor((prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60));
-    setCountdown(remaining);
+    const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60));
+    const startTime = timeService?.now ? timeService.now() : Date.now();
+    setCountdown(duration);
 
-    timerRef.current = setInterval(() => {
-      remaining -= 1;
-      setCountdown(remaining);
+    const handler = () => {
+      const now = timeService?.now ? timeService.now() : Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const remaining = duration - elapsed;
+      setCountdown(Math.max(0, remaining));
       if (remaining <= 0) {
-        clearTimer();
+        window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
         scheduleReload();
       }
-    }, 1000);
-    return () => { clearTimer(); clearSafeReloadTimer(); };
+    };
+
+    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+    return () => {
+      window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+      clearSafeReloadTimer();
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref
 

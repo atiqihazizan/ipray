@@ -249,6 +249,7 @@ export function useTimeDriver() {
         if (totalMin !== lastSavedTimeMinRef.current) {
           lastSavedTimeMinRef.current = totalMin;
           try { localStorage.setItem(LS_CURRENT_TIME_KEY, JSON.stringify(t)); } catch (_) {}
+          window.dispatchEvent(new CustomEvent(TIME_EVENTS.MINUTE_CHANGED));
         }
 
         const currentTotalSeconds = t.hours * 3600 + t.minutes * 60 + t.seconds;

@@ -27,7 +27,6 @@ const resolveOverlay = (dt, key) => {
 
 const DateTimeOverlay = ({ overlayOverride = null }) => {
   const dtRef = useRef(null);
-  const [minuteTick, setMinuteTick] = useState(0);
   const [, forceRender] = useState(0);
   const { takwimArray, takwimParsed } = useTakwimData();
   const { MARQUEE_CONFIG, hebahanData, COLOR_CONFIG, slidesMarqueeShow } = useData();
@@ -49,8 +48,9 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
 
   useEffect(() => {
-    const id = setInterval(() => setMinuteTick(t => t + 1), 60 * 1000);
-    return () => clearInterval(id);
+    const handler = () => forceRender(c => c + 1);
+    window.addEventListener(TIME_EVENTS.MINUTE_CHANGED, handler);
+    return () => window.removeEventListener(TIME_EVENTS.MINUTE_CHANGED, handler);
   }, []);
 
   useEffect(() => {
