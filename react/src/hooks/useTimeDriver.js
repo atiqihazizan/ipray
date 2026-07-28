@@ -380,14 +380,16 @@ export function useTimeDriver() {
             const warnTrigger = prayerTotalSeconds - warningSecondsRef.current;
             const warnKey = isTestTarget ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
-              if (!prayerWarningTriggeredRef.current[warnKey] && isPrayerSequenceActive()) {
+              if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                const displayName = (isTestTarget && resolvedNextPrayer) ? resolvedNextPrayer : name;
-                dispatchPrayerWarning(displayName, timeStr);
-                logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
-                // Pause slider dan jump ke slide 0 (halaman waktu solat)
+                // Pause slider dan jump ke slide 0 (halaman waktu solat) — berlaku tanpa mengira sequence state
                 sliderGoTo(0);
                 sliderPause();
+                if (isPrayerSequenceActive()) {
+                  const displayName = (isTestTarget && resolvedNextPrayer) ? resolvedNextPrayer : name;
+                  dispatchPrayerWarning(displayName, timeStr);
+                  logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
+                }
               }
               if (isTestTarget) break;
             }
