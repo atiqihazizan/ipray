@@ -16,7 +16,10 @@ import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayer
 
 function applyBlink(elementId, toggle) {
   const el = document.getElementById(elementId);
-  if (el) el.style.opacity = toggle ? '1' : '0';
+  if (el) {
+    el.style.opacity = toggle ? '1' : '0';
+    el.style.transition = 'none';
+  }
 }
 import { logKioskEvent } from '../services/clientLogger';
 

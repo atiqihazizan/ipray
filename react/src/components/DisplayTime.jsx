@@ -113,7 +113,7 @@ const DisplayTime = ({
     if (type === 2) {
       const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
       const minutes = parts[1].replace(/\s*(AM|PM)/, '');
-      return <>{parts[0]}<span id={colonId || undefined}>:</span>{minutes}{ampm}</>;
+      return <>{parts[0]}<span id={colonId || undefined} style={{ transition: 'none' }}>:</span>{minutes}{ampm}</>;
     }
 
     // type=3 atau lain — guna formatTimeWithBlink lama
