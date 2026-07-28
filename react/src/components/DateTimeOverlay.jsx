@@ -115,6 +115,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
                     wrapperId={`ipray-wrap-${waktu.prayerName.toLowerCase()}`}
                     elementId={`ipray-time-${waktu.prayerName.toLowerCase()}`}
                     labelElementId={`ipray-label-${waktu.prayerName.toLowerCase()}`}
+                    colonId={`ipray-colon-${waktu.prayerName.toLowerCase()}`}
                     style={{ position: 'relative' }} />
                 ))}
               </div>

@@ -12,7 +12,7 @@ import {
   dispatchBlinkToggle,
   TIME_EVENTS
 } from '../utils/timeEvents';
-import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
+import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -388,9 +388,161 @@ export function useTimeDriver() {
       }
     };
 
+    // Debug helper — window.iprayTest(key) dari browser console
+    window.iprayTest = (key) => {
+      const PRAYER_IDS_DEBUG = ['subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
+      const times = window.data_ipray?.snapshot?.prayer?.times;
+
+      // --- DOM elements ---
+      if (key === 'dom') {
+        console.group('[iprayTest] DOM elements — prayer');
+        PRAYER_IDS_DEBUG.forEach(name => {
+          ['wrap','label','time','colon'].forEach(type => {
+            const id = `ipray-${type}-${name}`;
+            const el = document.getElementById(id);
+            console.log(id, el ? '✓' : '✗ NULL', el?.style?.opacity ? `opacity:${el.style.opacity}` : '');
+          });
+        });
+        console.groupEnd();
+        console.group('[iprayTest] DOM elements — clock & date');
+        ['ipray-clock-h','ipray-clock-m','ipray-clock-colon',
+         'ipray-clock-sm-h','ipray-clock-sm-m','ipray-clock-sm-colon',
+         'ipray-date-g-day','ipray-date-g-dayname','ipray-date-g-month','ipray-date-g-year',
+         'ipray-date-h-day','ipray-date-h-month','ipray-date-h-year',
+         'ipray-next-name','ipray-next-time'].forEach(id => {
+          const el = document.getElementById(id);
+          console.log(id, el ? `✓ "${el.textContent}"` : '✗ NULL');
+        });
+        console.groupEnd();
+      }
+
+      // --- Masa & prayer times ---
+      if (key === 'time') {
+        console.group('[iprayTest] window.data_ipray');
+        console.log('time:', window.data_ipray?.time);
+        console.log('next prayer:', window.data_ipray?.snapshot?.prayer?.next);
+        console.log('prayer times:', times);
+        console.groupEnd();
+      }
+
+      // --- Blink colon state ---
+      if (key === 'blink') {
+        console.group('[iprayTest] blink colon opacity');
+        PRAYER_IDS_DEBUG.forEach(name => {
+          const el = document.getElementById(`ipray-colon-${name}`);
+          console.log(`ipray-colon-${name}`, el ? `opacity:${el.style.opacity}` : '✗ NULL');
+        });
+        console.log('ipray-clock-colon:', document.getElementById('ipray-clock-colon')?.style?.opacity ?? '✗ NULL');
+        console.groupEnd();
+      }
+
+      // --- Prayer sequence state ---
+      if (key === 'state') {
+        const active = isPrayerSequenceActive();
+        console.group('[iprayTest] prayer sequence state');
+        console.log('isPrayerSequenceActive:', active);
+        console.log('next prayer:', window.data_ipray?.snapshot?.prayer?.next);
+        console.groupEnd();
+      }
+
+      // --- Disable prayer sequence (untuk test blink bebas) ---
+      if (key === 'disable') {
+        setPrayerSequenceActive(false);
+        console.log('[iprayTest] prayer sequence DISABLED — blink & syuruk boleh trigger bebas');
+      }
+
+      if (key === 'enable') {
+        setPrayerSequenceActive(true);
+        console.log('[iprayTest] prayer sequence ENABLED semula');
+      }
+
+      // --- Simulate blink warning terus pada DOM (tanpa trigger prayer sequence) ---
+      if (key === 'warning') {
+        const wrapEl = document.getElementById('ipray-wrap-zohor');
+        if (!wrapEl) { console.warn('[iprayTest] ipray-wrap-zohor tidak wujud dalam DOM'); return; }
+        console.log('[iprayTest] simulate blink warning Zohor — 10 saat (DOM direct, tanpa event)');
+        wrapEl.style.transition = 'opacity 0.35s ease';
+        const colonEl = document.getElementById('ipray-colon-zohor');
+        if (colonEl) colonEl.style.transition = 'opacity 0.35s ease';
+        let t = 0;
+        const iv = setInterval(() => {
+          t++;
+          const b = t % 2 === 0;
+          wrapEl.style.opacity = b ? '1' : '0';
+          if (colonEl) colonEl.style.opacity = b ? '1' : '0';
+          if (t >= 10) { clearInterval(iv); wrapEl.style.opacity = '1'; wrapEl.style.transition = ''; if (colonEl) { colonEl.style.opacity = '1'; colonEl.style.transition = ''; } console.log('[iprayTest] blink warning selesai'); }
+        }, 1000);
+      }
+
+      // --- Trigger prayer sequence sebenar (akan papar prayer state) ---
+      if (key === 'seq') {
+        const zohorTime = times?.Zohor ?? '13:00';
+        console.log('[iprayTest] dispatch prayer-warning → Zohor (AKAN trigger prayer sequence UI)');
+        window.dispatchEvent(new CustomEvent('prayer-warning', {
+          detail: { prayerName: 'Zohor', prayerTimeStr: zohorTime }
+        }));
+      }
+
+      // --- Simulate masuk waktu Zohor (prayer-time event) ---
+      if (key === 'masuk') {
+        console.log('[iprayTest] dispatch prayer-time → Zohor');
+        window.dispatchEvent(new CustomEvent('prayer-time', {
+          detail: { prayerName: 'Zohor' }
+        }));
+      }
+
+      // --- Simulate syuruk beep blink (auto-stop 10s) ---
+      if (key === 'syuruk') {
+        console.log('[iprayTest] SYURUK_BEEP_START — blink syuruk aktif (auto-stop 10s)');
+        window.dispatchEvent(new CustomEvent('syuruk-beep-start'));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('syuruk-beep-stop'));
+          console.log('[iprayTest] SYURUK_BEEP_STOP — blink syuruk tamat');
+        }, 10000);
+      }
+
+      // --- Watch next prayer change selama 70 saat ---
+      if (key === 'watch') {
+        console.log('[iprayTest] watch next prayer & blink selama 70s...');
+        let tick = 0;
+        const iv = setInterval(() => {
+          tick++;
+          const next = window.data_ipray?.snapshot?.prayer?.next;
+          const t = window.data_ipray?.time;
+          const colonOpacity = document.getElementById('ipray-colon-zohor')?.style?.opacity;
+          console.log(`[${tick}s] next:${next} | ${t?.hours}:${String(t?.minutes).padStart(2,'0')}:${String(t?.seconds).padStart(2,'0')} | colon-zohor opacity:${colonOpacity}`);
+          if (tick >= 70) {
+            clearInterval(iv);
+            console.log('[iprayTest] watch selesai');
+          }
+        }, 1000);
+      }
+
+      const ALL_KEYS = ['dom','time','blink','state','disable','enable','warning','seq','masuk','syuruk','watch'];
+      if (!ALL_KEYS.includes(key)) {
+        console.log('[iprayTest] keys tersedia:');
+        console.log('  dom     — semak semua DOM element');
+        console.log('  time    — semak window.data_ipray');
+        console.log('  blink   — semak opacity colon semua waktu');
+        console.log('  state   — semak prayer sequence state');
+        console.log('  disable — disable prayer sequence state');
+        console.log('  enable  — enable semula prayer sequence state');
+        console.log('  warning — simulate blink warning Zohor (DOM direct, TANPA trigger UI)');
+        console.log('  seq     — trigger prayer sequence UI (prayer-warning event)');
+        console.log('  masuk   — dispatch prayer-time event');
+        console.log('  syuruk  — simulate syuruk beep blink (auto-stop 10s)');
+        console.log('  watch   — watch next prayer & blink 70s');
+      }
+    };
+    console.log('%c[iPray] Debug ready → window.iprayTest(key)', 'color:#FFD700;font-weight:bold');
+    console.log('%c  dom | time | blink | state | disable | enable | warning | seq | masuk | syuruk | watch', 'color:#aaa');
+
     update();
     const id = setInterval(update, 1000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      delete window.iprayTest;
+    };
   // Sengaja exclude PRAYER_TIME_CONFIG dari deps — dibaca dari ref supaya interval tidak restart
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [takwimParsed, timeService]);
