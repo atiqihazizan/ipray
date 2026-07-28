@@ -96,7 +96,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
 
   const [screen, setScreen] = useState(debugStart || 'azan');
   const [countdown, setCountdown] = useState(0);
-  const timerRef = useRef(null);
+  // const timerRef = useRef(null);
   const beepCleanupRef = useRef(null);
   const safeReloadTimerRef = useRef(null);
 
@@ -106,9 +106,9 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     prayerTimeConfigRef.current = PRAYER_TIME_CONFIG;
   }, [PRAYER_TIME_CONFIG]);
 
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-  }, []);
+  // const clearTimer = useCallback(() => {
+  //   if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  // }, []);
 
   const clearBeep = useCallback(() => {
     if (beepCleanupRef.current) { beepCleanupRef.current(); beepCleanupRef.current = null; }
@@ -121,11 +121,11 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // Cleanup semua timer apabila komponen unmount
   useEffect(() => {
     return () => {
-      clearTimer();
+      // clearTimer();
       clearBeep();
       clearSafeReloadTimer();
     };
-  }, [clearTimer, clearBeep, clearSafeReloadTimer]);
+  }, [clearBeep, clearSafeReloadTimer]);
 
   // Tandakan urutan solat sedang aktif — proses lain (contoh: reload data:updated)
   // akan tangguh sehingga urutan ini selesai (unmount)
