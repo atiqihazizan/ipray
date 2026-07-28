@@ -152,6 +152,27 @@ export function useTimeDriver() {
           const blink = blinkToggleRef.current;
           dispatchBlinkToggle(blink);
 
+          const h12 = islamicTime.time.hours % 12 || 12;
+          const m2 = String(islamicTime.time.minutes).padStart(2, '0');
+
+          for (const colonId of ['ipray-clock-colon', 'ipray-clock-sm-colon']) {
+            const colonEl = document.getElementById(colonId);
+            if (colonEl) {
+              colonEl.style.opacity = blink ? '1' : '0';
+              colonEl.style.transition = 'none';
+            }
+          }
+
+          for (const [hId, mId] of [
+            ['ipray-clock-h', 'ipray-clock-m'],
+            ['ipray-clock-sm-h', 'ipray-clock-sm-m']
+          ]) {
+            const hEl = document.getElementById(hId);
+            const mEl = document.getElementById(mId);
+            if (hEl) hEl.textContent = h12;
+            if (mEl) mEl.textContent = m2;
+          }
+
           const warningSecs = warningSecondsRef.current;
           const t = islamicTime.time;
           const currentTotalSec = t.hours * 3600 + t.minutes * 60 + t.seconds;

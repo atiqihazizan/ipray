@@ -35,6 +35,8 @@ const DisplayTime = ({
   type = 1,
   // Unique colon ID untuk DOM blink
   colonId = null,
+  hourId = null,    // id untuk span jam (type=1, DOM update)
+  minuteId = null,  // id untuk span minit (type=1, DOM update)
   // Caption attributes
   transition,
   transition2,
@@ -92,11 +94,20 @@ const DisplayTime = ({
       if (showSeconds && parts.length === 3) {
         const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
         const seconds = parts[2].replace(/\s*(AM|PM)/, '');
-        return <>{parts[0]}<span id={colonId || undefined} style={{ transition: 'none' }}>:</span>{parts[1]}<span>:</span>{seconds}{ampm}</>;
+        return (
+          <><span id={hourId || undefined}>{parts[0]}</span>
+            <span id={colonId || undefined} style={{ transition: 'none' }}>:</span>
+            <span id={minuteId || undefined}>{parts[1]}</span>
+            <span>:</span>{seconds}{ampm}</>
+        );
       }
       const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
       const minutes = parts[1].replace(/\s*(AM|PM)/, '');
-      return <>{parts[0]}<span id={colonId || undefined} style={{ transition: 'none' }}>:</span>{minutes}{ampm}</>;
+      return (
+        <><span id={hourId || undefined}>{parts[0]}</span>
+          <span id={colonId || undefined} style={{ transition: 'none' }}>:</span>
+          <span id={minuteId || undefined}>{minutes}</span>{ampm}</>
+      );
     }
 
     if (type === 2) {
@@ -127,26 +138,18 @@ const DisplayTime = ({
   );
 };
 
-// Memoize component - hanya re-render bila props atau time data berubah
-// Untuk type=1 (masa semasa): re-render setiap saat (perlu)
-// Untuk type=2 & 3 (waktu solat): hanya re-render bila prayer time berubah
+// Memoize component - skip re-render jika props sama (type=1 gunakan DOM update)
 export default memo(DisplayTime, (prevProps, nextProps) => {
-  // Untuk type=1 (masa semasa), biarkan re-render (perlu update setiap saat)
-  if (prevProps.type === 1 || nextProps.type === 1) {
-    return false; // Re-render untuk type=1
-  }
-  
-  // Untuk type=2 & 3, skip re-render jika props sama
   return (
     prevProps.type === nextProps.type &&
-    prevProps.format === nextProps.format &&
-    prevProps.showSeconds === nextProps.showSeconds &&
-    prevProps.showAmPm === nextProps.showAmPm &&
+    prevProps.size === nextProps.size &&
+    prevProps.color === nextProps.color &&
+    prevProps.colonId === nextProps.colonId &&
+    prevProps.hourId === nextProps.hourId &&
+    prevProps.minuteId === nextProps.minuteId &&
     prevProps.prayerName === nextProps.prayerName &&
     prevProps.nextPrayerName === nextProps.nextPrayerName &&
     prevProps.nextPrayerTime === nextProps.nextPrayerTime &&
-    prevProps.size === nextProps.size &&
-    prevProps.color === nextProps.color &&
     JSON.stringify(prevProps.style) === JSON.stringify(nextProps.style)
   );
 });
