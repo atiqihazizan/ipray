@@ -119,11 +119,6 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
                     style={{ position: 'relative' }} />
                 ))}
               </div>
-              <DisplayTime type={1} elementId="ipray-clock"
-              colonId="ipray-clock-colon"
-              hourId="ipray-clock-h"
-              minuteId="ipray-clock-m"
-              size={148} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{ borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem', ...STANDARD_DARK_BACKGROUND_STYLE, position: 'relative' }} />
             </div>
           )}
         
@@ -141,18 +136,18 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
               <Marquee texts={hebahanArray} separator={separator} duration={MARQUEE_CONFIG.DURATION} className="w-full" enabled={marqueeEnabled && showMarqueeOverride} style={{ ...STANDARD_DARK_BACKGROUND_STYLE }} />
             </div>
 
-            {showOverlay('solat-time-small')  && nextPrayerData && (
-              <DisplayTime key="clock-small" type={1} elementId="ipray-clock-sm"
-                colonId="ipray-clock-sm-colon"
-                hourId="ipray-clock-sm-h"
-                minuteId="ipray-clock-sm-m"
-                size={100} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{
-                bottom: 0, right: 0, padding: '14px', paddingLeft: '1.5rem', position: 'relative',
-                clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%', ...STANDARD_DARK_BACKGROUND_STYLE
-              }} />
-            )}
           </div>
         </div>
+
+        {(showOverlay('solat-time') || (showOverlay('solat-time-small') && nextPrayerData)) && (
+          <DisplayTime type={1} elementId="ipray-clock"
+            colonId="ipray-clock-colon"
+            hourId="ipray-clock-h"
+            minuteId="ipray-clock-m"
+            format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor}
+            className={showOverlay('solat-time') ? 'ipray-clock-lg' : 'ipray-clock-sm'}
+            style={{ ...STANDARD_DARK_BACKGROUND_STYLE }} />
+        )}
       </div>
     </>
   );

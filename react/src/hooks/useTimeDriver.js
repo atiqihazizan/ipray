@@ -13,14 +13,6 @@ import {
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
-
-function applyBlink(elementId, toggle) {
-  const el = document.getElementById(elementId);
-  if (el) {
-    el.style.opacity = toggle ? '1' : '0';
-    el.style.transition = 'none';
-  }
-}
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -163,12 +155,11 @@ export function useTimeDriver() {
           const h12 = islamicTime.time.hours % 12 || 12;
           const m2 = String(islamicTime.time.minutes).padStart(2, '0');
 
-          applyBlink('ipray-clock-colon', blink);
-          applyBlink('ipray-clock-sm-colon', blink);
+          const clockColonEl = document.getElementById('ipray-clock-colon');
+          if (clockColonEl) clockColonEl.style.opacity = blink ? '1' : '0';
 
           for (const [hId, mId] of [
-            ['ipray-clock-h', 'ipray-clock-m'],
-            ['ipray-clock-sm-h', 'ipray-clock-sm-m']
+            ['ipray-clock-h', 'ipray-clock-m']
           ]) {
             const hEl = document.getElementById(hId);
             const mEl = document.getElementById(mId);
@@ -220,23 +211,10 @@ export function useTimeDriver() {
             if (timeEl) timeEl.style.color = timeColor;
 
             const wrapEl = document.getElementById(`ipray-wrap-${name}`);
-            if (wrapEl) {
-              const shouldBlink = isPrayerExactTime || is30SecBefore || isSyurukBeeping;
-              if (shouldBlink) {
-                wrapEl.style.opacity = blink ? '1' : '0';
-                wrapEl.style.transition = 'opacity 0.35s ease';
-              } else {
-                wrapEl.style.opacity = '1';
-                wrapEl.style.transition = '';
-              }
-            }
+            if (wrapEl) wrapEl.style.opacity = is30SecBefore ? (blink ? '1' : '0') : '1';
 
-            if (isInPrayerMinute) {
-              applyBlink(`ipray-colon-${name}`, blink);
-            } else {
-              const el = document.getElementById(`ipray-colon-${name}`);
-              if (el) el.style.opacity = '1';
-            }
+            const colonEl = document.getElementById(`ipray-colon-${name}`);
+            if (colonEl) colonEl.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1';
           }
 
           const nextNameEl = document.getElementById('ipray-next-name');
