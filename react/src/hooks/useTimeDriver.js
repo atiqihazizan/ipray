@@ -13,6 +13,11 @@ import {
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
+
+function applyBlink(elementId, toggle) {
+  const el = document.getElementById(elementId);
+  if (el) el.style.opacity = toggle ? '1' : '0';
+}
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -155,13 +160,8 @@ export function useTimeDriver() {
           const h12 = islamicTime.time.hours % 12 || 12;
           const m2 = String(islamicTime.time.minutes).padStart(2, '0');
 
-          for (const colonId of ['ipray-clock-colon', 'ipray-clock-sm-colon']) {
-            const colonEl = document.getElementById(colonId);
-            if (colonEl) {
-              colonEl.style.opacity = blink ? '1' : '0';
-              colonEl.style.transition = 'none';
-            }
-          }
+          applyBlink('ipray-clock-colon', blink);
+          applyBlink('ipray-clock-sm-colon', blink);
 
           for (const [hId, mId] of [
             ['ipray-clock-h', 'ipray-clock-m'],
@@ -228,15 +228,11 @@ export function useTimeDriver() {
               }
             }
 
-            const colonEl = document.getElementById(`ipray-colon-${name}`);
-            if (colonEl) {
-              if (isInPrayerMinute) {
-                colonEl.style.opacity = blink ? '1' : '0';
-                colonEl.style.transition = 'opacity 0.35s ease';
-              } else {
-                colonEl.style.opacity = '1';
-                colonEl.style.transition = '';
-              }
+            if (isInPrayerMinute) {
+              applyBlink(`ipray-colon-${name}`, blink);
+            } else {
+              const el = document.getElementById(`ipray-colon-${name}`);
+              if (el) el.style.opacity = '1';
             }
           }
 
