@@ -305,6 +305,16 @@ async function startServers() {
 
     // Bila sambungan cloud berjaya, upload semua fail data (.txt) dan imej dari local ke server
     setOnRegisteredCallback(() => {
+      // Sync live stream status to cloud
+      try {
+        if (socketServerService.liveStreamData) {
+          socketServerService._emitToCloud('live:started', socketServerService.liveStreamData);
+        } else {
+          socketServerService._emitToCloud('live:stopped', { timestamp: Date.now() });
+        }
+      } catch (_) {}
+
+      // Full data sync (existing code — do not change)
       Promise.all([
         dataService.syncAllDataFilesToCloud(),
         dataService.syncAllImagesToCloud(imagesPath)

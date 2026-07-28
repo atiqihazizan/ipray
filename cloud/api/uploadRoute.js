@@ -6,7 +6,8 @@ const { uploadQueue } = require('../queue/uploadQueue');
 const router = express.Router();
 
 const upload = multer({
-  storage: multer.memoryStorage()
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 // Penting: Multer mesti jalan dulu supaya req.body ada clientId (multipart/form-data)

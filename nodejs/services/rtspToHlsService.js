@@ -54,6 +54,20 @@ class RtspToHlsService extends EventEmitter {
     if (config.ffmpegPath) this.ffmpegPath = config.ffmpegPath;
   }
 
+  _appendToLog(line) {
+    try {
+      const MAX_LOG_SIZE = 5 * 1024 * 1024;
+      if (fs.existsSync(this.logPath)) {
+        const stat = fs.statSync(this.logPath);
+        if (stat.size > MAX_LOG_SIZE) {
+          fs.renameSync(this.logPath, this.logPath + '.1');
+        }
+      }
+      fs.appendFileSync(this.logPath, line + '\n');
+    } catch (e) {
+    }
+  }
+
   _log(line, isError = false) {
     const prefix = '[RTSP→HLS] ';
     const out = prefix + line;
@@ -63,12 +77,8 @@ class RtspToHlsService extends EventEmitter {
       console.log(out);
     }
     if (this.logPath) {
-      try {
-        const ts = new Date().toISOString();
-        fs.appendFileSync(this.logPath, ts + ' ' + out + '\n');
-      } catch (e) {
-        try { console.error('[RTSP→HLS] Gagal tulis log:', e.message); } catch (_) {}
-      }
+      const ts = new Date().toISOString();
+      this._appendToLog(ts + ' ' + out);
     }
   }
 
@@ -76,10 +86,8 @@ class RtspToHlsService extends EventEmitter {
     const out = '[RTSP→HLS FFmpeg] ' + line;
     console.log(out);
     if (this.logPath) {
-      try {
-        const ts = new Date().toISOString();
-        fs.appendFileSync(this.logPath, ts + ' ' + out + '\n');
-      } catch (e) {}
+      const ts = new Date().toISOString();
+      this._appendToLog(ts + ' ' + out);
     }
   }
 
@@ -173,6 +181,9 @@ class RtspToHlsService extends EventEmitter {
       this.ffProcess.stderr.on('data', (d) => {
         const s = d.toString();
         stderrBuffer += s;
+        if (stderrBuffer.length > 4096) {
+          stderrBuffer = stderrBuffer.slice(-4096);
+        }
         self._logFfmpeg(s.trimEnd());
       });
 

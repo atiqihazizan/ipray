@@ -413,12 +413,19 @@ function findLineIndex(allLines, normalized, id) {
   return null;
 }
 
+/** Tulis ke fail dengan atomic write (tmp + rename). */
+async function writeFileAtomic(filePath, content) {
+  const tmpPath = filePath + '.tmp';
+  await fs.writeFile(tmpPath, content, 'utf8');
+  await fs.move(tmpPath, filePath, { overwrite: true });
+}
+
 /** Tulis penuh fail (cloud:file:save). */
 async function writeFile(clientId, fileName, content) {
   const filePath = getDataFilePath(clientId, fileName);
   if (!filePath) throw new Error(`Invalid or disallowed filename: ${fileName}`);
   await fs.ensureDir(path.dirname(filePath));
-  await fs.writeFile(filePath, content, 'utf8');
+  await writeFileAtomic(filePath, content);
   return { success: true };
 }
 
@@ -468,7 +475,7 @@ async function updateRow(clientId, fileName, id, rowData) {
   if (newLine == null) newLine = '';
   allLines[lineIndex] = newLine;
   await fs.ensureDir(path.dirname(filePath));
-  await fs.writeFile(filePath, allLines.join('\n'), 'utf8');
+  await writeFileAtomic(filePath, allLines.join('\n'));
   return { success: true };
 }
 
@@ -505,7 +512,7 @@ async function insertRow(clientId, fileName, rowData, position = 'end') {
   if (newRow == null) newRow = '';
   lines.splice(insertIndex, 0, newRow);
   await fs.ensureDir(path.dirname(filePath));
-  await fs.writeFile(filePath, lines.join('\n'), 'utf8');
+  await writeFileAtomic(filePath, lines.join('\n'));
   return { success: true, insertedAt: insertIndex };
 }
 
@@ -525,7 +532,7 @@ async function deleteRow(clientId, fileName, id) {
   }
   allLines.splice(lineIndex, 1);
   await fs.ensureDir(path.dirname(filePath));
-  await fs.writeFile(filePath, allLines.join('\n'), 'utf8');
+  await writeFileAtomic(filePath, allLines.join('\n'));
   return { success: true, rowId: id };
 }
 
@@ -535,5 +542,6 @@ module.exports = {
   updateRow,
   insertRow,
   deleteRow,
-  writeFile
+  writeFile,
+  writeFileAtomic
 };
