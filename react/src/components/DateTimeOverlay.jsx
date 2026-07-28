@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import DisplayTime from './DisplayTime';
 import DisplayDate from './DisplayDate';
-import Marquee, { MARQUEE_STANDARD_HEIGHT_BASE } from './Marquee';
+import Marquee from './Marquee';
+// import { MARQUEE_STANDARD_HEIGHT_BASE } from './Marquee';
 import { useData } from '../contexts/DataContext';
 import { usePrayerTimes } from '../hooks/useIslamicTime';
 import { useTakwimData } from '../hooks/useTakwimData';
@@ -27,7 +28,6 @@ const resolveOverlay = (dt, key) => {
 
 const DateTimeOverlay = ({ overlayOverride = null }) => {
   const dtRef = useRef(null);
-  const [minuteTick, setMinuteTick] = useState(0);
   const [, forceRender] = useState(0);
   const { takwimArray, takwimParsed } = useTakwimData();
   const { MARQUEE_CONFIG, hebahanData, COLOR_CONFIG, slidesMarqueeShow } = useData();
@@ -45,12 +45,13 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   const marqueeEnabled = dtRef.current == null 
     ? false                                          // first load: hide
     : (marqueeFromSlide !== false);                  // selepas slide pertama: ikut slide
-  const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
+  // const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
 
   useEffect(() => {
-    const id = setInterval(() => setMinuteTick(t => t + 1), 60 * 1000);
-    return () => clearInterval(id);
+    const handler = () => forceRender(c => c + 1);
+    window.addEventListener(TIME_EVENTS.MINUTE_CHANGED, handler);
+    return () => window.removeEventListener(TIME_EVENTS.MINUTE_CHANGED, handler);
   }, []);
 
   useEffect(() => {
@@ -110,10 +111,24 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             <div className={`flex justify-between items-center`}>
               <div className="flex gap-[20px]">
                 {OVERLAY_PRAYER_TIMES.map((waktu, index) => (
-                  <DisplayTime key={index} type={2} label={waktu.label} size={95} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={39} labelColor={prayerTimeColor} prayerName={waktu.prayerName} nextPrayerName={nextPrayerName} style={{ position: 'relative' }} />
+                  <DisplayTime key={index} type={2} label={waktu.label} size={95} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={39} labelColor={prayerTimeColor} prayerName={waktu.prayerName} nextPrayerName={nextPrayerName}
+                    wrapperId={`ipray-wrap-${waktu.prayerName.toLowerCase()}`}
+                    elementId={`ipray-time-${waktu.prayerName.toLowerCase()}`}
+                    labelElementId={`ipray-label-${waktu.prayerName.toLowerCase()}`}
+                    colonId={`ipray-colon-${waktu.prayerName.toLowerCase()}`}
+                    style={{ position: 'relative' }} />
                 ))}
               </div>
-              <DisplayTime type={1} size={148} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{ borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem', ...STANDARD_DARK_BACKGROUND_STYLE, position: 'relative' }} />
+              <DisplayTime type={1} elementId="ipray-clock"
+                colonId="ipray-clock-colon"
+                hourId="ipray-clock-h"
+                minuteId="ipray-clock-m"
+                size={148}
+                format="12h" showSeconds={false} showAmPm={false}
+                color={currentTimeColor}
+                className="ipray-clock-lg"
+                style={{ borderTopLeftRadius: '10px', padding: '4px 18px 17px 1.5rem',
+                         ...STANDARD_DARK_BACKGROUND_STYLE, position: 'relative' }} />
             </div>
           )}
         
@@ -121,6 +136,8 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
             {showOverlay('solat-time-small') && nextPrayerData && (
                 <div style={{ clipPath: 'polygon(80% 0, 100% 25%, 100% 100%, 0 100%, 0 0)', ...STANDARD_DARK_BACKGROUND_STYLE, padding: '0' }}>
                     <DisplayTime key="next-solat" type={3} label={nextPrayerData.next} nextPrayerTime={nextPrayerData.nextTime} nextPrayerName={nextPrayerName} size={70} format="12h" showSeconds={false} showAmPm={false} color={prayerTimeColor} labelSize={20} labelColor={prayerTimeColor}
+                      elementId="ipray-next-time"
+                      labelElementId="ipray-next-name"
                       style={{ position: 'relative'}} />
                 </div>
               )}
@@ -129,11 +146,18 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
               <Marquee texts={hebahanArray} separator={separator} duration={MARQUEE_CONFIG.DURATION} className="w-full" enabled={marqueeEnabled && showMarqueeOverride} style={{ ...STANDARD_DARK_BACKGROUND_STYLE }} />
             </div>
 
-            {showOverlay('solat-time-small')  && nextPrayerData && (
-              <DisplayTime key="clock-small" type={1} size={100} format="12h" showSeconds={false} showAmPm={false} color={currentTimeColor} style={{
-                bottom: 0, right: 0, padding: '14px', paddingLeft: '1.5rem', position: 'relative',
-                clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%', ...STANDARD_DARK_BACKGROUND_STYLE
-              }} />
+            {showOverlay('solat-time-small') && nextPrayerData && (
+              <DisplayTime type={1} elementId="ipray-clock"
+                colonId="ipray-clock-colon"
+                hourId="ipray-clock-h"
+                minuteId="ipray-clock-m"
+                size={100}
+                format="12h" showSeconds={false} showAmPm={false}
+                color={currentTimeColor}
+                className="ipray-clock-sm"
+                style={{ padding: '14px', paddingLeft: '1.5rem', position: 'relative',
+                         clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%)',
+                         ...STANDARD_DARK_BACKGROUND_STYLE }} />
             )}
           </div>
         </div>

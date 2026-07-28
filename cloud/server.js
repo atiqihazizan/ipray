@@ -17,20 +17,25 @@ const clientsRoute = require('./api/clientsRoute');
 
 const PORT = process.env.PORT || 4000;
 let uploadWorker = null;
+let httpServer = null;
+let ioServer = null;
+let pubClient = null;
+let subClient = null;
+let cloudWatcher = null;
 
 async function bootstrap() {
   const app = express();
-  const server = http.createServer(app);
+  httpServer = http.createServer(app);
 
-  const io = new Server(server, {
+  ioServer = new Server(httpServer, {
     cors: {
       origin: '*'
     }
   });
 
   // Konfigurasi Redis adapter untuk clustering Socket.IO
-  const pubClient = createRedisClient();
-  const subClient = pubClient.duplicate();
+  pubClient = createRedisClient();
+  subClient = pubClient.duplicate();
 
   pubClient.on('error', err => {
     // eslint-disable-next-line no-console
@@ -52,7 +57,7 @@ async function bootstrap() {
     process.exit(1);
   }
 
-  io.adapter(createAdapter(pubClient, subClient));
+  ioServer.adapter(createAdapter(pubClient, subClient));
 
   app.use(express.json({ limit: '15mb' }));
 
@@ -98,16 +103,16 @@ async function bootstrap() {
   });
 
   // Initialize Socket.IO handlers
-  registerSocketHandlers(io);
+  registerSocketHandlers(ioServer);
 
   // Initialize file watcher
-  initCloudWatcher(io);
+  cloudWatcher = initCloudWatcher(ioServer);
 
   // Jalankan upload worker dalam proses yang sama (elak perlu npm run worker berasingan)
   uploadWorker = await startUploadWorker();
   console.log('[Cloud] Upload worker started (in-process)');
 
-  server.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`Cloud sync server listening on port ${PORT}`);
     // eslint-disable-next-line no-console
@@ -115,13 +120,21 @@ async function bootstrap() {
   });
 }
 
-function shutdown(signal) {
+async function shutdown(signal) {
   console.log(`\n[Cloud] ${signal}, shutting down...`);
-  if (uploadWorker) {
-    uploadWorker.close().then(() => process.exit(0)).catch(() => process.exit(1));
-  } else {
-    process.exit(0);
+  try {
+    if (uploadWorker) await uploadWorker.close();
+    if (cloudWatcher) await cloudWatcher.close();
+    if (ioServer) ioServer.close();
+    if (pubClient) { await pubClient.quit(); }
+    if (subClient) { await subClient.quit(); }
+    if (httpServer) {
+      await new Promise(resolve => httpServer.close(resolve));
+    }
+  } catch (e) {
+    console.error('[Cloud] Shutdown error:', e.message || e);
   }
+  process.exit(0);
 }
 
 process.on('SIGINT', () => shutdown('SIGINT'));

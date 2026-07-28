@@ -27,8 +27,14 @@ const REGISTERED_DELAY_MS = 800;
 let _syncScheduled = false;
 let _syncTimer = null;
 
+const FULL_SYNC_COOLDOWN_MS = 5 * 60 * 1000;
+let _lastFullSyncTime = 0;
+
 function runOnRegisteredCallback() {
   _syncScheduled = false;
+  const now = Date.now();
+  if (now - _lastFullSyncTime < FULL_SYNC_COOLDOWN_MS) return;
+  _lastFullSyncTime = now;
   if (typeof _onRegisteredCallback === 'function') _onRegisteredCallback();
 }
 

@@ -107,22 +107,6 @@ class SocketServerService {
       modbusRemoteSwitchService.init({ dataService: this.dataService });
     }
 
-    // Bila cloudClient (nodejs) connect/register semula ke cloud,
-    // emit snapshot status live supaya panel Flutter ikut mode play/stop.
-    try {
-      const cloudClient = require('./cloudClient');
-      if (cloudClient && typeof cloudClient.setOnRegisteredCallback === 'function') {
-        cloudClient.setOnRegisteredCallback(() => {
-          if (this.liveStreamData) {
-            this._emitToCloud('live:started', this.liveStreamData);
-          } else {
-            this._emitToCloud('live:stopped', { timestamp: Date.now() });
-          }
-        });
-      }
-    } catch (_) {
-      // optional: cloudClient mungkin tiada pada sesetengah deploy
-    }
   }
 
   /**

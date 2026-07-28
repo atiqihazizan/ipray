@@ -8,9 +8,11 @@ import {
   dispatchPrayerWarning,
   dispatchPrayerTime,
   dispatchSyurukTime,
-  dispatchDateChanged
+  dispatchDateChanged,
+  dispatchBlinkToggle,
+  TIME_EVENTS
 } from '../utils/timeEvents';
-import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
+import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -33,9 +35,9 @@ function savePrayerTimesForToday(todayStr, timesObj) {
   } catch (_) {}
 }
 
-// ─── TEST CONFIG — tukar ke true untuk test. Pastikan false semula sebelum production. ───
-const TEST_PRAYER = false; // test waktu solat (semua 5 waktu) — trigger pada masa sekarang + 1 minit
+// ─── TEST CONFIG ───────────────────────────────────────────────────────────────────────────
 const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang + 1 minit
+// Gunakan window.iprayTest('run') untuk test prayer — lebih fleksibel daripada static boolean
 // ─────────────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -46,7 +48,7 @@ const TEST_SYURUK = false; // test waktu syuruk — trigger pada masa sekarang +
  */
 export function useTimeDriver() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
-  const { timeService, PRAYER_TIME_CONFIG } = useData();
+  const { timeService, PRAYER_TIME_CONFIG, COLOR_CONFIG } = useData();
   // No React state — data goes to window.data_ipray
   // Simpan config dalam ref supaya perubahan config tidak restart interval setiap kali
   const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
@@ -54,6 +56,11 @@ export function useTimeDriver() {
   const warningSeconds = Math.round((PRAYER_TIME_CONFIG?.WARNING_START_MINUTES ?? 5) * 60);
   const warningSecondsRef = useRef(warningSeconds);
   useEffect(() => { warningSecondsRef.current = warningSeconds; }, [warningSeconds]);
+  const colorConfigRef = useRef(COLOR_CONFIG);
+  useEffect(() => { colorConfigRef.current = COLOR_CONFIG; }, [COLOR_CONFIG]);
+  const isSyurukBeepBlinkingRef = useRef(false);
+  const blinkToggleRef = useRef(true);
+  const testPrayerOverrideRef = useRef(null); // { name: 'asar', timeStr: 'HH:MM:SS' } — set via iprayTest('run')
   const lastHijriKeyRef = useRef('');
   const lastDateStrRef = useRef('');
   const lastSavedTimesRef = useRef('');
@@ -64,10 +71,36 @@ export function useTimeDriver() {
   // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
   const lastCleanDateRef = useRef('');
 
+  const PRAYER_IDS = ['subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
+
+  function fmt12h(t) {
+    if (!t) return '';
+    const h = t.hours % 12 || 12;
+    const m = String(t.minutes).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function fmtPrayerTime12h(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')}`;
+  }
+
+  useEffect(() => {
+    const onStart = () => { isSyurukBeepBlinkingRef.current = true; };
+    const onStop = () => { isSyurukBeepBlinkingRef.current = false; };
+    window.addEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
+    window.addEventListener(TIME_EVENTS.SYURUK_BEEP_STOP, onStop);
+    return () => {
+      window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_START, onStart);
+      window.removeEventListener(TIME_EVENTS.SYURUK_BEEP_STOP, onStop);
+    };
+  }, []);
+
   useEffect(() => {
     if (!takwimParsed?.wdata) return;
 
-    // Test: masa solat = now + max(60, warningSeconds+15) supaya cukup runway bila warningSeconds > 60
+    // Test syuruk: masa syuruk = now + max(60, warningSeconds+15)
     const _testTimeStr = (() => {
       const n = new Date();
       const offsetSec = Math.max(60, warningSeconds + 15);
@@ -75,7 +108,6 @@ export function useTimeDriver() {
       const h = t.getHours(), m = t.getMinutes(), s = t.getSeconds();
       return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     })();
-    const testPrayerStr = TEST_PRAYER ? _testTimeStr : null;
     const testSyurukStr = TEST_SYURUK ? _testTimeStr : null;
 
     const update = () => {
@@ -101,6 +133,171 @@ export function useTimeDriver() {
         };
 
         dispatchTimeUpdate({ time: islamicTime.time, snapshot: snapshotData });
+
+        // --- DOM UPDATE VIA ID ---
+        try {
+          const colorConfig = colorConfigRef.current;
+          const nextPrayer = islamicTime.prayer?.next?.toLowerCase();
+          const prayerTimes = islamicTime.prayer?.times;
+          const nextColor = colorConfig?.NEXT_PRAYER ?? '#FFD700';
+          const defaultColor = colorConfig?.DEFAULT ?? '#FFFF00';
+
+          // const clockEl = document.getElementById('ipray-clock');
+          // if (clockEl) clockEl.textContent = fmt12h(islamicTime.time);
+          //
+          // const clockSmEl = document.getElementById('ipray-clock-sm');
+          // if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
+
+          blinkToggleRef.current = !blinkToggleRef.current;
+          const blink = blinkToggleRef.current;
+          dispatchBlinkToggle(blink);
+
+          const h12 = islamicTime.time.hours % 12 || 12;
+          const m2 = String(islamicTime.time.minutes).padStart(2, '0');
+
+          const clockColonEl = document.getElementById('ipray-clock-colon');
+          if (clockColonEl) clockColonEl.style.opacity = blink ? '1' : '0';
+
+          for (const [hId, mId] of [
+            ['ipray-clock-h', 'ipray-clock-m']
+          ]) {
+            const hEl = document.getElementById(hId);
+            const mEl = document.getElementById(mId);
+            if (hEl) hEl.textContent = h12;
+            if (mEl) mEl.textContent = m2;
+          }
+
+          const warningSecs = warningSecondsRef.current;
+          const t = islamicTime.time;
+          const currentTotalSec = t.hours * 3600 + t.minutes * 60 + t.seconds;
+          const warningColor = colorConfig?.WARNING_PRAYER ?? '#FF6600';
+
+          for (const name of PRAYER_IDS) {
+            const capitalName = name.charAt(0).toUpperCase() + name.slice(1);
+            const testOverride = testPrayerOverrideRef.current;
+            const timeStr = (testOverride?.name === name ? testOverride.timeStr : null) ?? prayerTimes?.[capitalName];
+            const isSyuruk = name === 'syuruk';
+
+            let isPrayerExactTime = false;
+            let isInPrayerMinute = false;
+            let is30SecBefore = false;
+
+            if (timeStr) {
+              const [ph, pm] = timeStr.split(':').map(Number);
+              const prayerTotalSec = ph * 3600 + pm * 60;
+              isPrayerExactTime = currentTotalSec === prayerTotalSec;
+              isInPrayerMinute = currentTotalSec >= prayerTotalSec && currentTotalSec < prayerTotalSec + 60;
+              is30SecBefore = !isSyuruk && currentTotalSec >= prayerTotalSec - warningSecs && currentTotalSec < prayerTotalSec;
+            }
+
+            const isSyurukBeeping = isSyuruk && isSyurukBeepBlinkingRef.current;
+            const isNext = nextPrayer === name;
+
+            let labelColor, timeColor;
+            if (isSyurukBeeping || (!isSyuruk && (isInPrayerMinute || is30SecBefore))) {
+              labelColor = warningColor;
+              timeColor = warningColor;
+            } else if (isNext) {
+              labelColor = nextColor;
+              timeColor = nextColor;
+            } else {
+              labelColor = defaultColor;
+              timeColor = '';
+            }
+
+            const labelEl = document.getElementById(`ipray-label-${name}`);
+            const timeEl = document.getElementById(`ipray-time-${name}`);
+            if (labelEl) labelEl.style.color = labelColor;
+            if (timeEl) timeEl.style.color = timeColor;
+
+            const wrapEl = document.getElementById(`ipray-wrap-${name}`);
+            if (wrapEl) wrapEl.style.opacity = is30SecBefore ? (blink ? '1' : '0') : '1';
+
+            const colonEl = document.getElementById(`ipray-colon-${name}`);
+            if (colonEl) colonEl.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1';
+          }
+
+          const nextNameEl = document.getElementById('ipray-next-name');
+          if (nextNameEl && islamicTime.prayer?.next) {
+            const n = islamicTime.prayer.next;
+            nextNameEl.textContent = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+          }
+
+          const nextTimeEl = document.getElementById('ipray-next-time');
+          if (nextTimeEl && nextPrayer && prayerTimes) {
+            const capitalNext = nextPrayer.charAt(0).toUpperCase() + nextPrayer.slice(1);
+            const tStr = fmtPrayerTime12h(prayerTimes[capitalNext]);
+            if (tStr) {
+              const [hPart, mPart] = tStr.split(':');
+              nextTimeEl.innerHTML = `${hPart}:${mPart}`;
+            }
+          }
+
+          // --- Test override: update nextPrayer DOM terus bila override aktif ---
+          const _testOvr = testPrayerOverrideRef.current;
+          if (_testOvr) {
+            const ACTIVE_LOWER = ['subuh', 'zohor', 'asar', 'maghrib', 'isyak'];
+            const [_ph, _pm] = _testOvr.timeStr.split(':').map(Number);
+            const _ovrSec = _ph * 3600 + _pm * 60;
+            const _afterPrayerSec = currentTotalSec - _ovrSec;
+
+            let _testNext;
+            if (currentTotalSec < _ovrSec) {
+              _testNext = _testOvr.name; // belum masuk waktu — tunjuk prayer ini
+            } else if (_afterPrayerSec < 60) {
+              _testNext = _testOvr.name; // isInPrayerMinute — masih tunjuk prayer ini
+            } else {
+              const _idx = ACTIVE_LOWER.indexOf(_testOvr.name);
+              _testNext = _idx >= 0 && _idx < ACTIVE_LOWER.length - 1
+                ? ACTIVE_LOWER[_idx + 1]
+                : 'subuh';
+            }
+
+            // Update ipray-next-name
+            const _nextNameEl = document.getElementById('ipray-next-name');
+            if (_nextNameEl) _nextNameEl.textContent = _testNext.charAt(0).toUpperCase() + _testNext.slice(1).toLowerCase();
+
+            // Update ipray-next-time — guna masa sebenar dari prayerTimes
+            const _nextTimeEl = document.getElementById('ipray-next-time');
+            if (_nextTimeEl && prayerTimes) {
+              const _cap = _testNext.charAt(0).toUpperCase() + _testNext.slice(1);
+              const _tStr = fmtPrayerTime12h(prayerTimes[_cap]);
+              if (_tStr) {
+                const [_h, _m] = _tStr.split(':');
+                _nextTimeEl.innerHTML = `${_h}:${_m}`;
+              }
+            }
+
+            // Update highlight warna dalam grid — DOM terus
+            PRAYER_IDS.forEach(_name => {
+              const _lbl = document.getElementById(`ipray-label-${_name}`);
+              const _tim = document.getElementById(`ipray-time-${_name}`);
+              const _isTestNext = _name === _testNext;
+              if (_lbl) _lbl.style.color = _isTestNext ? nextColor : defaultColor;
+              if (_tim) _tim.style.color = _isTestNext ? nextColor : '';
+            });
+          }
+
+          const g = islamicTime.gregorian;
+          if (g) {
+            const gDay = g.dayFormatted || (g.day < 10 ? `0${g.day}` : `${g.day}`);
+            const setG = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setG('ipray-date-g-day', gDay);
+            setG('ipray-date-g-dayname', g.dayName);
+            setG('ipray-date-g-month', g.monthName);
+            setG('ipray-date-g-year', g.year);
+          }
+
+          const h = islamicTime.hijri;
+          if (h) {
+            const hDay = h.day < 10 ? `0${h.day}` : `${h.day}`;
+            const setH = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setH('ipray-date-h-day', hDay);
+            setH('ipray-date-h-month', h.monthName);
+            setH('ipray-date-h-year', h.year);
+          }
+        } catch (domErr) {
+        }
 
         const { time: t, hijri, gregorian, prayer } = islamicTime;
 
@@ -128,6 +325,7 @@ export function useTimeDriver() {
         if (totalMin !== lastSavedTimeMinRef.current) {
           lastSavedTimeMinRef.current = totalMin;
           try { localStorage.setItem(LS_CURRENT_TIME_KEY, JSON.stringify(t)); } catch (_) {}
+          window.dispatchEvent(new CustomEvent(TIME_EVENTS.MINUTE_CHANGED));
         }
 
         const currentTotalSeconds = t.hours * 3600 + t.minutes * 60 + t.seconds;
@@ -152,7 +350,9 @@ export function useTimeDriver() {
           const resolvedNextPrayer = nextPrayerDisplay && ACTIVE_PRAYERS.includes(nextPrayerDisplay) ? nextPrayerDisplay : null;
 
           for (const name of ACTIVE_PRAYERS) {
-            const timeStr = testPrayerStr || prayerTimes[name];
+            const testOverride = testPrayerOverrideRef.current;
+            const isTestTarget = testOverride?.name === name.toLowerCase();
+            const timeStr = (isTestTarget ? testOverride.timeStr : null) || prayerTimes[name];
             if (!timeStr) continue;
             const parts = timeStr.split(':').map(Number);
             const ph = parts[0] || 0, pm = parts[1] || 0, ps = parts[2] || 0;
@@ -160,20 +360,15 @@ export function useTimeDriver() {
 
             // Trigger HANYA bila kita masih SEBELUM waktu solat (elak beep serta-merta bila tick terlepas)
             const warnTrigger = prayerTotalSeconds - warningSecondsRef.current;
-            const warnKey = testPrayerStr ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
-            // Sengaja TIDAK padam warnKey selepas waktu solat berlalu — key sudah bertarikh unik
-            // (dibersihkan betul bila hari bertukar di atas), dan pemadaman awal ini boleh buka
-            // lubang replay: jika jam sistem melompat ke belakang (contoh OS betulkan RTC) dan
-            // jatuh semula dalam tingkap amaran, seluruh urutan azan-beep-iqamah-solat akan
-            // tercetus SEKALI LAGI pada hari yang sama.
+            const warnKey = isTestTarget ? `${todayStr}-test-warn` : `${name}-${todayStr}-warn`;
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
-              if (!prayerWarningTriggeredRef.current[warnKey]) {
+              if (!prayerWarningTriggeredRef.current[warnKey] && isPrayerSequenceActive()) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                const displayName = (testPrayerStr && resolvedNextPrayer) ? resolvedNextPrayer : name;
+                const displayName = (isTestTarget && resolvedNextPrayer) ? resolvedNextPrayer : name;
                 dispatchPrayerWarning(displayName, timeStr);
                 logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
               }
-              if (testPrayerStr) break; // Test mode: satu dispatch sahaja
+              if (isTestTarget) break;
             }
           }
 
@@ -213,9 +408,196 @@ export function useTimeDriver() {
       }
     };
 
+    // Debug helper — window.iprayTest(key) dari browser console
+    window.iprayTest = (key) => {
+      const PRAYER_IDS_DEBUG = ['subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
+      const times = window.data_ipray?.snapshot?.prayer?.times;
+
+      // --- DOM elements ---
+      if (key === 'dom') {
+        console.group('[iprayTest] DOM elements — prayer');
+        PRAYER_IDS_DEBUG.forEach(name => {
+          ['wrap','label','time','colon'].forEach(type => {
+            const id = `ipray-${type}-${name}`;
+            const el = document.getElementById(id);
+            console.log(id, el ? '✓' : '✗ NULL', el?.style?.opacity ? `opacity:${el.style.opacity}` : '');
+          });
+        });
+        console.groupEnd();
+        console.group('[iprayTest] DOM elements — clock & date');
+        ['ipray-clock-h','ipray-clock-m','ipray-clock-colon',
+         'ipray-clock-sm-h','ipray-clock-sm-m','ipray-clock-sm-colon',
+         'ipray-date-g-day','ipray-date-g-dayname','ipray-date-g-month','ipray-date-g-year',
+         'ipray-date-h-day','ipray-date-h-month','ipray-date-h-year',
+         'ipray-next-name','ipray-next-time'].forEach(id => {
+          const el = document.getElementById(id);
+          console.log(id, el ? `✓ "${el.textContent}"` : '✗ NULL');
+        });
+        console.groupEnd();
+      }
+
+      // --- Masa & prayer times ---
+      if (key === 'time') {
+        console.group('[iprayTest] window.data_ipray');
+        console.log('time:', window.data_ipray?.time);
+        console.log('next prayer:', window.data_ipray?.snapshot?.prayer?.next);
+        console.log('prayer times:', times);
+        console.groupEnd();
+      }
+
+      // --- Blink colon state ---
+      if (key === 'blink') {
+        console.group('[iprayTest] blink colon opacity');
+        PRAYER_IDS_DEBUG.forEach(name => {
+          const el = document.getElementById(`ipray-colon-${name}`);
+          console.log(`ipray-colon-${name}`, el ? `opacity:${el.style.opacity}` : '✗ NULL');
+        });
+        console.log('ipray-clock-colon:', document.getElementById('ipray-clock-colon')?.style?.opacity ?? '✗ NULL');
+        console.groupEnd();
+      }
+
+      // --- Prayer sequence state ---
+      if (key === 'state') {
+        const active = isPrayerSequenceActive();
+        console.group('[iprayTest] prayer sequence state');
+        console.log('isPrayerSequenceActive:', active);
+        console.log('next prayer:', window.data_ipray?.snapshot?.prayer?.next);
+        console.groupEnd();
+      }
+
+      // --- Disable prayer sequence (untuk test blink bebas) ---
+      if (key === 'disable') {
+        setPrayerSequenceActive(false);
+        console.log('[iprayTest] prayer sequence DISABLED — blink & syuruk boleh trigger bebas');
+      }
+
+      if (key === 'enable') {
+        setPrayerSequenceActive(true);
+        console.log('[iprayTest] prayer sequence ENABLED semula');
+      }
+
+      // --- Simulate blink warning terus pada DOM (tanpa trigger prayer sequence) ---
+      if (key === 'warning') {
+        const wrapEl = document.getElementById('ipray-wrap-zohor');
+        if (!wrapEl) { console.warn('[iprayTest] ipray-wrap-zohor tidak wujud dalam DOM'); return; }
+        console.log('[iprayTest] simulate blink warning Zohor — 10 saat (DOM direct, tanpa event)');
+        wrapEl.style.transition = 'opacity 0.35s ease';
+        const colonEl = document.getElementById('ipray-colon-zohor');
+        if (colonEl) colonEl.style.transition = 'opacity 0.35s ease';
+        let t = 0;
+        const iv = setInterval(() => {
+          t++;
+          const b = t % 2 === 0;
+          wrapEl.style.opacity = b ? '1' : '0';
+          if (colonEl) colonEl.style.opacity = b ? '1' : '0';
+          if (t >= 10) { clearInterval(iv); wrapEl.style.opacity = '1'; wrapEl.style.transition = ''; if (colonEl) { colonEl.style.opacity = '1'; colonEl.style.transition = ''; } console.log('[iprayTest] blink warning selesai'); }
+        }, 1000);
+      }
+
+      // --- Trigger prayer sequence sebenar (akan papar prayer state) ---
+      if (key === 'seq') {
+        const zohorTime = times?.Zohor ?? '13:00';
+        console.log('[iprayTest] dispatch prayer-warning → Zohor (AKAN trigger prayer sequence UI)');
+        window.dispatchEvent(new CustomEvent('prayer-warning', {
+          detail: { prayerName: 'Zohor', prayerTimeStr: zohorTime }
+        }));
+      }
+
+      // --- Simulate masuk waktu Zohor (prayer-time event) ---
+      if (key === 'masuk') {
+        console.log('[iprayTest] dispatch prayer-time → Zohor');
+        window.dispatchEvent(new CustomEvent('prayer-time', {
+          detail: { prayerName: 'Zohor' }
+        }));
+      }
+
+      // --- Simulate syuruk beep blink (auto-stop 10s) ---
+      if (key === 'syuruk') {
+        console.log('[iprayTest] SYURUK_BEEP_START — blink syuruk aktif (auto-stop 10s)');
+        window.dispatchEvent(new CustomEvent('syuruk-beep-start'));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('syuruk-beep-stop'));
+          console.log('[iprayTest] SYURUK_BEEP_STOP — blink syuruk tamat');
+        }, 10000);
+      }
+
+      // --- Watch next prayer change — pantau override prayer ---
+      if (key === 'watch') {
+        const override = testPrayerOverrideRef.current;
+        const watchName = override?.name || 'asar';
+        console.log(`[iprayTest] watch '${watchName}' selama 150s... (jalankan 'run' dulu jika belum)`);
+        let tick = 0;
+        const iv = setInterval(() => {
+          tick++;
+          const next = window.data_ipray?.snapshot?.prayer?.next;
+          const t = window.data_ipray?.time;
+          const colonEl = document.getElementById(`ipray-colon-${watchName}`);
+          const wrapEl = document.getElementById(`ipray-wrap-${watchName}`);
+          console.log(`[${tick}s] next:${next} | ${t?.hours}:${String(t?.minutes).padStart(2,'0')}:${String(t?.seconds).padStart(2,'0')} | colon:${colonEl?.style?.opacity??'?'} wrap:${wrapEl?.style?.opacity??'?'}`);
+          if (tick >= 150) { clearInterval(iv); console.log('[iprayTest] watch selesai'); }
+        }, 1000);
+      }
+
+      // --- Hardcode waktu solat untuk test (gantikan TEST_PRAYER) ---
+      if (key === 'run') {
+        const next = window.data_ipray?.snapshot?.prayer?.next?.toLowerCase();
+        if (!next || next === 'subuh') {
+          console.warn('[iprayTest run] nextPrayer adalah Subuh atau tiada — skip (Subuh tidak disokong)');
+          return;
+        }
+        // Prayer time = sekarang + 2 minit — warning terus blink, masuk waktu dalam ~2 minit
+        const offsetSec = 120;
+        const now = new Date();
+        const t = new Date(now.getTime() + offsetSec * 1000);
+        const h = String(t.getHours()).padStart(2,'0');
+        const m = String(t.getMinutes()).padStart(2,'0');
+        const s = String(t.getSeconds()).padStart(2,'0');
+        const timeStr = `${h}:${m}:${s}`;
+        // Clear warnKey lama supaya warning boleh fire semula
+        const todayKey = new Date().toISOString().slice(0,10);
+        prayerWarningTriggeredRef.current[`${todayKey}-test-warn`] = false;
+        testPrayerOverrideRef.current = { name: next, timeStr };
+        console.log(`%c[iprayTest run] ${next.toUpperCase()} hardcode → ${timeStr}`, 'color:#FFD700;font-weight:bold');
+        console.log(`  warning blink: SEGERA (prayer time dalam ~2 minit)`);
+        console.log(`  masuk waktu dalam: ~2 minit`);
+        console.log(`  colon blink (isInPrayerMinute): 60s selepas masuk waktu`);
+        console.log(`  nextPrayer tukar selepas: ~3 minit`);
+        console.log(`  jalankan 'watch' untuk pantau`);
+      }
+
+      // --- Henti test, buang override ---
+      if (key === 'stop') {
+        testPrayerOverrideRef.current = null;
+        console.log('[iprayTest stop] test prayer override cleared — kembali ke masa sebenar');
+      }
+
+      const ALL_KEYS = ['dom','time','blink','state','disable','enable','warning','seq','masuk','syuruk','run','stop','watch'];
+      if (!ALL_KEYS.includes(key)) {
+        console.log('[iprayTest] keys tersedia:');
+        console.log('  run     — hardcode waktu nextPrayer = sekarang+offset (test warning→masuk→nextPrayer)');
+        console.log('  stop    — buang test override, kembali ke masa sebenar');
+        console.log('  watch   — pantau nextPrayer & colon opacity (150s)');
+        console.log('  dom     — semak semua DOM element');
+        console.log('  time    — semak window.data_ipray');
+        console.log('  blink   — semak opacity colon semua waktu');
+        console.log('  state   — semak prayer sequence state');
+        console.log('  disable — disable prayer sequence state');
+        console.log('  enable  — enable semula prayer sequence state');
+        console.log('  warning — simulate blink warning Zohor (DOM direct, TANPA trigger UI)');
+        console.log('  seq     — trigger prayer sequence UI (prayer-warning event)');
+        console.log('  masuk   — dispatch prayer-time event');
+        console.log('  syuruk  — simulate syuruk beep blink (auto-stop 10s)');
+      }
+    };
+    console.log('%c[iPray] Debug ready → window.iprayTest(key)', 'color:#FFD700;font-weight:bold');
+    console.log('%c  run | stop | watch | dom | time | blink | state | disable | enable | warning | seq | masuk | syuruk', 'color:#aaa');
+
     update();
     const id = setInterval(update, 1000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      delete window.iprayTest;
+    };
   // Sengaja exclude PRAYER_TIME_CONFIG dari deps — dibaca dari ref supaya interval tidak restart
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [takwimParsed, timeService]);

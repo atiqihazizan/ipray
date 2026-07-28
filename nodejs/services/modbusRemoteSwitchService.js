@@ -82,17 +82,17 @@ async function saveConfig(host, port) {
   return { host: h, port: p };
 }
 
-function testConnection() {
-  return new Promise(async (resolve, reject) => {
-    let cfg;
-    try {
-      cfg = await loadConfig();
-    } catch (e) {
-      return reject(e);
-    }
-    if (!cfg) {
-      return reject(new Error('modbus-remote.txt kosong atau tiada host — simpan IP|port dahulu'));
-    }
+async function testConnection() {
+  let cfg;
+  try {
+    cfg = await loadConfig();
+  } catch (e) {
+    throw e;
+  }
+  if (!cfg) {
+    throw new Error('modbus-remote.txt kosong atau tiada host — simpan IP|port dahulu');
+  }
+  return new Promise((resolve, reject) => {
     const client = net.createConnection({ host: cfg.host, port: cfg.port });
     const timer = setTimeout(() => {
       client.destroy();
@@ -114,17 +114,17 @@ function testConnection() {
 /**
  * @param {number} switchIndex 1..4
  */
-function sendSwitchCommand(switchIndex) {
-  return new Promise(async (resolve, reject) => {
-    let cfg;
-    try {
-      cfg = await loadConfig();
-    } catch (e) {
-      return reject(e);
-    }
-    if (!cfg) {
-      return reject(new Error('modbus-remote.txt kosong — simpan IP|port dahulu'));
-    }
+async function sendSwitchCommand(switchIndex) {
+  let cfg;
+  try {
+    cfg = await loadConfig();
+  } catch (e) {
+    throw e;
+  }
+  if (!cfg) {
+    throw new Error('modbus-remote.txt kosong — simpan IP|port dahulu');
+  }
+  return new Promise((resolve, reject) => {
     const payload = buildCommandLine(switchIndex);
     const buf = Buffer.from(payload, 'ascii');
     const sentDisplay = payload.replace(/\r$/, '').trim();
