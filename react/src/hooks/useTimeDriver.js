@@ -13,6 +13,7 @@ import {
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
+import audioService from '../services/audioService';
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -68,6 +69,7 @@ export function useTimeDriver() {
   const prayerTriggeredRef = useRef({});
   const prayerWarningTriggeredRef = useRef({});
   const syurukTriggeredRef = useRef({});
+  const beepFiredRef = useRef({});
   // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
   const lastCleanDateRef = useRef('');
 
@@ -215,6 +217,14 @@ export function useTimeDriver() {
 
             const colonEl = document.getElementById(`ipray-colon-${name}`);
             if (colonEl) colonEl.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1';
+
+            if (isInPrayerMinute && !beepFiredRef.current[name]) {
+              beepFiredRef.current[name] = true;
+              if (audioService.getIsPlaying()) audioService.stop();
+              audioService.play({ sound: 'beep', volume: 1, playCount: 1 });
+            } else if (!isInPrayerMinute) {
+              beepFiredRef.current[name] = false;
+            }
           }
 
           const nextNameEl = document.getElementById('ipray-next-name');

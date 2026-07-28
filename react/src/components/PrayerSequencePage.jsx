@@ -5,22 +5,43 @@ import { LS_PRAYER_TIMES_KEY } from '../hooks/useTimeDriver';
 import { TIME_EVENTS } from '../utils/timeEvents';
 import { setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { logKioskEvent } from '../services/clientLogger';
-import AzanScreen from './prayer-screens/AzanScreen';
-import IqamahScreen from './prayer-screens/IqamahScreen';
-import SolatScreen from './prayer-screens/SolatScreen';
+import { PegawaiTable, PEGAWAI_LIST } from './prayer-screens/OfficerRow';
 import DateTimeOverlay from './DateTimeOverlay';
-import { bgSolatStyle } from './prayer-screens/styles';
+import {
+  bgSolatStyle, gridScreenStyle, leftColumnPegawaiStyle,
+  rightColumnCenterStyle, pegawaiTitleStyle, pegawaiSmallStyle,
+  countdownStyleIqamah, countdownBoxStyle, countdownBoxTextStyle,
+  jawiTitleStyleAzan, jawiTitleStyleIqamah, jawiTitleStyle
+} from './prayer-screens/styles';
 
 const PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
-// Fallback timeout jika durasi audio tidak dapat dikesan (contoh: autoplay suspend) — guna nilai
-// generus supaya tidak potong beep.wav (~13s) sebelum habis; bila durasi diketahui, guna durasi sebenar + buffer.
 const BEEP_FALLBACK_TIMEOUT_MS = 20_000;
 const BEEP_FALLBACK_BUFFER_MS = 2_000;
-// Jaring keselamatan mutlak jika promise play() sendiri tidak pernah resolve/reject
-// (jarang, tapi dilaporkan berlaku pada sesetengah browser Chromium terbenam) — tanpa ini,
-// urutan boleh tersangkut di skrin Azan selama-lamanya kerana fallback biasa hanya bermula
-// SELEPAS play() selesai.
 const BEEP_HARD_CEILING_MS = 30_000;
+
+const JAWI_PRAYER_NAME = {
+  subuh: 'صبح',
+  zohor: 'الظهر',
+  asar: 'العصر',
+  maghrib: 'المغرب',
+  isyak: 'العشاء',
+};
+
+function getAzanJawiText(prayerName) {
+  const key = prayerName?.trim()?.toLowerCase();
+  const nameJawi = key && JAWI_PRAYER_NAME[key] ? JAWI_PRAYER_NAME[key] : (prayerName || '');
+  return `أذان`;
+}
+
+const JAWI_IQAMAH = 'اقامة';
+const JAWI_SEDANG_SOLAT = 'صلاة';
+
+const muteIconBadgeStyle = {
+  width: '70px', height: '70px', borderRadius: '50%',
+  backgroundColor: '#FFFFFF', display: 'flex',
+  alignItems: 'center', justifyContent: 'center', margin: '0 16px',
+};
+const muteIconStyle = { maxWidth: '55px', maxHeight: '55px', height: 'auto' };
 
 function formatCountdown(totalSeconds) {
   const s = Math.max(0, totalSeconds);
@@ -29,11 +50,6 @@ function formatCountdown(totalSeconds) {
   return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
-/**
- * Tunggu beep habis melalui audioService.subscribe('stop').
- * Fallback: jika 'stop' tidak diterima dalam BEEP_FALLBACK_TIMEOUT_MS, teruskan juga.
- * Returns cleanup function untuk unsubscribe jika komponen unmount.
- */
 function playBeepThenDo(onDone, prayerName) {
   if (audioService.getIsPlaying()) audioService.stop();
 
@@ -57,15 +73,12 @@ function playBeepThenDo(onDone, prayerName) {
     if (event === 'stop') finish();
   });
 
-  // Bermula SERTA-MERTA (bukan selepas play() selesai) — jaring keselamatan mutlak.
   let hardCeilingTimer = setTimeout(finish, BEEP_HARD_CEILING_MS);
 
   audioService.play({ sound: 'beep', volume: 1, playCount: 1 })
     .then(() => {
       if (done) return;
       if (hardCeilingTimer) { clearTimeout(hardCeilingTimer); hardCeilingTimer = null; }
-      // Fallback hanya sebagai jaringan keselamatan jika event 'stop' tidak fired langsung.
-      // Guna durasi sebenar audio + buffer supaya skrin tidak bertukar sebelum beep habis main.
       const durationMs = audioService.getDurationMs();
       const timeoutMs = durationMs ? durationMs + BEEP_FALLBACK_BUFFER_MS : BEEP_FALLBACK_TIMEOUT_MS;
       fallbackTimer = setTimeout(finish, timeoutMs);
@@ -80,35 +93,24 @@ function playBeepThenDo(onDone, prayerName) {
   };
 }
 
-/** Debug: ?debugScreen=iqamah atau ?debugScreen=solat untuk lompat terus ke screen itu */
 function getDebugStartScreen() {
   const s = new URLSearchParams(window.location.search).get('debugScreen');
   return (s === 'iqamah' || s === 'solat') ? s : null;
 }
 
-/**
- * Urutan waktu solat: azan countdown → (countdown=0: play beep, tunggu beep habis) → iqamah → solat → reload.
- * Sentiasa mulakan dari screen azan tanpa mengira warningSeconds.
- */
 export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComplete, overlayOverride = null }) {
-  const { PRAYER_TIME_CONFIG, timeService } = useData();
+  const { PRAYER_TIME_CONFIG, timeService, petugasData } = useData();
   const debugStart = getDebugStartScreen();
 
   const [screen, setScreen] = useState(debugStart || 'azan');
   const [countdown, setCountdown] = useState(0);
-  // const timerRef = useRef(null);
   const beepCleanupRef = useRef(null);
   const safeReloadTimerRef = useRef(null);
 
-  // Simpan config dalam ref supaya countdown tidak restart bila config berubah semasa berjalan
   const prayerTimeConfigRef = useRef(PRAYER_TIME_CONFIG);
   useEffect(() => {
     prayerTimeConfigRef.current = PRAYER_TIME_CONFIG;
   }, [PRAYER_TIME_CONFIG]);
-
-  // const clearTimer = useCallback(() => {
-  //   if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-  // }, []);
 
   const clearBeep = useCallback(() => {
     if (beepCleanupRef.current) { beepCleanupRef.current(); beepCleanupRef.current = null; }
@@ -118,17 +120,13 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     if (safeReloadTimerRef.current) { clearTimeout(safeReloadTimerRef.current); safeReloadTimerRef.current = null; }
   }, []);
 
-  // Cleanup semua timer apabila komponen unmount
   useEffect(() => {
     return () => {
-      // clearTimer();
       clearBeep();
       clearSafeReloadTimer();
     };
   }, [clearBeep, clearSafeReloadTimer]);
 
-  // Tandakan urutan solat sedang aktif — proses lain (contoh: reload data:updated)
-  // akan tangguh sehingga urutan ini selesai (unmount)
   useEffect(() => {
     setPrayerSequenceActive(true);
     logKioskEvent('sequence-start', { prayer: prayerName, time: prayerTimeStr });
@@ -139,17 +137,14 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sentiasa mulakan dari screen azan apabila prayerTimeStr tersedia (kecuali debug via ?debugScreen=)
   useEffect(() => {
     if (!prayerTimeStr || getDebugStartScreen()) return;
     setScreen('azan');
   }, [prayerTimeStr]);
 
   // Screen AZAN: countdown masa sebenar sehingga waktu solat
-  // Apabila countdown = 0: play beep, tunggu beep habis, BARU tukar ke iqamah
   useEffect(() => {
     if (screen !== 'azan') return;
-    // clearTimer();
     clearBeep();
 
     const handler = () => {
@@ -165,7 +160,7 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       if (remaining <= 0) {
         window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
         setCountdown(0);
-        beepCleanupRef.current = playBeepThenDo(() => setScreen('iqamah'), prayerName);
+        beepCleanupRef.current = playBeepThenDo(() => setScreen('masuk-waktu'), prayerName);
         return;
       }
       setCountdown(remaining);
@@ -178,12 +173,18 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       clearBeep();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, prayerTimeStr]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref supaya countdown tidak restart
+  }, [screen, prayerTimeStr]);
 
-  // Screen IQAMAH: countdown dari config (baca dari ref, bukan state — elak restart bila config berubah)
+  // Screen MASUK-WAKTU: papar teks selama 10 saat, auto ke iqamah
+  useEffect(() => {
+    if (screen !== 'masuk-waktu') return;
+    const timer = setTimeout(() => setScreen('iqamah'), 10_000);
+    return () => clearTimeout(timer);
+  }, [screen]);
+
+  // Screen IQAMAH: countdown dari config
   useEffect(() => {
     if (screen !== 'iqamah') return;
-    // clearTimer();
 
     const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60));
     const startTime = timeService?.now ? timeService.now() : Date.now();
@@ -204,12 +205,11 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
     return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref
+  }, [screen]);
 
   // Screen SOLAT: countdown dari config, kemudian safe reload
   useEffect(() => {
     if (screen !== 'solat') return;
-    // clearTimer();
     clearSafeReloadTimer();
 
     const duration = Math.max(1, Math.floor((prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60));
@@ -233,14 +233,8 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
       clearSafeReloadTimer();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]); // Sengaja exclude PRAYER_TIME_CONFIG — guna ref
+  }, [screen]);
 
-  /**
-   * Reload selamat dengan timer yang boleh dibatalkan.
-   * Hanya reload jika masa semasa sudah lepas waktu solat semasa
-   * tetapi belum mencapai waktu solat seterusnya.
-   * Tidak rekursif tanpa batas — guna ref untuk track dan cancel.
-   */
   const scheduleReload = useCallback(() => {
     clearSafeReloadTimer();
 
@@ -252,8 +246,6 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
         ? (() => { const [h, m] = prayerTimeStr.split(':').map(Number); return h * 60 + m; })()
         : null;
 
-      // Dapatkan waktu solat berikutnya dari localStorage
-      // Guna key bertarikh supaya tidak stale lintas hari
       let nextPtMinutes = 24 * 60;
       try {
         const today = now.toISOString().slice(0, 10);
@@ -267,18 +259,14 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
         }
       } catch (_) {}
 
-      // Reload jika sudah lepas waktu solat dan belum sampai solat seterusnya
       if (ptMinutes !== null && currentMinutes > ptMinutes && currentMinutes < nextPtMinutes) {
         logKioskEvent('solat-done-reload', { prayer: prayerName });
         window.location.reload();
       } else {
-        // Cuba semula dalam 30s — tapi hanya jika masih dalam window yang munasabah
-        // Elak retry bila masa jauh dari solat (contoh: Isyak selesai, masa 11 PM)
         const minutesSincePrayer = ptMinutes !== null ? currentMinutes - ptMinutes : 999;
-        if (minutesSincePrayer < 120) { // hanya retry dalam 2 jam selepas waktu solat
+        if (minutesSincePrayer < 120) {
           safeReloadTimerRef.current = setTimeout(tryReload, 30_000);
         } else {
-          // Sudah terlalu lama — panggil onComplete untuk kembali ke slideshow
           if (typeof onComplete === 'function') onComplete();
         }
       }
@@ -287,16 +275,65 @@ export default function PrayerSequencePage({ prayerName, prayerTimeStr, onComple
     tryReload();
   }, [prayerName, prayerTimeStr, onComplete, clearSafeReloadTimer, timeService]);
 
-  if (!screen) return <div style={bgSolatStyle} />;
+  const pegawaiList = (petugasData && petugasData.length > 0)
+    ? petugasData.map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
+    : PEGAWAI_LIST;
 
-  let content;
-  if (screen === 'azan') content = <AzanScreen prayerName={prayerName} countdown={formatCountdown(countdown)} />;
-  else if (screen === 'iqamah') content = <IqamahScreen countdown={formatCountdown(countdown)} />;
-  else content = <SolatScreen countdown={formatCountdown(countdown)} />;
+  const cd = formatCountdown(countdown);
 
+  // --- AZAN / IQAMAH layout (grid 2 lajur) ---
+  if (screen === 'azan' || screen === 'iqamah') {
+    const jawiTitle = screen === 'azan' ? jawiTitleStyleAzan() : jawiTitleStyleIqamah();
+    const jawiText = screen === 'azan' ? getAzanJawiText(prayerName) : JAWI_IQAMAH;
+    return (
+      <>
+        <div style={gridScreenStyle}>
+          <div style={leftColumnPegawaiStyle}>
+            <h2 style={pegawaiTitleStyle()}>PEGAWAI BERTUGAS</h2>
+            <small style={pegawaiSmallStyle}>(Tertakluk kepada perubahan)</small>
+            <br />
+            <PegawaiTable list={pegawaiList} />
+          </div>
+          <div style={rightColumnCenterStyle}>
+            <h1 style={jawiTitle}>{jawiText}</h1>
+            <div style={countdownBoxStyle}>
+              <p style={{ ...countdownStyleIqamah, ...countdownBoxTextStyle }}>{cd}</p>
+            </div>
+          </div>
+        </div>
+        {overlayOverride && <DateTimeOverlay overlayOverride={overlayOverride} />}
+      </>
+    );
+  }
+
+  // --- MASUK-WAKTU layout ---
+  if (screen === 'masuk-waktu') {
+    return (
+      <>
+        <div style={bgSolatStyle}>
+          <h1 style={{ color: '#FFFFFF', fontSize: '80px', textAlign: 'center', margin: 0, fontFamily: "'ArchivoBlack', sans-serif" }}>
+            Sekarang telah masuk waktu {prayerName}
+          </h1>
+        </div>
+        {overlayOverride && <DateTimeOverlay overlayOverride={overlayOverride} />}
+      </>
+    );
+  }
+
+  // --- SOLAT layout ---
   return (
     <>
-      {content}
+      <div style={bgSolatStyle}>
+        <h1 style={jawiTitleStyle()}>{JAWI_SEDANG_SOLAT}</h1>
+        <div style={{ position: 'absolute', bottom: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '104px' }}>
+          <div style={muteIconBadgeStyle}>
+            <img src="/img/mute-phone.png" alt="Senangkan telefon" style={muteIconStyle} />
+          </div>
+          <div style={muteIconBadgeStyle}>
+            <img src="/img/silent.png" alt="Diam" style={muteIconStyle} />
+          </div>
+        </div>
+      </div>
       {overlayOverride && <DateTimeOverlay overlayOverride={overlayOverride} />}
     </>
   );

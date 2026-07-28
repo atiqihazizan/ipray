@@ -69,7 +69,7 @@ export const gridScreenStyle = {
   ...bgStyle,
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  alignItems: "center",
+  alignItems: "flex-end",
   justifyContent: "center",
   gap: "2rem",
   padding: 0,
@@ -79,6 +79,7 @@ export const leftColumnPegawaiStyle = {
   width: "100%",
   // marginTop: "13rem",
   marginTop: "8rem",
+  paddingBottom: "3rem",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -88,7 +89,8 @@ export const rightColumnCenterStyle = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  justifyContent: "center",
+  justifyContent: "flex-end",
+  paddingBottom: "3rem",
   gap: `${textSize(200)}px`,
 };
 
