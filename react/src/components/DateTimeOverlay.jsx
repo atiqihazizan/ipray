@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import DisplayTime from './DisplayTime';
 import DisplayDate from './DisplayDate';
-import Marquee, { MARQUEE_STANDARD_HEIGHT_BASE } from './Marquee';
+import Marquee from './Marquee';
+// import { MARQUEE_STANDARD_HEIGHT_BASE } from './Marquee';
 import { useData } from '../contexts/DataContext';
 import { usePrayerTimes } from '../hooks/useIslamicTime';
 import { useTakwimData } from '../hooks/useTakwimData';
@@ -44,7 +45,7 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
   const marqueeEnabled = dtRef.current == null 
     ? false                                          // first load: hide
     : (marqueeFromSlide !== false);                  // selepas slide pertama: ikut slide
-  const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
+  // const timeBottom = marqueeEnabled ? MARQUEE_STANDARD_HEIGHT_BASE : 0;
   const { nextPrayerData, nextPrayerName } = usePrayerTimes(takwimParsed);
 
   useEffect(() => {
