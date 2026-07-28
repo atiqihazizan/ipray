@@ -31,7 +31,8 @@ export const useDisplayTime = ({
   prayerName = null,
   nextPrayerTime = null,
   nextPrayerName = null,
-  disablePrayerTracking = false
+  disablePrayerTracking = false,
+  disableBlinkState = false
 }) => {
   const { islamicTime, loading } = useIslamicTime();
   const { PRAYER_TIME_CONFIG } = useData();
@@ -98,12 +99,16 @@ export const useDisplayTime = ({
 
   // Kelipan: driven oleh event time-update. Syuruk: blink sepanjang beep.wav dimainkan; lain: 30s sebelum + masuk waktu.
   useEffect(() => {
+    if (disableBlinkState) {
+      setBlink(true);
+      return;
+    }
     if (!shouldBlink && !isPrayerTime && !use30sBeforeForBlink && !useSyurukBeepBlink) {
       setBlink(true);
       return;
     }
     if (islamicTime?.time != null) setBlink((prev) => !prev);
-  }, [islamicTime?.time?.seconds, shouldBlink, isPrayerTime, use30sBeforeForBlink, useSyurukBeepBlink]);
+  }, [islamicTime?.time?.seconds, shouldBlink, isPrayerTime, use30sBeforeForBlink, useSyurukBeepBlink, disableBlinkState]);
 
   const isPrayerTimeMode = prayerName != null;
   const isNextPrayerMode = nextPrayerTime != null;

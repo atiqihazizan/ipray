@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo } from 'react';
 import { useDisplayTime } from '../hooks/useDisplayTime';
 import { useData } from '../contexts/DataContext';
 import {
@@ -62,24 +62,11 @@ const DisplayTime = ({
     prayerName: isPrayerTimeMode ? prayerName : (isNextPrayerMode ? label : null),
     nextPrayerTime: isNextPrayerMode ? nextPrayerTime : null,
     nextPrayerName: isPrayerTimeMode ? nextPrayerName : null,
-    disablePrayerTracking: isPrayerTimeMode || isNextPrayerMode
+    disablePrayerTracking: isPrayerTimeMode || isNextPrayerMode,
+    disableBlinkState: isCurrentTimeMode
   });
 
-  useEffect(() => {
-    if (!colonId) return;
-    const handler = (e) => {
-      const el = document.getElementById(colonId);
-      if (!el) return;
-      if (type === 1) {
-        el.style.opacity = e.detail.blink ? '1' : '0';
-        el.style.transition = 'opacity 0.35s ease';
-      }
-    };
-    window.addEventListener('blink-toggle', handler);
-    return () => window.removeEventListener('blink-toggle', handler);
-  }, [colonId, type]);
-
-  // Commented out — digantikan oleh renderTime() + DOM blink
+  // Commented out — digantikan oleh renderTime() + DOM blink via useTimeDriver
   // const formatTimeWithBlink = () => {
   //   const parts = displayTime.split(':');
   //   if (parts.length === 1) return displayTime;
@@ -105,11 +92,11 @@ const DisplayTime = ({
       if (showSeconds && parts.length === 3) {
         const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
         const seconds = parts[2].replace(/\s*(AM|PM)/, '');
-        return <>{parts[0]}<span id={colonId || undefined}>:</span>{parts[1]}<span>:</span>{seconds}{ampm}</>;
+        return <>{parts[0]}<span id={colonId || undefined} style={{ transition: 'none' }}>:</span>{parts[1]}<span>:</span>{seconds}{ampm}</>;
       }
       const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
       const minutes = parts[1].replace(/\s*(AM|PM)/, '');
-      return <>{parts[0]}<span id={colonId || undefined}>:</span>{minutes}{ampm}</>;
+      return <>{parts[0]}<span id={colonId || undefined} style={{ transition: 'none' }}>:</span>{minutes}{ampm}</>;
     }
 
     if (type === 2) {
