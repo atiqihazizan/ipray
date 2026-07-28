@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { useDisplayTime } from '../hooks/useDisplayTime';
 import { useData } from '../contexts/DataContext';
 import {
@@ -33,6 +33,8 @@ const DisplayTime = ({
   wrapperId = null,      // id untuk outer wrapper div
   // Type: 1 = clock/masa semasa, 2 = waktu solat, 3 = next solat
   type = 1,
+  // Unique colon ID untuk DOM blink
+  colonId = null,
   // Caption attributes
   transition,
   transition2,
@@ -63,21 +65,62 @@ const DisplayTime = ({
     disablePrayerTracking: isPrayerTimeMode || isNextPrayerMode
   });
 
-  const formatTimeWithBlink = () => {
-    const parts = displayTime.split(':');
-    if (parts.length === 1) return displayTime;
+  useEffect(() => {
+    if (!colonId) return;
+    const handler = (e) => {
+      const el = document.getElementById(colonId);
+      if (!el) return;
+      if (type === 1) {
+        el.style.opacity = e.detail.blink ? '1' : '0';
+        el.style.transition = 'opacity 0.35s ease';
+      }
+    };
+    window.addEventListener('blink-toggle', handler);
+    return () => window.removeEventListener('blink-toggle', handler);
+  }, [colonId, type]);
 
-    const colonClass = effectiveShouldBlink ? 'ipray-blink-colon' : undefined;
+  // Commented out — digantikan oleh renderTime() + DOM blink
+  // const formatTimeWithBlink = () => {
+  //   const parts = displayTime.split(':');
+  //   if (parts.length === 1) return displayTime;
+  //
+  //   const colonClass = effectiveShouldBlink ? 'ipray-blink-colon' : undefined;
+  //
+  //   if (showSeconds && parts.length === 3) {
+  //     const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
+  //     const seconds = parts[2].replace(/\s*(AM|PM)/, '');
+  //     return <>{parts[0]}<span className={colonClass}>:</span>{parts[1]}<span className={colonClass}>:</span>{seconds}{ampm}</>;
+  //   }
+  //
+  //   const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
+  //   const minutes = parts[1].replace(/\s*(AM|PM)/, '');
+  //   return <>{parts[0]}<span className={colonClass}>:</span>{minutes}{ampm}</>;
+  // };
 
-    if (showSeconds && parts.length === 3) {
-      const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
-      const seconds = parts[2].replace(/\s*(AM|PM)/, '');
-      return <>{parts[0]}<span className={colonClass}>:</span>{parts[1]}<span className={colonClass}>:</span>{seconds}{ampm}</>;
+  const renderTime = () => {
+    const parts = displayTime ? displayTime.split(':') : [];
+    if (parts.length < 2) return displayTime || '';
+
+    if (type === 1) {
+      if (showSeconds && parts.length === 3) {
+        const ampm = parts[2].match(/\s*(AM|PM)/)?.[0] || '';
+        const seconds = parts[2].replace(/\s*(AM|PM)/, '');
+        return <>{parts[0]}<span id={colonId || undefined}>:</span>{parts[1]}<span>:</span>{seconds}{ampm}</>;
+      }
+      const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
+      const minutes = parts[1].replace(/\s*(AM|PM)/, '');
+      return <>{parts[0]}<span id={colonId || undefined}>:</span>{minutes}{ampm}</>;
     }
 
-    const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
-    const minutes = parts[1].replace(/\s*(AM|PM)/, '');
-    return <>{parts[0]}<span className={colonClass}>:</span>{minutes}{ampm}</>;
+    if (type === 2) {
+      const ampm = parts[1].match(/\s*(AM|PM)/)?.[0] || '';
+      const minutes = parts[1].replace(/\s*(AM|PM)/, '');
+      return <>{parts[0]}<span id={colonId || undefined}>:</span>{minutes}{ampm}</>;
+    }
+
+    // type=3 atau lain — guna formatTimeWithBlink lama
+    // return formatTimeWithBlink();
+    return displayTime || '';
   };
 
   const attrs = getCaptionAttributes({ transition, transition2, delay, duration });
@@ -91,7 +134,7 @@ const DisplayTime = ({
     <div {...attrs} id={wrapperId || undefined} className={className} style={{ ...styleObj, ...wrapperStyle, ...blinkContainerStyle }}>
       {label && <div id={labelElementId || undefined} style={labelStyle}>{label}</div>}
       <div id={elementId || undefined} style={timeTextStyle}>
-        {type === 1 ? (displayTime || '') : formatTimeWithBlink()}
+        {renderTime()}
       </div>
     </div>
   );

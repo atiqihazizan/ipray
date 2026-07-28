@@ -13,7 +13,8 @@ export const TIME_EVENTS = {
   SYURUK_BEEP_STOP: 'syuruk-beep-stop',
   DATE_CHANGED: 'date-changed',
   SLIDE_CHANGED: 'slide-changed',
-  MINUTE_CHANGED: 'minute-changed'
+  MINUTE_CHANGED: 'minute-changed',
+  BLINK_TOGGLE: 'blink-toggle'
 };
 
 export function dispatchTimeUpdate(payload) {
@@ -61,6 +62,12 @@ export function dispatchSyurukBeepStop() {
 export function dispatchDateChanged(todayStr) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(TIME_EVENTS.DATE_CHANGED, { detail: { todayStr } }));
+  }
+}
+
+export function dispatchBlinkToggle(blink) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.BLINK_TOGGLE, { detail: { blink } }));
   }
 }
 

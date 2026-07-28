@@ -9,6 +9,7 @@ import {
   dispatchPrayerTime,
   dispatchSyurukTime,
   dispatchDateChanged,
+  dispatchBlinkToggle,
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
@@ -149,6 +150,7 @@ export function useTimeDriver() {
 
           blinkToggleRef.current = !blinkToggleRef.current;
           const blink = blinkToggleRef.current;
+          dispatchBlinkToggle(blink);
 
           const warningSecs = warningSecondsRef.current;
           const t = islamicTime.time;
@@ -201,6 +203,17 @@ export function useTimeDriver() {
               } else {
                 wrapEl.style.opacity = '1';
                 wrapEl.style.transition = '';
+              }
+            }
+
+            const colonEl = document.getElementById(`ipray-colon-${name}`);
+            if (colonEl) {
+              if (isInPrayerMinute) {
+                colonEl.style.opacity = blink ? '1' : '0';
+                colonEl.style.transition = 'opacity 0.35s ease';
+              } else {
+                colonEl.style.opacity = '1';
+                colonEl.style.transition = '';
               }
             }
           }
