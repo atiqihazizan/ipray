@@ -13,6 +13,7 @@ import {
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
+import { sliderGoTo, sliderPause, sliderPlay, sliderResume } from '../utils/sliderControl';
 import audioService from '../services/audioService';
 import { logKioskEvent } from '../services/clientLogger';
 
@@ -70,6 +71,7 @@ export function useTimeDriver() {
   const prayerWarningTriggeredRef = useRef({});
   const syurukTriggeredRef = useRef({});
   const beepFiredRef = useRef({});
+  const sliderResumeTimerRef = useRef(null);
   // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
   const lastCleanDateRef = useRef('');
 
@@ -222,6 +224,12 @@ export function useTimeDriver() {
               beepFiredRef.current[name] = true;
               if (audioService.getIsPlaying()) audioService.stop();
               audioService.play({ sound: 'beep', volume: 1, playCount: 1 });
+              // Resume slider 60s selepas masuk waktu (selepas isInPrayerMinute tamat)
+              if (sliderResumeTimerRef.current) clearTimeout(sliderResumeTimerRef.current);
+              sliderResumeTimerRef.current = setTimeout(() => {
+                sliderResumeTimerRef.current = null;
+                sliderResume();
+              }, 60_000);
             } else if (!isInPrayerMinute) {
               beepFiredRef.current[name] = false;
             }
@@ -377,6 +385,9 @@ export function useTimeDriver() {
                 const displayName = (isTestTarget && resolvedNextPrayer) ? resolvedNextPrayer : name;
                 dispatchPrayerWarning(displayName, timeStr);
                 logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
+                // Pause slider dan jump ke slide 0 (halaman waktu solat)
+                sliderGoTo(0);
+                sliderPause();
               }
               if (isTestTarget) break;
             }
@@ -484,6 +495,18 @@ export function useTimeDriver() {
       if (key === 'enable') {
         setPrayerSequenceActive(true);
         console.log('[iprayTest] prayer sequence ENABLED semula');
+      }
+
+      // --- Test slider pause / play ---
+      if (key === 'pause') {
+        sliderGoTo(0);
+        sliderPause();
+        console.log('[iprayTest] slider → GoTo(0) + Pause');
+      }
+
+      if (key === 'play') {
+        sliderResume();
+        console.log('[iprayTest] slider → Resume (clear lock + Play)');
       }
 
       // --- Simulate blink warning terus pada DOM (tanpa trigger prayer sequence) ---
@@ -606,6 +629,10 @@ export function useTimeDriver() {
     const id = setInterval(update, 1000);
     return () => {
       clearInterval(id);
+      if (sliderResumeTimerRef.current) {
+        clearTimeout(sliderResumeTimerRef.current);
+        sliderResumeTimerRef.current = null;
+      }
       delete window.iprayTest;
     };
   // Sengaja exclude PRAYER_TIME_CONFIG dari deps — dibaca dari ref supaya interval tidak restart

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sliderConfig } from '../config/sliderConfig';
+import { sliderInit } from '../utils/sliderControl';
 
 /**
  * Create stable hash dari slide structure DAN content untuk detect changes
@@ -301,6 +302,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
           if (sliderInstanceRef.current) {
             const oldInst = sliderInstanceRef.current;
             sliderInstanceRef.current = null;
+            sliderInit(null);
             try {
               if (oldInst.$Elmt && typeof oldInst.$Pause === 'function') oldInst.$Pause();
               if (oldInst.$Elmt && typeof oldInst.$Destroy === 'function') oldInst.$Destroy();
@@ -311,6 +313,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
             if (sliderContainerRef.current && !sliderInstanceRef.current) {
               try {
                 sliderInstanceRef.current = new $JssorSlider$(sliderContainerRef.current, options);
+                sliderInit(sliderInstanceRef.current);
                 isInitializingRef.current = false;
               } catch (error) {
                 isInitializingRef.current = false;
@@ -434,6 +437,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
       if (sliderInstanceRef.current) {
         const inst = sliderInstanceRef.current;
         sliderInstanceRef.current = null; // null dulu untuk elak race condition
+        sliderInit(null);
         try {
           if (inst.$Elmt && typeof inst.$Pause === 'function') inst.$Pause();
           if (inst.$Elmt && typeof inst.$Destroy === 'function') inst.$Destroy();
