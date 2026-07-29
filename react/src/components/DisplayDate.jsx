@@ -1,7 +1,4 @@
 import { memo } from 'react';
-// import { useMemo, useState, useEffect } from 'react';
-// import { useIslamicTime } from '../hooks/useIslamicTime';
-// import { TIME_EVENTS } from '../utils/timeEvents';
 
 const DisplayDate = ({
   type = 1, // 1 = kiri, 2 = kanan
@@ -10,27 +7,7 @@ const DisplayDate = ({
   color = '#ffff00',
   style: customStyle = {}
 }) => {
-  // const { islamicTime, loading } = useIslamicTime();
-  // const [hijriOverride, setHijriOverride] = useState(null);
-  //
-  // useEffect(() => {
-  //   if (dateType !== 'hijri') return;
-  //   const handler = (e) => {
-  //     if (e.detail?.hijri) setHijriOverride(e.detail.hijri);
-  //   };
-  //   window.addEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
-  //   return () => window.removeEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
-  // }, [dateType]);
-  //
-  // const effectiveHijri = hijriOverride ?? islamicTime?.hijri;
-  // const dateKey = dateType === 'hijri'
-  //   ? `${effectiveHijri?.day}-${effectiveHijri?.month}-${effectiveHijri?.year}`
-  //   : `${islamicTime?.gregorian?.day}-${islamicTime?.gregorian?.month}-${islamicTime?.gregorian?.year}`;
-  //
-  // const dateData = useMemo(() => {
-  //   if (!islamicTime && !effectiveHijri) return null;
-  //   return dateType === 'hijri' ? effectiveHijri : islamicTime?.gregorian;
-  // }, [dateKey, dateType, islamicTime, effectiveHijri]);
+
 
   const snapshot = typeof window !== 'undefined' ? window.data_ipray?.snapshot ?? null : null;
   const gregorian = snapshot?.gregorian ?? null;

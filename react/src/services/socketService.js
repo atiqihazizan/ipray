@@ -1,12 +1,12 @@
 import { io } from 'socket.io-client';
 import { getSocketUrl } from './apiBase';
-import audioService from './audioService.js';
+import beepService from './beepService.js';
 import { isPrayerSequenceActive } from '../utils/prayerSequenceState';
 
 /** Elak chime 'notify' mengganggu paparan azan/iqamah/solat yang sedang aktif */
 function playNotifyIfIdle() {
   if (isPrayerSequenceActive()) return;
-  audioService.play({ sound: 'notify', playCount: 1, volume: 1 }).catch(() => {});
+  beepService.beep(1);
 }
 
 /**
@@ -135,7 +135,7 @@ class SocketService {
 
     // Listen for test sound from setting panel
     this.socket.on('test-sound', () => {
-      audioService.play({ sound: 'beep_once', playCount: 1, volume: 1 }).catch(() => {});
+      beepService.playPattern('b1');
     });
 
     // Listen for home title config update (tanpa reload)

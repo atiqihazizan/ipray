@@ -7,14 +7,15 @@ export const TIME_EVENTS = {
   TIME_UPDATE: 'time-update',
   HIJRI_DATE_CHANGED: 'hijri-date-changed',
   PRAYER_WARNING: 'prayer-warning',
-  PRAYER_TIME: 'prayer-time',
   SYURUK_TIME: 'syuruk-time',
   SYURUK_BEEP_START: 'syuruk-beep-start',
   SYURUK_BEEP_STOP: 'syuruk-beep-stop',
   DATE_CHANGED: 'date-changed',
   SLIDE_CHANGED: 'slide-changed',
   MINUTE_CHANGED: 'minute-changed',
-  BLINK_TOGGLE: 'blink-toggle'
+  BLINK_TOGGLE: 'blink-toggle',
+  SEQUENCE_STATE: 'sequence-state',
+  SEQUENCE_END: 'sequence-end'
 };
 
 export function dispatchTimeUpdate(payload) {
@@ -32,12 +33,6 @@ export function dispatchHijriDateChanged(hijri) {
 export function dispatchPrayerWarning(prayerName, prayerTimeStr) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_WARNING, { detail: { prayerName, prayerTimeStr } }));
-  }
-}
-
-export function dispatchPrayerTime(prayerName) {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_TIME, { detail: { prayerName } }));
   }
 }
 
@@ -74,5 +69,17 @@ export function dispatchBlinkToggle(blink) {
 export function dispatchSlideChanged(datetime) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(TIME_EVENTS.SLIDE_CHANGED, { detail: { datetime } }));
+  }
+}
+
+export function dispatchSequenceState({ phase, countdown, prayerName, prayerTimeStr }) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.SEQUENCE_STATE, { detail: { phase, countdown, prayerName, prayerTimeStr } }));
+  }
+}
+
+export function dispatchSequenceEnd() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.SEQUENCE_END, { detail: {} }));
   }
 }

@@ -33,35 +33,16 @@ export const bgSolatStyle = {
   backgroundColor: "#000000",
 };
 
-export const titleStyle = {
-  color: "#FFFFFF",
-  fontSize: "120px",
-  fontFamily: "'Anton', sans-serif",
-  fontWeight: "normal",
-  textAlign: "center",
-  margin: 0,
-  lineHeight: 1.2,
-};
-
-export const countdownStyle = {
-  color: "#FFFFFF",
-  fontSize: "80px",
-  fontFamily: "'Roboto Mono', monospace",
-  fontWeight: "bold",
-  textAlign: "center",
-  margin: "20px 0 0 0",
-  letterSpacing: "4px",
-};
-
 export const countdownStyleIqamah = {
   color: "#FFFFFF",
-  fontSize: `${textSize(256)}px`,
-  fontFamily: "'Bebas', sans-serif",
-  fontWeight: "bold",
+  fontSize: `${textSize(300)}px`,
+  fontFamily: "'DIN', sans-serif",
+  fontWeight: "900",
   textAlign: "center",
   margin: `${textSize(16)}px 0 0 0`,
-  letterSpacing: `${textSize(7)}px`,
-  lineHeight: 0.25,
+  letterSpacing: "2px",
+  transform: "scaleY(1.45)",
+  display: "inline-block",
 };
 
 // ---------- Kongsi layout AzanScreen & IqamahScreen (grid 2 lajur, center) ----------
@@ -69,7 +50,7 @@ export const gridScreenStyle = {
   ...bgStyle,
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  alignItems: "flex-end",
+  alignItems: "center",
   justifyContent: "center",
   gap: "2rem",
   padding: 0,
@@ -77,7 +58,6 @@ export const gridScreenStyle = {
 
 export const leftColumnPegawaiStyle = {
   width: "100%",
-  // marginTop: "13rem",
   marginTop: "8rem",
   paddingBottom: "3rem",
   display: "flex",
@@ -89,9 +69,11 @@ export const rightColumnCenterStyle = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  justifyContent: "flex-end",
-  paddingBottom: "3rem",
-  gap: `${textSize(200)}px`,
+  justifyContent: "center",
+  // marginTop: "-2rem",
+  // paddingBottom: "3rem",
+  // gap: "15vh",
+  height: "100vh",
 };
 
 export const pegawaiTitleStyle = () => ({
@@ -121,16 +103,13 @@ export const countdownBoxStyle = {};
 
 export const countdownBoxTextStyle = {
   color: "red",
-  margin: 0, // Jarak tajuk-ke-countdown kini dikawal oleh gap rightColumnCenterStyle
-  WebkitTextStroke: `${Math.max(1, Math.round(textSize(10)))}px #FFFFFF`,
+  margin: 0,
+  WebkitTextStroke: `${Math.max(1, Math.round(textSize(3)))}px #FFFFFF`,
   paintOrder: "stroke fill",
   textShadow: "0 0 24px rgba(0,0,0,0.9), 0 6px 12px rgba(0,0,0,0.85)",
+  width: "1010px",
 };
 
-/** Baris pegawai (imej + label : nama) — kongsi Azan & Iqamah */
-export const officerRowStyle = { display: "flex", alignItems: "center", width: "100%" };
-export const officerColImgStyle = { width: "32%", padding: "0.5rem", textAlign: "center" };
-export const officerColLabelStyle = { width: "auto", padding: "0.5rem", color: "#fff", fontSize: "3rem" };
 export const officerImgStyle = { width: "250px", height: "auto" };
 
 /** Jadual pegawai — 3 lajur: imej 200px, label 100px, nama full width. Kongsi Azan & Iqamah. */
@@ -150,7 +129,8 @@ export const jawiTitleStyleIqamah = () => ({
   fontWeight: 700,
   textAlign: "center",
   margin: 0,
-  lineHeight: 1.4,
+  // marginTop: "-13vh",
+  // lineHeight: 1.4,
   direction: "rtl",
 });
 
@@ -167,7 +147,8 @@ export const jawiTitleStyleAzan = () => ({
   fontWeight: 700,
   textAlign: "center",
   margin: 0,
-  lineHeight: 1.4,
+  // marginTop: "-13vh",
+  // lineHeight: 1.4,
   direction: "rtl",
 });
 
@@ -185,28 +166,4 @@ export const jawiTitleStyle = () => ({
   direction: "rtl",
 });
 
-/** Subtitle Arab/Jawi — font lebih kecil, guna ratio (base 28px @ 1080p) */
-export const jawiSubtitleStyle = () => ({
-  position: 'absolute',
-  bottom: '330px',
-  color: "#FFFFFF",
-  WebkitTextStroke: `${Math.max(1, Math.round(textSize(5)))}px #000000`,
-  paintOrder: "stroke fill",
-  fontSize: `${textSize(100)}px`,
-  fontFamily: ARABIC_FONT_FAMILY,
-  // fontWeight: 600,
-  textAlign: "center",
-  margin: `${textSize(16)}px 0 0 0`,
-  maxWidth: "90vw",
-  lineHeight: 1.6,
-  direction: "rtl",
-});
 
-export const subtitleStyle = {
-  color: "#FFFFFF",
-  fontSize: "26px",
-  fontFamily: "'Roboto', sans-serif",
-  textAlign: "center",
-  margin: "16px 0 0 0",
-  maxWidth: "90vw",
-};
