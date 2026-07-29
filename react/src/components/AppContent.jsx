@@ -1,30 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import SliderPage from './SliderPage'
 import LoadingPage from './LoadingPage'
 import PrayerSequencePage from './PrayerSequencePage'
+import BeepManagementPage from './BeepManagementPage'
 
-// Set true untuk debug: papar PrayerSequencePage sahaja
 const DEBUG_SHOW_PRAYER_SEQUENCE_ONLY = false
 
 import DateTimeOverlay from './DateTimeOverlay'
 import DeathAnnouncementOverlay from './DeathAnnouncementOverlay'
 import LiveStreamOverlay from './LiveStreamOverlay'
-import PrayerTimeController from './PrayerTimeController'
 import { useData } from '../contexts/DataContext'
+import { TIME_EVENTS } from '../utils/timeEvents'
 
 const AppContent = () => {
+  if (new URLSearchParams(window.location.search).has('beep')) {
+    return <BeepManagementPage />
+  }
+
   const {
     loading: dataLoading,
     socketConnected,
     socketReady,
-    midnightReloadMessage,
     deathAnnouncementData,
     liveStreamData,
   } = useData()
   const [sliderReady, setSliderReady] = useState(false)
   const [currentView, setCurrentView] = useState('slide')
   const [currentPrayerName, setCurrentPrayerName] = useState(null)
-  const [currentPrayerTimeStr, setCurrentPrayerTimeStr] = useState(null)
+
+  useEffect(() => {
+    const onStart = (e) => {
+      setCurrentPrayerName(e.detail?.prayerName ?? null)
+      setCurrentView('prayer')
+    }
+    const onEnd = () => setCurrentView('slide')
+    window.addEventListener(TIME_EVENTS.PRAYER_WARNING, onStart)
+    window.addEventListener(TIME_EVENTS.SEQUENCE_END, onEnd)
+    return () => {
+      window.removeEventListener(TIME_EVENTS.PRAYER_WARNING, onStart)
+      window.removeEventListener(TIME_EVENTS.SEQUENCE_END, onEnd)
+    }
+  }, [])
 
   if (socketReady && !socketConnected) {
     return (
@@ -41,14 +57,9 @@ const AppContent = () => {
   if (!socketConnected) return <LoadingPage />
 
   if (DEBUG_SHOW_PRAYER_SEQUENCE_ONLY) {
-    const now = new Date()
-    const in2Min = new Date(now.getTime() + 2 * 60 * 1000)
-    const debugTimeStr = `${String(in2Min.getHours()).padStart(2, '0')}:${String(in2Min.getMinutes()).padStart(2, '0')}:00`
     return (
       <PrayerSequencePage
         prayerName="Subuh"
-        prayerTimeStr={debugTimeStr}
-        onComplete={() => {}}
         overlayOverride={{ showDate: true, showSmallTime: true, showMarquee: true, showTimeSmallClock: false }}
       />
     )
@@ -57,10 +68,8 @@ const AppContent = () => {
   if (currentView === 'prayer') {
     return (
       <PrayerSequencePage
-        key={`${currentPrayerName}-${currentPrayerTimeStr}`}
+        key={currentPrayerName}
         prayerName={currentPrayerName}
-        prayerTimeStr={currentPrayerTimeStr}
-        onComplete={() => setCurrentView('slide')}
         overlayOverride={{ showDate: true, showSmallTime: true, showMarquee: true, showTimeSmallClock: false }}
       />
     )
@@ -70,12 +79,6 @@ const AppContent = () => {
 
   return (
     <>
-      <PrayerTimeController setCurrentView={setCurrentView} setPrayerName={setCurrentPrayerName} setPrayerTimeStr={setCurrentPrayerTimeStr} />
-      {midnightReloadMessage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <p className="text-white text-2xl font-bold">{midnightReloadMessage}</p>
-        </div>
-      )}
       {(dataLoading || (!sliderReady && !hasDeathAnnouncement)) && <LoadingPage />}
       <div 
         className="relative bg-black flex items-center justify-center" 

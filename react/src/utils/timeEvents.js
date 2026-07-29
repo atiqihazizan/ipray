@@ -14,7 +14,9 @@ export const TIME_EVENTS = {
   DATE_CHANGED: 'date-changed',
   SLIDE_CHANGED: 'slide-changed',
   MINUTE_CHANGED: 'minute-changed',
-  BLINK_TOGGLE: 'blink-toggle'
+  BLINK_TOGGLE: 'blink-toggle',
+  SEQUENCE_STATE: 'sequence-state',
+  SEQUENCE_END: 'sequence-end'
 };
 
 export function dispatchTimeUpdate(payload) {
@@ -74,5 +76,17 @@ export function dispatchBlinkToggle(blink) {
 export function dispatchSlideChanged(datetime) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(TIME_EVENTS.SLIDE_CHANGED, { detail: { datetime } }));
+  }
+}
+
+export function dispatchSequenceState({ phase, countdown, prayerName, prayerTimeStr }) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.SEQUENCE_STATE, { detail: { phase, countdown, prayerName, prayerTimeStr } }));
+  }
+}
+
+export function dispatchSequenceEnd() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(TIME_EVENTS.SEQUENCE_END, { detail: {} }));
   }
 }

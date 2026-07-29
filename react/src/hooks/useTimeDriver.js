@@ -10,6 +10,8 @@ import {
   dispatchSyurukTime,
   dispatchDateChanged,
   dispatchBlinkToggle,
+  dispatchSequenceState,
+  dispatchSequenceEnd,
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
@@ -70,10 +72,15 @@ export function useTimeDriver() {
   const prayerTriggeredRef = useRef({});
   const prayerWarningTriggeredRef = useRef({});
   const syurukTriggeredRef = useRef({});
-  const beepFiredRef = useRef({});
-  const sliderResumeTimerRef = useRef(null);
   // Track tarikh terakhir supaya ref dibersihkan apabila hari bertukar
   const lastCleanDateRef = useRef('');
+  const sequencePhaseRef = useRef(null);
+  const sequenceCountdownRef = useRef(0);
+  const sequenceStartTimeRef = useRef(0);
+  const sequencePrayerNameRef = useRef('');
+  const sequencePrayerTimeStrRef = useRef('');
+  const scheduleReloadTimerRef = useRef(null);
+  const masukWaktuBeepDoneRef = useRef(false);
 
   const PRAYER_IDS = ['subuh', 'syuruk', 'zohor', 'asar', 'maghrib', 'isyak'];
 
@@ -114,9 +121,52 @@ export function useTimeDriver() {
     })();
     const testSyurukStr = TEST_SYURUK ? _testTimeStr : null;
 
+    const scheduleReloadAfterSequence = () => {
+      const tryReload = () => {
+        const now = timeService?.now ? new Date(timeService.now()) : new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+        const prayerName = sequencePrayerNameRef.current;
+        const prayerTimeStr = sequencePrayerTimeStrRef.current;
+
+        const ptMinutes = prayerTimeStr
+          ? (() => { const [h, m] = prayerTimeStr.split(':').map(Number); return h * 60 + m; })()
+          : null;
+
+        let nextPtMinutes = 24 * 60;
+        try {
+          const today = now.toISOString().slice(0, 10);
+          const ACTIVE_PRAYERS_LIST = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
+          const stored = JSON.parse(localStorage.getItem(`${LS_PRAYER_TIMES_KEY}-${today}`) || 'null')
+            ?? JSON.parse(localStorage.getItem(LS_PRAYER_TIMES_KEY) || 'null');
+          const idx = ACTIVE_PRAYERS_LIST.indexOf(prayerName);
+          const nextName = ACTIVE_PRAYERS_LIST[idx + 1] ?? null;
+          if (nextName && stored?.[nextName]) {
+            const [h, m] = stored[nextName].split(':').map(Number);
+            nextPtMinutes = h * 60 + m;
+          }
+        } catch (_) {}
+
+        if (ptMinutes !== null && currentMinutes > ptMinutes && currentMinutes < nextPtMinutes) {
+          logKioskEvent('solat-done-reload', { prayer: prayerName });
+          window.location.reload();
+        } else {
+          const minutesSincePrayer = ptMinutes !== null ? currentMinutes - ptMinutes : 999;
+          if (minutesSincePrayer < 120) {
+            scheduleReloadTimerRef.current = setTimeout(tryReload, 30_000);
+          }
+        }
+      };
+
+      tryReload();
+    };
+
     const update = () => {
       try {
-        const nextPrayerDelayMinutes = (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) + (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10);
+        const seqEnabled = prayerTimeConfigRef.current?.SEQUENCE_ENABLED !== false;
+        const nextPrayerDelayMinutes = seqEnabled
+          ? (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) + (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10)
+          : 1;
         const islamicTime = getCurrentIslamicTime({
           hdata: takwimParsed.hdata,
           wdata: takwimParsed.wdata,
@@ -220,19 +270,7 @@ export function useTimeDriver() {
             const colonEl = document.getElementById(`ipray-colon-${name}`);
             if (colonEl) colonEl.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1';
 
-            if (isInPrayerMinute && !beepFiredRef.current[name]) {
-              beepFiredRef.current[name] = true;
-              if (audioService.getIsPlaying()) audioService.stop();
-              audioService.play({ sound: 'beep', volume: 1, playCount: 1 });
-              // Resume slider 60s selepas masuk waktu (selepas isInPrayerMinute tamat)
-              if (sliderResumeTimerRef.current) clearTimeout(sliderResumeTimerRef.current);
-              sliderResumeTimerRef.current = setTimeout(() => {
-                sliderResumeTimerRef.current = null;
-                sliderResume();
-              }, 60_000);
-            } else if (!isInPrayerMinute) {
-              beepFiredRef.current[name] = false;
-            }
+            // Beep + slider resume now handled by countdown engine (seqEnabled) or warning trigger timer (disabled)
           }
 
           const nextNameEl = document.getElementById('ipray-next-name');
@@ -382,16 +420,127 @@ export function useTimeDriver() {
             if (currentTotalSeconds >= warnTrigger && currentTotalSeconds < prayerTotalSeconds) {
               if (!prayerWarningTriggeredRef.current[warnKey]) {
                 prayerWarningTriggeredRef.current[warnKey] = true;
-                // Pause slider dan jump ke slide 0 (halaman waktu solat) — berlaku tanpa mengira sequence state
                 sliderGoTo(0);
                 sliderPause();
-                if (isPrayerSequenceActive()) {
+                if (seqEnabled) {
                   const displayName = (isTestTarget && resolvedNextPrayer) ? resolvedNextPrayer : name;
+                  sequencePhaseRef.current = 'azan';
+                  sequencePrayerNameRef.current = displayName;
+                  sequencePrayerTimeStrRef.current = timeStr;
+                  setPrayerSequenceActive(true);
                   dispatchPrayerWarning(displayName, timeStr);
                   logKioskEvent('prayer-warning', { prayer: displayName, time: timeStr });
+                } else {
+                  if (scheduleReloadTimerRef.current) clearTimeout(scheduleReloadTimerRef.current);
+                  scheduleReloadTimerRef.current = setTimeout(sliderResume, 60_000);
                 }
               }
               if (isTestTarget) break;
+            }
+          }
+
+          // ─── SEQUENCE COUNTDOWN ENGINE — azan → iqamah → solat ───────────────
+          if (seqEnabled && sequencePhaseRef.current) {
+            const phase = sequencePhaseRef.current;
+            const now = timeService?.now ? timeService.now() : Date.now();
+
+            if (phase === 'azan') {
+              const [ph, pm, ps] = sequencePrayerTimeStrRef.current.split(':').map(Number);
+              const prayerTotalSec = ph * 3600 + pm * 60 + (ps || 0);
+              const remaining = prayerTotalSec - currentTotalSeconds;
+
+              if (remaining <= 0) {
+                if (audioService.getIsPlaying()) audioService.stop();
+                masukWaktuBeepDoneRef.current = false;
+                sequencePhaseRef.current = 'masuk-waktu';
+
+                let fallbackTimer = null;
+                const unsubBeep = audioService.subscribe((event) => {
+                  if (event === 'stop' && !masukWaktuBeepDoneRef.current) {
+                    masukWaktuBeepDoneRef.current = true;
+                    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+                    unsubBeep();
+                    sequencePhaseRef.current = 'iqamah';
+                    sequenceStartTimeRef.current = timeService?.now ? timeService.now() : Date.now();
+                    sequenceCountdownRef.current = Math.floor(
+                      (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
+                    );
+                  }
+                });
+
+                fallbackTimer = setTimeout(() => {
+                  if (!masukWaktuBeepDoneRef.current) {
+                    masukWaktuBeepDoneRef.current = true;
+                    unsubBeep();
+                    sequencePhaseRef.current = 'iqamah';
+                    sequenceStartTimeRef.current = timeService?.now ? timeService.now() : Date.now();
+                    sequenceCountdownRef.current = Math.floor(
+                      (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
+                    );
+                  }
+                }, 30_000);
+
+                audioService.play({ sound: 'beep', volume: 1, playCount: 1 });
+              } else {
+                sequenceCountdownRef.current = remaining;
+              }
+              dispatchSequenceState({
+                phase: sequencePhaseRef.current,
+                countdown: sequenceCountdownRef.current,
+                prayerName: sequencePrayerNameRef.current,
+                prayerTimeStr: sequencePrayerTimeStrRef.current
+              });
+            } else if (phase === 'masuk-waktu') {
+              dispatchSequenceState({
+                phase: 'masuk-waktu',
+                countdown: 0,
+                prayerName: sequencePrayerNameRef.current,
+                prayerTimeStr: sequencePrayerTimeStrRef.current
+              });
+            } else if (phase === 'iqamah') {
+              const duration = Math.floor(
+                (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
+              );
+              const elapsed = Math.floor((now - sequenceStartTimeRef.current) / 1000);
+              const remaining = Math.max(0, duration - elapsed);
+              sequenceCountdownRef.current = remaining;
+
+              if (remaining <= 0) {
+                sequencePhaseRef.current = 'solat';
+                sequenceStartTimeRef.current = now;
+                sequenceCountdownRef.current = Math.floor(
+                  (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60
+                );
+              }
+              dispatchSequenceState({
+                phase: sequencePhaseRef.current,
+                countdown: sequenceCountdownRef.current,
+                prayerName: sequencePrayerNameRef.current,
+                prayerTimeStr: sequencePrayerTimeStrRef.current
+              });
+            } else if (phase === 'solat') {
+              const duration = Math.floor(
+                (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10) * 60
+              );
+              const elapsed = Math.floor((now - sequenceStartTimeRef.current) / 1000);
+              const remaining = Math.max(0, duration - elapsed);
+              sequenceCountdownRef.current = remaining;
+
+              dispatchSequenceState({
+                phase: 'solat',
+                countdown: remaining,
+                prayerName: sequencePrayerNameRef.current,
+                prayerTimeStr: sequencePrayerTimeStrRef.current
+              });
+
+              if (remaining <= 0) {
+                sequencePhaseRef.current = null;
+                setPrayerSequenceActive(false);
+                sliderResume();
+                dispatchSequenceEnd();
+                scheduleReloadAfterSequence();
+                logKioskEvent('sequence-done', { prayer: sequencePrayerNameRef.current });
+              }
             }
           }
 
@@ -532,7 +681,11 @@ export function useTimeDriver() {
       // --- Trigger prayer sequence sebenar (akan papar prayer state) ---
       if (key === 'seq') {
         const zohorTime = times?.Zohor ?? '13:00';
-        console.log('[iprayTest] dispatch prayer-warning → Zohor (AKAN trigger prayer sequence UI)');
+        sequencePhaseRef.current = 'azan';
+        sequencePrayerNameRef.current = 'Zohor';
+        sequencePrayerTimeStrRef.current = zohorTime;
+        setPrayerSequenceActive(true);
+        console.log('[iprayTest] trigger sequence → Zohor (countdown engine running)');
         window.dispatchEvent(new CustomEvent('prayer-warning', {
           detail: { prayerName: 'Zohor', prayerTimeStr: zohorTime }
         }));
@@ -631,9 +784,9 @@ export function useTimeDriver() {
     const id = setInterval(update, 1000);
     return () => {
       clearInterval(id);
-      if (sliderResumeTimerRef.current) {
-        clearTimeout(sliderResumeTimerRef.current);
-        sliderResumeTimerRef.current = null;
+      if (scheduleReloadTimerRef.current) {
+        clearTimeout(scheduleReloadTimerRef.current);
+        scheduleReloadTimerRef.current = null;
       }
       delete window.iprayTest;
     };

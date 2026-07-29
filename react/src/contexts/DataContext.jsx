@@ -11,6 +11,7 @@ const DEFAULT_PRAYER_TIME_CONFIG = {
   WARNING_START_MINUTES: 5,
   IQAMAH_DURATION_MIN: 10,
   SOLAT_DURATION_MIN: 10,
+  SEQUENCE_ENABLED: true,
 };
 
 /**
@@ -78,7 +79,6 @@ export const DataProvider = ({ children }) => {
   const [kuliahMingguProcessed, setKuliahMingguProcessed] = useState([]);
   const [kuliahBulananProcessed, setKuliahBulananProcessed] = useState([]);
   const [imagesData, setImagesData] = useState(null);
-  const [midnightReloadMessage, setMidnightReloadMessage] = useState(null);
   const [slidesConfigData, setSlidesConfigData] = useState(null);
   const [slidesMarqueeShow, setSlidesMarqueeShow] = useState(true);
   const [slideshowData, setSlideshowData] = useState(null);
@@ -464,7 +464,6 @@ export const DataProvider = ({ children }) => {
     kuliahMingguProcessed,
     kuliahBulananProcessed,
     imagesData,
-    midnightReloadMessage,
     slidesConfigData,
     slidesMarqueeShow,
     slideshowData,
