@@ -16,7 +16,7 @@ import {
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
 import { sliderGoTo, sliderPause, sliderPlay, sliderResume } from '../utils/sliderControl';
-import audioService from '../services/audioService';
+import beepService from '../services/beepService';
 import { logKioskEvent } from '../services/clientLogger';
 
 const ACTIVE_PRAYERS = ['Subuh', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
@@ -450,37 +450,25 @@ export function useTimeDriver() {
               const remaining = prayerTotalSec - currentTotalSeconds;
 
               if (remaining <= 0) {
-                if (audioService.getIsPlaying()) audioService.stop();
+                if (beepService.getIsPlaying()) beepService.stop();
                 masukWaktuBeepDoneRef.current = false;
                 sequencePhaseRef.current = 'masuk-waktu';
 
                 let fallbackTimer = null;
-                const unsubBeep = audioService.subscribe((event) => {
-                  if (event === 'stop' && !masukWaktuBeepDoneRef.current) {
-                    masukWaktuBeepDoneRef.current = true;
-                    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
-                    unsubBeep();
-                    sequencePhaseRef.current = 'iqamah';
-                    sequenceStartTimeRef.current = timeService?.now ? timeService.now() : Date.now();
-                    sequenceCountdownRef.current = Math.floor(
-                      (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
-                    );
-                  }
-                });
 
-                fallbackTimer = setTimeout(() => {
-                  if (!masukWaktuBeepDoneRef.current) {
-                    masukWaktuBeepDoneRef.current = true;
-                    unsubBeep();
-                    sequencePhaseRef.current = 'iqamah';
-                    sequenceStartTimeRef.current = timeService?.now ? timeService.now() : Date.now();
-                    sequenceCountdownRef.current = Math.floor(
-                      (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
-                    );
-                  }
-                }, 30_000);
+                const transitionToIqamah = () => {
+                  if (masukWaktuBeepDoneRef.current) return;
+                  masukWaktuBeepDoneRef.current = true;
+                  if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+                  sequencePhaseRef.current = 'iqamah';
+                  sequenceStartTimeRef.current = timeService?.now ? timeService.now() : Date.now();
+                  sequenceCountdownRef.current = Math.floor(
+                    (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) * 60
+                  );
+                };
 
-                audioService.play({ sound: 'beep', volume: 1, playCount: 1 });
+                fallbackTimer = setTimeout(transitionToIqamah, 30_000);
+                beepService.playPattern('ba', transitionToIqamah);
               } else {
                 sequenceCountdownRef.current = remaining;
               }
