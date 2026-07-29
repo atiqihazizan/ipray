@@ -33,26 +33,6 @@ export const bgSolatStyle = {
   backgroundColor: "#000000",
 };
 
-export const titleStyle = {
-  color: "#FFFFFF",
-  fontSize: "120px",
-  fontFamily: "'Anton', sans-serif",
-  fontWeight: "normal",
-  textAlign: "center",
-  margin: 0,
-  lineHeight: 1.2,
-};
-
-export const countdownStyle = {
-  color: "#FFFFFF",
-  fontSize: "80px",
-  fontFamily: "'Roboto Mono', monospace",
-  fontWeight: "bold",
-  textAlign: "center",
-  margin: "20px 0 0 0",
-  letterSpacing: "4px",
-};
-
 export const countdownStyleIqamah = {
   color: "#FFFFFF",
   fontSize: `${textSize(300)}px`,
@@ -130,10 +110,6 @@ export const countdownBoxTextStyle = {
   width: "1010px",
 };
 
-/** Baris pegawai (imej + label : nama) — kongsi Azan & Iqamah */
-export const officerRowStyle = { display: "flex", alignItems: "center", width: "100%" };
-export const officerColImgStyle = { width: "32%", padding: "0.5rem", textAlign: "center" };
-export const officerColLabelStyle = { width: "auto", padding: "0.5rem", color: "#fff", fontSize: "3rem" };
 export const officerImgStyle = { width: "250px", height: "auto" };
 
 /** Jadual pegawai — 3 lajur: imej 200px, label 100px, nama full width. Kongsi Azan & Iqamah. */
@@ -190,37 +166,4 @@ export const jawiTitleStyle = () => ({
   direction: "rtl",
 });
 
-/** Subtitle Arab/Jawi — font lebih kecil, guna ratio (base 28px @ 1080p) */
-export const jawiSubtitleStyle = () => ({
-  position: 'absolute',
-  bottom: '330px',
-  color: "#FFFFFF",
-  WebkitTextStroke: `${Math.max(1, Math.round(textSize(5)))}px #000000`,
-  paintOrder: "stroke fill",
-  fontSize: `${textSize(100)}px`,
-  fontFamily: ARABIC_FONT_FAMILY,
-  // fontWeight: 600,
-  textAlign: "center",
-  margin: `${textSize(16)}px 0 0 0`,
-  maxWidth: "90vw",
-  lineHeight: 1.6,
-  direction: "rtl",
-});
 
-export const masukWaktuTitleStyle = {
-  color: "#FFFFFF",
-  fontSize: `${textSize(400)}px`,
-  fontFamily: "'Bebas', sans-serif",
-  fontWeight: 700,
-  textAlign: "center",
-  margin: 0,
-};
-
-export const subtitleStyle = {
-  color: "#FFFFFF",
-  fontSize: "26px",
-  fontFamily: "'Roboto', sans-serif",
-  textAlign: "center",
-  margin: "16px 0 0 0",
-  maxWidth: "90vw",
-};

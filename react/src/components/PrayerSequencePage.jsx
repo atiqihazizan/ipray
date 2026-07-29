@@ -11,7 +11,6 @@ import {
 } from './prayer-screens/styles';
 
 const JAWI_AZAN = 'أذان';
-// const JAWI_MASUK_WAKTU = 'تله مسوق وقتو';
 const JAWI_MASUK_WAKTU = 'أذان';
 const JAWI_IQAMAH = 'إقامة';
 const JAWI_SEDANG_SOLAT = 'صلاة';
@@ -62,17 +61,6 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
   if (screen === 'masuk-waktu') {
     return (
       <>
-        {/* <div style={bgSolatStyle}>
-          <h1 style={{
-            color: '#FFFFFF',
-            fontSize: '80px',
-            textAlign: 'center',
-            margin: 0,
-            fontFamily: "'ArchivoBlack', sans-serif"
-          }}>
-            {JAWI_SEDANG_AZAN} {prayerName.toUpperCase()}
-          </h1>
-        </div> */}
         
         <div style={bgSolatStyle}>
           <h1 style={{

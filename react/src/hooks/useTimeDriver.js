@@ -6,7 +6,6 @@ import {
   dispatchTimeUpdate,
   dispatchHijriDateChanged,
   dispatchPrayerWarning,
-  dispatchPrayerTime,
   dispatchSyurukTime,
   dispatchDateChanged,
   dispatchBlinkToggle,
@@ -15,7 +14,7 @@ import {
   TIME_EVENTS
 } from '../utils/timeEvents';
 import { isPrayerSequenceActive, setPrayerSequenceActive } from '../utils/prayerSequenceState';
-import { sliderGoTo, sliderPause, sliderPlay, sliderResume } from '../utils/sliderControl';
+import { sliderGoTo, sliderPause, sliderResume } from '../utils/sliderControl';
 import beepService from '../services/beepService';
 import { logKioskEvent } from '../services/clientLogger';
 
@@ -468,7 +467,7 @@ export function useTimeDriver() {
                 };
 
                 fallbackTimer = setTimeout(transitionToIqamah, 30_000);
-                beepService.playPattern('ba', transitionToIqamah);
+                beepService.beep(3, transitionToIqamah);
               } else {
                 sequenceCountdownRef.current = remaining;
               }

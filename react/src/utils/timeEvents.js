@@ -7,7 +7,6 @@ export const TIME_EVENTS = {
   TIME_UPDATE: 'time-update',
   HIJRI_DATE_CHANGED: 'hijri-date-changed',
   PRAYER_WARNING: 'prayer-warning',
-  PRAYER_TIME: 'prayer-time',
   SYURUK_TIME: 'syuruk-time',
   SYURUK_BEEP_START: 'syuruk-beep-start',
   SYURUK_BEEP_STOP: 'syuruk-beep-stop',
@@ -34,12 +33,6 @@ export function dispatchHijriDateChanged(hijri) {
 export function dispatchPrayerWarning(prayerName, prayerTimeStr) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_WARNING, { detail: { prayerName, prayerTimeStr } }));
-  }
-}
-
-export function dispatchPrayerTime(prayerName) {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(TIME_EVENTS.PRAYER_TIME, { detail: { prayerName } }));
   }
 }
 
