@@ -1,2 +1,4 @@
 w1|h0|BILAL|zakaria-abdul
 w1|h0|IMAM|ustaz-zainuddin
+w5|h4|BILAL|zakaria-abdul
+w5|h4|IMAM|ustaz-hassan-hashim

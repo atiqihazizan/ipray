@@ -146,7 +146,7 @@ export const DataProvider = ({ children }) => {
       setSlidesConfigData(data.slidesConfig ?? {});
       setSlidesMarqueeShow(data.slidesMarqueeShow !== false);
       setSlideshowData(data.slideshow ?? []);
-      setPetugasData((data.petugasData ?? []).map((p) => ({ ...p, imageSrc: withAssetBase(p.imageSrc) })));
+      setPetugasData((data.petugasData ?? []).map((p) => ({ ...p, imageSrc: p.imageSrc?.startsWith('/img/') ? p.imageSrc : withAssetBase(p.imageSrc) })));
       setConfigData(data.config ?? {
         PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
         COLOR_CONFIG: DEFAULT_COLOR_CONFIG,

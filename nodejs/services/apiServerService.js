@@ -472,7 +472,7 @@ class ApiServerService {
           const week = getWeekCode(today);
           const day = getDayCode(today);
           const petugasMap = {};
-          petugasParsed.forEach((p) => { if (p.kod) petugasMap[p.kod] = p; });
+          petugasParsed.forEach((p) => { if (p.slug) petugasMap[p.slug] = p; });
           const jadualToday = (jadualParsed || []).filter((j) => (j.week || '').trim() === week && (j.day || '').trim() === day);
           const roleOrder = ['BILAL', 'IMAM'];
           jadualToday.forEach((j) => {
@@ -481,8 +481,8 @@ class ApiServerService {
             const officer = officerCode ? petugasMap[officerCode] : null;
             const name = officer ? (officer.namaPenuh || officer.kod || '') : '';
             let imageSrc = '';
-            if (officer && officer.imageCode && images && typeof images === 'object') {
-              const path = images[(officer.imageCode || '').trim()];
+            if (officer && images && typeof images === 'object') {
+              const path = images[(officer.slug || '').trim()];
               if (path) imageSrc = path.startsWith('/') ? path : `/${path}`;
             }
             if (!imageSrc) imageSrc = '/img/Random_user.svg';
