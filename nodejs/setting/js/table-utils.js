@@ -43,7 +43,7 @@ const colLabelMap = {
   hebahan: { text: "Teks", startDate: "Tarikh Mula", endDate: "Tarikh Akhir" },
   livestream: { tajuk: "Tajuk", url: "URL / IP", jenis: "Jenis" },
   petugas: { slug: "Slug", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", gambar: "Gambar" },
-  "jadual-petugas": { week: "Minggu", day: "Hari", role: "Peranan", officerCode: "Petugas" },
+  "jadual-petugas": { officerCode: "Petugas", role: "Peranan", weeks: "Minggu", days: "Hari", waktu: "Waktu" },
   penceramah: { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", gambar: "Gambar", kitab: "Kitab" },
 };
 

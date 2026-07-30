@@ -169,7 +169,7 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "petugas") {
     return `${rowData.slug || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|`;
   } else if (fileName === "jadual-petugas") {
-    return `${rowData.week || ""}|${rowData.day || ""}|${rowData.role || ""}|${rowData.officerCode || ""}`;
+    return `${rowData.officerCode || ""}|${rowData.role || ""}|${rowData.weeks || ""}|${rowData.days || ""}|${rowData.waktu || ""}`;
   } else if (fileName === "penceramah") {
     // Fail penceramah: kod(slug namaPenuh)|namaPenuh|shortname|kitab
     return `${rowData.kod || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.kitab || ""}`;

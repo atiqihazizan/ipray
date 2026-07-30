@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseKuliahOverride } = require('./kuliahOverrideParser');
 const { processKuliahHari, processKuliahMinggu, processKuliahBulanan } = require('./kuliahProcessor');
-const { getWeekCode, getDayCode } = require('./kuliahDateUtils');
+const { getWeekNumber, getTodayDayNumber } = require('./kuliahDateUtils');
 
 /**
  * Escape string untuk selamat dibenamkan dalam petikan dwi-tanda (") shell command.
@@ -469,11 +469,13 @@ class ApiServerService {
           ]);
           const petugasParsed = this.dataService.parseFileContent('petugas', petugasContent);
           const jadualParsed = this.dataService.parseFileContent('jadual-petugas', jadualContent);
-          const week = getWeekCode(today);
-          const day = getDayCode(today);
+          const weekNum = getWeekNumber(today);
+          const dayNum = getTodayDayNumber(today);
           const petugasMap = {};
           petugasParsed.forEach((p) => { if (p.slug) petugasMap[p.slug] = p; });
-          const jadualToday = (jadualParsed || []).filter((j) => (j.week || '').trim() === week && (j.day || '').trim() === day);
+          const jadualToday = (jadualParsed || []).filter((j) =>
+            j.weeks?.includes(weekNum) && j.days?.includes(dayNum)
+          );
           const roleOrder = ['BILAL', 'IMAM'];
           jadualToday.forEach((j) => {
             const officerCode = (j.officerCode || '').trim();
@@ -486,7 +488,7 @@ class ApiServerService {
               if (path) imageSrc = path.startsWith('/') ? path : `/${path}`;
             }
             if (!imageSrc) imageSrc = '/img/Random_user.svg';
-            petugasData.push({ label: role || 'PETUGAS', name, imageSrc });
+            petugasData.push({ label: role || 'PETUGAS', name, imageSrc, waktu: j.waktu || [] });
           });
           if (petugasData.length === 0) {
             roleOrder.forEach((r) => petugasData.push({ label: r, name: '', imageSrc: '/img/Random_user.svg' }));

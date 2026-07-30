@@ -283,18 +283,6 @@ function buildTableRow(row, ctx) {
       )
         value = "–";
     }
-    if (fileName === "jadual-petugas" && col === "day") {
-      const dayMap = {
-        h0: "AHAD",
-        h1: "ISNIN",
-        h2: "SELASA",
-        h3: "RABU",
-        h4: "KHAMIS",
-        h5: "JUMAAT",
-        h6: "SABTU",
-      };
-      value = dayMap[(value || "").trim().toLowerCase()] || value || "";
-    }
     if (fileName === "jadual-petugas" && col === "officerCode") {
       td.style.padding = "8px";
       td.style.verticalAlign = "middle";

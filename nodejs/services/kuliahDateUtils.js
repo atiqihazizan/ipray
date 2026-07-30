@@ -47,8 +47,28 @@ function calculateDateFromCodes(weekCode, dayCode, year, month) {
   return new Date(year, month, weekStartDay);
 }
 
+/**
+ * Get week number (1-5) from date
+ * @param {Date} date
+ * @returns {number} 1-5
+ */
+function getWeekNumber(date) {
+  return Math.ceil(date.getDate() / 7);
+}
+
+/**
+ * Get day number (1-7) from date. 1=Ahad, 7=Sabtu.
+ * @param {Date} date
+ * @returns {number} 1-7
+ */
+function getTodayDayNumber(date) {
+  return date.getDay() + 1;
+}
+
 module.exports = {
   getWeekCode,
   getDayCode,
-  calculateDateFromCodes
+  calculateDateFromCodes,
+  getWeekNumber,
+  getTodayDayNumber
 };

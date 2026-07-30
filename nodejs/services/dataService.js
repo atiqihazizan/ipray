@@ -756,13 +756,15 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'jadual-petugas') {
-        // Jadual petugas format: week|day|role|officerCode
+        // Jadual petugas format: officerCode|role|weeks|days|waktu
+        const parseCommaInts = (str) => (str || '').split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
         parsed.push({
           id: index + 1,
-          week: parts[0] || '',
-          day: parts[1] || '',
-          role: parts[2] || '',
-          officerCode: parts[3] || '',
+          officerCode: parts[0] || '',
+          role: parts[1] || '',
+          weeks: parseCommaInts(parts[2]),
+          days: parseCommaInts(parts[3]),
+          waktu: parseCommaInts(parts[4]),
           raw: line
         });
       }
@@ -790,7 +792,7 @@ class DataService {
       'livestream': ['tajuk', 'url', 'jenis'],
       'penceramah': ['kod', 'namaPenuh', 'shortname', 'kitab'],
       'petugas': ['slug', 'namaPenuh', 'shortname', 'role'],
-      'jadual-petugas': ['week', 'day', 'role', 'officerCode']
+      'jadual-petugas': ['role', 'officerCode', 'weeks', 'days', 'waktu']
     };
     return columnMap[normalized] || [];
   }
@@ -987,7 +989,7 @@ class DataService {
               continue;
             }
             const parts = jpLine.split('|');
-            const officerCode = (parts[3] || '').trim();
+            const officerCode = (parts[0] || '').trim();
             if (officerCode && officerCode === petugasSlug) {
               continue; // buang baris jadual-petugas yang guna slug ini
             }

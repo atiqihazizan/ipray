@@ -140,7 +140,7 @@ function createFormFields(form, row, isAdd, options = {}) {
     }
     // Jadual petugas: label
     if (currentFileName === "jadual-petugas") {
-      const jpLabels = { week: "Minggu", day: "Hari", role: "Peranan", officerCode: "Petugas" };
+      const jpLabels = { officerCode: "Petugas", role: "Peranan", weeks: "Minggu (1-5, guna koma)", days: "Hari (1=Ahad..7=Sabtu, guna koma)", waktu: "Waktu (1=Subuh..5=Isyak, guna koma)" };
       if (jpLabels[col]) label.textContent = jpLabels[col];
     }
     // Penceramah: label (kod dijana automatik dari namaPenuh)
@@ -200,97 +200,42 @@ function createFormFields(form, row, isAdd, options = {}) {
 
     // Petugas: imageCode tidak lagi digunakan (gambar diurus via slug di images.txt)
 
-    // Jadual-petugas: week, day (radio), role (dropdown), officerCode (dropdown dari petugas)
-    if (currentFileName === "jadual-petugas" && col === "week") {
-      label.textContent = "Minggu";
-      const WEEK_OPTIONS = [{ value: "w1", label: "Minggu 1" }, { value: "w2", label: "Minggu 2" }, { value: "w3", label: "Minggu 3" }, { value: "w4", label: "Minggu 4" }, { value: "w5", label: "Minggu 5" }];
-      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
-      const container = document.createElement("div");
-      container.style.display = "flex";
-      container.style.flexWrap = "wrap";
-      container.style.gap = "8px 16px";
-      const hiddenInput = document.createElement("input");
-      hiddenInput.type = "hidden";
-      hiddenInput.id = `field-${col}`;
-      hiddenInput.name = col;
-      hiddenInput.value = currentVal || "w1";
-      WEEK_OPTIONS.forEach((opt) => {
-        const wrap = document.createElement("label");
-        wrap.style.display = "inline-flex";
-        wrap.style.alignItems = "center";
-        wrap.style.gap = "6px";
-        wrap.style.cursor = "pointer";
-        const rb = document.createElement("input");
-        rb.type = "radio";
-        rb.name = "jadual-petugas-week";
-        rb.value = opt.value;
-        rb.checked = (currentVal || "w1") === opt.value;
-        rb.addEventListener("change", () => { hiddenInput.value = opt.value; });
-        wrap.appendChild(rb);
-        wrap.appendChild(document.createTextNode(opt.label));
-        container.appendChild(wrap);
-      });
-      group.appendChild(label);
-      group.appendChild(container);
-      group.appendChild(hiddenInput);
-      form.appendChild(group);
-      return;
-    }
-    if (currentFileName === "jadual-petugas" && col === "day") {
-      label.textContent = "Hari";
-      const DAY_OPTIONS = [{ value: "h0", label: "Ahad" }, { value: "h1", label: "Isnin" }, { value: "h2", label: "Selasa" }, { value: "h3", label: "Rabu" }, { value: "h4", label: "Khamis" }, { value: "h5", label: "Jumaat" }, { value: "h6", label: "Sabtu" }];
-      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
-      const container = document.createElement("div");
-      container.style.display = "flex";
-      container.style.flexWrap = "wrap";
-      container.style.gap = "8px 16px";
-      const hiddenInput = document.createElement("input");
-      hiddenInput.type = "hidden";
-      hiddenInput.id = `field-${col}`;
-      hiddenInput.name = col;
-      hiddenInput.value = currentVal || "h0";
-      DAY_OPTIONS.forEach((opt) => {
-        const wrap = document.createElement("label");
-        wrap.style.display = "inline-flex";
-        wrap.style.alignItems = "center";
-        wrap.style.gap = "6px";
-        wrap.style.cursor = "pointer";
-        const rb = document.createElement("input");
-        rb.type = "radio";
-        rb.name = "jadual-petugas-day";
-        rb.value = opt.value;
-        rb.checked = (currentVal || "h0") === opt.value;
-        rb.addEventListener("change", () => { hiddenInput.value = opt.value; });
-        wrap.appendChild(rb);
-        wrap.appendChild(document.createTextNode(opt.label));
-        container.appendChild(wrap);
-      });
-      group.appendChild(label);
-      group.appendChild(container);
-      group.appendChild(hiddenInput);
-      form.appendChild(group);
-      return;
-    }
+    // Jadual-petugas: role radio, weeks/days/waktu checkbox, officerCode dropdown
     if (currentFileName === "jadual-petugas" && col === "role") {
-      const select = document.createElement("select");
-      select.id = `field-${col}`;
-      select.name = col;
-      select.className = "form-control";
-      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
-      [{ value: "BILAL", label: "BILAL" }, { value: "IMAM", label: "IMAM" }].forEach((opt) => {
-        const o = document.createElement("option");
-        o.value = opt.value;
-        o.textContent = opt.label;
-        if (currentVal === opt.value) o.selected = true;
-        select.appendChild(o);
+      const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "BILAL";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px 16px";
+      ["BILAL", "IMAM"].forEach((v) => {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const rb = document.createElement("input");
+        rb.type = "radio";
+        rb.name = "jadual-petugas-role";
+        rb.value = v;
+        rb.checked = currentVal === v;
+        rb.addEventListener("change", () => { if (rb.checked) hiddenInput.value = v; });
+        wrap.appendChild(rb);
+        wrap.appendChild(document.createTextNode(v));
+        container.appendChild(wrap);
       });
       group.appendChild(label);
-      group.appendChild(select);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
       form.appendChild(group);
       return;
     }
     if (currentFileName === "jadual-petugas" && col === "officerCode") {
-      const roleVal = !isAdd && row && row.role ? String(row.role).trim() : (form.querySelector("#field-role")?.value || "BILAL");
+      const roleVal = form.querySelector("#field-role")?.value || "BILAL";
       const filtered = petugasList.filter((p) => (p.role || "").trim().toUpperCase() === roleVal.toUpperCase());
       const select = document.createElement("select");
       select.id = `field-${col}`;
@@ -308,10 +253,9 @@ function createFormFields(form, row, isAdd, options = {}) {
         if (currentVal === (p.slug || "")) opt.selected = true;
         select.appendChild(opt);
       });
-      const roleField = form.querySelector("#field-role");
-      if (roleField) {
-        roleField.addEventListener("change", () => {
-          const rv = roleField.value || "BILAL";
+      form.querySelectorAll('input[name="jadual-petugas-role"]').forEach((rb) => {
+        rb.addEventListener("change", () => {
+          const rv = form.querySelector("#field-role")?.value || "BILAL";
           select.innerHTML = "";
           select.appendChild(emptyOpt.cloneNode(true));
           petugasList.filter((p) => (p.role || "").trim().toUpperCase() === rv.toUpperCase()).forEach((p) => {
@@ -321,9 +265,122 @@ function createFormFields(form, row, isAdd, options = {}) {
             select.appendChild(opt);
           });
         });
-      }
+      });
       group.appendChild(label);
       group.appendChild(select);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "weeks") {
+      const currentVal = !isAdd && row && row[col] ? String(row[col]) : "";
+      const selected = new Set(currentVal.split(',').map(Number).filter(n => !isNaN(n)));
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px";
+      for (let i = 1; i <= 5; i++) {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.name = "jadual-petugas-weeks";
+        cb.value = String(i);
+        cb.checked = selected.has(i);
+        cb.addEventListener("change", () => {
+          const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+          hiddenInput.value = Array.from(checked).map(c => c.value).join(',');
+        });
+        wrap.appendChild(cb);
+        wrap.appendChild(document.createTextNode(String(i)));
+        container.appendChild(wrap);
+      }
+      group.appendChild(label);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "days") {
+      const currentVal = !isAdd && row && row[col] ? String(row[col]) : "";
+      const selected = new Set(currentVal.split(',').map(Number).filter(n => !isNaN(n)));
+      const DAY_LABELS = { 1: "Ahad", 2: "Isnin", 3: "Selasa", 4: "Rabu", 5: "Khamis", 6: "Jumaat", 7: "Sabtu" };
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px";
+      for (let i = 1; i <= 7; i++) {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.name = "jadual-petugas-days";
+        cb.value = String(i);
+        cb.checked = selected.has(i);
+        cb.addEventListener("change", () => {
+          const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+          hiddenInput.value = Array.from(checked).map(c => c.value).join(',');
+        });
+        wrap.appendChild(cb);
+        wrap.appendChild(document.createTextNode(DAY_LABELS[i]));
+        container.appendChild(wrap);
+      }
+      group.appendChild(label);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
+      return;
+    }
+    if (currentFileName === "jadual-petugas" && col === "waktu") {
+      const currentVal = !isAdd && row && row[col] ? String(row[col]) : "";
+      const selected = new Set(currentVal.split(',').map(Number).filter(n => !isNaN(n)));
+      const WAKTU_LABELS = { 1: "Subuh", 2: "Zohor", 3: "Asar", 4: "Maghrib", 5: "Isyak" };
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexWrap = "wrap";
+      container.style.gap = "8px";
+      for (let i = 1; i <= 5; i++) {
+        const wrap = document.createElement("label");
+        wrap.style.display = "inline-flex";
+        wrap.style.alignItems = "center";
+        wrap.style.gap = "6px";
+        wrap.style.cursor = "pointer";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.name = "jadual-petugas-waktu";
+        cb.value = String(i);
+        cb.checked = selected.has(i);
+        cb.addEventListener("change", () => {
+          const checked = container.querySelectorAll('input[type="checkbox"]:checked');
+          hiddenInput.value = Array.from(checked).map(c => c.value).join(',');
+        });
+        wrap.appendChild(cb);
+        wrap.appendChild(document.createTextNode(WAKTU_LABELS[i]));
+        container.appendChild(wrap);
+      }
+      group.appendChild(label);
+      group.appendChild(container);
+      group.appendChild(hiddenInput);
       form.appendChild(group);
       return;
     }

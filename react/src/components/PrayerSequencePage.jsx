@@ -52,8 +52,12 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
     return () => window.removeEventListener(TIME_EVENTS.SEQUENCE_STATE, handler);
   }, [debugStart]);
 
+  const WAKTU_MAP = { subuh: 1, zohor: 2, asar: 3, maghrib: 4, isyak: 5 };
+  const currentWaktu = WAKTU_MAP[prayerName?.toLowerCase()];
   const pegawaiList = (petugasData && petugasData.length > 0)
-    ? petugasData.map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
+    ? petugasData
+        .filter((p) => !currentWaktu || !p.waktu?.length || p.waktu.includes(currentWaktu))
+        .map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
     : PEGAWAI_LIST;
 
   const cd = formatCountdown(countdown);
