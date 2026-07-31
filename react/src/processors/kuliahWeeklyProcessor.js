@@ -26,6 +26,7 @@ import {
 import { top, getContainerSize, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer } from '../utils/boxLayerUtils';
 import { escapeHtml } from './slideHelpers';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 /** Bottom box untuk weekly (lebih kecil = height box lebih) */
 const WEEKLY_BOX_BOTTOM = 200;
@@ -100,6 +101,12 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
       parent.children = [parent.children[0], bodyMsg];
     }
     kuliahSlide.transitionType = 'auto';
+    kuliahSlide.captions.push(
+      buildGregorianWidget(),
+      buildHijriWidget(),
+      buildClockSmWidget(),
+      buildNextPrayerWidget()
+    );
     return [kuliahSlide];
   }
 
@@ -198,5 +205,11 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
   }
 
   kuliahSlide.transitionType = 'auto';
+  kuliahSlide.captions.push(
+    buildGregorianWidget(),
+    buildHijriWidget(),
+    buildClockSmWidget(),
+    buildNextPrayerWidget()
+  );
   return [kuliahSlide];
 }

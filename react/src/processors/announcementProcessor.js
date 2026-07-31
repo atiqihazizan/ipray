@@ -3,6 +3,7 @@
  */
 import { slidesTemplate } from '../config/sliderConfig';
 import { formatDateTime, getCountdown } from '../utils/dateFormatter';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 export function processAnnouncements(announcementsData, slidesConfigData, applyConfig) {
   if (!announcementsData || announcementsData.length === 0) return [];
@@ -56,6 +57,12 @@ export function processAnnouncements(announcementsData, slidesConfigData, applyC
     }
 
     announceSlide.transitionType = i === 0 ? 'auto' : 'static';
+    announceSlide.captions.push(
+      buildGregorianWidget(),
+      buildHijriWidget(),
+      buildClockSmWidget(),
+      buildNextPrayerWidget()
+    );
     return announceSlide;
   });
 }

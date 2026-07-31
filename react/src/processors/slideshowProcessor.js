@@ -3,6 +3,7 @@
  */
 import { slidesTemplate } from '../config/sliderConfig';
 import { withAssetBase } from '../services/apiBase';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 const DEFAULT_SLIDESHOW_IMAGES = [
   '/img/slideshow/slide01.jpg',
@@ -37,7 +38,12 @@ export function processSlideshow(slideshowData, slidesConfigData, applyConfig) {
     slide.image = { src: item.image, alt: `Slideshow ${index + 1}` };
     slide.duration = template.duration != null ? template.duration : 1500;
     slide.transitionType = 'auto';
-    slide.captions = [];
+    slide.captions = [
+      buildGregorianWidget(),
+      buildHijriWidget(),
+      buildClockSmWidget(),
+      buildNextPrayerWidget()
+    ];
     return slide;
   });
 }

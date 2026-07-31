@@ -189,17 +189,19 @@ export function useTimeDriver() {
 
         // --- DOM UPDATE VIA ID ---
         try {
+          // Update SEMUA elemen widget (data-ipray-id) + fallback id="ipray-*"
+          // (DateTimeOverlay / backward compat). JSSOR simpan semua slide dalam DOM,
+          // jadi getElementById (elemen pertama sahaja) tidak cukup.
+          const qAll = (key) => {
+            const selectors = [`[data-ipray-id="${key}"]`, `[id="ipray-${key}"]`];
+            return document.querySelectorAll(selectors.join(', '));
+          };
+
           const colorConfig = colorConfigRef.current;
           const nextPrayer = islamicTime.prayer?.next?.toLowerCase();
           const prayerTimes = islamicTime.prayer?.times;
           const nextColor = colorConfig?.NEXT_PRAYER ?? '#FFD700';
           const defaultColor = colorConfig?.DEFAULT ?? '#FFFF00';
-
-          // const clockEl = document.getElementById('ipray-clock');
-          // if (clockEl) clockEl.textContent = fmt12h(islamicTime.time);
-          //
-          // const clockSmEl = document.getElementById('ipray-clock-sm');
-          // if (clockSmEl) clockSmEl.textContent = fmt12h(islamicTime.time);
 
           blinkToggleRef.current = !blinkToggleRef.current;
           const blink = blinkToggleRef.current;
@@ -208,16 +210,15 @@ export function useTimeDriver() {
           const h12 = islamicTime.time.hours % 12 || 12;
           const m2 = String(islamicTime.time.minutes).padStart(2, '0');
 
-          const clockColonEl = document.getElementById('ipray-clock-colon');
-          if (clockColonEl) clockColonEl.style.opacity = blink ? '1' : '0';
+          qAll('clock-colon').forEach(el => { el.style.opacity = blink ? '1' : '0'; });
+          qAll('clock-sm-colon').forEach(el => { el.style.opacity = blink ? '1' : '0'; });
 
-          for (const [hId, mId] of [
-            ['ipray-clock-h', 'ipray-clock-m']
+          for (const [hKey, mKey] of [
+            ['clock-h', 'clock-m'],
+            ['clock-sm-h', 'clock-sm-m']
           ]) {
-            const hEl = document.getElementById(hId);
-            const mEl = document.getElementById(mId);
-            if (hEl) hEl.textContent = h12;
-            if (mEl) mEl.textContent = m2;
+            qAll(hKey).forEach(el => { el.textContent = h12; });
+            qAll(mKey).forEach(el => { el.textContent = m2; });
           }
 
           const warningSecs = warningSecondsRef.current;
@@ -237,10 +238,8 @@ export function useTimeDriver() {
               const tStr = fmtPrayerTime12h(realTimeStr);
               if (tStr) {
                 const [hPart, mPart] = tStr.split(':');
-                const tHEl = document.getElementById(`ipray-time-${name}-h`);
-                const tMEl = document.getElementById(`ipray-time-${name}-m`);
-                if (tHEl && tHEl.textContent !== hPart) tHEl.textContent = hPart;
-                if (tMEl && tMEl.textContent !== mPart) tMEl.textContent = mPart;
+                qAll(`time-${name}-h`).forEach(el => { if (el.textContent !== hPart) el.textContent = hPart; });
+                qAll(`time-${name}-m`).forEach(el => { if (el.textContent !== mPart) el.textContent = mPart; });
               }
             }
 
@@ -271,37 +270,34 @@ export function useTimeDriver() {
               timeColor = '';
             }
 
-            const labelEl = document.getElementById(`ipray-label-${name}`);
-            const timeEl = document.getElementById(`ipray-time-${name}`);
-            if (labelEl) labelEl.style.color = labelColor;
-            if (timeEl) timeEl.style.color = timeColor;
+            const labelEls = qAll(`label-${name}`);
+            const timeEls = qAll(`time-${name}`);
+            labelEls.forEach(el => { el.style.color = labelColor; });
+            timeEls.forEach(el => { el.style.color = timeColor; });
 
-            const wrapEl = document.getElementById(`ipray-wrap-${name}`);
-            if (wrapEl) wrapEl.style.opacity = is30SecBefore ? (blink ? '1' : '0') : '1';
+            qAll(`wrap-${name}`).forEach(el => { el.style.opacity = is30SecBefore ? (blink ? '1' : '0') : '1'; });
 
-            const colonEl = document.getElementById(`ipray-colon-${name}`);
-            if (colonEl) colonEl.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1';
+            qAll(`colon-${name}`).forEach(el => { el.style.opacity = isInPrayerMinute ? (blink ? '1' : '0') : '1'; });
 
             // Beep + slider resume now handled by countdown engine (seqEnabled) or warning trigger timer (disabled)
           }
 
-          const nextNameEl = document.getElementById('ipray-next-name');
-          if (nextNameEl && islamicTime.prayer?.next) {
+          if (islamicTime.prayer?.next) {
             const n = islamicTime.prayer.next;
-            nextNameEl.textContent = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+            const nameText = n.charAt(0).toUpperCase() + n.slice(1).toLowerCase();
+            qAll('next-name').forEach(el => { el.textContent = nameText; });
           }
 
-          const nextTimeEl = document.getElementById('ipray-next-time');
-          if (nextTimeEl && nextPrayer && prayerTimes) {
+          if (nextPrayer && prayerTimes) {
             const capitalNext = nextPrayer.charAt(0).toUpperCase() + nextPrayer.slice(1);
             const tStr = fmtPrayerTime12h(prayerTimes[capitalNext]);
             if (tStr) {
               const [hPart, mPart] = tStr.split(':');
-              nextTimeEl.innerHTML = `${hPart}:${mPart}`;
+              qAll('next-time').forEach(el => { el.innerHTML = `${hPart}:${mPart}`; });
             }
           }
 
-          // --- Test override: update nextPrayer DOM terus bila override aktif ---
+          // --- Test override: update next prayer DOM terus bila override aktif ---
           const _testOvr = testPrayerOverrideRef.current;
           if (_testOvr) {
             const ACTIVE_LOWER = ['subuh', 'zohor', 'asar', 'maghrib', 'isyak'];
@@ -322,47 +318,43 @@ export function useTimeDriver() {
             }
 
             // Update ipray-next-name
-            const _nextNameEl = document.getElementById('ipray-next-name');
-            if (_nextNameEl) _nextNameEl.textContent = _testNext.charAt(0).toUpperCase() + _testNext.slice(1).toLowerCase();
+            qAll('next-name').forEach(el => { el.textContent = _testNext.charAt(0).toUpperCase() + _testNext.slice(1).toLowerCase(); });
 
             // Update ipray-next-time — guna masa sebenar dari prayerTimes
-            const _nextTimeEl = document.getElementById('ipray-next-time');
-            if (_nextTimeEl && prayerTimes) {
+            if (prayerTimes) {
               const _cap = _testNext.charAt(0).toUpperCase() + _testNext.slice(1);
               const _tStr = fmtPrayerTime12h(prayerTimes[_cap]);
               if (_tStr) {
                 const [_h, _m] = _tStr.split(':');
-                _nextTimeEl.innerHTML = `${_h}:${_m}`;
+                qAll('next-time').forEach(el => { el.innerHTML = `${_h}:${_m}`; });
               }
             }
 
             // Update highlight warna dalam grid — DOM terus
             PRAYER_IDS.forEach(_name => {
-              const _lbl = document.getElementById(`ipray-label-${_name}`);
-              const _tim = document.getElementById(`ipray-time-${_name}`);
               const _isTestNext = _name === _testNext;
-              if (_lbl) _lbl.style.color = _isTestNext ? nextColor : defaultColor;
-              if (_tim) _tim.style.color = _isTestNext ? nextColor : '';
+              qAll(`label-${_name}`).forEach(el => { el.style.color = _isTestNext ? nextColor : defaultColor; });
+              qAll(`time-${_name}`).forEach(el => { el.style.color = _isTestNext ? nextColor : ''; });
             });
           }
 
           const g = islamicTime.gregorian;
           if (g) {
             const gDay = g.dayFormatted || (g.day < 10 ? `0${g.day}` : `${g.day}`);
-            const setG = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setG('ipray-date-g-day', gDay);
-            setG('ipray-date-g-dayname', g.dayName);
-            setG('ipray-date-g-month', g.monthName);
-            setG('ipray-date-g-year', g.year);
+            const setG = (id, val) => { qAll(id).forEach(el => { el.textContent = val; }); };
+            setG('date-g-day', gDay);
+            setG('date-g-dayname', g.dayName);
+            setG('date-g-month', g.monthName);
+            setG('date-g-year', g.year);
           }
 
           const h = islamicTime.hijri;
           if (h) {
             const hDay = h.day < 10 ? `0${h.day}` : `${h.day}`;
-            const setH = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setH('ipray-date-h-day', hDay);
-            setH('ipray-date-h-month', h.monthName);
-            setH('ipray-date-h-year', h.year);
+            const setH = (id, val) => { qAll(id).forEach(el => { el.textContent = val; }); };
+            setH('date-h-day', hDay);
+            setH('date-h-month', h.monthName);
+            setH('date-h-year', h.year);
           }
         } catch (domErr) {
         }

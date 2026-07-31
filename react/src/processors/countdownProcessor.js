@@ -6,6 +6,7 @@ import { slidesTemplate } from '../config/sliderConfig';
 import { top, bottom, sz } from '../utils/screenUtils';
 import { getCountdown, getCountdownDays } from '../utils/dateFormatter';
 import { withAssetBase } from '../services/apiBase';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 function normalizeDateTime(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return '';
@@ -162,6 +163,12 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig,
     //   parent.transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
       parent.children = buildCaptionChildren(enrichedItem, isLast);
     }
+    slide.captions.push(
+      buildGregorianWidget(),
+      buildHijriWidget(),
+      buildClockSmWidget(),
+      buildNextPrayerWidget()
+    );
     // slide.transitionType = i === 0 ? 'auto' : 'static';
     return slide;
   });
