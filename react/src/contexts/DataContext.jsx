@@ -3,6 +3,7 @@ import { getApiBase, withAssetBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeServiceStub from '../services/timeServiceStub';
 import { runAfterPrayerSequence } from '../utils/prayerSequenceState';
+import { TIME_EVENTS } from '../utils/timeEvents';
 
 /**
  * Default constants untuk timing configuration (fallback jika file config.txt tidak wujud)
@@ -215,6 +216,12 @@ export const DataProvider = ({ children }) => {
       setError('Sambungan gagal. Sila cuba semula.');
     }
   }, [socketReady, socketConnected, loadAllData]);
+
+  useEffect(() => {
+    const handler = () => loadAllData();
+    window.addEventListener(TIME_EVENTS.DATE_CHANGED, handler);
+    return () => window.removeEventListener(TIME_EVENTS.DATE_CHANGED, handler);
+  }, [loadAllData]);
 
   /**
    * Setup Socket.IO connection untuk real-time updates
