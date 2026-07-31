@@ -31,7 +31,7 @@ function formatCountdown(totalSeconds) {
 
 function getDebugStartScreen() {
   const s = new URLSearchParams(window.location.search).get('debugScreen');
-  return (s === 'masuk-waktu' || s === 'iqamah' || s === 'solat') ? s : null;
+  return (s === 'azan' || s === 'masuk-waktu' || s === 'iqamah' || s === 'solat') ? s : null;
 }
 
 export default function PrayerSequencePage({ prayerName, overlayOverride = null }) {
@@ -40,10 +40,12 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
 
   const [screen, setScreen] = useState(debugStart || 'azan');
   const [countdown, setCountdown] = useState(0);
+  const [initialized, setInitialized] = useState(debugStart ? true : false);
 
   useEffect(() => {
     if (debugStart) return;
     const handler = (e) => {
+      if (!initialized) setInitialized(true);
       const { phase, countdown } = e.detail ?? {};
       if (phase) setScreen(phase);
       if (typeof countdown === 'number') setCountdown(countdown);
@@ -52,12 +54,10 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
     return () => window.removeEventListener(TIME_EVENTS.SEQUENCE_STATE, handler);
   }, [debugStart]);
 
-  const WAKTU_MAP = { subuh: 1, zohor: 2, asar: 3, maghrib: 4, isyak: 5 };
-  const currentWaktu = WAKTU_MAP[prayerName?.toLowerCase()];
+  if (!initialized) return null;
+
   const pegawaiList = (petugasData && petugasData.length > 0)
-    ? petugasData
-        .filter((p) => !currentWaktu || !p.waktu?.length || p.waktu.includes(currentWaktu))
-        .map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
+    ? petugasData.map((p) => ({ label: p.label, name: p.name, imageSrc: p.imageSrc }))
     : PEGAWAI_LIST;
 
   const cd = formatCountdown(countdown);

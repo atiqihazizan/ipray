@@ -1,3 +1,5 @@
 zakaria-abdul|BILAL|1,2,3,4,5|2,3,4,5|1,2,3
 ustaz-zainuddin|IMAM|1|1|1,2,3,4,5
 ustaz-hassan-hashim|IMAM|5|5|1,2,3,4,5
+zakaria-abdul|BILAL|1,2,3,4,5|6|4,5
+ustaz-hassan-hashim|IMAM|1,2,3,4,5|6|4,5
