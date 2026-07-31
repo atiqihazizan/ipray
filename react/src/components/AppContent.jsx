@@ -31,7 +31,7 @@ const AppContent = () => {
   useEffect(() => {
     const onStart = (e) => {
       setCurrentPrayerName(e.detail?.prayerName ?? null)
-      setCurrentView('prayer')
+      // setCurrentView('prayer') // [TEST] disable sequence — nak tengok blink sahaja
     }
     const onEnd = () => setCurrentView('slide')
     window.addEventListener(TIME_EVENTS.PRAYER_WARNING, onStart)
@@ -100,13 +100,14 @@ const AppContent = () => {
         <LiveStreamOverlay data={liveStreamData} />
       )}
 
-      <DateTimeOverlay overlayOverride={
+      {/* DateTimeOverlay dicomment — date/time kini sebahagian dari JSSOR slide caption */}
+      {/* <DateTimeOverlay overlayOverride={
         liveStreamData?.active
           ? (liveStreamData.overlayConfig ?? { showDate: true, showSmallTime: true, showMarquee: true })
           : hasDeathAnnouncement
             ? (deathAnnouncementData?.overlayConfig ?? { showDate: true, showSmallTime: true, showMarquee: true })
             : null
-      } />
+      } /> */}
     </>
   )
 }

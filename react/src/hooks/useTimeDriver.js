@@ -231,6 +231,19 @@ export function useTimeDriver() {
             const timeStr = (testOverride?.name === name ? testOverride.timeStr : null) ?? prayerTimes?.[capitalName];
             const isSyuruk = name === 'syuruk';
 
+            // Set teks waktu solat dalam slide caption — guna waktu sebenar (bukan test override)
+            const realTimeStr = prayerTimes?.[capitalName];
+            if (realTimeStr) {
+              const tStr = fmtPrayerTime12h(realTimeStr);
+              if (tStr) {
+                const [hPart, mPart] = tStr.split(':');
+                const tHEl = document.getElementById(`ipray-time-${name}-h`);
+                const tMEl = document.getElementById(`ipray-time-${name}-m`);
+                if (tHEl && tHEl.textContent !== hPart) tHEl.textContent = hPart;
+                if (tMEl && tMEl.textContent !== mPart) tMEl.textContent = mPart;
+              }
+            }
+
             let isPrayerExactTime = false;
             let isInPrayerMinute = false;
             let is30SecBefore = false;

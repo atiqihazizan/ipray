@@ -3,7 +3,7 @@
  * Backend hantar countdown enriched (display, layout, hijri, masihi, dualYear, background).
  */
 import { slidesTemplate } from '../config/sliderConfig';
-import { top, bottom } from '../utils/screenUtils';
+import { top, bottom, sz } from '../utils/screenUtils';
 import { getCountdown, getCountdownDays } from '../utils/dateFormatter';
 import { withAssetBase } from '../services/apiBase';
 
@@ -76,20 +76,19 @@ function buildCaptionChildren(item, isLast) {
     if (countdownText) {
       children.push({
         type: 'div',
-        // transition: 'CLIP|LR',
-        // transition: 'auto',
+        transition: 'CLIP|LR',
         // duration: 1000,
         content: countdownText,
         style: {
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: bottom(layout.countdownBottom),
-          width: '100%',
+          top: sz().height - 180 - bottom(layout.countdownBottom),
+          width: sz().width,
           height: 180,
           textAlign: 'center',
           fontSize: 150,
-          color: 'rgb(245 206 28)',
+          color: 'rgb(245, 28, 28)',
           // textShadow: '0 4px 12px rgba(0,0,0,0.9)',
           // textShadow: [
           //   '0 0 4px rgba(0,0,0,1)',

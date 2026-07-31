@@ -37,26 +37,113 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
 
   const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
 
+  const _now = new Date();
+  const _h12 = _now.getHours() % 12 || 12;
+  const _m2 = String(_now.getMinutes()).padStart(2, '0');
+
+  // Initial gregorian date values
+  const _gDay = String(_now.getDate()).padStart(2, '0');
+  const _gDayName = ['AHAD','ISNIN','SELASA','RABU','KHAMIS','JUMAAT','SABTU'][_now.getDay()];
+  const _gMonth = ['JAN','FEB','MAC','APR','MEI','JUN','JUL','OGO','SEP','OKT','NOV','DIS'][_now.getMonth()];
+  const _gYear = _now.getFullYear();
+
+  // Initial prayer times dari localStorage (dikemaskini oleh useTimeDriver pada tick pertama)
+  const _prayerData = (() => {
+    try {
+      const today = _now.toISOString().slice(0, 10);
+      return JSON.parse(localStorage.getItem(`ipray-prayer-times-${today}`) || 'null')
+        ?? JSON.parse(localStorage.getItem('ipray-prayer-times') || 'null')
+        ?? {};
+    } catch (e) { return {}; }
+  })();
+
+  const _fmtP = (t) => {
+    if (!t) return '--:--';
+    const [h, m] = t.split(':').map(Number);
+    return `${h % 12 || 12}:${String(m).padStart(2, '0')}`;
+  };
+
+  const _PRAYERS = ['Subuh', 'Syuruk', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
+  const _dSz = height(86);
+  const _dLb = height(36);
+  const _dW  = Math.round(sz().width * 0.25);
+  const _pTS = height(95);
+  const _pLS = height(39);
+
+  // Caption date gregorian — top-left, diupdate useTimeDriver via id
+  const dateGregorianCaption = {
+    type: "div", transition: "CLIP|L", duration: 1500,
+    style: { position: 'absolute', left: 0, top: 0 },
+    content: `<div style="display:flex;align-items:flex-start;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,88% 100%,0 100%);padding:0 ${height(16)}px ${height(4)}px;width:${_dW}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);"><div id="ipray-date-g-day" style="font-size:${_dSz}px;line-height:1;font-weight:normal;color:#FF00FF;">${_gDay}</div><div style="display:flex;flex-direction:column;font-size:${_dLb}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;"><div id="ipray-date-g-dayname" style="color:#FFFFFF;">${_gDayName}</div><div style="color:#00FFFF;"><span id="ipray-date-g-month">${_gMonth}</span> <span id="ipray-date-g-year">${_gYear}</span></div></div></div>`
+  };
+
+  // Caption date hijri — top-right, diisi useTimeDriver (perlu takwim data)
+  const dateHijriCaption = {
+    type: "div", transition: "R", duration: 1500,
+    style: { position: 'absolute', right: 0, top: 0 },
+    content: `<div style="display:flex;justify-content:flex-end;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,100% 100%,12% 100%);padding:0 ${height(16)}px ${height(4)}px;width:${_dW}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);"><div style="display:flex;flex-direction:column;font-size:${_dLb}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;text-align:right;"><div id="ipray-date-h-month" style="color:#FFFFFF;"></div><div id="ipray-date-h-year" style="color:#00FFFF;"></div></div><div id="ipray-date-h-day" style="font-size:${_dSz}px;line-height:1;font-weight:normal;color:#FF00FF;"></div></div>`
+  };
+
+  // Caption prayer times — bottom-left flex row, teks diisi useTimeDriver
+  const prayerTimesCaption = {
+    type: "div", transition: "B", duration: 1500,
+    style: {
+      position: 'absolute',
+      left: 0, bottom: 0,
+      display: 'flex', backgroundColor: 'rgba(16,16,16,0)' ,
+      color: '#FFFF00',
+      fontFamily: "'Bebas', sans-serif", fontWeight: 'normal'
+    },
+    content: _PRAYERS.map(name => {
+      const n = name.toLowerCase();
+      const t = _fmtP(_prayerData[name]);
+      const [tH, tM] = t.split(':');
+      return `<div id="ipray-wrap-${n}" style="display:flex;flex-direction:column;align-items:center;padding:${height(8)}px ${height(16)}px;"><div id="ipray-label-${n}" style="font-family:'Bebas',sans-serif;font-size:${_pLS}px;color:#FFFF00;text-shadow:4px 4px 0 rgba(0,0,0,1);padding-bottom:${height(4)}px;line-height:1;font-weight:normal;transition:color 0.3s ease;">${name.toUpperCase()}</div><div id="ipray-time-${n}" style="font-family:'Bebas',sans-serif;font-size:${_pTS}px;line-height:1;font-weight:normal;color:#FFFF00;text-shadow:3px 3px 0 rgba(0,0,0,1);transition:color 0.3s ease;"><span id="ipray-time-${n}-h">${tH}</span><span id="ipray-colon-${n}" style="transition:none">:</span><span id="ipray-time-${n}-m">${tM}</span></div></div>`;
+    }).join('')
+  };
+
+  // Caption clock — elemen dengan ID ini diupdate oleh useTimeDriver setiap saat (DOM-driven)
+  const clockCaption = {
+    type: "div", transition: "MCLIP|R", duration: 1500,
+    style: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      fontFamily: "'Bebas', monospace",
+      fontWeight: "900",
+      fontSize: height(128),
+      // lineHeight: 1,
+      // fontWeight: 'normal',
+      transform: "scaleY(1.0)",
+      color: '#FFFF00',
+      textShadow: '3px 3px 0px rgba(0,0,0,1)',
+      backgroundColor: 'rgba(16,16,16,0.5)',
+      borderTopLeftRadius: height(10),
+      // padding: `${height(4)}px ${height(18)}px ${height(17)}px ${height(24)}px`,
+      padding: `${height(0)}px ${height(18)}px ${height(0)}px ${height(24)}px`,
+    },
+    content: `<span id="ipray-clock-h">${_h12}</span><span id="ipray-clock-colon" style="transition:none">:</span><span id="ipray-clock-m">${_m2}</span>`
+  };
+
   const captions = showTitle ? [
       {
-        // type: "div", transition: "CLIP|LR", duration: 1500,
         type: "div", transition: "auto", duration: 1500,
-        style: { 
-          left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP), //width: sz().width,
-          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
+        style: {
+          left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP),
+          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold',
           fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px',
           backgroundColor: TITLE_BG,
-          // '-webkit-text-stroke': '1px red',
-          // webkitTextStrokeColor: 'red',
-          // webkittextstrokewidth: '1px',
-          // clip: 'auto'
         },
-        content: `<div style="display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
+        content: `<div style="transform:scale(1.8, 2.40); display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
         <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>
         <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
         </div>`
       },
-    ] : [];
+      clockCaption,
+      dateGregorianCaption,
+      dateHijriCaption,
+      prayerTimesCaption,
+    ] : [clockCaption, dateGregorianCaption, dateHijriCaption, prayerTimesCaption];
 
   return {
     type: 'home',
@@ -64,7 +151,6 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
     transitionType: 'auto',
     image: { src: HOME_SLIDE_BACKGROUND, alt: "Slide 1" },
     captions,
-    datetime: ['date', 'solat-time']
   };
 };
 
@@ -154,12 +240,10 @@ export const slidesTemplate = {
       //   content: MOSQUE_LOCATION
       // },
     ],
-    datetime: ['date', 'solat-time']
   },
   announce: {
     type: 'announce',
     transitionType: 'auto',
-    datetime: [],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Slide 2" },
     // Captions struktur parent-child (sama konsep kuliah)
     // Parent: kategori (PENGUMUMAN/PEMBERITAHUAN) - play in pertama, play out terakhir
@@ -214,7 +298,6 @@ export const slidesTemplate = {
   countDown: {
     type: 'countDown',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: null,
     captions: [
       {
@@ -239,7 +322,6 @@ export const slidesTemplate = {
   kuliahHari: {
     type: 'kuliahHari',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Harian" },
     captions: [
       {
@@ -273,7 +355,6 @@ export const slidesTemplate = {
   kuliahWeekly: {
     type: 'kuliahWeekly',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Mingguan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
@@ -305,7 +386,6 @@ export const slidesTemplate = {
   kuliahBulanan: {
     type: 'kuliahBulanan',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Bulanan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
@@ -333,7 +413,6 @@ export const slidesTemplate = {
   slideshow: {
     type: 'slideshow',
     transitionType: 'auto',
-    datetime: [],
     image: { src: "/img/slideshow/mountant0.jpeg", alt: "Slideshow" },
     // Captions: array imej dibina dalam useSlides (processSlideshow) - setiap caption type img, FADE, delay berurutan
     captions: []
