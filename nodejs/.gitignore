@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Data files (kekal di server sahaja)
+data/
+
+# Images (kekal di server sahaja)
+images/
+
+# Logs
+logs/
+*.log
+
+# OS & editor
+.DS_Store
+**/.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Env
+.env
