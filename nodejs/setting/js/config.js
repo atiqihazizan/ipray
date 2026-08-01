@@ -63,6 +63,18 @@ if (typeof window !== 'undefined' && !window.__fetchTokenPatched) {
                 headers.set('X-Access-Token', token);
                 init = { ...init, headers };
             }
+            const res = await nativeFetch(input, init);
+            // Jika 401 — token cache mungkin stale (server restart). Clear dan retry sekali.
+            if (res.status === 401) {
+                _accessTokenPromise = null;
+                const freshToken = await ensureAccessToken();
+                if (freshToken) {
+                    const headers = new Headers(init.headers);
+                    headers.set('X-Access-Token', freshToken);
+                    return nativeFetch(input, { ...init, headers });
+                }
+            }
+            return res;
         }
         return nativeFetch(input, init);
     };

@@ -2,11 +2,13 @@
 // IMPORTS
 // ============================================================================
 // Import screen utilities dari utils folder
-import { getContainerSize, top, bottom, sz, height } from '../utils/screenUtils';
+import { getContainerSize, top, bottom, sz } from '../utils/screenUtils';
 // Import build functions dan constants dari slideBuilders
 import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 import { MOSQUE_NAME, MOSQUE_LOCATION, HOME_SLIDE_BACKGROUND } from './mosqueInfo';
 import { withAssetBase } from '../services/apiBase';
+// Widget tarikh/jam/next-prayer (data-ipray-id, diupdate useTimeDriver)
+import { buildClockWidget, buildGregorianWidget, buildHijriWidget, buildNextPrayerWidget, buildPrayerTimesWidget } from '../processors/dateTimeWidgets';
 
 // ============================================================================
 // HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
@@ -15,9 +17,10 @@ import { withAssetBase } from '../services/apiBase';
  * Build home template dengan styling dinamik dari HOME_TITLE_CONFIG
  * TEKS adalah HARDCODED untuk protect dari cetak rompak
  * @param {Object} homeTitleConfig - Config untuk styling title home (tanpa text)
+ * @param {string[]} datetime - Flag overlay dari config ('date', 'solat-time-small', ...). Kosong/null = tunjuk semua.
  * @returns {Object} Home slide template
  */
-export const buildHomeTemplate = (homeTitleConfig = {}) => {
+export const buildHomeTemplate = (homeTitleConfig = {}, datetime = []) => {
   const {
     SHOW_TITLE = true,
     TITLE1_TOP = 120,
@@ -35,28 +38,34 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
 
   const showTitle = SHOW_TITLE !== false;
 
+  const showDate = datetime.includes('date');
+  const showSolatSmall = datetime.includes('solat-time-small');
+
   const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
 
-  const captions = showTitle ? [
-      {
-        // type: "div", transition: "CLIP|LR", duration: 1500,
-        type: "div", transition: "auto", duration: 1500,
-        style: { 
-          left: TITLE_LEFT, right: TITLE_RIGHT, top: top(TITLE1_TOP), //width: sz().width,
-          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold', 
-          fontFamily: "'din_bold', sans-serif", lineHeight: 70, margin: '3rem auto 14px',
+  const captions = [
+    ...(showTitle ? [{
+        type: "div", transition: "CLIP|LR", //duration: 1500,
+        style: {
+          left: TITLE_LEFT, right: TITLE_RIGHT, 
+          top: top(TITLE1_TOP),
+          textShadow: '3px 3px 0px rgba(0,0,0,1)', fontWeight: 'bold',
+          fontFamily: "'din_bold', sans-serif", 
+          lineHeight: 70,
+          height: 500,
+          margin: '3rem auto 14px',
           backgroundColor: TITLE_BG,
-          // '-webkit-text-stroke': '1px red',
-          // webkitTextStrokeColor: 'red',
-          // webkittextstrokewidth: '1px',
-          // clip: 'auto'
         },
-        content: `<div style="display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
+        content: `<div style="transform:scale(1.7, 2.40); transform-origin:top center; width:100%; display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
         <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>
         <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
         </div>`
-      },
-    ] : [];
+      }] : []),
+    buildClockWidget(),
+    ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+    ...(showSolatSmall ? [buildNextPrayerWidget()] : []),
+    buildPrayerTimesWidget(),
+  ];
 
   return {
     type: 'home',
@@ -64,7 +73,6 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
     transitionType: 'auto',
     image: { src: HOME_SLIDE_BACKGROUND, alt: "Slide 1" },
     captions,
-    datetime: ['date', 'solat-time']
   };
 };
 
@@ -154,12 +162,10 @@ export const slidesTemplate = {
       //   content: MOSQUE_LOCATION
       // },
     ],
-    datetime: ['date', 'solat-time']
   },
   announce: {
     type: 'announce',
     transitionType: 'auto',
-    datetime: [],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Slide 2" },
     // Captions struktur parent-child (sama konsep kuliah)
     // Parent: kategori (PENGUMUMAN/PEMBERITAHUAN) - play in pertama, play out terakhir
@@ -214,7 +220,6 @@ export const slidesTemplate = {
   countDown: {
     type: 'countDown',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: null,
     captions: [
       {
@@ -239,7 +244,6 @@ export const slidesTemplate = {
   kuliahHari: {
     type: 'kuliahHari',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Harian" },
     captions: [
       {
@@ -273,7 +277,6 @@ export const slidesTemplate = {
   kuliahWeekly: {
     type: 'kuliahWeekly',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Mingguan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
@@ -305,7 +308,6 @@ export const slidesTemplate = {
   kuliahBulanan: {
     type: 'kuliahBulanan',
     transitionType: 'auto',
-    datetime: ['solat-time-small'],
     image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Bulanan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
@@ -333,7 +335,6 @@ export const slidesTemplate = {
   slideshow: {
     type: 'slideshow',
     transitionType: 'auto',
-    datetime: [],
     image: { src: "/img/slideshow/mountant0.jpeg", alt: "Slideshow" },
     // Captions: array imej dibina dalam useSlides (processSlideshow) - setiap caption type img, FADE, delay berurutan
     captions: []

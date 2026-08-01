@@ -830,8 +830,8 @@ class DataService {
     } else {
       // Konsisten dengan parseFileContent:
       // - Skip baris kosong untuk SEMUA fail
-      // - Skip baris comment (#) kecuali countdowns (countdowns guna # sebagai separator)
-      const skipComment = normalized !== 'countdowns';
+      // - Skip baris comment (#) untuk SEMUA fail termasuk countdowns
+      const skipComment = true;
       for (let i = 0; i < allLines.length; i++) {
         const line = allLines[i];
         const trimmed = line.trim();

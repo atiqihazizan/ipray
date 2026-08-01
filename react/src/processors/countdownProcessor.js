@@ -3,9 +3,10 @@
  * Backend hantar countdown enriched (display, layout, hijri, masihi, dualYear, background).
  */
 import { slidesTemplate } from '../config/sliderConfig';
-import { top, bottom } from '../utils/screenUtils';
+import { top, bottom, sz } from '../utils/screenUtils';
 import { getCountdown, getCountdownDays } from '../utils/dateFormatter';
 import { withAssetBase } from '../services/apiBase';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 function normalizeDateTime(dateStr) {
   if (!dateStr || typeof dateStr !== 'string') return '';
@@ -76,20 +77,19 @@ function buildCaptionChildren(item, isLast) {
     if (countdownText) {
       children.push({
         type: 'div',
-        // transition: 'CLIP|LR',
-        // transition: 'auto',
+        transition: 'CLIP|LR',
         // duration: 1000,
         content: countdownText,
         style: {
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: bottom(layout.countdownBottom),
-          width: '100%',
+          top: sz().height - 180 - bottom(layout.countdownBottom),
+          width: sz().width,
           height: 180,
           textAlign: 'center',
           fontSize: 150,
-          color: 'rgb(245 206 28)',
+          color: 'rgb(245, 28, 28)',
           // textShadow: '0 4px 12px rgba(0,0,0,0.9)',
           // textShadow: [
           //   '0 0 4px rgba(0,0,0,1)',
@@ -121,8 +121,11 @@ function buildCaptionChildren(item, isLast) {
   return children;
 }
 
-export function processCountdowns(countdownsData, slidesConfigData, applyConfig, imagesData = {}) {
+export function processCountdowns(countdownsData, slidesConfigData, applyConfig, imagesData = {}, datetime = []) {
   if (!countdownsData || countdownsData.length === 0) return [];
+
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
 
   const active = countdownsData.filter((item) => {
     const dateStr = normalizeDateTime(item.dateTimeRaw ?? item.date ?? '');
@@ -163,6 +166,10 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig,
     //   parent.transition2 = isLast ? 'CLIP|LR' : 'NO_CLIP_OUT';
       parent.children = buildCaptionChildren(enrichedItem, isLast);
     }
+    slide.captions.push(
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
+    );
     // slide.transitionType = i === 0 ? 'auto' : 'static';
     return slide;
   });

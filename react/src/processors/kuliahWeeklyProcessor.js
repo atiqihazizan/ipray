@@ -26,6 +26,7 @@ import {
 import { top, getContainerSize, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer } from '../utils/boxLayerUtils';
 import { escapeHtml } from './slideHelpers';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 /** Bottom box untuk weekly (lebih kecil = height box lebih) */
 const WEEKLY_BOX_BOTTOM = 200;
@@ -61,9 +62,11 @@ function buildWeeklyCardContent(item, ctx) {
   return `<div style="${STYLE_CARD_CONTENT_WRAPPER}">${penceramahHtml}${dateHtml}</div>`;
 }
 
-export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig) {
+export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig, datetime = []) {
   const esc = escapeHtml;
   const safeData = kuliahMingguProcessed && Array.isArray(kuliahMingguProcessed) ? kuliahMingguProcessed : [];
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
   const currentDate = new Date();
   const currentDay = getDayCode(currentDate);
 
@@ -100,6 +103,10 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
       parent.children = [parent.children[0], bodyMsg];
     }
     kuliahSlide.transitionType = 'auto';
+    kuliahSlide.captions.push(
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
+    );
     return [kuliahSlide];
   }
 
@@ -198,5 +205,9 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
   }
 
   kuliahSlide.transitionType = 'auto';
+  kuliahSlide.captions.push(
+    ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+    ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
+  );
   return [kuliahSlide];
 }

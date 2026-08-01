@@ -218,10 +218,10 @@ export const DataProvider = ({ children }) => {
   }, [socketReady, socketConnected, loadAllData]);
 
   useEffect(() => {
-    const handler = () => loadAllData();
+    const handler = () => runAfterPrayerSequence(() => window.location.reload());
     window.addEventListener(TIME_EVENTS.DATE_CHANGED, handler);
     return () => window.removeEventListener(TIME_EVENTS.DATE_CHANGED, handler);
-  }, [loadAllData]);
+  }, []);
 
   /**
    * Setup Socket.IO connection untuk real-time updates

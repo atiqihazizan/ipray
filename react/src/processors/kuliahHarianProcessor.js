@@ -18,6 +18,7 @@ import {
 } from '../utils/kuliahHelpers';
 import { top, left, right, bottom, getContainerSize, width, height, textSize } from '../utils/screenUtils';
 import { createBoxLayer, BOX_LEFT, BOX_TOP, BOX_RIGHT, DEFAULT_BOX_BOTTOM } from '../utils/boxLayerUtils';
+import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 const CATEGORY_ORDER = ['KULIAH SUBUH', 'KULIAH DHUHA', 'KULIAH MAGHRIB', 'KULIAH KHAS'];
 
@@ -50,9 +51,11 @@ function buildTarikhHariHtml() {
   </div>`;
 }
 
-export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = []) {
+export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = [], datetime = []) {
   const safeData = kuliahHariProcessed && Array.isArray(kuliahHariProcessed) ? kuliahHariProcessed : [];
   const replacements = Array.isArray(kuliahHariReplacements) ? kuliahHariReplacements : [];
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
 
   const groupedData = {};
   replacements.filter((r) => !r.displaySkip).forEach((r) => {
@@ -103,6 +106,10 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
       parent.children = [parent.children[0], bodyMsg];
     }
     kuliahHariSlide.transitionType = 'auto';
+    kuliahHariSlide.captions.push(
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
+    );
     return [kuliahHariSlide];
   }
 
@@ -317,6 +324,10 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     if (TYPE_COLORS[type] && kuliahSlide.captions[0]) {
       kuliahSlide.captions[0].style.backgroundColor = hexToRgba(TYPE_COLORS[type], 0.80);
     }
+    kuliahSlide.captions.push(
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
+    );
     kuliahHariSlides.push(kuliahSlide);
   });
   return kuliahHariSlides;
