@@ -67,8 +67,8 @@ const COLUMNS = {
   countdowns: ['format', 'date', 'tahun', 'bulan', 'hari', 'event', 'windowDays', 'background', 'display', 'layout'],
   slideshow: ['caption', 'image', 'validFrom', 'validTo'],
   images: ['imageCode', 'imagePath'],
-  penceramah: ['kod', 'namaPenuh', 'shortname', 'kitab'],
-  petugas: ['slug', 'namaPenuh', 'shortname', 'role'],
+  penceramah: ['uuid', 'namaPenuh', 'shortname', 'kitab'],
+  petugas: ['uuid', 'namaPenuh', 'shortname', 'role'],
   'jadual-petugas': ['week', 'day', 'role', 'officerCode']
 };
 
@@ -297,10 +297,10 @@ function parseLineToRow(normalized, line, index) {
     return { id: index + 1, format: 'date', date: parts[1] || '', tahun: '', bulan: '', hari: '', event: parts[2] || '', windowDays: parts[3] || '', ...opt, raw: line };
   }
   if (normalized === 'penceramah') {
-    return { id: index + 1, kod: parts[0] || '', namaPenuh: parts[1] || '', shortname: parts[2] || '', kitab: parts.length >= 5 ? (parts[4] || '') : (parts[3] || ''), raw: line };
+    return { id: index + 1, uuid: parts[0] || '', namaPenuh: parts[1] || '', shortname: parts[2] || '', kitab: parts.length >= 5 ? (parts[4] || '') : (parts[3] || ''), raw: line };
   }
   if (normalized === 'petugas') {
-    return { id: index + 1, slug: parts[0] || '', namaPenuh: parts[1] || '', shortname: parts[2] || '', role: parts[3] || '', raw: line };
+    return { id: index + 1, uuid: parts[0] || '', namaPenuh: parts[1] || '', shortname: parts[2] || '', role: parts[3] || '', raw: line };
   }
   if (normalized === 'jadual-petugas') {
     return { id: index + 1, week: parts[0] || '', day: parts[1] || '', role: parts[2] || '', officerCode: parts[3] || '', raw: line };

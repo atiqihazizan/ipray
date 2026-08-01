@@ -240,9 +240,9 @@ function buildTableRow(row, ctx) {
     let value =
       col === "gambar"
         ? fileName === "penceramah"
-          ? row.kod
+          ? row.uuid
           : fileName === "petugas"
-            ? row.slug
+            ? row.uuid
             : ""
         : row[col] || "";
     if (fileName === "kuliah-override") {
@@ -310,7 +310,7 @@ function buildTableRow(row, ctx) {
       td.style.padding = "8px";
       td.style.verticalAlign = "middle";
       const slug = (value || "").trim();
-      const petugas = petugasList.find((p) => (p.slug || "").trim() === slug);
+      const petugas = petugasList.find((p) => (p.uuid || "").trim() === slug);
       const namaPenuh = petugas ? (petugas.namaPenuh || slug) : slug;
       const imgContainer = document.createElement("div");
       imgContainer.style.display = "flex";
@@ -412,7 +412,7 @@ function buildTableRow(row, ctx) {
     } else if (fileName === "penceramah" && col === "gambar") {
       td.style.padding = "8px";
       td.style.verticalAlign = "middle";
-      const code = (row.kod || "").trim();
+      const code = (row.uuid || "").trim();
       const imgContainer = document.createElement("div");
       imgContainer.style.display = "flex";
       imgContainer.style.alignItems = "center";
@@ -448,7 +448,7 @@ function buildTableRow(row, ctx) {
     } else if (fileName === "petugas" && col === "gambar") {
       td.style.padding = "8px";
       td.style.verticalAlign = "middle";
-      const slug = (row.slug || "").trim();
+      const slug = (row.uuid || "").trim();
       const imgContainer = document.createElement("div");
       imgContainer.style.display = "flex";
       imgContainer.style.alignItems = "center";

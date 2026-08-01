@@ -167,12 +167,12 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "livestream") {
     return `${rowData.tajuk || ""}|${rowData.url || ""}|${rowData.jenis || ""}`;
   } else if (fileName === "petugas") {
-    return `${rowData.slug || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|`;
+    return `${rowData.uuid || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|`;
   } else if (fileName === "jadual-petugas") {
     return `${rowData.officerCode || ""}|${rowData.role || ""}|${rowData.weeks || ""}|${rowData.days || ""}|${rowData.waktu || ""}`;
   } else if (fileName === "penceramah") {
-    // Fail penceramah: kod(slug namaPenuh)|namaPenuh|shortname|kitab
-    return `${rowData.kod || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.kitab || ""}`;
+    // Fail penceramah: id(uuid)|namaPenuh|shortname|kitab
+    return `${rowData.uuid || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.kitab || ""}`;
   }
   return "";
 }
@@ -341,14 +341,21 @@ function validateAnnouncementData(rowData) {
   return { valid: true };
 }
 
-function slugifyName(name) {
-  if (!name) return "";
-  return String(name)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9\-]/g, "")
-    .replace(/\-+/g, "-");
+function genUuid() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback RFC4122 v4 untuk non-secure context (LAN http)
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
+      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+    );
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 /**
@@ -367,18 +374,18 @@ export async function saveRow() {
     rowData[col] = field ? field.value.trim() : "";
   });
 
-  // Penceramah: jana kod automatik dari namaPenuh (slug); tiada imageCode
+  // Penceramah: jana UUID untuk ADD mode sahaja; EDIT mode kekalkan uuid dari field hidden
   if (currentFileName === "penceramah") {
-    const namaPenuh = (rowData.namaPenuh || "").trim();
-    const slug = slugifyName(namaPenuh);
-    if (slug) rowData.kod = slug;
+    if (addMode) {
+      rowData.uuid = genUuid();
+    }
   }
 
-  // Petugas: jana slug automatik dari namaPenuh
+  // Petugas: jana UUID untuk ADD mode sahaja; EDIT mode kekalkan uuid dari field hidden
   if (currentFileName === "petugas") {
-    const namaPenuh = (rowData.namaPenuh || "").trim();
-    const slug = slugifyName(namaPenuh);
-    if (slug) rowData.slug = slug;
+    if (addMode) {
+      rowData.uuid = genUuid();
+    }
   }
 
   // Images + Slideshow: upload image dibuat masa Save (bukan di dialog)
@@ -454,7 +461,7 @@ export async function saveRow() {
       // - EDIT: hanya masuk sini jika changeFlag === "1" dan ada file
       if (file) {
         const uploaded = await uploadImageForSave(file, "penceramah");
-        const imageCode = (rowData.kod || "").trim();
+        const imageCode = (rowData.uuid || "").trim();
         if (imageCode) {
           await upsertImageEntry(imageCode, uploaded.path || "");
         }
@@ -471,9 +478,9 @@ export async function saveRow() {
       const shouldUpload = file && (addMode || changeFlag === "1");
       if (shouldUpload) {
         const uploaded = await uploadImageForSave(file, "imambilal");
-        const slug = (rowData.slug || "").trim();
-        if (slug && uploaded.path) {
-          await upsertImageEntry(slug, uploaded.path);
+        const petugasUuid = (rowData.uuid || "").trim();
+        if (petugasUuid && uploaded.path) {
+          await upsertImageEntry(petugasUuid, uploaded.path);
         }
       }
     }

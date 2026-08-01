@@ -732,24 +732,24 @@ class DataService {
           raw: line
         });
       } else if (normalized === 'penceramah') {
-        // Format: kod(slug)|nama_penuh|shortname|kitab (4 lajur, tiada imageCode)
-        const kod = parts[0] || '';
+        // Format: id(uuid)|nama_penuh|shortname|kitab (4 lajur, tiada imageCode)
+        const uuid = parts[0] || '';
         const namaPenuh = parts[1] || '';
         const shortname = parts[2] || '';
         const kitab = parts.length >= 5 ? (parts[4] || '') : (parts[3] || ''); // 4 lajur baru; 5 lajur lama
         parsed.push({
           id: index + 1,
-          kod,
+          uuid,
           namaPenuh,
           shortname,
           kitab,
           raw: line
         });
       } else if (normalized === 'petugas') {
-        // Petugas format: slug|namaPenuh|shortname|role
+        // Petugas format: uuid|namaPenuh|shortname|role
         parsed.push({
           id: index + 1,
-          slug: parts[0] || '',
+          uuid: parts[0] || '',
           namaPenuh: parts[1] || '',
           shortname: parts[2] || '',
           role: parts[3] || '',
@@ -790,8 +790,8 @@ class DataService {
       'slideshow': ['caption', 'image', 'validFrom', 'validTo', 'showOn'],
       'hebahan': ['text', 'startDate', 'endDate'],
       'livestream': ['tajuk', 'url', 'jenis'],
-      'penceramah': ['kod', 'namaPenuh', 'shortname', 'kitab'],
-      'petugas': ['slug', 'namaPenuh', 'shortname', 'role'],
+      'penceramah': ['uuid', 'namaPenuh', 'shortname', 'kitab'],
+      'petugas': ['uuid', 'namaPenuh', 'shortname', 'role'],
       'jadual-petugas': ['role', 'officerCode', 'weeks', 'days', 'waktu']
     };
     return columnMap[normalized] || [];
@@ -975,9 +975,9 @@ class DataService {
 
     // Petugas: cascade delete (jadual-petugas + images) sebelum buang rekod petugas
     if (normalized === 'petugas' && lineToDelete) {
-      const petugasSlug = ((lineToDelete.split('|')[0]) || '').trim();
-      if (petugasSlug) {
-        // 1) Buang rekod jadual-petugas yang match slug (lajur ke-4)
+      const petugasUuid = ((lineToDelete.split('|')[0]) || '').trim();
+      if (petugasUuid) {
+        // 1) Buang rekod jadual-petugas yang match uuid (lajur ke-1)
         try {
           const jpContent = await this.readFile('jadual-petugas').catch(() => '');
           const jpLines = jpContent.split('\n');
@@ -990,8 +990,8 @@ class DataService {
             }
             const parts = jpLine.split('|');
             const officerCode = (parts[0] || '').trim();
-            if (officerCode && officerCode === petugasSlug) {
-              continue; // buang baris jadual-petugas yang guna slug ini
+            if (officerCode && officerCode === petugasUuid) {
+              continue; // buang baris jadual-petugas yang guna uuid ini
             }
             keptJpLines.push(jpLine);
           }
@@ -1000,7 +1000,7 @@ class DataService {
           throw e;
         }
 
-        // 2) Buang rekod images.txt yang match slug, dan padam fail image jika ada
+        // 2) Buang rekod images.txt yang match uuid, dan padam fail image jika ada
         try {
           const imagesContent = await this.readFile('images').catch(() => '');
           const imagesLines = imagesContent.split('\n');
@@ -1018,7 +1018,7 @@ class DataService {
             const parts = imgLine.split('|');
             const imageCode = (parts[0] || '').trim();
             const imagePath = (parts[1] || '').trim();
-            if (imageCode && imageCode === petugasSlug) {
+            if (imageCode && imageCode === petugasUuid) {
               if (imagePath && options.imagesPath) {
                 try {
                   const relativePath = imagePath.replace(/^\/images\//, '');
@@ -1055,9 +1055,9 @@ class DataService {
 
     // Penceramah: cascade delete (images + kuliah) sebelum buang rekod penceramah
     if (normalized === 'penceramah' && lineToDelete) {
-      const slug = ((lineToDelete.split('|')[0]) || '').trim();
-      if (slug) {
-        // 1) Buang rekod images.txt yang match slug, dan padam fail image jika ada
+      const uuid = ((lineToDelete.split('|')[0]) || '').trim();
+      if (uuid) {
+        // 1) Buang rekod images.txt yang match uuid, dan padam fail image jika ada
         try {
           const imagesContent = await this.readFile('images').catch(() => '');
           const imagesLines = imagesContent.split('\n');
@@ -1075,7 +1075,7 @@ class DataService {
             const parts = imgLine.split('|');
             const imageCode = (parts[0] || '').trim();
             const imagePath = (parts[1] || '').trim();
-            if (imageCode && imageCode === slug) {
+            if (imageCode && imageCode === uuid) {
               // Padam fail gambar jika ada (ikut logik delete row images)
               if (imagePath && options.imagesPath) {
                 try {
@@ -1110,7 +1110,7 @@ class DataService {
           throw e;
         }
 
-        // 2) Buang rekod kuliah.txt yang match slug (lajur ke-4)
+        // 2) Buang rekod kuliah.txt yang match uuid (lajur ke-4)
         try {
           const kuliahContent = await this.readFile('kuliah').catch(() => '');
           const kuliahLines = kuliahContent.split('\n');
@@ -1126,9 +1126,9 @@ class DataService {
               continue;
             }
             const parts = kLine.split('|');
-            const kuliahSlug = (parts[3] || '').trim();
-            if (kuliahSlug && kuliahSlug === slug) {
-              continue; // buang baris kuliah yang guna slug ini
+            const kuliahUuid = (parts[3] || '').trim();
+            if (kuliahUuid && kuliahUuid === uuid) {
+              continue; // buang baris kuliah yang guna uuid ini
             }
             keptKuliahLines.push(kLine);
           }

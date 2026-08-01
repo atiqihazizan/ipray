@@ -1,26 +1,26 @@
-ust-suhaimi-abd-jalil|Ust Suhaimi Abd Jalil|suhaimi|Sirah Nabawiah
-ust-badrol|Ust Badrol|badrol|Hikam (Tok Ku Pulau Manis)
-ust-hj-omar-ibrahim-khalid|Ust Hj Omar Ibrahim Khalid|omar|Strategi Musuh Menentang Islam
-ust-mohd-yusoff-abdullah|Ust Mohd Yusoff Abdullah|yusoff|Bahrul Mazi
-ust-hassan-hj-hashim|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
-ustazah-nor-bee-aziz|Ustazah Nor Bee Aziz|nor-bee|Bidayatul Hidayah
-ust-dato-hj-hassan-ahmad|Ust Dato Hj Hassan Ahmad|dato-hassan|Mat La'al Badrain
-ust-muhd-hanif-yusof|Ust Muhd Hanif Yusof|hanif|Kitab Tazkirah,Hidayatul Sobiyan
-ust-sallehuddin|Ust Sallehuddin|sallehuddin|Hadis 40
-ust-mohd-nasir-abd-rahim|Ust Mohd Nasir Abd Rahim|nasir|Tafsir Nurul Ehsan (Surah Al-Kahfi)
-ust-qutub|Ust Qutub|qutub|Penawar Bagi Hati,Masalah Munafiq & Masbuq
-ust-dato-hj-elias-zakaria|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
-ust-hafezol-saad|Ust Hafezol Saad|hafezol|Misbahul Munir
-ustazah-siti-hajar-ghazali|Ustazah Siti Hajar Ghazali|siti-hajar|Kitab Al-Hikam
-ust-shukor-salleh|Ust Shukor Salleh|shukor|Tafsir Juz Amma,Kasyful Ghaibiyyah
-ust-aiman-subri|Ust Aiman Subri|aiman|As-Syamail Al-Muhammadiyah
-ust-hassan-abd-latif|Ust Hassan Abd Latif|hassan_latif|Minhajul 'Abidin
-ust-rahimi-rahman|Ust Rahimi Rahman|rahimi|Keperibadian Seorang Muslim Menurut Al-Quran & Hadis
-ust-uzair-abd-hani-albanjari|Ust Uzair Abd Hani Albanjari|uzair|Tafsir Al-Quran,Anak Kunci Syurga
-ust-taufik-mohd-husin|Ust Taufik Mohd Husin|taufik|Ayyuhal Walad
-ust-ridhoudin|Ust Ridhoudin|ridhoudin|Hidayatul Mutafakirin
-ustazah-mardiah-zakaria|Ustazah Mardiah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
-ust-mohamad-shakir|Ust Mohamad Shakir|shakir|Ummul Amrad
-ust-syamsuri-hassan|Ust Syamsuri Hassan|syamsuri|Tajul Arus
+a40e4395-2f3b-45af-9f7b-2bf139dc1651|Ust Suhaimi Abd Jalil|suhaimi|Sirah Nabawiah
+fbdaa719-bdef-464f-8b5c-7c7cca74abb7|Ust Badrol|badrol|Hikam (Tok Ku Pulau Manis)
+705bad0f-b864-4e07-b3d9-e7334b4a4351|Ust Hj Omar Ibrahim Khalid|omar|Strategi Musuh Menentang Islam
+2c8f238b-d7b3-4154-b40c-62c33e6d8dfb|Ust Mohd Yusoff Abdullah|yusoff|Bahrul Mazi
+0005e5eb-7c00-4a21-bc06-990f0be6b5f9|Ust Hassan Hj Hashim|hassan-hashim|Wi Shahul Afrah Wa Isbahul Falah
+8aa4b56f-0773-4101-a096-45e3f1c5ebbb|Ustazah Nor Bee Aziz|nor-bee|Bidayatul Hidayah
+6f91689d-e5c1-4d08-8fe5-f5cbe8710b44|Ust Dato Hj Hassan Ahmad|dato-hassan|Mat La'al Badrain
+77acc3bd-e5d6-43ac-930f-165d9bc809ba|Ust Muhd Hanif Yusof|hanif|Kitab Tazkirah,Hidayatul Sobiyan
+08eb5bd6-1643-4797-8f48-c66da1d756bd|Ust Sallehuddin|sallehuddin|Hadis 40
+0a4f55cb-3d63-45ef-967d-389fde313e31|Ust Mohd Nasir Abd Rahim|nasir|Tafsir Nurul Ehsan (Surah Al-Kahfi)
+2b7694fc-d0dc-4e73-a1a1-264f77513a32|Ust Qutub|qutub|Penawar Bagi Hati,Masalah Munafiq & Masbuq
+320aefcc-18e6-4824-ba49-bf907bb5f3d4|Ust Dato Hj Elias Zakaria|elias|Nasihat Bimbingan Hadis Qudsi
+d8f16bd3-a5db-4083-80f8-7466a63ea3de|Ust Hafezol Saad|hafezol|Misbahul Munir
+e8b901e8-5120-4971-95f7-094763d49423|Ustazah Siti Hajar Ghazali|siti-hajar|Kitab Al-Hikam
+12a09942-8127-4806-bcd6-7f701def11fd|Ust Shukor Salleh|shukor|Tafsir Juz Amma,Kasyful Ghaibiyyah
+c5e3a6d1-56cd-4e10-91fc-96875931f676|Ust Aiman Subri|aiman|As-Syamail Al-Muhammadiyah
+297ab92e-b44f-402a-b6a3-969645aa509c|Ust Hassan Abd Latif|hassan_latif|Minhajul 'Abidin
+30046bda-d895-44ff-b685-c00bd932a42a|Ust Rahimi Rahman|rahimi|Keperibadian Seorang Muslim Menurut Al-Quran & Hadis
+fb646894-9397-4660-9998-4fb9bc64681c|Ust Uzair Abd Hani Albanjari|uzair|Tafsir Al-Quran,Anak Kunci Syurga
+5d39789c-e183-42cc-83e6-4d85d9a1bfe0|Ust Taufik Mohd Husin|taufik|Ayyuhal Walad
+968fee49-9dca-4fc3-87ac-8a5de018d50b|Ust Ridhoudin|ridhoudin|Hidayatul Mutafakirin
+b6240b0d-813e-4486-ad75-4b38c598c855|Ustazah Mardiah Zakaria|maridhah|Jalan Mudah Ke Syurga Tanpa Hisab Tanpa Azab
+fe2a1a7b-2bca-403b-87fe-8527ae94e4d3|Ust Mohamad Shakir|shakir|Ummul Amrad
+7957bb87-6122-4cd3-88db-6047b2ff8e03|Ust Syamsuri Hassan|syamsuri|Tajul Arus
 
-puz-faiz-hafizuddin-bin-rosli|PUZ Faiz Hafizuddin Rosli|PU Faiz|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)
+8fe81cec-9615-4b39-ba2d-deb90cd442b6|PUZ Faiz Hafizuddin Rosli|PU Faiz|Faridatul Faraid (Tauhid), Bidayatul Tholibin (Tasawuf)

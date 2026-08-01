@@ -136,7 +136,7 @@ function createFormFields(form, row, isAdd, options = {}) {
 
     // Petugas: label mesra pengguna
     if (currentFileName === "petugas") {
-      const petugasLabels = { slug: "Slug (jana automatik)", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan" };
+      const petugasLabels = { uuid: "UUID (jana automatik)", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan" };
       if (petugasLabels[col]) label.textContent = petugasLabels[col];
     }
     // Jadual petugas: label
@@ -150,8 +150,17 @@ function createFormFields(form, row, isAdd, options = {}) {
       if (pLabels[col]) label.textContent = pLabels[col];
     }
 
-    // Penceramah: kolum kod dijana automatik dari namaPenuh (slug), jadi tiada input dalam dialog
-    if (currentFileName === "penceramah" && col === "kod") {
+    // Penceramah: uuid dijana automatik (ADD) / dikekalkan dari rekod (EDIT) — field hidden
+    if (currentFileName === "penceramah" && col === "uuid") {
+      const currentVal = !isAdd && row && row.uuid ? String(row.uuid || "").trim() : "";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
+      group.appendChild(label);
+      group.appendChild(hiddenInput);
+      form.appendChild(group);
       return;
     }
 
@@ -160,21 +169,16 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Petugas: kolum slug dijana automatik dari namaPenuh, papar sebagai readonly
-    if (currentFileName === "petugas" && col === "slug") {
-      const currentVal = !isAdd && row && row.slug ? String(row.slug).trim() : "";
-      const input = document.createElement("input");
-      input.type = "text";
-      input.id = "field-slug";
-      input.name = "slug";
-      input.className = "form-control";
-      input.value = currentVal;
-      input.readOnly = true;
-      input.style.background = "#f3f4f6";
-      input.style.color = "#6b7280";
-      input.placeholder = "Jana automatik dari Nama Penuh";
+    // Petugas: uuid dijana automatik (ADD) / dikekalkan dari rekod (EDIT) — field hidden
+    if (currentFileName === "petugas" && col === "uuid") {
+      const currentVal = !isAdd && row && row.uuid ? String(row.uuid || "").trim() : "";
+      const hiddenInput = document.createElement("input");
+      hiddenInput.type = "hidden";
+      hiddenInput.id = `field-${col}`;
+      hiddenInput.name = col;
+      hiddenInput.value = currentVal;
       group.appendChild(label);
-      group.appendChild(input);
+      group.appendChild(hiddenInput);
       form.appendChild(group);
       return;
     }
@@ -199,7 +203,7 @@ function createFormFields(form, row, isAdd, options = {}) {
       return;
     }
 
-    // Petugas: imageCode tidak lagi digunakan (gambar diurus via slug di images.txt)
+    // Petugas: imageCode tidak lagi digunakan (gambar diurus via uuid di images.txt)
 
     // Jadual-petugas: week, day (radio), role (dropdown), officerCode (dropdown dari petugas)
     if (currentFileName === "jadual-petugas" && col === "week") {
@@ -304,9 +308,9 @@ function createFormFields(form, row, isAdd, options = {}) {
       const currentVal = !isAdd && row && row[col] ? String(row[col]).trim() : "";
       filtered.forEach((p) => {
         const opt = document.createElement("option");
-        opt.value = p.slug || "";
-        opt.textContent = p.namaPenuh || p.slug || "";
-        if (currentVal === (p.slug || "")) opt.selected = true;
+        opt.value = p.uuid || "";
+        opt.textContent = p.namaPenuh || p.uuid || "";
+        if (currentVal === (p.uuid || "")) opt.selected = true;
         select.appendChild(opt);
       });
       const roleField = form.querySelector("#field-role");
@@ -317,8 +321,8 @@ function createFormFields(form, row, isAdd, options = {}) {
           select.appendChild(emptyOpt.cloneNode(true));
           petugasList.filter((p) => (p.role || "").trim().toUpperCase() === rv.toUpperCase()).forEach((p) => {
             const opt = document.createElement("option");
-            opt.value = p.slug || "";
-            opt.textContent = p.namaPenuh || p.slug || "";
+            opt.value = p.uuid || "";
+            opt.textContent = p.namaPenuh || p.uuid || "";
             select.appendChild(opt);
           });
         });
@@ -476,16 +480,16 @@ function createFormFields(form, row, isAdd, options = {}) {
       const currentSpeakerVal = !isAdd && row && row[col] ? String(row[col] || "").trim() : "";
       penceramahList.forEach((p) => {
         const opt = document.createElement("option");
-        opt.value = p.kod || "";
-        opt.textContent = p.namaPenuh || p.kod || "";
-        opt.dataset.imageCode = p.kod || "";
+        opt.value = p.uuid || "";
+        opt.textContent = p.namaPenuh || p.uuid || "";
+        opt.dataset.imageCode = p.uuid || "";
         opt.dataset.kitab = p.kitab || "";
-        if (currentSpeakerVal === (p.kod || "") || currentSpeakerVal === (p.namaPenuh || "")) {
+        if (currentSpeakerVal === (p.uuid || "") || currentSpeakerVal === (p.namaPenuh || "")) {
           opt.selected = true;
         }
         select.appendChild(opt);
       });
-      if (currentSpeakerVal && !penceramahList.some((p) => (p.kod || "") === currentSpeakerVal || (p.namaPenuh || "") === currentSpeakerVal)) {
+      if (currentSpeakerVal && !penceramahList.some((p) => (p.uuid || "") === currentSpeakerVal || (p.namaPenuh || "") === currentSpeakerVal)) {
         const opt = document.createElement("option");
         opt.value = currentSpeakerVal;
         opt.textContent = currentSpeakerVal + " (legacy)";
@@ -2102,9 +2106,9 @@ function createFormFields(form, row, isAdd, options = {}) {
     }
   });
 
-  // Petugas: bahagian Gambar pilihan (upload + preview) – guna slug untuk lookup dalam images.txt
+  // Petugas: bahagian Gambar pilihan (upload + preview) – guna uuid untuk lookup dalam images.txt
   if (currentFileName === "petugas") {
-    const originalSlug = !isAdd && row && row.slug ? String(row.slug || "").trim() : "";
+    const originalSlug = !isAdd && row && row.uuid ? String(row.uuid || "").trim() : "";
     const group = document.createElement("div");
     group.className = "form-group";
     const label = document.createElement("label");
@@ -2197,7 +2201,7 @@ function createFormFields(form, row, isAdd, options = {}) {
 
   // Penceramah: bahagian Gambar (upload + preview) – tiada kolum imageCode, guna kod untuk lookup
   if (currentFileName === "penceramah") {
-    const originalCode = !isAdd && row && row.kod ? String(row.kod || "").trim() : "";
+    const originalCode = !isAdd && row && row.uuid ? String(row.uuid || "").trim() : "";
     const group = document.createElement("div");
     group.className = "form-group";
     const label = document.createElement("label");

@@ -42,9 +42,9 @@ const colLabelMap = {
   slideshow: { caption: "Kapsyen", image: "Imej", validFrom: "Mula", validTo: "Tamat", showOn: "Papar Pada" },
   hebahan: { text: "Teks", startDate: "Tarikh Mula", endDate: "Tarikh Akhir" },
   livestream: { tajuk: "Tajuk", url: "URL / IP", jenis: "Jenis" },
-  petugas: { slug: "Slug", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", gambar: "Gambar" },
+  petugas: { uuid: "ID", namaPenuh: "Nama Penuh", shortname: "Shortname", role: "Peranan", gambar: "Gambar" },
   "jadual-petugas": { officerCode: "Petugas", role: "Peranan", weeks: "Minggu", days: "Hari", waktu: "Waktu" },
-  penceramah: { kod: "Kod", namaPenuh: "Nama Penuh", shortname: "Shortname", gambar: "Gambar", kitab: "Kitab" },
+  penceramah: { uuid: "ID", namaPenuh: "Nama Penuh", shortname: "Shortname", gambar: "Gambar", kitab: "Kitab" },
 };
 
 const _buildRowStore = {};

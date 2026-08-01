@@ -397,7 +397,7 @@ class ApiServerService {
           const penceramahContent = await this.dataService.readFile('penceramah');
           const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
           penceramahParsed.forEach((p) => {
-            if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.kod };
+            if (p.uuid) penceramahMap[p.uuid] = { namaPenuh: p.namaPenuh, imageCode: p.uuid };
           });
         } catch (e) {
           console.warn('Could not load penceramah for app:', e);
@@ -472,7 +472,7 @@ class ApiServerService {
           const weekNum = getWeekNumber(today);
           const dayNum = getTodayDayNumber(today);
           const petugasMap = {};
-          petugasParsed.forEach((p) => { if (p.slug) petugasMap[p.slug] = p; });
+          petugasParsed.forEach((p) => { if (p.uuid) petugasMap[p.uuid] = p; });
           const jadualToday = (jadualParsed || []).filter((j) =>
             j.weeks?.includes(weekNum) && j.days?.includes(dayNum)
           );
@@ -481,10 +481,10 @@ class ApiServerService {
             const officerCode = (j.officerCode || '').trim();
             const role = (j.role || '').trim().toUpperCase() || 'BILAL';
             const officer = officerCode ? petugasMap[officerCode] : null;
-            const name = officer ? (officer.namaPenuh || officer.kod || '') : '';
+            const name = officer ? (officer.namaPenuh || officer.uuid || '') : '';
             let imageSrc = '';
             if (officer && images && typeof images === 'object') {
-              const path = images[(officer.slug || '').trim()];
+              const path = images[(officer.uuid || '').trim()];
               if (path) imageSrc = path.startsWith('/') ? path : `/${path}`;
             }
             if (!imageSrc) imageSrc = '/img/Random_user.svg';
@@ -576,7 +576,7 @@ class ApiServerService {
             const penceramahContent = await this.dataService.readFile('penceramah');
             const penceramahParsed = this.dataService.parseFileContent('penceramah', penceramahContent);
             penceramahParsed.forEach((p) => {
-              if (p.kod) penceramahMap[p.kod] = { namaPenuh: p.namaPenuh, imageCode: p.kod };
+              if (p.uuid) penceramahMap[p.uuid] = { namaPenuh: p.namaPenuh, imageCode: p.uuid };
             });
           } catch (e) {
             console.warn('Could not load penceramah for kuliah resolve:', e);

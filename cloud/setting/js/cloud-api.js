@@ -165,11 +165,11 @@ function reconstructRawLine(fileName, rowData) {
   } else if (fileName === "livestream") {
     return `${rowData.tajuk || ""}|${rowData.url || ""}|${rowData.jenis || ""}`;
   } else if (fileName === "petugas") {
-    return `${rowData.slug || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|`;
+    return `${rowData.uuid || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.role || ""}|`;
   } else if (fileName === "jadual-petugas") {
     return `${rowData.week || ""}|${rowData.day || ""}|${rowData.role || ""}|${rowData.officerCode || ""}`;
   } else if (fileName === "penceramah") {
-    return `${rowData.kod || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.kitab || ""}`;
+    return `${rowData.uuid || ""}|${rowData.namaPenuh || ""}|${rowData.shortname || ""}|${rowData.kitab || ""}`;
   }
   return "";
 }
@@ -251,11 +251,6 @@ function validateAnnouncementData(rowData) {
   return { valid: true };
 }
 
-function slugifyName(name) {
-  if (!name) return "";
-  return String(name).trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "").replace(/\-+/g, "-");
-}
-
 export async function saveRow() {
   const currentFileName = getCurrentFileName();
   const currentColumns = getCurrentColumns();
@@ -269,12 +264,18 @@ export async function saveRow() {
   });
 
   if (currentFileName === "penceramah") {
-    const slug = slugifyName((rowData.namaPenuh || "").trim());
-    if (slug) rowData.kod = slug;
+    if (addMode) {
+      rowData.uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
   }
   if (currentFileName === "petugas") {
-    const slug = slugifyName((rowData.namaPenuh || "").trim());
-    if (slug) rowData.slug = slug;
+    if (addMode) {
+      rowData.uuid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
   }
 
   try {
@@ -307,7 +308,7 @@ export async function saveRow() {
       if (addMode && !file) { showNotification("✗ Sila pilih fail gambar penceramah sebelum simpan", "error"); return; }
       if (file && (addMode || changeFlag === "1")) {
         const uploaded = await uploadImageForSave(file, "penceramah");
-        const imageCode = (rowData.kod || "").trim();
+        const imageCode = (rowData.uuid || "").trim();
         if (imageCode) {
           const imageRow = { imageCode, imagePath: uploaded.path || "" };
           const imageRaw = reconstructRawLine("images", imageRow);
@@ -323,9 +324,9 @@ export async function saveRow() {
       const changeFlag = changeFlagEl ? (changeFlagEl.value || "").trim() : "0";
       if (file && (addMode || changeFlag === "1")) {
         const uploaded = await uploadImageForSave(file, "imambilal");
-        const slug = (rowData.slug || "").trim();
-        if (slug && uploaded.path) {
-          const imageRow = { imageCode: slug, imagePath: uploaded.path };
+        const petugasUuid = (rowData.uuid || "").trim();
+        if (petugasUuid && uploaded.path) {
+          const imageRow = { imageCode: petugasUuid, imagePath: uploaded.path };
           const imageRaw = reconstructRawLine("images", imageRow);
           await emitWithResponse('cloud:data:insert', { fileName: 'images', row: { ...imageRow, raw: imageRaw }, position: 'end' });
         }
