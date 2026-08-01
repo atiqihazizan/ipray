@@ -276,6 +276,24 @@
 		// if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian dihantar ke paparan kiosk.', 'success');
 	}
 
+	async function handleTestTvSound() {
+		const btn = document.getElementById('test-tv-sound-btn');
+		if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Testing...'; }
+		try {
+			const res = await fetch('/api/system/test-tv-sound', { method: 'POST' });
+			const data = await res.json();
+			if (data.success) {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian TV selesai.', 'success');
+			} else {
+				if (window.NotificationUtils) window.NotificationUtils.showNotification(data.error || 'Gagal main bunyi TV.', 'error');
+			}
+		} catch (e) {
+			if (window.NotificationUtils) window.NotificationUtils.showNotification('Ralat sambungan ke server.', 'error');
+		} finally {
+			if (btn) { btn.disabled = false; btn.querySelector('span').textContent = 'Test TV'; }
+		}
+	}
+
 	let kematianCountdownTimer = null;
 
 	function formatRemaining(sec) {
@@ -853,6 +871,7 @@
 	window.setSystemTime = setSystemTime;
 	window.syncTimeWithInternet = syncTimeWithInternet;
 	window.handleTestSound = handleTestSound;
+	window.handleTestTvSound = handleTestTvSound;
 	window.initSystemDatetimeDefault = initSystemDatetimeDefault;
 	window.initColorPickerSync = initColorPickerSync;
 

@@ -978,6 +978,23 @@ class ApiServerService {
       }
     });
     
+    // System control - Test TV sound (HDMI via speaker-test)
+    this.app.post('/api/system/test-tv-sound', async (req, res) => {
+      try {
+        const { exec } = require('child_process');
+        exec('speaker-test -t sine -f 1000 -l 1 -D default', (error, stdout, stderr) => {
+          if (error) {
+            console.error('TV sound test error:', error);
+            return res.status(500).json({ error: 'Gagal main bunyi TV' });
+          }
+          res.json({ success: true, message: 'Bunyi ujian TV selesai' });
+        });
+      } catch (error) {
+        console.error('Error testing TV sound:', error);
+        res.status(500).json({ error: error.message || 'Failed to test TV sound' });
+      }
+    });
+
     // System control - Reboot kiosk
     this.app.post('/api/system/reboot', async (req, res) => {
       try {
