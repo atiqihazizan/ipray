@@ -114,7 +114,11 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
   return (
     <>
       <div style={bgSolatStyle}>
-        <h1 style={jawiTitleStyle()}>{JAWI_SEDANG_SOLAT}</h1>
+        <h1 style={{
+          ...jawiTitleStyle(),
+          height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center',
+          transform: 'scale(1.8) !important',
+        }}>{JAWI_SEDANG_SOLAT}</h1>
         <div style={{ position: 'absolute', bottom: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '104px' }}>
           <div style={muteIconBadgeStyle}>
             <img src="/img/mute-phone.png" alt="Senangkan telefon" style={muteIconStyle} />
