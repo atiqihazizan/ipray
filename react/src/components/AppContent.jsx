@@ -31,7 +31,7 @@ const AppContent = () => {
   useEffect(() => {
     const onStart = (e) => {
       setCurrentPrayerName(e.detail?.prayerName ?? null)
-      // setCurrentView('prayer') // [TEST] disable sequence — nak tengok blink sahaja
+      setCurrentView('prayer') // [TEST] disable sequence — nak tengok blink sahaja
     }
     const onEnd = () => setCurrentView('slide')
     window.addEventListener(TIME_EVENTS.PRAYER_WARNING, onStart)
