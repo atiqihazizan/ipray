@@ -3,8 +3,8 @@ import { useTimeDriver } from '../hooks/useTimeDriver'
 /**
  * Komponen dedikasi untuk driver masa.
  * Panggil useTimeDriver() di sini sahaja supaya hanya satu interval wujud.
- * Return null supaya bila state time/snapshot update setiap saat,
- * hanya komponen ini re-render — AppContent dan tree lain tidak terjejas.
+ * Data masa dihantar ke komponen lain via window event (dispatchTimeUpdate),
+ * bukan melalui React state — jadi tiada re-render dari tick masa.
  */
 const TimeDriver = () => {
   useTimeDriver()

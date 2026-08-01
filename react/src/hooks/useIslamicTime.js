@@ -8,34 +8,24 @@ import { useTakwimData } from './useTakwimData';
  */
 function useIslamicTimeFromEvents() {
   const { takwimParsed, loading: takwimLoading } = useTakwimData();
-  // Read snapshot from window.data_ipray (written every second by useTimeDriver).
-  // Only trigger re-render when the DATE changes — not every second.
-  const [snapshot, setSnapshot] = useState(() => window.data_ipray?.snapshot ?? null);
+  const [payload, setPayload] = useState(null);
 
   useEffect(() => {
-    // Init from window.data_ipray if already available (e.g. after hot reload)
-    if (window.data_ipray?.snapshot) setSnapshot(window.data_ipray.snapshot);
-
-    const handler = () => {
-      // DATE_CHANGED fires once per day — safe to setState here
-      setSnapshot(window.data_ipray?.snapshot ?? null);
-    };
-    window.addEventListener(TIME_EVENTS.DATE_CHANGED, handler);
-    window.addEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
-    return () => {
-      window.removeEventListener(TIME_EVENTS.DATE_CHANGED, handler);
-      window.removeEventListener(TIME_EVENTS.HIJRI_DATE_CHANGED, handler);
-    };
+    const handler = (e) => setPayload(e.detail || null);
+    window.addEventListener(TIME_EVENTS.TIME_UPDATE, handler);
+    return () => window.removeEventListener(TIME_EVENTS.TIME_UPDATE, handler);
   }, []);
 
-  const islamicTime = snapshot
-    ? {
-        time: window.data_ipray?.time ?? null,
-        gregorian: snapshot.gregorian,
-        hijri: snapshot.hijri,
-        prayer: snapshot.prayer
-      }
-    : null;
+  const { time, snapshot } = payload || {};
+  const islamicTime =
+    time != null && snapshot
+      ? {
+          time,
+          gregorian: snapshot.gregorian,
+          hijri: snapshot.hijri,
+          prayer: snapshot.prayer
+        }
+      : null;
 
   return {
     islamicTime,
@@ -46,55 +36,15 @@ function useIslamicTimeFromEvents() {
   };
 }
 
-/**
- * Custom Hook untuk menguruskan waktu Islam (Hijri, Masehi, Waktu Solat).
- * Data masa dari window event time-update (satu interval dalam useTimeDriver); tiada TimeProvider.
- *
- * @param {Object} externalTakwimParsed - Tidak digunakan; disimpan untuk API
- * @returns {Object} { islamicTime, loading, error, refresh, zone }
- */
-export const useIslamicTime = (externalTakwimParsed = null) => {
-  return useIslamicTimeFromEvents(externalTakwimParsed);
-};
-
-/**
- * Hook mudah untuk dapatkan waktu semasa sahaja
- */
-export const useCurrentTime = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    time: islamicTime?.time || null,
-    loading
-  };
-};
-
-/**
- * Hook untuk dapatkan tarikh Hijri semasa (initial dari event; update lepas Maghrib via hijri-date-changed di DisplayDate)
- */
-export const useHijriDate = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    hijri: islamicTime?.hijri || null,
-    loading
-  };
-};
-
-/**
- * Hook untuk dapatkan tarikh Masehi semasa
- */
-export const useGregorianDate = () => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents();
-  return {
-    gregorian: islamicTime?.gregorian || null,
-    loading
-  };
+export const useIslamicTime = () => {
+  return useIslamicTimeFromEvents();
 };
 
 /**
  * Hook untuk dapatkan waktu solat
  */
-export const usePrayerTimes = (externalTakwimParsed = null) => {
-  const { islamicTime, loading } = useIslamicTimeFromEvents(externalTakwimParsed);
+export const usePrayerTimes = () => {
+  const { islamicTime, loading } = useIslamicTimeFromEvents();
   const prayer = islamicTime?.prayer || null;
 
   const nextPrayerData =
@@ -109,31 +59,6 @@ export const usePrayerTimes = (externalTakwimParsed = null) => {
     nextPrayerData,
     nextPrayerName
   };
-};
-
-/**
- * Hook dengan callback apabila minit berubah
- */
-export const useIslamicTimeWithCallback = (onMinuteChange) => {
-  const { islamicTime, loading, error, refresh, zone } = useIslamicTimeFromEvents();
-  const [prevMinute, setPrevMinute] = useState(null);
-
-  useEffect(() => {
-    if (islamicTime?.time) {
-      const currentMinute = islamicTime.time.minutes;
-      if (prevMinute !== null && prevMinute !== currentMinute && typeof onMinuteChange === 'function') {
-        onMinuteChange({
-          time: islamicTime.time,
-          hijri: islamicTime.hijri,
-          gregorian: islamicTime.gregorian,
-          prayer: islamicTime.prayer
-        });
-      }
-      setPrevMinute(currentMinute);
-    }
-  }, [islamicTime, prevMinute, onMinuteChange]);
-
-  return { islamicTime, loading, error, refresh, zone };
 };
 
 export default useIslamicTime;

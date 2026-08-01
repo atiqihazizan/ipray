@@ -120,13 +120,6 @@ export const useSlides = () => {
       slides = [...homeGroup, ...nonHomeGroups.flat()];
     }
 
-    if (!DEBUG_SLIDES) return slides;
-    if (Array.isArray(DEBUG_SLIDES) && DEBUG_SLIDES.length > 0) {
-      return DEBUG_SLIDES.map((i) => slides[i]).filter((s) => s != null);
-    }
-    if (typeof DEBUG_SLIDES === 'number' && DEBUG_SLIDES > 0) {
-      return slides.slice(0, DEBUG_SLIDES);
-    }
     return slides;
   }, [announcementsData, countdownsData, kuliahHariProcessed, kuliahHariReplacements, kuliahMingguProcessed, kuliahBulananProcessed, imagesData, slidesConfigData, slideshowData, HOME_TITLE_CONFIG, SLIDES_CONFIG, dataLoading, isReloading, reloadCounter]);
 

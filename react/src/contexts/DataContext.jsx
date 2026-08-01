@@ -53,7 +53,6 @@ const DEFAULT_SLIDES_CONFIG = {
 };
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
-const RELOAD_DELAY_MS = 15000;
 
 /**
  * Data Context untuk menyimpan semua data dalam memory
@@ -92,28 +91,15 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const socketConnectedRef = useRef(socketConnected);
+  useEffect(() => { socketConnectedRef.current = socketConnected; }, [socketConnected]);
   const [socketReady, setSocketReady] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const [reloadCounter, setReloadCounter] = useState(0);
   const [deathAnnouncementData, setDeathAnnouncementData] = useState(null);
-  // const [deathAnnouncementData, setDeathAnnouncementData] = useState({
-  //     nama: "Abu Bakar bin Abdul Aziz",
-  //     tempatJenazah: "Kuala Lumpur",
-  //     masaSolat: "10:00",
-  //     maklumatTambahan: "",
-  //     durasiSaat: 0,
-  //     overlayConfig: {
-  //         showDate: true,
-  //         showSmallTime: true,
-  //         showMarquee: true
-  //     },
-  //     active: true,
-  //     timestamp: 1774614721856
-  // });
   const [liveStreamData, setLiveStreamData] = useState(null);
   const [petugasData, setPetugasData] = useState([]);
   const [hlsNotification, setHlsNotification] = useState(null); // { type: 'success'|'error', message }
-  const dataLoadDateRef = useRef(null);
   const kematianTimerRef = useRef(null);
   const hlsNotificationTimerRef = useRef(null);
 
@@ -156,7 +142,6 @@ export const DataProvider = ({ children }) => {
       });
 
       const todayStr = new Date().toISOString().slice(0, 10);
-      dataLoadDateRef.current = todayStr;
       try {
         if (typeof localStorage !== 'undefined') localStorage.setItem(DATA_LOAD_DATE_KEY, todayStr);
       } catch (_) {}
@@ -250,7 +235,7 @@ export const DataProvider = ({ children }) => {
     const debouncedLoadTakwimOnly = () => {
       if (takwimReloadDebounceTimer) clearTimeout(takwimReloadDebounceTimer);
       takwimReloadDebounceTimer = setTimeout(() => {
-        if (isMounted && socketConnected) loadTakwimOnly();
+        if (isMounted && socketConnectedRef.current) loadTakwimOnly();
       }, 500);
     };
 
@@ -271,7 +256,7 @@ export const DataProvider = ({ children }) => {
 
     // Timeout untuk declare socket ready (after attempting connection)
     readyTimeout = setTimeout(() => {
-      if (isMounted && !socketConnected) {
+      if (isMounted && !socketConnectedRef.current) {
         // After 5 seconds, jika masih tidak connected, declare ready tapi fail
         setSocketReady(true);
         setSocketConnected(false);
@@ -307,7 +292,7 @@ export const DataProvider = ({ children }) => {
 
     // Takwim sahaja dikemas kini - guna payload hari semasa jika ada (tiada fetch); jika tiada payload, fetch API
     const unsubscribeTakwimRefresh = socketService.on('takwim:refresh', (data) => {
-      if (!isMounted || !socketConnected) return;
+      if (!isMounted || !socketConnectedRef.current) return;
       const hasPayload = data && Array.isArray(data.takwimArray) && data.takwimParsed != null;
       if (hasPayload) {
         if (takwimReloadDebounceTimer) clearTimeout(takwimReloadDebounceTimer);
@@ -320,7 +305,6 @@ export const DataProvider = ({ children }) => {
 
     // Home title config - update state sahaja tanpa reload
     const unsubscribeHomeTitleUpdated = socketService.on('home-title:updated', (data) => {
-      console.log(data.homeTitleConfig);
       if (isMounted && data?.homeTitleConfig) {
         setConfigData(prev => ({ ...prev, HOME_TITLE_CONFIG: data.homeTitleConfig }));
       }
@@ -373,7 +357,6 @@ export const DataProvider = ({ children }) => {
       const durasi = data?.durasiSaat;
       if (durasi && durasi > 0) {
         kematianTimerRef.current = setTimeout(() => {
-          // if (isMounted) setDeathAnnouncementData(null);
           if (isMounted) {
             setDeathAnnouncementData(null);
             // Jangan ganggu urutan azan/iqamah/solat — tangguh reload sehingga selesai
@@ -386,7 +369,6 @@ export const DataProvider = ({ children }) => {
     const unsubscribeKematianCleared = socketService.on('kematian:cleared', () => {
       if (!isMounted) return;
       if (kematianTimerRef.current) { clearTimeout(kematianTimerRef.current); kematianTimerRef.current = null; }
-      // setDeathAnnouncementData(null);
       runAfterPrayerSequence(() => { if (isMounted) window.location.reload(); });
     });
 
@@ -403,9 +385,7 @@ export const DataProvider = ({ children }) => {
       setDeathAnnouncementData(prev => (prev ? { ...prev, overlayConfig: data.overlayConfig } : null));
     });
     const unsubscribeLiveStopped = socketService.on('live:stopped', () => {
-      // if (isMounted) setLiveStreamData(null);
       if (isMounted) {
-        // setLiveStreamData(null);
         runAfterPrayerSequence(() => { if (isMounted) window.location.reload(); });
       }
     });
@@ -458,7 +438,8 @@ export const DataProvider = ({ children }) => {
       unsubscribeHlsError();
       if (hlsNotificationTimerRef.current) clearTimeout(hlsNotificationTimerRef.current);
     };
-  }, [socketConnected, loadAllData, loadTakwimOnly]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const value = {
     takwimArray,

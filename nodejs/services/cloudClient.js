@@ -21,7 +21,7 @@ const CLIENT_TOKEN = process.env.CLIENT_TOKEN;
 const CLOUD_URL = process.env.CLOUD_URL || 'http://ipray-cloud.mahsites.net';
 
 let isConnected = false;
-let _onRegisteredCallback = null;
+let _onRegisteredCallbacks = [];
 const REGISTERED_DELAY_MS = 800;
 // Guard untuk elak double-sync (connect event + setOnRegisteredCallback boleh fire serentak)
 let _syncScheduled = false;
@@ -35,7 +35,8 @@ function runOnRegisteredCallback() {
   const now = Date.now();
   if (now - _lastFullSyncTime < FULL_SYNC_COOLDOWN_MS) return;
   _lastFullSyncTime = now;
-  if (typeof _onRegisteredCallback === 'function') _onRegisteredCallback();
+  const queue = _onRegisteredCallbacks.slice();
+  queue.forEach(cb => { if (typeof cb === 'function') cb(); });
 }
 
 function scheduleSyncOnConnect() {
@@ -85,18 +86,6 @@ socket.on('connect_error', err => {
   console.error('[cloudClient] Connect error:', err.message || err);
 });
 
-socket.on('fileChanged', payload => {
-  // Di sini tuan boleh trigger logic sync download dari cloud
-  // eslint-disable-next-line no-console
-  // console.log('[cloudClient] fileChanged', payload);
-});
-
-socket.on('fileDeleted', payload => {
-  // Di sini tuan boleh padam fail local yang berkaitan
-  // eslint-disable-next-line no-console
-  // console.log('[cloudClient] fileDeleted', payload);
-});
-
 socket.on('syncRequest', payload => {
   // eslint-disable-next-line no-console
   console.log('[cloudClient] syncRequest', payload);
@@ -118,22 +107,6 @@ async function uploadFile(actualFilePath, folder) {
 
   return res.data;
 }
-
-// async function deleteFile(fileName) {
-//   console.log(fileName)
-//   // const res = await axios.delete(`${CLOUD_URL}/upload/${arr}`, {
-//   const res = await axios.delete(`${CLOUD_URL}/upload`, {
-//     headers: {
-//       'x-auth-token': CLIENT_TOKEN,
-//       'Content-Type': 'application/json'
-//     },
-//     data: {
-//       clientId: CLIENT_ID,
-//       filename: fileName.split('/')
-//     }
-//   });
-//   return res.data;
-// }
 
 async function deleteFile(fileName) {
   const parts = fileName.split('/').filter(p => p); // buang empty string
@@ -204,7 +177,7 @@ async function sendAck(fileName, status = 'synced') {
 }
 
 function setOnRegisteredCallback(cb) {
-  _onRegisteredCallback = cb;
+  _onRegisteredCallbacks.push(cb);
   if (isConnected && socket.connected) scheduleSyncOnConnect();
 }
 

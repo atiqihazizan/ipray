@@ -50,10 +50,6 @@ const timeServiceStub = {
     serverOffset = 0;
   },
 
-  // Expose untuk debugging
-  getOffset: () => serverOffset,
-
-  syncNow: fetchServerOffset,
 };
 
 export default timeServiceStub;

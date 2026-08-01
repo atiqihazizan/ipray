@@ -84,7 +84,13 @@ const DEFAULT_COLOR_CONFIG = {
 };
 
 /** Hari dalam bulan (index 0 unused, 1=Jan..12=Dec) untuk getYearDays */
-const MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+function isLeapYear(year) {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+function getMonthDays(year) {
+  return [0, 31, isLeapYear(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+}
 
 /**
  * Data Service
@@ -160,7 +166,7 @@ class DataService {
     // Sync ke cloud (fire-and-forget) – ikut implementasi asal di apiServerService
     (async () => {
       try {
-        const cloudResult = await uploadFile(actualPath, folder);
+        await uploadFile(actualPath, folder);
         await sendAck(sanitizedName, 'uploaded');
       } catch (cloudError) {
         if (isCloudUnavailableError(cloudError)) return;
@@ -1224,9 +1230,10 @@ class DataService {
    * Hari dalam tahun (1-365) dan daysm sejak epoch
    */
   getYearDays(year, month, day) {
+    const monthDays = getMonthDays(year);
     let days = day;
     for (let i = 1; i < month; i++) {
-      days += MONTH_DAYS[i];
+      days += monthDays[i];
     }
     let daysm = days;
     const yy = year % 100;
@@ -2132,8 +2139,8 @@ class DataService {
    * Get today's takwim data only
    * Returns single row for today's date (filter by day and month only, ignore year)
    */
-  getTodayTakwim(content) {
-    const today = new Date();
+  getTodayTakwim(content, nowMs = null) {
+    const today = nowMs ? new Date(nowMs) : new Date();
     const todayDay = String(today.getDate()).padStart(2, '0');
     const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
     

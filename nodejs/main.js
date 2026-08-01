@@ -63,6 +63,7 @@ if (ELECTRON_MODE) {
 // Initialize data service (set on app ready)
 let dataService = null;
 let timeService = null;
+let stopHebahanScheduler = null;
 
 /**
  * Start all servers
@@ -265,7 +266,7 @@ async function startServers() {
     // hebahanScheduler: bungkus dalam try-catch supaya kegagalan scheduler tidak matikan server
     try {
       const { startHebahanScheduler } = require('./services/hebahanScheduler');
-      startHebahanScheduler(dataService, socketServerService);
+      stopHebahanScheduler = startHebahanScheduler(dataService, socketServerService);
     } catch (err) {
       console.error('[hebahanScheduler] Gagal start (server terus berjalan):', err.message);
     }
@@ -337,6 +338,7 @@ const SHUTDOWN_TIMEOUT_MS = 3000;
  */
 async function stopServers() {
   try {
+    if (typeof stopHebahanScheduler === 'function') stopHebahanScheduler();
     rtspToHlsService.stop();
     await socketServerService.stop();
     await publicServerService.stop();
