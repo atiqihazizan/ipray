@@ -986,9 +986,10 @@ class ApiServerService {
         exec('speaker-test -t sine -f 1000 -l 1 -D default', { env }, (error, stdout, stderr) => {
           if (error) {
             console.error('TV sound test error:', error);
-            return res.status(500).json({ error: 'Gagal main bunyi TV' });
+            return res.status(500).json({ success: false, error: 'Gagal main bunyi TV', detail: stderr || error.message });
           }
-          res.json({ success: true, message: 'Bunyi ujian TV selesai' });
+          const played = stdout.includes('Time per period');
+          res.json({ success: played, message: played ? 'Bunyi berjaya dihantar ke TV' : 'Tiada output audio', detail: stdout.trim() });
         });
       } catch (error) {
         console.error('Error testing TV sound:', error);

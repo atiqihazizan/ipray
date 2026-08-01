@@ -283,9 +283,9 @@
 			const res = await fetch('/api/system/test-tv-sound', { method: 'POST' });
 			const data = await res.json();
 			if (data.success) {
-				if (window.NotificationUtils) window.NotificationUtils.showNotification('Bunyi ujian TV selesai.', 'success');
+				if (window.NotificationUtils) window.NotificationUtils.showNotification(data.message || 'Bunyi berjaya dihantar ke TV.', 'success');
 			} else {
-				if (window.NotificationUtils) window.NotificationUtils.showNotification(data.error || 'Gagal main bunyi TV.', 'error');
+				if (window.NotificationUtils) window.NotificationUtils.showNotification((data.error || 'Gagal main bunyi TV.') + (data.detail ? ` — ${data.detail}` : ''), 'error');
 			}
 		} catch (e) {
 			if (window.NotificationUtils) window.NotificationUtils.showNotification('Ralat sambungan ke server.', 'error');
