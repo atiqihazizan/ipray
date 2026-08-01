@@ -475,7 +475,7 @@ export function useTimeDriver() {
                 if (remaining < -120) {
                   transitionToIqamah();
                 } else {
-                  beepService.beep(3, transitionToIqamah);
+                  beepService.beep(6, transitionToIqamah);
                 }
               } else {
                 sequenceCountdownRef.current = remaining;
