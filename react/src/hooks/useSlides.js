@@ -14,7 +14,7 @@ import { withAssetBase } from '../services/apiBase';
  * - Array indeks 0-based (contoh [0, 3] = slide 1 & 4, [1] = slide 2 sahaja, [0, 2] = slide 1 & 3)
  */
 const DEBUG_SLIDES = false;
-// const DEBUG_SLIDES = [0];
+// const DEBUG_SLIDES = [6];
 
 /**
  * Custom hook untuk menguruskan slides data.

@@ -122,6 +122,7 @@ function processKuliahBulanan(kuliahLines, batalOptions, today) {
     if (!p || !p.week || !p.day) continue;
     const date = calculateDateFromCodes(p.week, p.day, year, month);
     if (date.getFullYear() !== year || date.getMonth() !== month) continue;
+    if (date.getDay() !== parseInt(p.day.replace('h', ''))) continue;
     const dayNum = date.getDate();
     addedFromKuliah.add(`${dayNum}-${p.type}`);
     const m = matchBatal(date, p.type, list, opts);

@@ -158,7 +158,8 @@ export const calculateDateFromCodes = (weekCode, dayCode) => {
   
   // Week ranges: w1=1-7, w2=8-14, w3=15-21, w4=22-28
   const weekStartDay = (weekNum - 1) * 7 + 1; // 1, 8, 15, 22
-  const weekEndDay = weekNum * 7; // 7, 14, 21, 28
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const weekEndDay = Math.min(weekNum * 7, daysInMonth);
   
   // Find the day in the week range that matches the day of week
   // Iterate through days in the week range to find matching day of week
