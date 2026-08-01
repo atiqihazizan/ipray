@@ -982,7 +982,8 @@ class ApiServerService {
     this.app.post('/api/system/test-tv-sound', async (req, res) => {
       try {
         const { exec } = require('child_process');
-        exec('speaker-test -t sine -f 1000 -l 1 -D default', (error, stdout, stderr) => {
+        const env = { ...process.env, XDG_RUNTIME_DIR: '/run/user/1000', PULSE_RUNTIME_PATH: '/run/user/1000/pulse' };
+        exec('speaker-test -t sine -f 1000 -l 1 -D default', { env }, (error, stdout, stderr) => {
           if (error) {
             console.error('TV sound test error:', error);
             return res.status(500).json({ error: 'Gagal main bunyi TV' });
