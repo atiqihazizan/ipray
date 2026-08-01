@@ -7,11 +7,10 @@
  */
 function getOriginForApiAndSocket() {
   if (typeof window === 'undefined') return '';
-  const { hostname, port } = window.location;
+  const { hostname, protocol } = window.location;
   if (import.meta.env.DEV) return window.location.origin;
-  if (hostname === 'ipray.local' && port === '3000') return 'http://ipray.local';
-  if (hostname === 'localhost') return 'http://localhost:3001';
-  return window.location.origin;
+  if (hostname === 'ipray.local') return 'http://ipray.local';
+  return `${protocol}//${hostname}:3001`;
 }
 
 export function getApiBase() {
