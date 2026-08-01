@@ -14,7 +14,7 @@ import { withAssetBase } from '../services/apiBase';
  * - Array indeks 0-based (contoh [0, 3] = slide 1 & 4, [1] = slide 2 sahaja, [0, 2] = slide 1 & 3)
  */
 const DEBUG_SLIDES = false;
-// const DEBUG_SLIDES = [7];
+// const DEBUG_SLIDES = [0];
 
 /**
  * Custom hook untuk menguruskan slides data.
@@ -118,6 +118,15 @@ export const useSlides = () => {
       slides = [...homeGroup, ...shuffleArray(nonHomeGroups.flat())];
     } else {
       slides = [...homeGroup, ...nonHomeGroups.flat()];
+    }
+    
+    // Debug: pilih slide untuk test.
+    if (DEBUG_SLIDES) {
+      if (Array.isArray(DEBUG_SLIDES)) {
+        slides = DEBUG_SLIDES.map(i => slides[i]).filter(Boolean);
+      } else if (typeof DEBUG_SLIDES === 'number') {
+        slides = slides.slice(0, DEBUG_SLIDES);
+      }
     }
 
     return slides;

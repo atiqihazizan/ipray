@@ -80,11 +80,13 @@ export function buildHijriWidget() {
 /** Widget jam besar — bottom-right. Elemen diupdate useTimeDriver setiap saat (DOM-driven). */
 export function buildClockWidget() {
   const now = _now();
-  const h12 = now.getHours() % 12 || 12;
+  // const h12 = now.getHours() % 12 || 12;
+  const h12raw = now.getHours() % 12 || 12;
+  const h12 = h12raw < 10 ? `\u2002${h12raw}` : `${h12raw}`;
   const m2 = String(now.getMinutes()).padStart(2, '0');
 
   return {
-    type: "div", transition: "MCLIP|R", duration: 1500,
+    type: "div", transition: "CLIP|R", duration: 1500,
     style: {
       position: 'absolute',
       right: 0,
@@ -92,43 +94,65 @@ export function buildClockWidget() {
       fontFamily: "'Bebas', monospace",
       fontWeight: "900",
       fontSize: height(128),
-      transform: "scaleY(1.0)",
+      // transform: "scaleY(1.0)",
       color: '#FFFF00',
       textShadow: '3px 3px 0px rgba(0,0,0,1)',
       backgroundColor: 'rgba(16,16,16,0.5)',
-      borderTopLeftRadius: height(10),
-      padding: `${height(0)}px ${height(18)}px ${height(0)}px ${height(24)}px`,
-      width: 367,
+      borderTopLeftRadius: height(15),
+      padding: `${height(5)}px ${height(25)}px ${height(20)}px ${height(0)}px`,
+      textAlign: 'center',
+      // width: 367,
+      height: height(130) + height(15) * 2,
+      width: Math.round(height(200) * 3 * 0.6),
+      transformOrigin:'top center', 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'end',
     },
-    content: `<span data-ipray-id="clock-h">${h12}</span><span data-ipray-id="clock-colon" style="transition:none">:</span><span data-ipray-id="clock-m">${m2}</span>`
+    content: `<span data-ipray-id="clock-h">${h12}</span>
+    <span data-ipray-id="clock-colon" style="transition:none">:</span>
+    <span data-ipray-id="clock-m">${m2}</span>`
   };
 }
 
 /** Widget jam kecil — bottom-right, untuk slide bukan home supaya tidak ganggu konten. */
 export function buildClockSmWidget() {
   const now = _now();
-  const h12 = now.getHours() % 12 || 12;
+  // const h12 = now.getHours() % 12 || 12;
+  const h12raw = now.getHours() % 12 || 12;
+  const h12 = h12raw < 10 ? `\u2002${h12raw}` : `${h12raw}`;
   const m2 = String(now.getMinutes()).padStart(2, '0');
 
   return {
-    type: "div", transition: "MCLIP|R", duration: 1500,
+    type: "div", transition: "CLIP|R", duration: 1500,
     style: {
       position: 'absolute',
       right: 0,
       bottom: 0,
       fontFamily: "'Bebas', monospace",
       fontWeight: "900",
-      fontSize: height(90),
+      fontSize: height(80),
       color: '#FFFF00',
       backgroundColor: 'rgba(16,16,16,0.5)',
       clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%)',
       // padding: `${height(14)}px ${height(14)}px ${height(14)}px ${height(24)}px`,
-      padding: `${height(0)}px ${height(10)}px ${height(0)}px ${height(24)}px`,
-      width: Math.round(height(130) * 3 * 0.6),
-      height: height(100) + height(14) * 2,
+      padding: `${height(0)}px ${height(15)}px ${height(0)}px ${height(0)}px`,
+      width: Math.round(height(120) * 3 * 0.6),
+      // width: 367,
+      height: height(100) + height(1) * 2,
+      textAlign: 'center',
       marginBottom: height(1),
+      // transform:scale(1.7, 2.40); 
+      transformOrigin:'center center', 
+      // transform: "scale(1.0,2.0)",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'right',
     },
-    content: `<span data-ipray-id="clock-sm-h">${h12}</span><span data-ipray-id="clock-sm-colon" style="transition:none">:</span><span data-ipray-id="clock-sm-m">${m2}</span>`
+    // content: `<span data-ipray-id="clock-sm-h">${h12}</span><span data-ipray-id="clock-sm-colon" style="transition:none">:</span><span data-ipray-id="clock-sm-m">${m2}</span>`
+    content: `<span data-ipray-id="clock-sm-h" style="display:inline-block;width:1ch;text-align:right">${h12}</span>
+    <span data-ipray-id="clock-sm-colon" style="transition:none">:</span>
+    <span data-ipray-id="clock-sm-m">${m2}</span>`
   };
 }
 

@@ -34,7 +34,7 @@
 //$JssorDebug$
 var $JssorDebug$ = new function () {
 
-    this.$DebugMode = true;
+    this.$DebugMode = false;
 
     // Methods
 
