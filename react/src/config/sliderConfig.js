@@ -8,7 +8,7 @@ import { buildKuliahWeeklyChildren, KULIAH_NUM_CARDS } from './slideBuilders';
 import { MOSQUE_NAME, MOSQUE_LOCATION, HOME_SLIDE_BACKGROUND } from './mosqueInfo';
 import { withAssetBase } from '../services/apiBase';
 // Widget tarikh/jam/next-prayer (data-ipray-id, diupdate useTimeDriver)
-import { buildClockWidget, buildGregorianWidget, buildHijriWidget, buildPrayerTimesWidget } from '../processors/dateTimeWidgets';
+import { buildClockWidget, buildGregorianWidget, buildHijriWidget, buildNextPrayerWidget, buildPrayerTimesWidget } from '../processors/dateTimeWidgets';
 
 // ============================================================================
 // HOME TITLE BUILDER (Teks Hardcoded, Styling Dinamik)
@@ -17,9 +17,10 @@ import { buildClockWidget, buildGregorianWidget, buildHijriWidget, buildPrayerTi
  * Build home template dengan styling dinamik dari HOME_TITLE_CONFIG
  * TEKS adalah HARDCODED untuk protect dari cetak rompak
  * @param {Object} homeTitleConfig - Config untuk styling title home (tanpa text)
+ * @param {string[]} datetime - Flag overlay dari config ('date', 'solat-time-small', ...). Kosong/null = tunjuk semua.
  * @returns {Object} Home slide template
  */
-export const buildHomeTemplate = (homeTitleConfig = {}) => {
+export const buildHomeTemplate = (homeTitleConfig = {}, datetime = []) => {
   const {
     SHOW_TITLE = true,
     TITLE1_TOP = 120,
@@ -37,10 +38,13 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
 
   const showTitle = SHOW_TITLE !== false;
 
+  const showDate = datetime.includes('date');
+  const showSolatSmall = datetime.includes('solat-time-small');
+
   const alignItems = TITLE_ALIGN === 'left' ? 'flex-start' : TITLE_ALIGN === 'right' ? 'flex-end' : 'center';
 
-  const captions = showTitle ? [
-      {
+  const captions = [
+    ...(showTitle ? [{
         type: "div", transition: "CLIP|LR", //duration: 1500,
         style: {
           left: TITLE_LEFT, right: TITLE_RIGHT, 
@@ -52,16 +56,16 @@ export const buildHomeTemplate = (homeTitleConfig = {}) => {
           margin: '3rem auto 14px',
           backgroundColor: TITLE_BG,
         },
-        content: `<div style="transform:scale(1.8, 2.40); display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
+        content: `<div style="transform:scale(1.7, 2.40); transform-origin:top center; width:100%; display: flex; flex-direction: column; align-items: ${alignItems}; justify-content: center; gap: ${TITLE_GAP}px; text-align: ${TITLE_ALIGN};">
         <span style="font-size: ${TITLE1_SIZE}px; color: ${TITLE1_COLOR};">${MOSQUE_NAME}</span>
         <span style="font-size: ${TITLE2_SIZE}px; color: ${TITLE2_COLOR};">${MOSQUE_LOCATION}</span>
         </div>`
-      },
-      buildClockWidget(),
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildPrayerTimesWidget(),
-    ] : [buildClockWidget(), buildGregorianWidget(), buildHijriWidget(), buildPrayerTimesWidget()];
+      }] : []),
+    buildClockWidget(),
+    ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+    ...(showSolatSmall ? [buildNextPrayerWidget()] : []),
+    buildPrayerTimesWidget(),
+  ];
 
   return {
     type: 'home',

@@ -51,9 +51,11 @@ function buildTarikhHariHtml() {
   </div>`;
 }
 
-export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = []) {
+export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfigData, applyConfig, kuliahHariReplacements = [], datetime = []) {
   const safeData = kuliahHariProcessed && Array.isArray(kuliahHariProcessed) ? kuliahHariProcessed : [];
   const replacements = Array.isArray(kuliahHariReplacements) ? kuliahHariReplacements : [];
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
 
   const groupedData = {};
   replacements.filter((r) => !r.displaySkip).forEach((r) => {
@@ -105,10 +107,8 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
     }
     kuliahHariSlide.transitionType = 'auto';
     kuliahHariSlide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     return [kuliahHariSlide];
   }
@@ -325,10 +325,8 @@ export function processKuliahHarian(kuliahHariProcessed, imagesData, slidesConfi
       kuliahSlide.captions[0].style.backgroundColor = hexToRgba(TYPE_COLORS[type], 0.80);
     }
     kuliahSlide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     kuliahHariSlides.push(kuliahSlide);
   });

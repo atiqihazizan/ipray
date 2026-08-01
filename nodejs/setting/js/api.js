@@ -456,14 +456,7 @@ export async function saveRow() {
         const uploaded = await uploadImageForSave(file, "penceramah");
         const imageCode = (rowData.kod || "").trim();
         if (imageCode) {
-          const API_URL = window.Config.API_URL;
-          const imageRow = { imageCode, imagePath: uploaded.path || "" };
-          const imageRaw = reconstructRawLine("images", imageRow);
-          await fetch(`${API_URL}/data/images/insert`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row: { ...imageRow, raw: imageRaw }, position: "end" }),
-          });
+          await upsertImageEntry(imageCode, uploaded.path || "");
         }
       }
     }
@@ -480,14 +473,7 @@ export async function saveRow() {
         const uploaded = await uploadImageForSave(file, "imambilal");
         const slug = (rowData.slug || "").trim();
         if (slug && uploaded.path) {
-          const API_URL = window.Config.API_URL;
-          const imageRow = { imageCode: slug, imagePath: uploaded.path };
-          const imageRaw = reconstructRawLine("images", imageRow);
-          await fetch(`${API_URL}/data/images/insert`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ row: { ...imageRow, raw: imageRaw }, position: "end" }),
-          });
+          await upsertImageEntry(slug, uploaded.path);
         }
       }
     }

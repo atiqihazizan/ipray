@@ -8,7 +8,7 @@
  * mengupdate SEMUA elemen yang sepadan (querySelectorAll + fallback id="ipray-*"
  * untuk backward-compat dengan DateTimeOverlay / PrayerSequencePage).
  */
-import { height, sz } from '../utils/screenUtils';
+import { height } from '../utils/screenUtils';
 
 const _PRAYERS = ['Subuh', 'Syuruk', 'Zohor', 'Asar', 'Maghrib', 'Isyak'];
 
@@ -31,7 +31,18 @@ const _prayerData = () => {
 
 const _dSz = () => height(86);
 const _dLb = () => height(36);
-const _dW = () => Math.round(sz().width * 0.25);
+// Lebar widget tarikh dikira dari kandungan sebenar (bukan % skrin):
+// - digit hari: 2 char × ~1.2× fontSize
+// - label: char terpanjang (hijri "ZULHIJJAH" = 9) × ~0.65× fontSize
+// - + gap/padding
+const _dW = () => {
+  const digitW = _dSz() * 1.2 * 2;
+  // const labelW = _dLb() * 0.65 * 9;
+  const labelW = _dLb() * 0.65 * 6;
+  // return Math.round(digitW + labelW + height(32));
+  return Math.round(digitW + labelW + height(2));
+};
+const _dH = () => height(100);
 const _pTS = () => height(95);
 const _pLS = () => height(39);
 
@@ -46,16 +57,23 @@ export function buildGregorianWidget() {
   return {
     type: "div", transition: "CLIP|L", duration: 1500,
     style: { position: 'absolute', left: 0, top: 0 },
-    content: `<div style="display:flex;align-items:flex-start;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,88% 100%,0 100%);padding:0 ${height(16)}px ${height(4)}px;width:${_dW()}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);"><div data-ipray-id="date-g-day" style="font-size:${_dSz()}px;line-height:1;font-weight:normal;color:#FF00FF;">${gDay}</div><div style="display:flex;flex-direction:column;font-size:${_dLb()}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;"><div data-ipray-id="date-g-dayname" style="color:#FFFFFF;">${gDayName}</div><div style="color:#00FFFF;"><span data-ipray-id="date-g-month">${gMonth}</span> <span data-ipray-id="date-g-year">${gYear}</span></div></div></div>`
+    content: `<div style="display:flex;align-items:flex-start;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,88% 100%,0 100%);padding:0 ${height(16)}px ${height(4)}px;height:${_dH()}px;width:${_dW()}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);"><div data-ipray-id="date-g-day" style="font-size:${_dSz()}px;line-height:1;font-weight:normal;color:#FF00FF;">${gDay}</div><div style="display:flex;flex-direction:column;font-size:${_dLb()}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;"><div data-ipray-id="date-g-dayname" style="color:#FFFFFF;">${gDayName}</div><div style="color:#00FFFF;"><span data-ipray-id="date-g-month">${gMonth}</span> <span data-ipray-id="date-g-year">${gYear}</span></div></div></div>`
   };
 }
 
 /** Widget tarikh Hijri — top-right. Nilai diisi useTimeDriver (perlu takwim data). */
 export function buildHijriWidget() {
   return {
-    type: "div", transition: "R", duration: 1500,
-    style: { position: 'absolute', right: 0, top: 0 },
-    content: `<div style="display:flex;justify-content:flex-end;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,100% 100%,12% 100%);padding:0 ${height(16)}px ${height(4)}px;width:${_dW()}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);"><div style="display:flex;flex-direction:column;font-size:${_dLb()}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;text-align:right;"><div data-ipray-id="date-h-month" style="color:#FFFFFF;"></div><div data-ipray-id="date-h-year" style="color:#00FFFF;"></div></div><div data-ipray-id="date-h-day" style="font-size:${_dSz()}px;line-height:1;font-weight:normal;color:#FF00FF;"></div></div>`
+    type: "div", transition: "CLIP|R", duration: 1500,
+    // style: { position: 'absolute', left:'100', right: 0, top: 0, width: _dW() + height(32), height: _dSz() + height(8) },
+    style: { position: 'absolute', right: 0, top: 0, },
+    content: `<div style="display:flex;justify-content:flex-end;gap:8px;background-color:rgba(71,71,71,0.78);clip-path:polygon(0 0,100% 0,100% 100%,12% 100%);padding:0 ${height(16)}px ${height(4)}px;height:${_dH()}px;width:${_dW()}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);">
+      <div style="display:flex;flex-direction:column;font-size:${_dLb()}px;line-height:1.2;font-weight:normal;padding-top:${height(4)}px;text-align:right;">
+        <div data-ipray-id="date-h-month" style="color:#FFFFFF;"></div>
+        <div data-ipray-id="date-h-year" style="color:#00FFFF;"></div>
+      </div>
+      <div data-ipray-id="date-h-day" style="font-size:${_dSz()}px;line-height:1;font-weight:normal;color:#FF00FF;"></div>
+    </div>`
   };
 }
 
@@ -80,6 +98,7 @@ export function buildClockWidget() {
       backgroundColor: 'rgba(16,16,16,0.5)',
       borderTopLeftRadius: height(10),
       padding: `${height(0)}px ${height(18)}px ${height(0)}px ${height(24)}px`,
+      width: 367,
     },
     content: `<span data-ipray-id="clock-h">${h12}</span><span data-ipray-id="clock-colon" style="transition:none">:</span><span data-ipray-id="clock-m">${m2}</span>`
   };
@@ -99,13 +118,15 @@ export function buildClockSmWidget() {
       bottom: 0,
       fontFamily: "'Bebas', monospace",
       fontWeight: "900",
-      fontSize: height(60),
-      transform: "scaleY(1.0)",
+      fontSize: height(90),
       color: '#FFFF00',
-      textShadow: '3px 3px 0px rgba(0,0,0,1)',
       backgroundColor: 'rgba(16,16,16,0.5)',
-      borderTopLeftRadius: height(6),
-      padding: `${height(2)}px ${height(10)}px ${height(2)}px ${height(14)}px`,
+      clipPath: 'polygon(15% 0%, 100% 0, 100% 100%, 0 100%, 0% 25%)',
+      // padding: `${height(14)}px ${height(14)}px ${height(14)}px ${height(24)}px`,
+      padding: `${height(0)}px ${height(10)}px ${height(0)}px ${height(24)}px`,
+      width: Math.round(height(130) * 3 * 0.6),
+      height: height(100) + height(14) * 2,
+      marginBottom: height(1),
     },
     content: `<span data-ipray-id="clock-sm-h">${h12}</span><span data-ipray-id="clock-sm-colon" style="transition:none">:</span><span data-ipray-id="clock-sm-m">${m2}</span>`
   };
@@ -130,13 +151,9 @@ export function buildNextPrayerWidget() {
   return {
     type: "div", transition: "L", duration: 1500,
     style: { position: 'absolute', left: 0, bottom: 0 },
-    content: `<div style="display:flex;align-items:center;gap:${height(12)}px;background-color:rgba(16,16,16,0.5);clip-path:polygon(0 0,100% 0,92% 100%,0 100%);padding:${height(8)}px ${height(20)}px ${height(8)}px ${height(16)}px;font-family:'Bebas',sans-serif;text-shadow:3px 3px 0px rgba(0,0,0,1);">
-      <div style="display:flex;flex-direction:column;gap:${height(4)}px;">
-        <div style="font-size:${height(18)}px;line-height:1;color:#FFFFFF;letter-spacing:2px;">SOLAT SETERUSNYA</div>
-        <div data-ipray-id="next-name" style="font-size:${height(38)}px;line-height:1;color:#FFD700;">${next.name.toUpperCase()}</div>
-      </div>
-      <div style="width:3px;height:${height(44)}px;background:#FFFFFF;"></div>
-      <div data-ipray-id="next-time" style="font-size:${height(56)}px;line-height:1;color:#FFFF00;">${_fmtP(next.time)}</div>
+    content: `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:rgba(16,16,16,0.5);clip-path:polygon(80% 0, 100% 25%, 100% 100%, 0 100%, 0 0);padding:${height(16)}px;font-family:'Bebas',sans-serif;">
+      <div data-ipray-id="next-name" style="font-size:${height(20)}px;line-height:1;color:#FFFF00;text-shadow:4px 4px 0px rgba(0,0,0,1);padding-bottom:${height(8)}px;">${next.name.toUpperCase()}</div>
+      <div data-ipray-id="next-time" style="font-size:${height(70)}px;line-height:1;color:#FFFF00;text-shadow:3px 3px 0px rgba(0,0,0,1);">${_fmtP(next.time)}</div>
     </div>`
   };
 }

@@ -48,8 +48,10 @@ const MALAY_DAYS = ['AHAD', 'ISNIN', 'SELASA', 'RABU', 'KHAMIS', 'JUMAAT', 'SABT
  * @param {Array<{ dayNumber, dayOfWeek, date, entries }>} kuliahBulananProcessed
  * @param {Object} imagesData - Map imageCode -> imagePath
  */
-export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesConfigData, applyConfig) {
+export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesConfigData, applyConfig, datetime = []) {
   const safeData = Array.isArray(kuliahBulananProcessed) ? kuliahBulananProcessed : [];
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
   const kuliahBulananTemplate = applyConfig(slidesTemplate.kuliahBulanan, 'kuliahBulanan');
   const slide = JSON.parse(JSON.stringify(kuliahBulananTemplate));
   const parent = slide.captions[0];
@@ -59,10 +61,8 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
     delete parent.children;
     parent.content = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;font-size:32px;font-family:'SairaCondensed',sans-serif;font-weight:bold;">JADUAL KULIAH BULAN INI</div>`;
     slide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     return [slide];
   }
@@ -230,10 +230,8 @@ export function processKuliahBulanan(kuliahBulananProcessed, imagesData, slidesC
 
   delete parent.children;
   slide.captions.push(
-    buildGregorianWidget(),
-    buildHijriWidget(),
-    buildClockSmWidget(),
-    buildNextPrayerWidget()
+    ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+    ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
   );
   return [slide];
 }

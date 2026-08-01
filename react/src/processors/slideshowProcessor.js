@@ -15,7 +15,9 @@ const DEFAULT_SLIDESHOW_IMAGES = [
   '/img/slideshow/slide07.jpg'
 ];
 
-export function processSlideshow(slideshowData, slidesConfigData, applyConfig) {
+export function processSlideshow(slideshowData, slidesConfigData, applyConfig, datetime = []) {
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
   let list = [];
   if (slideshowData && Array.isArray(slideshowData) && slideshowData.length > 0) {
     list = slideshowData
@@ -39,10 +41,8 @@ export function processSlideshow(slideshowData, slidesConfigData, applyConfig) {
     slide.duration = template.duration != null ? template.duration : 1500;
     slide.transitionType = 'auto';
     slide.captions = [
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     ];
     return slide;
   });

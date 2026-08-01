@@ -121,8 +121,11 @@ function buildCaptionChildren(item, isLast) {
   return children;
 }
 
-export function processCountdowns(countdownsData, slidesConfigData, applyConfig, imagesData = {}) {
+export function processCountdowns(countdownsData, slidesConfigData, applyConfig, imagesData = {}, datetime = []) {
   if (!countdownsData || countdownsData.length === 0) return [];
+
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
 
   const active = countdownsData.filter((item) => {
     const dateStr = normalizeDateTime(item.dateTimeRaw ?? item.date ?? '');
@@ -164,10 +167,8 @@ export function processCountdowns(countdownsData, slidesConfigData, applyConfig,
       parent.children = buildCaptionChildren(enrichedItem, isLast);
     }
     slide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     // slide.transitionType = i === 0 ? 'auto' : 'static';
     return slide;

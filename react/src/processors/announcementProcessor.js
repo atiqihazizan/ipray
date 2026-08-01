@@ -5,8 +5,11 @@ import { slidesTemplate } from '../config/sliderConfig';
 import { formatDateTime, getCountdown } from '../utils/dateFormatter';
 import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
-export function processAnnouncements(announcementsData, slidesConfigData, applyConfig) {
+export function processAnnouncements(announcementsData, slidesConfigData, applyConfig, datetime = []) {
   if (!announcementsData || announcementsData.length === 0) return [];
+
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
 
   const activeAnnouncements = announcementsData.filter((line) => {
     const arr = line.split('|');
@@ -58,10 +61,8 @@ export function processAnnouncements(announcementsData, slidesConfigData, applyC
 
     announceSlide.transitionType = i === 0 ? 'auto' : 'static';
     announceSlide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     return announceSlide;
   });

@@ -62,9 +62,11 @@ function buildWeeklyCardContent(item, ctx) {
   return `<div style="${STYLE_CARD_CONTENT_WRAPPER}">${penceramahHtml}${dateHtml}</div>`;
 }
 
-export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig) {
+export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesConfigData, applyConfig, datetime = []) {
   const esc = escapeHtml;
   const safeData = kuliahMingguProcessed && Array.isArray(kuliahMingguProcessed) ? kuliahMingguProcessed : [];
+  const showDate = datetime.includes('date');
+  const showSmall = datetime.includes('solat-time-small');
   const currentDate = new Date();
   const currentDay = getDayCode(currentDate);
 
@@ -102,10 +104,8 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
     }
     kuliahSlide.transitionType = 'auto';
     kuliahSlide.captions.push(
-      buildGregorianWidget(),
-      buildHijriWidget(),
-      buildClockSmWidget(),
-      buildNextPrayerWidget()
+      ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+      ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
     );
     return [kuliahSlide];
   }
@@ -206,10 +206,8 @@ export function processKuliahMingguan(kuliahMingguProcessed, imagesData, slidesC
 
   kuliahSlide.transitionType = 'auto';
   kuliahSlide.captions.push(
-    buildGregorianWidget(),
-    buildHijriWidget(),
-    buildClockSmWidget(),
-    buildNextPrayerWidget()
+    ...(showDate ? [buildGregorianWidget(), buildHijriWidget()] : []),
+    ...(showSmall ? [buildClockSmWidget(), buildNextPrayerWidget()] : [])
   );
   return [kuliahSlide];
 }
