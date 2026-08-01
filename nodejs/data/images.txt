@@ -38,3 +38,4 @@ ce5be28b-47d7-4052-91da-c1a8a3464a9b|/images/imambilal/ustaz_hassan_hashim.png
 bg-maulid|/images/countdown/maulidnabi.png
 8fe81cec-9615-4b39-ba2d-deb90cd442b6|/images/penceramah/pu_faiz.png
 968fee49-9dca-4fc3-87ac-8a5de018d50b|/images/penceramah/ridhauddin.png
+bg-merdeka|/images/countdown/malaysia-flag-banner-design-hari-merdeka-greeting-which-means-malaysia-independence-day-free-vector.jpg
