@@ -89,6 +89,7 @@ export const DataProvider = ({ children }) => {
     HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
   });
   const [loading, setLoading] = useState(true);
+  const [hasData, setHasData] = useState(false);
   const [error, setError] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const socketConnectedRef = useRef(socketConnected);
@@ -147,6 +148,7 @@ export const DataProvider = ({ children }) => {
       } catch (_) {}
 
       setLoading(false);
+      setHasData(true);
       setTimeout(() => {
         setIsReloading(false);
       }, 100);
@@ -457,6 +459,7 @@ export const DataProvider = ({ children }) => {
     slideshowData,
     loading,
     error,
+    hasData,
     socketConnected,
     socketReady,
     isReloading,

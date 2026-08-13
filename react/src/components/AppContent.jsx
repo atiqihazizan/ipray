@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import SliderPage from './SliderPage'
 import LoadingPage from './LoadingPage'
 import PrayerSequencePage from './PrayerSequencePage'
@@ -21,6 +21,7 @@ const AppContent = () => {
     loading: dataLoading,
     socketConnected,
     socketReady,
+    hasData,
     deathAnnouncementData,
     liveStreamData,
   } = useData()
@@ -42,15 +43,26 @@ const AppContent = () => {
     }
   }, [])
 
-  // Auto-reload selepas 8 saat bila socket ready tapi gagal connect — pulih sendiri selepas reboot
+  // Auto-reload bila socket reconnect selepas offline (untuk refresh data terkini)
+  const prevConnected = useRef(false)
   useEffect(() => {
-    if (socketReady && !socketConnected) {
+    if (socketConnected && prevConnected.current === false && hasData) {
+      // Socket baru reconnect — reload untuk dapat data terkini
+      window.location.reload()
+    }
+    prevConnected.current = socketConnected
+  }, [socketConnected, hasData])
+
+  // Auto-reload hanya jika tiada data langsung (first boot gagal)
+  useEffect(() => {
+    if (socketReady && !socketConnected && !hasData) {
       const t = setTimeout(() => window.location.reload(), 8000)
       return () => clearTimeout(t)
     }
-  }, [socketReady, socketConnected])
+  }, [socketReady, socketConnected, hasData])
 
-  if (socketReady && !socketConnected) {
+  // Hanya papar error jika tiada data langsung
+  if (socketReady && !socketConnected && !hasData) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center p-8">
@@ -62,7 +74,8 @@ const AppContent = () => {
     )
   }
   
-  if (!socketConnected) return <LoadingPage />
+  // Tunjuk loading hanya jika tiada data sama sekali
+  if (!socketConnected && !hasData) return <LoadingPage />
 
   if (DEBUG_SHOW_PRAYER_SEQUENCE_ONLY) {
     return (
