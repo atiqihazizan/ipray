@@ -66,6 +66,14 @@ const SliderPage = ({ onReady }) => {
     }
   }, [sliderLoading, slidesLoading, takwimLoading, takwimArray, slideData, onReady]);
 
+  // Pastikan autoplay berjalan selepas ScaleSlider retry selesai (fix first boot selepas reboot)
+  useEffect(() => {
+    if (!sliderLoading && sliderRef?.current) {
+      const t = setTimeout(() => sliderPlay(), 500)
+      return () => clearTimeout(t)
+    }
+  }, [sliderLoading]);
+
   useEffect(() => {
     if (!sliderRef?.current) return;
     const slider = sliderRef.current;
