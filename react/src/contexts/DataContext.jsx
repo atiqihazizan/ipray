@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getApiBase, withAssetBase } from '../services/apiBase';
 import socketService from '../services/socketService';
 import timeServiceStub from '../services/timeServiceStub';
@@ -54,6 +54,7 @@ const DEFAULT_SLIDES_CONFIG = {
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
 const CACHE_KEY = 'ipray_app_data_cache';
+const SESSION_RELOAD_FLAG = 'ipray_fresh_reload';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -190,43 +191,60 @@ export const DataProvider = ({ children }) => {
   const hlsNotificationTimerRef = useRef(null);
 
   /**
-   * Load semua data sekali sahaja dari API (parsed di server, tiada parsing di client)
+   * Setters object stable untuk applyDataToState
    */
-  const loadAllData = useCallback(async () => {
-    setIsReloading(true);
-    setLoading(true);
-    setError(null);
-    setReloadCounter(prev => prev + 1);
+  const setters = useMemo(() => ({
+    setTakwimArray,
+    setTakwimParsed,
+    setAnnouncementsData,
+    setCountdownsData,
+    setHebahanData,
+    setKuliahHariProcessed,
+    setKuliahHariReplacements,
+    setKuliahMingguProcessed,
+    setKuliahBulananProcessed,
+    setImagesData,
+    setSlidesConfigData,
+    setSlidesMarqueeShow,
+    setSlideshowData,
+    setPetugasData,
+    setConfigData,
+  }), [
+    setTakwimArray, setTakwimParsed, setAnnouncementsData, setCountdownsData,
+    setHebahanData, setKuliahHariProcessed, setKuliahHariReplacements,
+    setKuliahMingguProcessed, setKuliahBulananProcessed, setImagesData,
+    setSlidesConfigData, setSlidesMarqueeShow, setSlideshowData,
+    setPetugasData, setConfigData,
+  ]);
 
-    const API_BASE = getApiBase();
-    const setters = {
-      setTakwimArray,
-      setTakwimParsed,
-      setAnnouncementsData,
-      setCountdownsData,
-      setHebahanData,
-      setKuliahHariProcessed,
-      setKuliahHariReplacements,
-      setKuliahMingguProcessed,
-      setKuliahBulananProcessed,
-      setImagesData,
-      setSlidesConfigData,
-      setSlidesMarqueeShow,
-      setSlideshowData,
-      setPetugasData,
-      setConfigData,
-    };
-
-    // Fasa 1: Load cache dahulu supaya slideshow boleh jalan serta-merta
+  /**
+   * Load cache SEGERA pada mount (tanpa tunggu socket)
+   * Return true jika cache ada dan slideshow boleh jalan
+   */
+  const loadCacheIfAvailable = useCallback(() => {
     const cached = loadFromCache();
     if (cached) {
       applyDataToState(cached, setters);
       setLoading(false);
       setHasData(true);
+      return true;
+    }
+    return false;
+  }, [setters]);
+
+  /**
+   * Fetch fresh data HANYA bila socket connect.
+   * Round 1 (tiada flag): reload window supaya slider start bersih dengan data terkini.
+   * Round 2 (flag ada): tiada reload — data sudah fresh, slider kekal jalan.
+   */
+  const fetchAndMaybeReload = useCallback(async () => {
+    const isRound2 = sessionStorage.getItem(SESSION_RELOAD_FLAG) === '1';
+    if (isRound2) {
+      sessionStorage.removeItem(SESSION_RELOAD_FLAG);
     }
 
-    // Fasa 2: Background fetch dengan retry (3 attempt × 1.5s)
     try {
+      const API_BASE = getApiBase();
       const res = await fetchWithRetry(`${API_BASE}/data/app?t=${Date.now()}`, 3, 1500);
       const data = await res.json();
       applyDataToState(data, setters);
@@ -239,24 +257,27 @@ export const DataProvider = ({ children }) => {
 
       setLoading(false);
       setHasData(true);
+
+      if (!isRound2) {
+        // Round 1: reload supaya slider start bersih dengan data terkini
+        sessionStorage.setItem(SESSION_RELOAD_FLAG, '1');
+        window.location.reload();
+      }
+      // Round 2: tiada reload — data sudah fresh, slider kekal jalan
     } catch (err) {
-      if (!cached) {
+      console.warn('[DataContext] Fetch gagal selepas 3 attempt:', err.message);
+      // Jangan set error state jika cache ada — slideshow terus jalan
+      if (!hasData) {
         setError(err.message);
         setLoading(false);
-        setTakwimArray([]);
-        setTakwimParsed(null);
-        setAnnouncementsData([]);
-        setKuliahHariProcessed([]);
-        setKuliahMingguProcessed([]);
-        setKuliahBulananProcessed([]);
-        setImagesData({});
-        setSlidesConfigData({});
-        setSlideshowData([]);
       }
     } finally {
-      setIsReloading(false);
+      if (!sessionStorage.getItem(SESSION_RELOAD_FLAG)) {
+        // Hanya set isReloading false jika tidak akan reload
+        setIsReloading(false);
+      }
     }
-  }, []);
+  }, [hasData, setters]);
 
   /**
    * Load takwim sahaja (tanpa ganggu slide / loading penuh) - guna API full supaya wdata lengkap, elak waktu 00
@@ -281,18 +302,27 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
-   * Load data hanya bila Socket.IO connected
+   * Panggil cache check SEGERA pada mount (tanpa tunggu socket)
    */
   useEffect(() => {
-    // Tunggu socket ready dan connected, baru load data
+    loadCacheIfAvailable();
+  }, [loadCacheIfAvailable]);
+
+  /**
+   * Socket gating: fetch fresh data hanya bila Socket.IO connected
+   */
+  useEffect(() => {
     if (socketReady && socketConnected) {
-      loadAllData();
-    } else if (socketReady && !socketConnected) {
-      // Sambungan gagal - skip operations
+      setIsReloading(true);
+      setReloadCounter(prev => prev + 1);
+      fetchAndMaybeReload();
+    } else if (socketReady && !socketConnected && !hasData) {
+      // Socket gagal DAN tiada cache — tunjuk error
       setLoading(false);
-      setError('Sambungan gagal. Sila cuba semula.');
+      setError('Sambungan gagal. Data tidak tersedia.');
     }
-  }, [socketReady, socketConnected, loadAllData]);
+    // Jika socketReady && !socketConnected && hasData → diam, slideshow terus jalan
+  }, [socketReady, socketConnected, hasData, fetchAndMaybeReload]);
 
   useEffect(() => {
     const handler = () => runAfterPrayerSequence(() => window.location.reload());
@@ -557,7 +587,7 @@ export const DataProvider = ({ children }) => {
     deathAnnouncementData,
     liveStreamData,
     petugasData,
-    refresh: loadAllData,
+    refresh: fetchAndMaybeReload,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
