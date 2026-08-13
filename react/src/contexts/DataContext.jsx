@@ -53,6 +53,91 @@ const DEFAULT_SLIDES_CONFIG = {
 };
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
+const CACHE_KEY = 'ipray_app_data_cache';
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Simpan data cache ke localStorage
+ * Silent fail jika localStorage penuh / tidak tersedia
+ * Jangan simpan jika data null atau tiada takwim (response partial/error)
+ */
+const saveToCache = (data) => {
+  try {
+    if (!data || !data.takwim) return;
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (_) {
+    // Silent fail
+  }
+};
+
+/**
+ * Baca data cache dari localStorage
+ * Return object atau null jika tiada / gagal parse
+ */
+const loadFromCache = () => {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && parsed.takwim ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+};
+
+/**
+ * Fetch dengan retry (maxAttempts × delayMs)
+ * Return Response bila berjaya; throw error terakhir bila semua attempt gagal
+ */
+const fetchWithRetry = async (url, maxAttempts = 3, delayMs = 1500) => {
+  let lastError;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`[DataContext] Fetch attempt ${attempt}/${maxAttempts}...`);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error('Gagal memuatkan data aplikasi');
+      }
+      return res;
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        await wait(delayMs);
+      }
+    }
+  }
+  throw lastError;
+};
+
+/**
+ * Apply semua setter state dari data API response
+ * Boleh dipanggil dari dua tempat: cache load (Fasa 1) dan fresh fetch (Fasa 2)
+ */
+const applyDataToState = (data, setters) => {
+  setters.setTakwimArray(data.takwim?.takwimArray ?? []);
+  setters.setTakwimParsed(data.takwim?.takwimParsed ?? null);
+  setters.setAnnouncementsData(data.announcements ?? []);
+  setters.setCountdownsData(data.countdowns ?? []);
+  setters.setHebahanData(data.hebahan ?? []);
+  setters.setKuliahHariProcessed(data.kuliahHariProcessed ?? []);
+  setters.setKuliahHariReplacements(data.kuliahHariReplacements ?? []);
+  setters.setKuliahMingguProcessed(data.kuliahMingguProcessed ?? []);
+  setters.setKuliahBulananProcessed(data.kuliahBulananProcessed ?? []);
+  setters.setImagesData(data.images ?? {});
+  setters.setSlidesConfigData(data.slidesConfig ?? {});
+  setters.setSlidesMarqueeShow(data.slidesMarqueeShow !== false);
+  setters.setSlideshowData(data.slideshow ?? []);
+  setters.setPetugasData((data.petugasData ?? []).map((p) => ({ ...p, imageSrc: p.imageSrc?.startsWith('/img/') ? p.imageSrc : withAssetBase(p.imageSrc) })));
+  setters.setConfigData(data.config ?? {
+    PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
+    COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
+    MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
+    HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
+  });
+};
 
 /**
  * Data Context untuk menyimpan semua data dalam memory
@@ -108,39 +193,44 @@ export const DataProvider = ({ children }) => {
    * Load semua data sekali sahaja dari API (parsed di server, tiada parsing di client)
    */
   const loadAllData = useCallback(async () => {
+    setIsReloading(true);
+    setLoading(true);
+    setError(null);
+    setReloadCounter(prev => prev + 1);
+
+    const API_BASE = getApiBase();
+    const setters = {
+      setTakwimArray,
+      setTakwimParsed,
+      setAnnouncementsData,
+      setCountdownsData,
+      setHebahanData,
+      setKuliahHariProcessed,
+      setKuliahHariReplacements,
+      setKuliahMingguProcessed,
+      setKuliahBulananProcessed,
+      setImagesData,
+      setSlidesConfigData,
+      setSlidesMarqueeShow,
+      setSlideshowData,
+      setPetugasData,
+      setConfigData,
+    };
+
+    // Fasa 1: Load cache dahulu supaya slideshow boleh jalan serta-merta
+    const cached = loadFromCache();
+    if (cached) {
+      applyDataToState(cached, setters);
+      setLoading(false);
+      setHasData(true);
+    }
+
+    // Fasa 2: Background fetch dengan retry (3 attempt × 1.5s)
     try {
-      setIsReloading(true);
-      setLoading(true);
-      setError(null);
-      setReloadCounter(prev => prev + 1);
-
-      const API_BASE = getApiBase();
-      const res = await fetch(`${API_BASE}/data/app?t=${Date.now()}`);
-      if (!res.ok) {
-        throw new Error('Gagal memuatkan data aplikasi');
-      }
+      const res = await fetchWithRetry(`${API_BASE}/data/app?t=${Date.now()}`, 3, 1500);
       const data = await res.json();
-
-      setTakwimArray(data.takwim?.takwimArray ?? []);
-      setTakwimParsed(data.takwim?.takwimParsed ?? null);
-      setAnnouncementsData(data.announcements ?? []);
-      setCountdownsData(data.countdowns ?? []);
-      setHebahanData(data.hebahan ?? []);
-      setKuliahHariProcessed(data.kuliahHariProcessed ?? []);
-      setKuliahHariReplacements(data.kuliahHariReplacements ?? []);
-      setKuliahMingguProcessed(data.kuliahMingguProcessed ?? []);
-      setKuliahBulananProcessed(data.kuliahBulananProcessed ?? []);
-      setImagesData(data.images ?? {});
-      setSlidesConfigData(data.slidesConfig ?? {});
-      setSlidesMarqueeShow(data.slidesMarqueeShow !== false);
-      setSlideshowData(data.slideshow ?? []);
-      setPetugasData((data.petugasData ?? []).map((p) => ({ ...p, imageSrc: p.imageSrc?.startsWith('/img/') ? p.imageSrc : withAssetBase(p.imageSrc) })));
-      setConfigData(data.config ?? {
-        PRAYER_TIME_CONFIG: DEFAULT_PRAYER_TIME_CONFIG,
-        COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
-        MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
-        HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
-      });
+      applyDataToState(data, setters);
+      saveToCache(data);
 
       const todayStr = new Date().toISOString().slice(0, 10);
       try {
@@ -149,22 +239,22 @@ export const DataProvider = ({ children }) => {
 
       setLoading(false);
       setHasData(true);
-      setTimeout(() => {
-        setIsReloading(false);
-      }, 100);
     } catch (err) {
-      setError(err.message);
-      setLoading(false);
+      if (!cached) {
+        setError(err.message);
+        setLoading(false);
+        setTakwimArray([]);
+        setTakwimParsed(null);
+        setAnnouncementsData([]);
+        setKuliahHariProcessed([]);
+        setKuliahMingguProcessed([]);
+        setKuliahBulananProcessed([]);
+        setImagesData({});
+        setSlidesConfigData({});
+        setSlideshowData([]);
+      }
+    } finally {
       setIsReloading(false);
-      setTakwimArray([]);
-      setTakwimParsed(null);
-      setAnnouncementsData([]);
-      setKuliahHariProcessed([]);
-      setKuliahMingguProcessed([]);
-      setKuliahBulananProcessed([]);
-      setImagesData({});
-      setSlidesConfigData({});
-      setSlideshowData([]);
     }
   }, []);
 

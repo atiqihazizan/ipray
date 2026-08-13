@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sliderConfig } from '../config/sliderConfig';
 import { sliderInit, sliderPlay } from '../utils/sliderControl';
+import { logKioskEvent } from '../services/clientLogger';
 
 /**
  * Create stable hash dari slide structure DAN content untuk detect changes
@@ -315,6 +316,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                 sliderInstanceRef.current = new $JssorSlider$(sliderContainerRef.current, options);
                 sliderInit(sliderInstanceRef.current);
                 isInitializingRef.current = false;
+                logKioskEvent('slider-init-ok', { slides: (slideDataRef.current || []).length });
               } catch (error) {
                 isInitializingRef.current = false;
                 setLoading(false);
@@ -329,6 +331,7 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                 sliderInstanceRef.current.$Elmt &&
                 typeof sliderInstanceRef.current.$TriggerEvent === 'function' &&
                 typeof sliderInstanceRef.current.$ScaleWidth === 'function') {
+              let _scaleRetries = 0;
               const ScaleSlider = () => {
                 if (sliderInstanceRef.current &&
                     sliderInstanceRef.current.$Elmt &&
@@ -354,12 +357,12 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                     if (sliderInstanceRef.current.$ScaleHeight) {
                       sliderInstanceRef.current.$ScaleHeight(scaledHeight);
                     }
-                    if (sliderInstanceRef.current.$GoTo) {
-                      sliderInstanceRef.current.$GoTo(0);
-                      // Resume autoplay — $GoTo(0) pause slider, kena $Play semula
-                      sliderPlay();
-                    }
+                    // Jangan $GoTo(0) selepas scale — ia reset opacity caption ke 0 tanpa re-fire park event
+                    // Slider sudah kat slide 0 (dari $StartIndex:0), $ScaleWidth cukup untuk layout
+                    sliderPlay();
+                    logKioskEvent('slider-scaled', { w: parentWidth, h: parentHeight, retries: _scaleRetries });
                   } else {
+                    _scaleRetries++;
                     window.setTimeout(ScaleSlider, 30);
                   }
                 }
