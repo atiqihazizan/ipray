@@ -45,15 +45,21 @@ const AppContent = () => {
 
   // Auto-reload bila socket reconnect selepas offline (untuk refresh data terkini)
   const hasEverConnected = useRef(false)
+  const hasDisconnected = useRef(false)
   useEffect(() => {
     if (socketConnected) {
-      if (hasEverConnected.current && hasData) {
-        // Ini reconnect (bukan first connect) — reload untuk data terkini
+      if (hasDisconnected.current) {
+        // Ada disconnect sebelum ini → ini reconnect → reload
         window.location.reload()
       }
       hasEverConnected.current = true
+    } else {
+      if (hasEverConnected.current) {
+        // Pernah connect, kini disconnect
+        hasDisconnected.current = true
+      }
     }
-  }, [socketConnected, hasData])
+  }, [socketConnected])
 
   // Auto-reload hanya jika tiada data langsung (first boot gagal)
   useEffect(() => {
