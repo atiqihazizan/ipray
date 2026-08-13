@@ -257,11 +257,11 @@ export const DataProvider = ({ children }) => {
     // Timeout untuk declare socket ready (after attempting connection)
     readyTimeout = setTimeout(() => {
       if (isMounted && !socketConnectedRef.current) {
-        // After 5 seconds, jika masih tidak connected, declare ready tapi fail
+        // After 10 seconds, jika masih tidak connected, declare ready tapi fail
         setSocketReady(true);
         setSocketConnected(false);
       }
-    }, 5000); // 5 seconds timeout
+    }, 10000); // 10 seconds timeout
 
     // Listen for connection success
     const unsubscribeConnect = socketService.on('connect', (data) => {

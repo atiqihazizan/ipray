@@ -42,13 +42,21 @@ const AppContent = () => {
     }
   }, [])
 
+  // Auto-reload selepas 8 saat bila socket ready tapi gagal connect — pulih sendiri selepas reboot
+  useEffect(() => {
+    if (socketReady && !socketConnected) {
+      const t = setTimeout(() => window.location.reload(), 8000)
+      return () => clearTimeout(t)
+    }
+  }, [socketReady, socketConnected])
+
   if (socketReady && !socketConnected) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center p-8">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <h1 className="text-white text-2xl font-bold mb-4">Sambungan Gagal</h1>
-          <p className="text-gray-400 mb-2">Tidak dapat menyambung ke sistem. Sila cuba semula.</p>
+          <p className="text-gray-400 mb-2">Tidak dapat menyambung ke sistem. Sedang cuba semula...</p>
         </div>
       </div>
     )
