@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { sliderConfig } from '../config/sliderConfig';
-import { sliderInit } from '../utils/sliderControl';
+import { sliderInit, sliderPlay } from '../utils/sliderControl';
 
 /**
  * Create stable hash dari slide structure DAN content untuk detect changes
@@ -356,6 +356,8 @@ export const useJssorSlider = (slideData = [], opts = {}) => {
                     }
                     if (sliderInstanceRef.current.$GoTo) {
                       sliderInstanceRef.current.$GoTo(0);
+                      // Resume autoplay — $GoTo(0) pause slider, kena $Play semula
+                      sliderPlay();
                     }
                   } else {
                     window.setTimeout(ScaleSlider, 30);
