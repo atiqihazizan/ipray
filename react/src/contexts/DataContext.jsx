@@ -54,7 +54,6 @@ const DEFAULT_SLIDES_CONFIG = {
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
 const CACHE_KEY = 'ipray_app_data_cache';
-const SESSION_RELOAD_FLAG = 'ipray_fresh_reload';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -233,16 +232,9 @@ export const DataProvider = ({ children }) => {
   }, [setters]);
 
   /**
-   * Fetch fresh data HANYA bila socket connect.
-   * Round 1 (tiada flag): reload window supaya slider start bersih dengan data terkini.
-   * Round 2 (flag ada): tiada reload — data sudah fresh, slider kekal jalan.
-   */
+* Fetch fresh data HANYA bila socket connect.
+    */
   const fetchAndMaybeReload = useCallback(async () => {
-    const isRound2 = sessionStorage.getItem(SESSION_RELOAD_FLAG) === '1';
-    if (isRound2) {
-      sessionStorage.removeItem(SESSION_RELOAD_FLAG);
-    }
-
     try {
       const API_BASE = getApiBase();
       const res = await fetchWithRetry(`${API_BASE}/data/app?t=${Date.now()}`, 3, 1500);
@@ -257,25 +249,14 @@ export const DataProvider = ({ children }) => {
 
       setLoading(false);
       setHasData(true);
-
-      if (!isRound2) {
-        // Round 1: reload supaya slider start bersih dengan data terkini
-        sessionStorage.setItem(SESSION_RELOAD_FLAG, '1');
-        window.location.reload();
-      }
-      // Round 2: tiada reload — data sudah fresh, slider kekal jalan
     } catch (err) {
       console.warn('[DataContext] Fetch gagal selepas 3 attempt:', err.message);
-      // Jangan set error state jika cache ada — slideshow terus jalan
       if (!hasData) {
         setError(err.message);
         setLoading(false);
       }
     } finally {
-      if (!sessionStorage.getItem(SESSION_RELOAD_FLAG)) {
-        // Hanya set isReloading false jika tidak akan reload
-        setIsReloading(false);
-      }
+      setIsReloading(false);
     }
   }, [hasData, setters]);
 
