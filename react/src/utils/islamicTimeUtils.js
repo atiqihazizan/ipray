@@ -14,7 +14,7 @@ export const HIJRI_MONTHS = [
 // Nama bulan Masehi (short)
 export const MASIHI_MONTHS = [
   "MASIHI", "JAN", "FEB", "MAC", "APR", "MEI", "JUN", 
-  "JUL", "OGS", "SEP", "OKT", "NOV", "DIS"
+  "JUL", "OGO", "SEP", "OKT", "NOV", "DIS"
 ];
 
 // Nama hari
