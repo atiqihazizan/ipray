@@ -162,7 +162,7 @@ export function useTimeDriver() {
 
     const update = () => {
       try {
-        const seqEnabled = false;// prayerTimeConfigRef.current?.SEQUENCE_ENABLED !== false;
+        const seqEnabled = prayerTimeConfigRef.current?.SEQUENCE_ENABLED !== false;
         const nextPrayerDelayMinutes = seqEnabled
           ? (prayerTimeConfigRef.current?.IQAMAH_DURATION_MIN ?? 10) + (prayerTimeConfigRef.current?.SOLAT_DURATION_MIN ?? 10)
           : 1;
