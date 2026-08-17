@@ -216,25 +216,13 @@ export const DataProvider = ({ children }) => {
     setPetugasData, setConfigData,
   ]);
 
-  /**
-   * Load cache SEGERA pada mount (tanpa tunggu socket)
-   * Return true jika cache ada dan slideshow boleh jalan
+/**
+   * Fetch data dari backend TERUS pada mount.
+   * Berjaya → applyDataToState + saveToCache.
+   * Gagal → fallback ke cache (data mungkin stale).
+   * Tiada cache → setError (papar ErrorPage).
    */
-  const loadCacheIfAvailable = useCallback(() => {
-    const cached = loadFromCache();
-    if (cached) {
-      applyDataToState(cached, setters);
-      setLoading(false);
-      setHasData(true);
-      return true;
-    }
-    return false;
-  }, [setters]);
-
-  /**
-* Fetch fresh data HANYA bila socket connect.
-    */
-  const fetchAndMaybeReload = useCallback(async () => {
+  const fetchFromBackend = useCallback(async () => {
     try {
       const API_BASE = getApiBase();
       const res = await fetchWithRetry(`${API_BASE}/data/app?t=${Date.now()}`, 3, 1500);
@@ -247,18 +235,23 @@ export const DataProvider = ({ children }) => {
         if (typeof localStorage !== 'undefined') localStorage.setItem(DATA_LOAD_DATE_KEY, todayStr);
       } catch (_) {}
 
-      setLoading(false);
+      setError(null);
       setHasData(true);
     } catch (err) {
       console.warn('[DataContext] Fetch gagal selepas 3 attempt:', err.message);
-      if (!hasData) {
+      const cached = loadFromCache();
+      if (cached) {
+        applyDataToState(cached, setters);
+        setError(null);
+        setHasData(true);
+      } else {
         setError(err.message);
-        setLoading(false);
+        setHasData(false);
       }
     } finally {
-      setIsReloading(false);
+      setLoading(false);
     }
-  }, [hasData, setters]);
+  }, [setters]);
 
   /**
    * Load takwim sahaja (tanpa ganggu slide / loading penuh) - guna API full supaya wdata lengkap, elak waktu 00
@@ -283,27 +276,12 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   /**
-   * Panggil cache check SEGERA pada mount (tanpa tunggu socket)
+   * Fetch backend terus pada mount. Gagal → fallback ke cache. Tiada cache → error.
+   * Socket tidak diperlukan untuk fetch — ia kekal untuk real-time updates sahaja.
    */
   useEffect(() => {
-    loadCacheIfAvailable();
-  }, [loadCacheIfAvailable]);
-
-  /**
-   * Socket gating: fetch fresh data hanya bila Socket.IO connected
-   */
-  useEffect(() => {
-    if (socketReady && socketConnected) {
-      setIsReloading(true);
-      setReloadCounter(prev => prev + 1);
-      fetchAndMaybeReload();
-    } else if (socketReady && !socketConnected && !hasData) {
-      // Socket gagal DAN tiada cache — tunjuk error
-      setLoading(false);
-      setError('Sambungan gagal. Data tidak tersedia.');
-    }
-    // Jika socketReady && !socketConnected && hasData → diam, slideshow terus jalan
-  }, [socketReady, socketConnected, hasData, fetchAndMaybeReload]);
+    fetchFromBackend();
+  }, [fetchFromBackend]);
 
   useEffect(() => {
     const handler = () => runAfterPrayerSequence(() => window.location.reload());
@@ -568,7 +546,7 @@ export const DataProvider = ({ children }) => {
     deathAnnouncementData,
     liveStreamData,
     petugasData,
-    refresh: fetchAndMaybeReload,
+    refresh: fetchFromBackend,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,

@@ -98,12 +98,13 @@ const DateTimeOverlay = ({ overlayOverride = null }) => {
     <>
       {/* <div className={`fixed top-0 left-0 right-0 flex justify-between items-center z-10 px-0 py-[14px] ${showOverlay('date') ? 'opacity-100' : 'opacity-0'}`} aria-hidden={!showOverlay('date')}> */}
       
-      {showOverlay('date') && (
-        <div className={`fixed top-0 left-0 right-0 flex justify-between items-center z-[10000] px-0 py-[14px]`}>
-            <DisplayDate type={1} dateType="gregorian" size={72} color={currentTimeColor} />
-            <DisplayDate type={2} dateType="hijri" size={72} color={currentTimeColor} />
-        </div>
-      )}
+      <div
+        className={`fixed top-0 left-0 right-0 flex justify-between items-center z-[10000] px-0 py-[14px]`}
+        style={{ visibility: showOverlay('date') ? 'visible' : 'hidden' }}
+      >
+          <DisplayDate type={1} dateType="gregorian" size={72} color={currentTimeColor} />
+          <DisplayDate type={2} dateType="hijri" size={72} color={currentTimeColor} />
+      </div>
 
       <div className={`fixed bottom-0 left-0 right-0 z-[10000]`}>
         <div className='relative flex flex-col'>
