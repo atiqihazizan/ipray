@@ -194,9 +194,10 @@ export function buildNextPrayerWidget() {
   return {
     type: "div", transition: "L", duration: 1500,
     style: { position: 'absolute', left: 0, bottom: 0 },
-    content: `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:rgba(16,16,16,0.5);clip-path:polygon(80% 0, 100% 25%, 100% 100%, 0 100%, 0 0);padding:${height(16)}px;font-family:'Bebas',sans-serif;">
+    // content: `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:rgba(16,16,16,0.5);clip-path:polygon(80% 0, 100% 25%, 100% 100%, 0 100%, 0 0);padding:${height(10)}px;font-family:'Bebas',sans-serif;">
+    content: `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background-color:rgba(16,16,16,0.5);border-top-right-radius: ${height(15)}px;padding:${height(10)}px;font-family:'Bebas',sans-serif;">
       <div data-ipray-id="next-name" style="font-size:${height(20)}px;line-height:1;color:#FFFF00;text-shadow:4px 4px 0px rgba(0,0,0,1);padding-bottom:${height(8)}px;">${next.name.toUpperCase()}</div>
-      <div data-ipray-id="next-time" style="font-size:${height(70)}px;line-height:1;color:#FFFF00;text-shadow:3px 3px 0px rgba(0,0,0,1);">${_fmtP(next.time)}</div>
+      <div data-ipray-id="next-time" style="font-size:${height(50)}px;line-height:1;color:#FFFF00;text-shadow:3px 3px 0px rgba(0,0,0,1);">${_fmtP(next.time)}</div>
     </div>`
   };
 }

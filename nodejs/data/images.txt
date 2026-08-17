@@ -1,7 +1,7 @@
 a40e4395-2f3b-45af-9f7b-2bf139dc1651|/images/penceramah/ustaz_suhaimi.png
 fbdaa719-bdef-464f-8b5c-7c7cca74abb7|/images/penceramah/ustaz_badrul_azhar_bakar.png
 705bad0f-b864-4e07-b3d9-e7334b4a4351|/images/penceramah/ustaz_omar.png
-2c8f238b-d7b3-4154-b40c-62c33e6d8dfb|/images/penceramah/ust-yusoff.png
+2c8f238b-d7b3-4154-b40c-62c33e6d8dfb|/images/penceramah/ustaz_yusoff.png
 0005e5eb-7c00-4a21-bc06-990f0be6b5f9|/images/penceramah/ustaz_hassan_hashim.png
 6f91689d-e5c1-4d08-8fe5-f5cbe8710b44|/images/penceramah/ust_dato_hj_hassan_ahmad.png
 77acc3bd-e5d6-43ac-930f-165d9bc809ba|/images/penceramah/hanif_yusof.png
@@ -13,7 +13,7 @@ d8f16bd3-a5db-4083-80f8-7466a63ea3de|/images/penceramah/Random_user.svg
 12a09942-8127-4806-bcd6-7f701def11fd|/images/penceramah/Random_user.svg
 c5e3a6d1-56cd-4e10-91fc-96875931f676|/images/penceramah/ustaz_aiman_subri.png
 297ab92e-b44f-402a-b6a3-969645aa509c|/images/penceramah/ustaz_hassan_abd_latif.png
-30046bda-d895-44ff-b685-c00bd932a42a|/images/penceramah/Random_user.svg
+30046bda-d895-44ff-b685-c00bd932a42a|/images/penceramah/ustaz_rahimi.png
 5d39789c-e183-42cc-83e6-4d85d9a1bfe0|/images/penceramah/Random_user.svg
 fe2a1a7b-2bca-403b-87fe-8527ae94e4d3|/images/penceramah/Random_user.svg
 7957bb87-6122-4cd3-88db-6047b2ff8e03|/images/penceramah/Random_user.svg
