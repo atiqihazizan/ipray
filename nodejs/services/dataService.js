@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { sendAck, deleteFile, uploadFile } = require('./cloudClient');
 const { isHebahanActive } = require('../utils/hebahanDate');
 
@@ -144,30 +145,45 @@ class DataService {
       throw new Error('Missing original filename');
     }
 
-    const sanitizedName = String(originalName).replace(/[^a-zA-Z0-9.-]/g, '_');
+    // Sanitize nama dan tentukan extension asal
+    const baseName = String(originalName)
+      .replace(/[^a-zA-Z0-9.-]/g, '_')
+      .replace(/\.[^.]+$/, '');              // buang extension asal
+    const originalExt = (String(originalName).match(/\.[^.]+$/)?.[0] || '').toLowerCase();
+
     const destDir = path.join(imagesPath, category);
     if (!fs.existsSync(destDir)) {
       fs.mkdirSync(destDir, { recursive: true });
     }
 
-    const actualPath = path.join(destDir, sanitizedName);
-    fs.writeFileSync(actualPath, buffer);
+    // SVG dan GIF (animated) TIDAK dikonversi — kekalkan format asal.
+    // Format lain (jpg/jpeg/png/webp/bmp dll) dikonversi ke .webp.
+    const skipConvert = originalExt === '.svg' || originalExt === '.gif';
+    const finalExt = skipConvert ? (originalExt || '.bin') : '.webp';
+    const finalName = `${baseName}${finalExt}`;
+    const finalPath = path.join(destDir, finalName);
+
+    if (skipConvert) {
+      fs.writeFileSync(finalPath, buffer);
+    } else {
+      await sharp(buffer).webp({ quality: 85 }).toFile(finalPath);
+    }
 
     // Verify file size > 0
-    const stats = fs.statSync(actualPath);
+    const stats = fs.statSync(finalPath);
     if (!stats || stats.size === 0) {
-      try { fs.unlinkSync(actualPath); } catch (e) {}
+      try { fs.unlinkSync(finalPath); } catch (e) {}
       throw new Error('Fail kosong. Upload mungkin gagal.');
     }
 
-    const imagePath = `/images/${category}/${sanitizedName}`;
+    const imagePath = `/images/${category}/${finalName}`;
     const folder = `/images/${category}`;
 
     // Sync ke cloud (fire-and-forget) – ikut implementasi asal di apiServerService
     (async () => {
       try {
-        await uploadFile(actualPath, folder);
-        await sendAck(sanitizedName, 'uploaded');
+        await uploadFile(finalPath, folder);
+        await sendAck(finalName, 'uploaded');
       } catch (cloudError) {
         if (isCloudUnavailableError(cloudError)) return;
         // eslint-disable-next-line no-console
@@ -178,9 +194,9 @@ class DataService {
     return {
       success: true,
       path: imagePath,
-      filename: sanitizedName,
+      filename: finalName,
       category,
-      actualPath
+      actualPath: finalPath
     };
   }
 
