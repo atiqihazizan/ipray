@@ -166,7 +166,7 @@ export const slidesTemplate = {
   announce: {
     type: 'announce',
     transitionType: 'auto',
-    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Slide 2" },
+    image: { src: withAssetBase("/images/slides/picture4.webp"), alt: "Slide 2" },
     // Captions struktur parent-child (sama konsep kuliah)
     // Parent: kategori (PENGUMUMAN/PEMBERITAHUAN) - play in pertama, play out terakhir
     // Children: 8 (tajuk, penceramah, tema, tarikh, masa, lokasi, sasaran, countdown)
@@ -244,7 +244,7 @@ export const slidesTemplate = {
   kuliahHari: {
     type: 'kuliahHari',
     transitionType: 'auto',
-    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Harian" },
+    image: { src: withAssetBase("/images/slides/picture4.webp"), alt: "Kuliah Harian" },
     captions: [
       {
         // Parent container - di-control PlayIn/PlayOut dalam useSlides (sama konsep announcement)
@@ -277,7 +277,7 @@ export const slidesTemplate = {
   kuliahWeekly: {
     type: 'kuliahWeekly',
     transitionType: 'auto',
-    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Mingguan" },
+    image: { src: withAssetBase("/images/slides/picture4.webp"), alt: "Kuliah Mingguan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
     // Children: 1 kategori + 6×3=18 (kategori, 6 cards: tajuk kategori + image + teks gabungan). Teks gabungan = penceramah + hari.
@@ -308,7 +308,7 @@ export const slidesTemplate = {
   kuliahBulanan: {
     type: 'kuliahBulanan',
     transitionType: 'auto',
-    image: { src: withAssetBase("/images/slides/picture4.jpg"), alt: "Kuliah Bulanan" },
+    image: { src: withAssetBase("/images/slides/picture4.webp"), alt: "Kuliah Bulanan" },
     // Captions struktur parent-child
     // Parent: container yang play in sekali (slide pertama), play out sekali (slide terakhir)
     // Children: 1 kategori + 6×3=18 (kategori, 6 cards: tajuk kategori + image + teks gabungan). Teks gabungan = penceramah + hari.
@@ -335,7 +335,7 @@ export const slidesTemplate = {
   slideshow: {
     type: 'slideshow',
     transitionType: 'auto',
-    image: { src: "/img/slideshow/mountant0.jpeg", alt: "Slideshow" },
+    image: null,
     // Captions: array imej dibina dalam useSlides (processSlideshow) - setiap caption type img, FADE, delay berurutan
     captions: []
   }

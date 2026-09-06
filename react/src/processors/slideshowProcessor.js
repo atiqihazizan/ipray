@@ -6,13 +6,13 @@ import { withAssetBase } from '../services/apiBase';
 import { buildGregorianWidget, buildHijriWidget, buildClockSmWidget, buildNextPrayerWidget } from './dateTimeWidgets';
 
 const DEFAULT_SLIDESHOW_IMAGES = [
-  '/img/slideshow/slide01.jpg',
-  '/img/slideshow/slide02.jpg',
-  '/img/slideshow/slide03.jpg',
-  '/img/slideshow/slide04.jpg',
-  '/img/slideshow/slide05.jpg',
-  '/img/slideshow/slide06.jpg',
-  '/img/slideshow/slide07.jpg'
+  '/img/slideshow/slide01.webp',
+  '/img/slideshow/slide02.webp',
+  '/img/slideshow/slide03.webp',
+  '/img/slideshow/slide04.webp',
+  '/img/slideshow/slide05.webp',
+  '/img/slideshow/slide06.webp',
+  '/img/slideshow/slide07.webp'
 ];
 
 export function processSlideshow(slideshowData, slidesConfigData, applyConfig, datetime = []) {

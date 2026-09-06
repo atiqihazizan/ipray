@@ -12,4 +12,4 @@ export const MOSQUE_FULL = `${MOSQUE_NAME} • ${MOSQUE_LOCATION}`;
 /** Gambar latar slide home (hardcoded) — ubah di sini sahaja untuk tukar background home.
  *  Fail imej dihoskan di backend (nodejs/images/), bukan dibundle dengan frontend — perlu
  *  withAssetBase supaya resolve betul bila dev server tunjuk ke backend jauh (VITE_API_BASE). */
-export const HOME_SLIDE_BACKGROUND = withAssetBase('/images/slides/bg-mta.jpg');
+export const HOME_SLIDE_BACKGROUND = withAssetBase('/images/slides/bg-mta.webp');

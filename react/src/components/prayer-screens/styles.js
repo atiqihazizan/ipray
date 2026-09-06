@@ -11,7 +11,7 @@ export const ARABIC_FONT_FAMILY = `'${textJawi[2]}'`;
 export const bgStyle = {
   width: "100vw",
   height: "100vh",
-  backgroundImage: "url(/img/bg-page4.jpg)",
+  backgroundImage: "url(/img/bg-page4.webp)",
   backgroundSize: "cover",
   backgroundPosition: "center",
   display: "flex",

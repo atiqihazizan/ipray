@@ -10,7 +10,7 @@ const DeathAnnouncementOverlay = ({ data }) => {
       className="absolute inset-0 flex flex-col items-center"
       style={{
         background: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-        backgroundImage: 'url(/img/bg-page4.jpg)',
+        backgroundImage: 'url(/img/bg-page4.webp)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',

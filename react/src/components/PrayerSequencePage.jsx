@@ -121,10 +121,10 @@ export default function PrayerSequencePage({ prayerName, overlayOverride = null 
         }}>{JAWI_SEDANG_SOLAT}</h1>
         <div style={{ position: 'absolute', bottom: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '104px' }}>
           <div style={muteIconBadgeStyle}>
-            <img src="/img/mute-phone.png" alt="Senangkan telefon" style={muteIconStyle} />
+            <img src="/img/mute-phone.webp" alt="Senangkan telefon" style={muteIconStyle} />
           </div>
           <div style={muteIconBadgeStyle}>
-            <img src="/img/silent.png" alt="Diam" style={muteIconStyle} />
+            <img src="/img/silent.webp" alt="Diam" style={muteIconStyle} />
           </div>
         </div>
       </div>

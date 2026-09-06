@@ -22,8 +22,8 @@ e8b901e8-5120-4971-95f7-094763d49423|/images/penceramah/ustazah_siti_hajar_ghaza
 fb646894-9397-4660-9998-4fb9bc64681c|/images/penceramah/ustaz_uzair.png
 b6240b0d-813e-4486-ad75-4b38c598c855|/images/penceramah/Random_user.svg
 
-bg-mta|/images/slides/bg-mta.jpg
-picture4|/images/slides/picture4.jpg
+bg-mta|/images/slides/bg-mta.webp
+picture4|/images/slides/picture4.webp
 picture4d|/images/slides/picture4d.png
 picture4e|/images/slides/picture4e.png
 picture4f|/images/slides/picture4f.png

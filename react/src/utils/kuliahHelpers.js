@@ -69,14 +69,14 @@ export const hexToRgba = (hex, alpha) => {
 };
 
 /**
- * Background slide kuliah harian ikut kod type: /img/bg-ks.png, bg-km.png, dll.
+ * Background slide kuliah harian ikut kod type: /img/bg-ks.webp, bg-km.webp, dll.
  * @param {string} typeCode - ks, km, kd, kk
  * @returns {string|null} Path background atau null jika kod tidak dikenali
  */
 export const getKuliahTypeBackground = (typeCode) => {
   const code = (typeCode || '').trim().toLowerCase();
   if (!KULIAH_TYPE_CODES.has(code)) return null;
-  return `/img/bg-${code}.png`;
+  return `/img/bg-${code}.webp`;
 };
 
 /**

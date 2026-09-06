@@ -7,8 +7,8 @@ const Slide = ({ slide }) => {
   const imageSrc = hasImage ? slide.image.src : null;
 
   const handleImageError = (e) => {
-    if (!e.target.src.includes('noimage.png')) {
-      e.target.src = '/img/noimage.png';
+    if (!e.target.src.includes('noimage.webp')) {
+      e.target.src = '/img/noimage.webp';
     }
   };
 
