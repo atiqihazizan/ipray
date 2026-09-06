@@ -26,7 +26,7 @@ const Icons = {
 function resolveImageUrl(imagePath) {
   const BASE_URL =
     window.Config.BASE_URL || window.Config.API_URL.replace(/\/api\/?$/, "");
-  if (!imagePath) return `${BASE_URL}/images/noimage.png`;
+  if (!imagePath) return `${BASE_URL}/images/noimage.webp`;
   if (imagePath.startsWith("http")) return imagePath;
   if (imagePath.startsWith("/")) return `${BASE_URL}${imagePath}`;
   return `${BASE_URL}/images/${imagePath}`;
@@ -39,7 +39,7 @@ function buildCard(row) {
   const BASE_URL =
     window.Config.BASE_URL || window.Config.API_URL.replace(/\/api\/?$/, "");
   const imageUrl = resolveImageUrl(row.imagePath);
-  const noimage = `${BASE_URL}/images/noimage.png`;
+  const noimage = `${BASE_URL}/images/noimage.webp`;
 
   const card = document.createElement("div");
   card.className = "gallery-card gallery-card--template-style";

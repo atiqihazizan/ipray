@@ -110,12 +110,12 @@ class ApiServerService {
     this.app.use(express.json());
     this.app.use(express.static(this.settingPath));
     
-    // Serve penceramah images dengan fallback ke noimage.png
+    // Serve penceramah images dengan fallback ke noimage.webp
     if (this.imagesPath) {
       this.app.get('/images/penceramah/:filename', (req, res) => {
         const filename = req.params.filename;
         const imagePath = path.join(this.imagesPath, 'penceramah', filename);
-        const defaultImage = path.join(this.imagesPath, 'noimage.png');
+        const defaultImage = path.join(this.imagesPath, 'noimage.webp');
         // Guna async fs.access untuk elak blocking event loop
         fs.access(imagePath, fs.constants.R_OK, (err) => {
           if (!err) {

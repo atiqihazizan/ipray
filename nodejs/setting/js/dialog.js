@@ -1769,7 +1769,7 @@ function createFormFields(form, row, isAdd, options = {}) {
         // Default value berdasarkan defaultCategory (default: penceramah)
         const defaultPath =
           defaultCategory === "slides"
-            ? "/images/slides/noimage.png"
+            ? "/images/slides/noimage.webp"
             : "/images/penceramah/Random_user.svg";
         hiddenInput.value = defaultPath;
       } else {

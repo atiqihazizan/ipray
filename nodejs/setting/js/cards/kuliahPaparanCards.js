@@ -78,7 +78,7 @@ export function renderKuliahPaparanCards({
     img.alt = row.image || "";
     img.loading = "lazy";
     img.onerror = function () {
-      this.src = `${BASE_URL}/images/noimage.png`;
+      this.src = `${BASE_URL}/images/noimage.webp`;
       this.onerror = null;
     };
     imgWrap.appendChild(img);

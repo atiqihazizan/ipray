@@ -505,11 +505,11 @@ function buildTableRow(row, ctx) {
         if (path.startsWith("/")) imageUrl = `${BASE_URL}${path}`;
         else imageUrl = `${BASE_URL}/images/${path}`;
       } else {
-        imageUrl = `${BASE_URL}/images/noimage.png`;
+        imageUrl = `${BASE_URL}/images/noimage.webp`;
       }
       img.src = imageUrl;
       img.onerror = function () {
-        this.src = `${BASE_URL}/images/noimage.png`;
+        this.src = `${BASE_URL}/images/noimage.webp`;
         this.onerror = null;
       };
       attachImgPopup(img, () => value || "");
@@ -551,11 +551,11 @@ function buildTableRow(row, ctx) {
         if (path.startsWith("/")) imageUrl = `${BASE_URL}${path}`;
         else imageUrl = `${BASE_URL}/images/${path}`;
       } else {
-        imageUrl = `${BASE_URL}/images/noimage.png`;
+        imageUrl = `${BASE_URL}/images/noimage.webp`;
       }
       img.src = imageUrl;
       img.onerror = function () {
-        this.src = `${BASE_URL}/images/noimage.png`;
+        this.src = `${BASE_URL}/images/noimage.webp`;
         this.onerror = null;
       };
       attachImgPopup(img, () => row.caption || value || "");
@@ -836,7 +836,7 @@ function resolveSlideImagePath(imageCode, imagesList, BASE_URL) {
     : imageCode && imageCode.startsWith("/")
       ? imageCode
       : "";
-  if (!path) return `${BASE_URL}/images/noimage.png`;
+  if (!path) return `${BASE_URL}/images/noimage.webp`;
   if (path.startsWith("/")) return `${BASE_URL}${path}`;
   return `${BASE_URL}/images/${path}`;
 }
@@ -1305,7 +1305,7 @@ export async function loadBackgroundTable() {
         : `${BASE_URL}/images/${pathVal}`;
       img.src = imageUrl;
       img.onerror = function () {
-        this.src = `${BASE_URL}/images/slides/noimage.png`;
+        this.src = `${BASE_URL}/images/slides/noimage.webp`;
         this.onerror = null;
       };
       attachImgPopup(img, () => row.imageCode || pathVal || "");

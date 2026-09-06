@@ -265,7 +265,7 @@ class DataService {
     let failed = 0;
     const imageExts = DataService.IMAGE_EXTENSIONS;
     try {
-      // Sync fail imej di root imagesPath (cth. noimage.png) ke storage/{clientId}/images/
+      // Sync fail imej di root imagesPath (cth. noimage.webp) ke storage/{clientId}/images/
       const rootEntries = fs.readdirSync(imagesPath, { withFileTypes: true });
       const rootFiles = rootEntries.filter(e => e.isFile() && !e.name.startsWith('.')).map(e => e.name);
       for (const file of rootFiles) {
