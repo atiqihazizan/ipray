@@ -1539,7 +1539,13 @@ class DataService {
     if (!c || typeof c !== 'object') return null;
     let dateTimeRaw;
     const event = c.event || '';
-    const windowDays = typeof c.windowDays === 'number' ? c.windowDays : parseInt(c.windowDays, 10) || 0;
+    let windowDays = typeof c.windowDays === 'number' ? c.windowDays : parseInt(c.windowDays, 10) || 0;
+
+    // Recurring events (HIJRI/MASIHI) tanpa windowDays:
+    // default 30 hari supaya tidak terpapar sepanjang tahun
+    if (windowDays === 0 && (c.type === 'COUNTDOWN_HIJRI' || c.type === 'COUNTDOWN_MASIHI')) {
+      windowDays = 30;
+    }
 
     if (c.type === 'COUNTDOWN_HIJRI') {
       const gregorianDate = this.getNextGregorianForHijriDate(takwimContent, c.month, c.day, today);
