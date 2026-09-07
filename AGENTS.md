@@ -52,16 +52,51 @@ Log FRAME menunjukkan: `size=... captions=... text=[...]`.
 
 ## Server ops penting
 
-- Autostart kiosk: `~/.config/autostart/ipray-kiosk.desktop` → `~/start-kiosk.sh`
-  (pm2 backend + chromium kiosk).
-- Pulihkan kiosk (bila display down):
-  `pkill -9 -x chromium; sleep 1; bash ~/start-kiosk.sh`
-- **JANGAN `pkill -f chromium`** — pattern match untuk "chromium" turut membunuh shell SSH/script
-  sendiri. Wajib `pkill -x chromium` (padan nama proses sahaja).
+### Process manager: systemd (bukan PM2 — Sep 2026)
+Migrasi dari PM2 + XDG autostart ke systemd user services. PM2 dan autostart `.desktop`
+sudah disabled.
+
+| Service | Perihal |
+|---|---|
+| `ipray-kiosk.service` | Node.js backend — `Restart=on-failure`, `Wants=ipray-chromium` |
+| `ipray-chromium.service` | Chromium kiosk — `BindsTo=ipray-kiosk`, auto-stop/start ikut backend |
+
+**Commands:**
+```bash
+# Status
+systemctl --user status ipray-kiosk.service ipray-chromium.service
+
+# Restart backend (Chromium turut restart automatik via BindsTo)
+systemctl --user restart ipray-kiosk.service
+
+# Stop/start manual
+systemctl --user stop ipray-kiosk.service     # stop kedua-dua (Chromium ikut)
+systemctl --user start ipray-kiosk.service    # start kedua-dua
+
+# Log
+journalctl --user -u ipray-kiosk.service -u ipray-chromium.service -f
+```
+
+**Crontab thermal (masih aktif):**
+- `23:00` — `systemctl --user stop ipray-kiosk.service` (Chromium auto-stop)
+- `05:00` — `systemctl --user start ipray-kiosk.service` (Chromium auto-start)
+- Log: `~/kiosk/logs/cron-thermal.log`
+
+**Pulihkan kiosk (bila display down):**
+```bash
+systemctl --user restart ipray-chromium.service
+```
+
+**JANGAN `pkill -f chromium`** — pattern match turut membunuh shell SSH/script sendiri.
+Wajib `pkill -x chromium` jika perlu kill manual.
+
 - Reboot: `sudo systemctl reboot` (ipray ada NOPASSWD sudo). Selepas reboot `/tmp` dibersihkan —
   tools kekal di `~/snap-tools`, snapshots di `~/snapshots`.
-- Tools server `~/snap-tools/`: `snap-live.sh` (orchestrator), `snap-probe.js` (CDP capture +
-  DOM dump, guna ws dari `~/kiosk/node_modules/ws`), `startcr-live.sh` (chromium + debug port).
+- Tools server `~/snap-tools/`: `snap-live.sh` (orchestrator, dikemaskini untuk systemd),
+  `snap-probe.js` (CDP capture + DOM dump, guna ws dari `~/kiosk/node_modules/ws`),
+  `startcr-live.sh` (chromium + debug port).
+- `~/start-kiosk.sh` — dikekalkan sebagai rujukan/fallback manual sahaja (tidak dipakai autostart).
+- `~/start-kiosk-chromium.sh` — wrapper Chromium yang dipakai oleh `ipray-chromium.service`.
 
 ## Nota semasa terkini (Aug 2026)
 
