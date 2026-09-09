@@ -252,7 +252,25 @@ chmod +x "$HOME/health-check.sh"
 info "health-check.sh siap"
 
 # -------------------------------------------------------
-step "8/8 — Setup crontab"
+step "8/9 — Setup snap tools"
+# -------------------------------------------------------
+SNAP_DIR="$HOME/snap-tools"
+mkdir -p "$SNAP_DIR" "$HOME/snapshots"
+
+# Copy snap tools dari repo (relatif kepada script ini)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_SNAP="$SCRIPT_DIR/../snap-tools"
+
+if [ -d "$REPO_SNAP" ]; then
+  cp "$REPO_SNAP/snap-live.sh" "$REPO_SNAP/snap-probe.js" "$REPO_SNAP/startcr-live.sh" "$SNAP_DIR/"
+  chmod +x "$SNAP_DIR/snap-live.sh" "$SNAP_DIR/startcr-live.sh"
+  info "snap-tools disalin ke $SNAP_DIR"
+else
+  warn "Folder snap-tools tidak dijumpai dalam repo — skip"
+fi
+
+# -------------------------------------------------------
+step "9/9 — Setup crontab"
 # -------------------------------------------------------
 XDG="XDG_RUNTIME_DIR=/run/user/$USER_ID"
 DBUS="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$USER_ID/bus"
@@ -271,7 +289,7 @@ info "Crontab siap"
 # -------------------------------------------------------
 echo ""
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN} Setup selesai! Mulakan kiosk sekarang:${NC}"
+echo -e "${GREEN} Setup selesai (9/9)! Mulakan kiosk sekarang:${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
 echo "  systemctl --user start ipray-kiosk.service"
