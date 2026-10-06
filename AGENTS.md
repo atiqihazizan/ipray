@@ -104,3 +104,44 @@ Wajib `pkill -x chromium` jika perlu kill manual.
   terus pada mount (3x retry 1.5s) → jatuh ke localStorage cache → ErrorPage jika tiada langsung.
   Socket.IO kekal untuk real-time sahaja (bukan gate fetch).
 - Deploy hanya atas arahan eksplisit; kiosk server = `ipray@100.108.32.65`.
+
+## Time Management & Validation (Oct 2026)
+
+### Masa Invalid (CMOS/RTC Rosak - Tahun 1970)
+
+Sistem kini ada validation untuk detect masa invalid (tahun < 2020) yang menunjukkan CMOS/RTC battery rosak:
+
+- **Frontend validation**: `getCurrentIslamicTime` (islamicTimeUtils.js) check `year < 2020`
+- **Behavior bila invalid**:
+  - Time/date component tidak dipaparkan
+  - Prayer sequence (warning, azan, iqamah) di-skip
+  - Slideshow terus berjalan normal
+  - Console log: `[TimeDriver] Invalid time detected, skipping prayer sequence`
+
+### RTC Persist (Hardware Clock)
+
+Bila set datetime dari UI (`POST /api/time/set`), masa kini persist ke hardware clock:
+
+- **Backend**: `timeService.setSystemClock()` sekarang jalankan `sudo hwclock -w` selepas `sudo date -s`
+- **Manfaat**: Masa kekal selepas reboot/restart (tidak kembali ke 1970)
+- **Requirement**: Pastikan user ada sudo privileges (tanpa password prompt)
+
+### Force Re-sync Tanpa Reload
+
+Bila datetime di-update dari UI, frontend force re-sync masa tanpa reload halaman:
+
+- **Backend**: Broadcast event `time-system-updated` via Socket.IO
+- **Frontend**: Handler di `DataContext.jsx` panggil `timeServiceStub.forceSync()`
+- **Behavior**: Masa update serta-merta, slideshow smooth, sequence tidak terputus
+
+### Testing
+
+Gunakan script `test-time-validation.sh` untuk test:
+```bash
+./test-time-validation.sh
+```
+
+Test steps:
+1. Set masa ke 1970 → verify prayer sequence skip
+2. Set masa betul dari UI → verify force re-sync
+3. Reboot → verify RTC persist (masa kekal)
