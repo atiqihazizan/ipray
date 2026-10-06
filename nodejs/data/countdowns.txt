@@ -1,4 +1,5 @@
 # windowDays: papar countdown hanya bila baki hari <= windowDays (0 = papar bila-bila masa). Contoh: 30 = papar bila 30 hari atau kurang lagi.
+# Auto-sync from ipray to ipray-kiosk via GitHub Actions
 # Optional (field 6-8): background|display|layout
 #   background = kod imej (images.txt), kosong = guna global screen.txt countDown
 COUNTDOWN_HIJRI||3|12|Salam Maulidur Rasul|30|bg-maulid|countdown|30,120
