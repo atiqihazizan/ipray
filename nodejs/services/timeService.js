@@ -129,11 +129,10 @@ class TimeService {
       this.ntpOffset = offset;
       this.lastNtpSync = Date.now();
       this.isOnline = true;
-      // if (this.setSystemClock(Date.now() + offset)) {
-      //   this.ntpOffset = 0;
-      //   console.log('[TimeService] OK: System clock updated');
-      // }
-      // Guna offset dalam app sahaja; tiada setSystemClock() supaya tidak minta password (sudo) di mana-mana platform.
+      if (this.setSystemClock(Date.now() + offset)) {
+        this.ntpOffset = 0;
+        console.log('[TimeService] OK: System clock updated');
+      }
       this.updateTimeSource();
       console.log(`[TimeService] OK: NTP sync successful, offset: ${offset}ms`);
       
