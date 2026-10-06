@@ -1953,12 +1953,6 @@ class DataService {
     const parsed = {
       PRAYER_TIME_CONFIG: { ...DEFAULT_PRAYER_TIME_CONFIG },
       COLOR_CONFIG: { ...DEFAULT_COLOR_CONFIG },
-      DATETIME_CONFIG: {
-        MANUAL_OFFSET_MS: 0,
-        NTP_ENABLED: true,
-        NTP_SERVER: 'pool.ntp.org',
-        NTP_SYNC_INTERVAL_MS: 3600000
-      },
       MARQUEE_CONFIG: {
         ENABLED: true,
         DURATION: 25,
@@ -1999,10 +1993,6 @@ class DataService {
       else if (key === 'COLOR_NEXT_PRAYER') parsed.COLOR_CONFIG.NEXT_PRAYER = value;
       else if (key === 'COLOR_WARNING_PRAYER') parsed.COLOR_CONFIG.WARNING_PRAYER = value;
       else if (key === 'OVERLAY_BG_COLOR') parsed.COLOR_CONFIG.OVERLAY_BG = value;
-      else if (key === 'DATETIME_MANUAL_OFFSET_MS') parsed.DATETIME_CONFIG.MANUAL_OFFSET_MS = parseInt(value, 10) || 0;
-      else if (key === 'DATETIME_NTP_ENABLED') parsed.DATETIME_CONFIG.NTP_ENABLED = value.toLowerCase() === 'true';
-      else if (key === 'DATETIME_NTP_SERVER') parsed.DATETIME_CONFIG.NTP_SERVER = value;
-      else if (key === 'DATETIME_NTP_SYNC_INTERVAL_MS') parsed.DATETIME_CONFIG.NTP_SYNC_INTERVAL_MS = parseInt(value, 10) || 3600000;
       else if (key === 'MARQUEE_ENABLED') parsed.MARQUEE_CONFIG.ENABLED = value.toLowerCase() === 'true' || value === '1';
       else if (key === 'MARQUEE_DURATION') parsed.MARQUEE_CONFIG.DURATION = Math.max(5, Math.min(120, parseInt(value, 10) || 25));
       else if (key === 'MARQUEE_SEPARATOR') parsed.MARQUEE_CONFIG.SEPARATOR = value;

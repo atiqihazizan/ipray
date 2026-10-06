@@ -210,7 +210,6 @@ async function startServers() {
       console.warn('Config file not found, using defaults');
     }
     const config = dataService.parseConfig(configContent);
-    const datetimeConfig = config.DATETIME_CONFIG || {};
 
     // RTSP→HLS untuk CCTV. Utamakan: config.FFMPEG_PATH > bundled bin/ > PATH sistem
     const ffmpegExe = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
@@ -239,11 +238,7 @@ async function startServers() {
     // Initialize time service
     timeService = new TimeService();
     await timeService.init({
-      dataService,
-      manualOffset: datetimeConfig.MANUAL_OFFSET_MS || 0,
-      ntpEnabled: datetimeConfig.NTP_ENABLED !== undefined ? datetimeConfig.NTP_ENABLED : true,
-      ntpServer: datetimeConfig.NTP_SERVER || 'pool.ntp.org',
-      ntpSyncIntervalMs: datetimeConfig.NTP_SYNC_INTERVAL_MS || 3600000
+      dataService
     });
 
     // Initialize Socket.IO service (will be attached to API server)

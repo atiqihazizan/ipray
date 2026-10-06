@@ -240,23 +240,6 @@
 		}
 	}
 
-	async function syncTimeWithInternet() {
-		const statusEl = document.getElementById('time-set-status');
-		const apiBase = (getApiUrl() || '').replace(/\/api\/?$/, '');
-		try {
-			if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#64748b'; statusEl.textContent = 'Sedang sync dengan internet (NTP)...'; }
-			const response = await fetch(apiBase + '/api/time/sync');
-			if (!response.ok) throw new Error('Sync gagal');
-			await response.json();
-			// if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync berjaya! Masa kini menggunakan Internet (NTP).', 'success');
-			if (statusEl) { statusEl.style.color = '#10b981'; statusEl.textContent = '✓ Sync berjaya.'; }
-		} catch (err) {
-			console.error('Error syncing time:', err);
-			if (window.NotificationUtils) window.NotificationUtils.showNotification('Sync gagal. Pastikan ada sambungan internet.', 'error');
-			if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#dc2626'; statusEl.textContent = '✗ ' + (err.message || 'Sync gagal'); }
-		}
-	}
-
 	function handleRebootKiosk() {
 		const socket = window.AppState?.getSocket();
 		if (!socket || !socket.connected) {
@@ -869,7 +852,6 @@
 	window.handleLiveStop = handleLiveStop;
 	window.updateLivestreamPlayState = updateLivestreamPlayState;
 	window.setSystemTime = setSystemTime;
-	window.syncTimeWithInternet = syncTimeWithInternet;
 	window.handleTestSound = handleTestSound;
 	window.handleTestTvSound = handleTestTvSound;
 	window.initSystemDatetimeDefault = initSystemDatetimeDefault;

@@ -237,8 +237,8 @@ class ApiServerService {
     });
     
     // Time Service Endpoints
-    
-    // Get calibrated time info
+
+    // Get time info
     this.app.get('/api/time', (req, res) => {
       try {
         if (!this.timeService) {
@@ -251,51 +251,7 @@ class ApiServerService {
         res.status(500).json({ error: error.message });
       }
     });
-    
-    // Force NTP sync
-    this.app.get('/api/time/sync', async (req, res) => {
-      try {
-        if (!this.timeService) {
-          return res.status(503).json({ error: 'Time service not available' });
-        }
-        const result = await this.timeService.syncNtp();
 
-        // Notify clients via socket supaya frontend update masa serta-merta
-        if (this.socketServerService) {
-          this.socketServerService.broadcastEvent('time-offset-updated', result);
-        }
-
-        res.json(result);
-      } catch (error) {
-        console.error('Error syncing NTP:', error);
-        res.status(500).json({ error: error.message });
-      }
-    });
-    
-    // Update manual offset
-    this.app.post('/api/time/offset', async (req, res) => {
-      try {
-        if (!this.timeService) {
-          return res.status(503).json({ error: 'Time service not available' });
-        }
-        const { offsetMs } = req.body;
-        if (offsetMs === undefined) {
-          return res.status(400).json({ error: 'offsetMs is required' });
-        }
-        const result = await this.timeService.updateManualOffset(offsetMs);
-        
-        // Notify clients via socket
-        if (this.socketServerService) {
-          this.socketServerService.broadcastEvent('time-offset-updated', result);
-        }
-        
-        res.json(result);
-      } catch (error) {
-        console.error('Error updating manual offset:', error);
-        res.status(500).json({ error: error.message });
-      }
-    });
-    
     // Set system clock (date/time mesin) dari setting UI
     this.app.post('/api/time/set', async (req, res) => {
       try {
