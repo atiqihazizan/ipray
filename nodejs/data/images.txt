@@ -9,7 +9,7 @@ fbdaa719-bdef-464f-8b5c-7c7cca74abb7|/images/penceramah/ustaz_badrul_azhar_bakar
 0a4f55cb-3d63-45ef-967d-389fde313e31|/images/penceramah/Random_user.svg
 2b7694fc-d0dc-4e73-a1a1-264f77513a32|/images/penceramah/Random_user.svg
 320aefcc-18e6-4824-ba49-bf907bb5f3d4|/images/penceramah/ustaz_dato_hj_elias_zakaria.webp
-d8f16bd3-a5db-4083-80f8-7466a63ea3de|/images/penceramah/Random_user.svg
+d8f16bd3-a5db-4083-80f8-7466a63ea3de|/images/penceramah/Hafezol_Saad.webp
 12a09942-8127-4806-bcd6-7f701def11fd|/images/penceramah/Random_user.svg
 c5e3a6d1-56cd-4e10-91fc-96875931f676|/images/penceramah/ustaz_aiman_subri.webp
 297ab92e-b44f-402a-b6a3-969645aa509c|/images/penceramah/ustaz_hassan_abd_latif.webp
