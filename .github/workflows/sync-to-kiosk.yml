@@ -10,6 +10,7 @@ on:
       - 'nodejs/services/**'
       - 'nodejs/data/**'
       - 'nodejs/public/**'
+      - '.github/workflows/**'
 
 jobs:
   sync:
