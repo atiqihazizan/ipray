@@ -1,0 +1,81 @@
+name: Sync to ipray-kiosk
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'react/**'
+      - 'nodejs/services/**'
+      - 'nodejs/data/**'
+      - 'nodejs/public/**'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout ipray repo
+      - name: Checkout ipray
+        uses: actions/checkout@v4
+        with:
+          path: ipray
+
+      # Setup Node.js untuk build React
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Build React
+      - name: Install dependencies
+        run: |
+          cd ipray/react
+          npm ci
+      - name: Build React
+        run: |
+          cd ipray/react
+          npm run build
+
+      # Checkout ipray-kiosk repo ( menggunakan PAT untuk write access)
+      - name: Checkout ipray-kiosk
+        uses: actions/checkout@v4
+        with:
+          repository: atiqihazizan/ipray-kiosk
+          path: ipray-kiosk
+          token: ${{ secrets.KIOSK_SYNC_TOKEN }}
+
+      # Sync React build ke ipray-kiosk
+      - name: Sync React build
+        run: |
+          cp -r ipray/nodejs/public/assets/* ipray-kiosk/public/assets/ || true
+          cp ipray/nodejs/public/index.html ipray-kiosk/public/ || true
+
+      # Sync services ke ipray-kiosk
+      - name: Sync services
+        run: |
+          cp ipray/nodejs/services/timeService.js ipray-kiosk/services/ || true
+          # Add other services jika perlu:
+          # cp ipray/nodejs/services/dataService.js ipray-kiosk/services/ || true
+          # cp ipray/nodejs/services/apiServerService.js ipray-kiosk/services/ || true
+
+      # Sync data files ke ipray-kiosk
+      - name: Sync data files
+        run: |
+          cp ipray/nodejs/data/images.txt ipray-kiosk/data/ || true
+          cp ipray/nodejs/data/countdowns.txt ipray-kiosk/data/ || true
+          # Add other data files jika perlu:
+          # cp ipray/nodejs/data/kuliah.txt ipray-kiosk/data/ || true
+          # cp ipray/nodejs/data/penceramah.txt ipray-kiosk/data/ || true
+
+      # Commit dan push ke ipray-kiosk
+      - name: Commit changes
+        run: |
+          cd ipray-kiosk
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git diff --staged --quiet || git commit -m "Auto-sync from ipray [skip ci]"
+      - name: Push to ipray-kiosk
+        run: |
+          cd ipray-kiosk
+          git push origin main
