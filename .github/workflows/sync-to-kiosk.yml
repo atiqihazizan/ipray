@@ -1,4 +1,5 @@
 name: Sync to ipray-kiosk
+# Test workflow untuk auto-sync dari ipray ke ipray-kiosk
 
 on:
   push:
