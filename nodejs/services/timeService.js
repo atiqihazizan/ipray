@@ -109,6 +109,8 @@ class TimeService {
         String(d.getMinutes()).padStart(2, '0') + ':' +
         String(d.getSeconds()).padStart(2, '0');
       execSync(`sudo date -s "${str}"`, { stdio: 'pipe', timeout: 5000 });
+      // Sync ke hardware clock (RTC) - persist walaupun reboot
+      execSync(`sudo hwclock -w`, { stdio: 'pipe', timeout: 5000 });
       this.systemClockSet = true;
       return true;
     } catch (e) {

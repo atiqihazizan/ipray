@@ -239,13 +239,23 @@ export const getCurrentIslamicTime = ({ hdata, wdata, timeService, nextPrayerDel
   const timestamp = timeService?.now ? timeService.now() : Date.now();
   const now = new Date(timestamp);
   const year = now.getFullYear();
+
+  // Validation: detect invalid time (cth: CMOS battery rosak, tahun 1970)
+  if (year < 2020) {
+    return {
+      isValid: false,
+      error: 'INVALID_TIME',
+      reason: `Year ${year} < 2020 - possible CMOS/RTC issue`
+    };
+  }
+
   const month = now.getMonth() + 1;
   const day = now.getDate();
   const hours = now.getHours();
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
   const dayOfWeek = now.getDay();
-  
+
   // Kira hari dalam tahun
   const [days, daysm] = getYearDays(year, month, day);
   
@@ -278,6 +288,7 @@ export const getCurrentIslamicTime = ({ hdata, wdata, timeService, nextPrayerDel
   const prayerInfo = getCurrentPrayerInfo({ wdata, days, currentMinutes, nextPrayerDelayMinutes });
   
   return {
+    isValid: true,
     // Tarikh Masehi
     gregorian: {
       year,

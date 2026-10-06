@@ -41,6 +41,14 @@ const timeServiceStub = {
     syncIntervalId = setInterval(fetchServerOffset, SYNC_INTERVAL_MS);
   },
 
+  /**
+   * Force immediate re-sync with server (tanpa tunggu interval)
+   * Digunakan bila datetime di-update dari UI
+   */
+  async forceSync() {
+    await fetchServerOffset();
+  },
+
   cleanup() {
     if (syncIntervalId) {
       clearInterval(syncIntervalId);

@@ -174,6 +174,13 @@ export function useTimeDriver() {
         });
         if (!islamicTime) return;
 
+        // Validation: skip prayer sequence jika masa invalid (tahun < 2020)
+        if (islamicTime.isValid === false) {
+          console.warn('[TimeDriver] Invalid time detected, skipping prayer sequence:', islamicTime.reason);
+          // Slideshow terus berjalan, tapi time/date/prayer tidak update
+          return;
+        }
+
         const snapshotData = {
           gregorian: islamicTime.gregorian,
           hijri: islamicTime.hijri,

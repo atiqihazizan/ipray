@@ -486,6 +486,14 @@ export const DataProvider = ({ children }) => {
       if (isMounted) showHlsNotification('error', data?.message || 'HLS: Ralat.');
     });
 
+    // Time system updated - force re-sync masa dari backend tanpa reload
+    const unsubscribeTimeSystemUpdated = socketService.on('time-system-updated', async (data) => {
+      if (isMounted) {
+        console.log('[DataContext] Time system updated, forcing re-sync...');
+        await timeServiceStub.forceSync();
+      }
+    });
+
     // Cleanup on unmount
     return () => {
       isMounted = false;
@@ -514,6 +522,10 @@ export const DataProvider = ({ children }) => {
       unsubscribeLiveStarted();
       unsubscribeLivestreamOverlayConfig();
       unsubscribeKematianOverlayConfig();
+      unsubscribeLiveStopped();
+      unsubscribeHlsPlaylistReady();
+      unsubscribeHlsError();
+      unsubscribeTimeSystemUpdated();
       unsubscribeLiveStopped();
       unsubscribeHlsPlaylistReady();
       unsubscribeHlsError();
