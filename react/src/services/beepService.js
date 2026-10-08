@@ -34,7 +34,10 @@ const PRAYER_DEFAULTS = {
   BEEP_LEADIN_MS: 200,
 };
 
-const PIEZO_PEAK_AMP = 0.9;   // puncak ternormal untuk wave 'piezo'
+// Puncak gain envelope untuk wave 'piezo'. Fundamental square wave ≈ 4/π ≈ 1.27×
+// amplitude square, dan bandpass (Q=3, tengah = BEEP_FREQ) melaluinya ~×1 —
+// jadi 0.68 × 1.27 ≈ 0.86, kekal ≤ 0.9 tanpa clipping.
+const PIEZO_PEAK_AMP = 0.68;
 const PIEZO_FADE_MS = 6;      // fade in/out 5–8ms untuk elak click
 const PIEZO_TAIL_MS = 25;     // ekor ring-down lepas beep (bandpass resonan)
 
@@ -42,10 +45,10 @@ const PIEZO_TAIL_MS = 25;     // ekor ring-down lepas beep (bandpass resonan)
 const BEEP_FALLBACK_MS = 30000;
 const BEEP_SAFETY_MARGIN_MS = 2000;
 
-/** Kurangkan bilangan set (minimum 1) jika jumlah masa melebihi had fallback. */
+/** Kurangkan bilangan set (minimum 1, integer) jika jumlah masa melebihi had fallback. */
 function clampSetsForDuration(sets, leadinMs, beepMs, gapMs, setGapMs) {
   const maxTotalMs = BEEP_FALLBACK_MS - BEEP_SAFETY_MARGIN_MS;
-  let n = sets;
+  let n = Math.round(sets);
   while (n > 1) {
     const total = leadinMs + n * (2 * beepMs + gapMs) + (n - 1) * setGapMs;
     if (total <= maxTotalMs) break;

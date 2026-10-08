@@ -130,7 +130,9 @@
 				if (BEEP_RANGES[key]) {
 					const n = parseFloat(value);
 					const [min, max] = BEEP_RANGES[key];
-					saveValue = String(isNaN(n) ? min : Math.max(min, Math.min(max, n)));
+					let clamped = isNaN(n) ? min : Math.max(min, Math.min(max, n));
+					if (key === 'BEEP_SETS') clamped = Math.round(clamped);
+					saveValue = String(clamped);
 				}
 				if (key === 'BEEP_WAVE' && !['piezo', 'sine'].includes(value)) {
 					saveValue = 'piezo';

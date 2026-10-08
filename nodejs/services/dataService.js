@@ -2065,7 +2065,7 @@ class DataService {
       else if (key === 'BEEP_FREQ') parsed.BEEP_CONFIG.BEEP_FREQ = clamp(value, 500, 4000, DEFAULT_BEEP_CONFIG.BEEP_FREQ);
       else if (key === 'BEEP_MS') parsed.BEEP_CONFIG.BEEP_MS = clamp(value, 30, 300, DEFAULT_BEEP_CONFIG.BEEP_MS);
       else if (key === 'BEEP_GAP_MS') parsed.BEEP_CONFIG.BEEP_GAP_MS = clamp(value, 30, 300, DEFAULT_BEEP_CONFIG.BEEP_GAP_MS);
-      else if (key === 'BEEP_SETS') parsed.BEEP_CONFIG.BEEP_SETS = clamp(value, 1, 12, DEFAULT_BEEP_CONFIG.BEEP_SETS);
+      else if (key === 'BEEP_SETS') parsed.BEEP_CONFIG.BEEP_SETS = Math.round(clamp(value, 1, 12, DEFAULT_BEEP_CONFIG.BEEP_SETS));
       else if (key === 'BEEP_SET_GAP_MS') parsed.BEEP_CONFIG.BEEP_SET_GAP_MS = clamp(value, 300, 3000, DEFAULT_BEEP_CONFIG.BEEP_SET_GAP_MS);
       else if (key === 'BEEP_WAVE') parsed.BEEP_CONFIG.BEEP_WAVE = ['piezo', 'sine'].includes(value) ? value : DEFAULT_BEEP_CONFIG.BEEP_WAVE;
       else if (key === 'BEEP_Q') parsed.BEEP_CONFIG.BEEP_Q = clamp(value, 1, 10, DEFAULT_BEEP_CONFIG.BEEP_Q);
