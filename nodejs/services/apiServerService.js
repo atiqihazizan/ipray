@@ -48,6 +48,18 @@ function netmonAvailable() {
   return fs.existsSync(NETMON_SCRIPT);
 }
 
+// Ralat exec/execFile membawa `.cmd`/`.message` yang mengandungi arahan penuh —
+// boleh membocorkan kata laluan dalam log/respons. Log/pulang hanya stderr + kod.
+function wifiErrLog(context, error) {
+  const code = error && (error.code ?? error.status);
+  const stderr = error && error.stderr ? String(error.stderr).trim().slice(0, 300) : '';
+  console.error(`${context}: code=${code ?? '?'}${stderr ? ` stderr=${stderr}` : ''}`);
+}
+function wifiErrMsg(error, fallback) {
+  const stderr = error && error.stderr ? String(error.stderr).trim().slice(0, 300) : '';
+  return stderr || fallback;
+}
+
 /**
  * API Server Service
  * Express server untuk API endpoints (port 3001)
@@ -1056,8 +1068,8 @@ class ApiServerService {
           return res.status(502).json({ error: 'Imbasan hidup gagal dan tiada senarai cache' });
         }
       } catch (error) {
-        console.error('Error scanning WiFi:', error);
-        res.status(500).json({ error: error.message || 'Gagal scan WiFi networks' });
+        wifiErrLog('Error scanning WiFi', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal scan WiFi networks') });
       }
     });
 
@@ -1125,8 +1137,8 @@ class ApiServerService {
         } catch (_) { status.error = 'Gagal membaca status wlan0'; }
         res.json({ success: true, status });
       } catch (error) {
-        console.error('Error getting WiFi status:', error);
-        res.status(500).json({ error: error.message || 'Gagal mendapatkan status WiFi' });
+        wifiErrLog('Error getting WiFi status', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal mendapatkan status WiFi') });
       }
     });
 
@@ -1158,8 +1170,8 @@ class ApiServerService {
         }
         res.json({ success: true, profiles, available: true });
       } catch (error) {
-        console.error('Error listing WiFi profiles:', error);
-        res.status(500).json({ error: error.message || 'Gagal menyenarai profil WiFi' });
+        wifiErrLog('Error listing WiFi profiles', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal menyenarai profil WiFi') });
       }
     });
 
@@ -1182,31 +1194,33 @@ class ApiServerService {
           return res.status(400).json({ error: 'Password WiFi minimum 8 aksara' });
         }
 
-        const { exec } = require('child_process');
+        const { execFile } = require('child_process');
         const { promisify } = require('util');
-        const execAsync = (cmd, opts) => promisify(exec)(cmd, { timeout: 15000, ...opts });
+        const execFileAsync = (file, args) => promisify(execFile)(file, args, { timeout: 15000 });
         const nmcli = this.getNmcliPath();
+        const sudo = '/usr/bin/sudo';
 
         const connectionName = `${WIFI_PROFILE_PREFIX}${String(ssid).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-        const esc = escapeShellDoubleQuoted;
-        const secArgs = password ? `wifi-sec.key-mgmt wpa-psk wifi-sec.psk "${esc(password)}"` : '';
+        // Argumen sebagai array — tiada shell, tiada escaping diperlukan.
+        const secArgs = password ? ['wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', String(password)] : [];
 
         // Wujudkan atau kemas kini profil — TIADA "connection up", TIADA disconnect.
         // autoconnect-priority 100 → WiFi didahulukan berbanding hotspot (-999).
         let exists = false;
         try {
-          const { stdout } = await execAsync(`${nmcli} -t -f NAME connection show`);
+          const { stdout } = await execFileAsync(nmcli, ['-t', '-f', 'NAME', 'connection', 'show']);
           exists = stdout.split('\n').includes(connectionName);
         } catch (_) { /* ignore */ }
 
+        const autoProps = ['connection.autoconnect', 'yes', 'connection.autoconnect-priority', '100', 'connection.autoconnect-retries', '0'];
         if (exists) {
-          await execAsync(`sudo ${nmcli} connection modify "${esc(connectionName)}" 802-11-wireless.ssid "${esc(ssid)}" ${secArgs} connection.autoconnect yes connection.autoconnect-priority 100 connection.autoconnect-retries 0`);
+          await execFileAsync(sudo, [nmcli, 'connection', 'modify', connectionName, '802-11-wireless.ssid', String(ssid), ...secArgs, ...autoProps]);
           // Rangkaian terbuka — kosongkan seksyen keselamatan lama
           if (!password) {
-            await execAsync(`sudo ${nmcli} connection modify "${esc(connectionName)}" wifi-sec.key-mgmt "" wifi-sec.psk ""`).catch(() => {});
+            await execFileAsync(sudo, [nmcli, 'connection', 'modify', connectionName, 'wifi-sec.key-mgmt', '', 'wifi-sec.psk', '']).catch(() => {});
           }
         } else {
-          await execAsync(`sudo ${nmcli} connection add type wifi con-name "${esc(connectionName)}" ifname wlan0 ssid "${esc(ssid)}" ${secArgs} connection.autoconnect yes connection.autoconnect-priority 100 connection.autoconnect-retries 0`);
+          await execFileAsync(sudo, [nmcli, 'connection', 'add', 'type', 'wifi', 'con-name', connectionName, 'ifname', 'wlan0', 'ssid', String(ssid), ...secArgs, ...autoProps]);
         }
 
         res.json({
@@ -1216,9 +1230,8 @@ class ApiServerService {
           message: `Rangkaian "${ssid}" disimpan. Guna "Sambung WiFi sekarang" untuk mengaktifkannya.`,
         });
       } catch (error) {
-        console.error('Error saving WiFi profile:', error);
-        const msg = (error && (error.stderr || error.message)) || 'Gagal menyimpan profil WiFi';
-        res.status(500).json({ error: msg });
+        wifiErrLog('Error saving WiFi profile', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal menyimpan profil WiFi') });
       }
     });
 
@@ -1256,8 +1269,8 @@ class ApiServerService {
           message: 'Kiosk sedang mencuba WiFi tersebut (~45s). Sambungan ke hotspot akan terputus — sambung semula ke rangkaian yang betul dan semak status.',
         });
       } catch (error) {
-        console.error('Error connect-now:', error);
-        res.status(500).json({ error: error.message || 'Gagal memulakan connect-now' });
+        wifiErrLog('Error connect-now', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal memulakan connect-now') });
       }
     });
 
@@ -1285,8 +1298,8 @@ class ApiServerService {
         await execAsync(`sudo ${nmcli} connection delete "${escapeShellDoubleQuoted(name)}"`, { timeout: 15000 });
         res.json({ success: true, message: `Profil "${name}" dipadam` });
       } catch (error) {
-        console.error('Error deleting WiFi profile:', error);
-        res.status(500).json({ error: error.message || 'Gagal memadam profil WiFi' });
+        wifiErrLog('Error deleting WiFi profile', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal memadam profil WiFi') });
       }
     });
 
@@ -1314,8 +1327,8 @@ class ApiServerService {
         await execAsync(`sudo ${nmcli} connection up "${HOTSPOT_PROFILE}"`, { timeout: 30000 });
         res.json({ success: true, message: `Hotspot "${HOTSPOT_DEFAULTS.SSID}" telah diaktifkan`, ssid: HOTSPOT_DEFAULTS.SSID });
       } catch (error) {
-        console.error('Error enabling hotspot:', error);
-        res.status(500).json({ error: error.message || 'Gagal enable hotspot' });
+        wifiErrLog('Error enabling hotspot', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal enable hotspot') });
       }
     });
 
@@ -1340,8 +1353,8 @@ class ApiServerService {
         await execAsync(`sudo ${nmcli} connection down "${HOTSPOT_PROFILE}" 2>/dev/null || true`, { timeout: 15000 });
         res.json({ success: true, message: 'Hotspot telah dinyahaktifkan' });
       } catch (error) {
-        console.error('Error disabling hotspot:', error);
-        res.status(500).json({ error: error.message || 'Gagal disable hotspot' });
+        wifiErrLog('Error disabling hotspot', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal disable hotspot') });
       }
     });
 
@@ -1381,8 +1394,8 @@ class ApiServerService {
         } catch (_) { /* ignore */ }
         res.json({ success: true, status });
       } catch (error) {
-        console.error('Error getting hotspot status:', error);
-        res.status(500).json({ error: error.message || 'Gagal mendapatkan status hotspot' });
+        wifiErrLog('Error getting hotspot status', error);
+        res.status(500).json({ error: wifiErrMsg(error, 'Gagal mendapatkan status hotspot') });
       }
     });
 

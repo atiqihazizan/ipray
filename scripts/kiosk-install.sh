@@ -319,9 +319,22 @@ for prof in $(sudo -n $NMCLI -t -f NAME,TYPE connection show 2>/dev/null | grep 
   fi
 done
 
-# Negara WiFi MY (idempoten — raspi-config hanya set jika belum)
-if command -v raspi-config >/dev/null 2>&1; then
-  sudo -n raspi-config nonint do_wifi_country MY 2>/dev/null && info "WiFi country MY diset" || warn "set wifi country gagal"
+# Peraturan UFW untuk hotspot (DHCP + DNS masuk pada wlan0 sahaja).
+# Idempoten: semak `ufw status` dahulu supaya tidak menggandakan peraturan.
+if command -v ufw >/dev/null 2>&1; then
+  UFW_STATUS="$(sudo -n ufw status 2>/dev/null || true)"
+  if echo "$UFW_STATUS" | grep -q "on wlan0.*67/udp\|67/udp.*on wlan0"; then
+    info "UFW: peraturan DHCP wlan0 sudah ada — skip"
+  else
+    sudo -n ufw allow in on wlan0 to any port 67 proto udp && info "UFW: benar DHCP (67/udp) masuk pada wlan0" || warn "UFW rule 67/udp gagal"
+  fi
+  if echo "$UFW_STATUS" | grep -q "on wlan0.*53\b\|53\b.*on wlan0"; then
+    info "UFW: peraturan DNS wlan0 sudah ada — skip"
+  else
+    sudo -n ufw allow in on wlan0 to any port 53 && info "UFW: benar DNS (53 udp+tcp) masuk pada wlan0" || warn "UFW rule 53 gagal"
+  fi
+else
+  warn "ufw tidak dipasang — langkau peraturan firewall hotspot"
 fi
 
 # -------------------------------------------------------

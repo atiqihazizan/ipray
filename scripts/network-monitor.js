@@ -344,8 +344,8 @@ function cmdTick(tun) {
     const s = doScan(); // imbasan hidup berfungsi dalam mod AP — kemas kini cache
     if (s.ok) state.lastScanAt = now;
     downConnection(HOTSPOT_PROFILE);
-    // Tunggu autoconnect sehingga ~25s
-    const deadline = now + 25000;
+    // Tunggu autoconnect sehingga ~25s — kira SELEPAS down (imbasan boleh makan masa)
+    const deadline = Date.now() + 25000;
     let conn = null;
     while (Date.now() < deadline) {
       const st = nmcli(['-t', '-f', 'GENERAL.STATE', 'device', 'show', IFACE]);

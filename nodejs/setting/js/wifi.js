@@ -270,7 +270,7 @@ export async function enableHotspot() {
         const result = await response.json().catch(() => ({}));
         if (!response.ok || !result.success) throw new Error(result.error || 'Gagal aktifkan hotspot');
         showNotification(`✓ ${result.message}`, 'success');
-        setBanner('unknown', '⏳ Kiosk bertukar ke mod hotspot… sambung semula ke "iPray-Hotspot" (http://10.42.0.1:3001).');
+        setBanner('unknown', '⏳ Kiosk bertukar ke mod hotspot… sambung semula ke "iPray-Hotspot" (http://10.42.0.1/).');
         pollUntilKioskAnswers();
     } catch (error) {
         console.error('Error enabling hotspot:', error);

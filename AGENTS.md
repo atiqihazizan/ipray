@@ -110,9 +110,20 @@ Wajib `pkill -x chromium` jika perlu kill manual.
   `priority -999`, `band bg`, `channel 6`. Negara WiFi `MY` kekal.
 
 ### Akses dalam mod hotspot
-Sambung telefon/laptop ke `iPray-Hotspot`, buka **`http://10.42.0.1:3001`** (panel tetapan;
-port 3000 = paparan awam). Kata laluan hotspot dalam `HOTSPOT_DEFAULTS` di
+Sambung telefon/laptop ke `iPray-Hotspot`, buka **`http://10.42.0.1/`** (port 80 melalui
+nginx → panel tetapan). Port 3001 **tidak** dibuka dalam UFW — jangan guna `:3001` dari
+klien hotspot. Kata laluan hotspot dalam `HOTSPOT_DEFAULTS` di
 `nodejs/services/apiServerService.js` — **jangan cetak dalam log/laporan**.
+
+### Peraturan UFW diperlukan (dijalankan pengguna)
+Supaya klien hotspot terima DHCP/DNS, peraturan ini mesti wujud pada `wlan0` sahaja
+(`kiosk-install.sh` turut menambahnya secara idempoten, tetapi pengguna mengesahkannya):
+```bash
+sudo ufw allow in on wlan0 to any port 67 proto udp   # DHCP
+sudo ufw allow in on wlan0 to any port 53             # DNS (udp+tcp)
+sudo ufw status                                        # sahkan — port 3001 JANGAN dibuka
+```
+Selepas itu sahkan: telefon sambung `iPray-Hotspot` → dapat `10.42.0.x` → `http://10.42.0.1/` buka UI.
 
 ### Komponen
 - `~/network-monitor/network-monitor.js` — skrip pemantau (disalin oleh `scripts/kiosk-install.sh`
