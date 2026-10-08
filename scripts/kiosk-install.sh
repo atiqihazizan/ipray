@@ -25,14 +25,14 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 step()  { echo -e "\n${GREEN}==>${NC} $1"; }
 
 # -------------------------------------------------------
-step "1/8 — Semak prasyarat"
+step "1/11 — Semak prasyarat"
 # -------------------------------------------------------
 [ "$USER" = "ipray" ] || warn "User bukan 'ipray' ($USER) — pastikan path dalam service files betul"
 command -v git >/dev/null || error "git tidak dijumpai. Pasang dulu: sudo apt install git"
 command -v curl >/dev/null || error "curl tidak dijumpai. Pasang dulu: sudo apt install curl"
 
 # -------------------------------------------------------
-step "2/8 — Install Node.js v20 & packages"
+step "2/11 — Install Node.js v20 & packages"
 # -------------------------------------------------------
 if ! command -v node >/dev/null || [[ $(node -v) != v20* ]]; then
   info "Install Node.js v20..."
@@ -52,7 +52,7 @@ for pkg in chromium-browser unclutter; do
 done
 
 # -------------------------------------------------------
-step "3/8 — Clone repo"
+step "3/11 — Clone repo"
 # -------------------------------------------------------
 if [ -d "$KIOSK_DIR/.git" ]; then
   info "Repo sudah ada — pull latest..."
@@ -68,7 +68,7 @@ npm install --production
 mkdir -p "$LOG_DIR"
 
 # -------------------------------------------------------
-step "4/8 — Buat start-kiosk-chromium.sh"
+step "4/11 — Buat start-kiosk-chromium.sh"
 # -------------------------------------------------------
 cat > "$HOME/start-kiosk-chromium.sh" << 'CHROMIUM_EOF'
 #!/bin/bash
@@ -143,7 +143,7 @@ chmod +x "$HOME/start-kiosk-chromium.sh"
 info "start-kiosk-chromium.sh siap"
 
 # -------------------------------------------------------
-step "5/8 — Setup systemd user services"
+step "5/11 — Setup systemd user services"
 # -------------------------------------------------------
 mkdir -p "$HOME/.config/systemd/user"
 
@@ -197,7 +197,7 @@ sudo loginctl enable-linger "$USER"
 info "systemd services siap"
 
 # -------------------------------------------------------
-step "6/8 — Journal persistent storage"
+step "6/11 — Journal persistent storage"
 # -------------------------------------------------------
 sudo mkdir -p /etc/systemd/journald.conf.d
 sudo tee /etc/systemd/journald.conf.d/50-persistent-storage.conf > /dev/null << 'EOF'
@@ -208,7 +208,7 @@ sudo systemctl restart systemd-journald
 info "Journal persistent storage diaktifkan"
 
 # -------------------------------------------------------
-step "7/8 — Health-check script"
+step "7/11 — Health-check script"
 # -------------------------------------------------------
 cat > "$HOME/health-check.sh" << HEALTH_EOF
 #!/bin/bash
@@ -252,7 +252,80 @@ chmod +x "$HOME/health-check.sh"
 info "health-check.sh siap"
 
 # -------------------------------------------------------
-step "8/9 — Setup snap tools"
+step "8/11 — Setup network monitor (WiFi ↔ Hotspot)"
+# -------------------------------------------------------
+# Skrip pemantau rangkaian — disalin dari repo ke ~/network-monitor/
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NETMON_DIR="$HOME/network-monitor"
+mkdir -p "$NETMON_DIR"
+
+if [ -f "$SCRIPT_DIR/network-monitor.js" ]; then
+  cp "$SCRIPT_DIR/network-monitor.js" "$NETMON_DIR/network-monitor.js"
+  chmod +x "$NETMON_DIR/network-monitor.js"
+  info "network-monitor.js disalin ke $NETMON_DIR"
+else
+  warn "scripts/network-monitor.js tidak dijumpai dalam repo — skip monitor"
+fi
+
+# Sudoers untuk nmcli + iw (pemantau perlukan tanpa password)
+if ! sudo -n /usr/bin/nmcli --version >/dev/null 2>&1; then
+  warn "sudo -n nmcli gagal — pemantau perlukan NOPASSWD untuk nmcli/iw"
+fi
+if ! sudo -n /usr/sbin/iw --version >/dev/null 2>&1; then
+  warn "sudo -n iw gagal — pemantau perlukan NOPASSWD untuk iw"
+fi
+
+# systemd user service + timer (~30s tick)
+cat > "$HOME/.config/systemd/user/ipray-network-monitor.service" << EOF
+[Unit]
+Description=iPray Network Monitor (WiFi <-> Hotspot)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/node $NETMON_DIR/network-monitor.js tick
+# Gagal tick tidak restart — timer pacu semula.
+# Nota: user manager tidak nampak unit sistem (NetworkManager.service) —
+# tiada After/Wants padanya di sini.
+EOF
+
+cat > "$HOME/.config/systemd/user/ipray-network-monitor.timer" << EOF
+[Unit]
+Description=iPray Network Monitor timer (~30s)
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now ipray-network-monitor.timer 2>/dev/null || warn "enable timer gagal (mungkin headless tanpa user session)"
+info "network monitor service+timer siap"
+
+# -------------------------------------------------------
+step "9/11 — Profil NetworkManager & negara WiFi"
+# -------------------------------------------------------
+NMCLI=/usr/bin/nmcli
+
+# WiFi rumah: priority tinggi; hotspot: priority rendah + band bg + channel 6
+for prof in $(sudo -n $NMCLI -t -f NAME,TYPE connection show 2>/dev/null | grep ':802-11-wireless' | cut -d: -f1); do
+  if [ "$prof" = "ipray-hotspot" ]; then
+    sudo -n $NMCLI connection modify "$prof" connection.autoconnect-priority -999 802-11-wireless.band bg 802-11-wireless.channel 6 2>/dev/null && info "hotspot profile: priority -999, band bg, channel 6" || warn "modify hotspot profile gagal"
+  else
+    sudo -n $NMCLI connection modify "$prof" connection.autoconnect yes connection.autoconnect-priority 100 connection.autoconnect-retries 0 2>/dev/null && info "wifi profile $prof: priority 100" || warn "modify $prof gagal"
+  fi
+done
+
+# Negara WiFi MY (idempoten — raspi-config hanya set jika belum)
+if command -v raspi-config >/dev/null 2>&1; then
+  sudo -n raspi-config nonint do_wifi_country MY 2>/dev/null && info "WiFi country MY diset" || warn "set wifi country gagal"
+fi
+
+# -------------------------------------------------------
+step "10/11 — Setup snap tools"
 # -------------------------------------------------------
 SNAP_DIR="$HOME/snap-tools"
 mkdir -p "$SNAP_DIR" "$HOME/snapshots"
@@ -270,7 +343,7 @@ else
 fi
 
 # -------------------------------------------------------
-step "9/9 — Setup crontab"
+step "11/11 — Setup crontab"
 # -------------------------------------------------------
 XDG="XDG_RUNTIME_DIR=/run/user/$USER_ID"
 DBUS="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$USER_ID/bus"
@@ -289,7 +362,7 @@ info "Crontab siap"
 # -------------------------------------------------------
 echo ""
 echo -e "${GREEN}============================================${NC}"
-echo -e "${GREEN} Setup selesai (9/9)! Mulakan kiosk sekarang:${NC}"
+echo -e "${GREEN} Setup selesai! Mulakan kiosk sekarang:${NC}"
 echo -e "${GREEN}============================================${NC}"
 echo ""
 echo "  systemctl --user start ipray-kiosk.service"

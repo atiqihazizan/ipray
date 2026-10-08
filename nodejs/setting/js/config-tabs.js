@@ -9,8 +9,7 @@ const CONFIG_SUB_TABS = [
 	{ id: 'beep', label: 'Bunyi Beep', file: 'config-tabs/beep.html' },
 	{ id: 'takwim', label: 'Takwim', file: 'config-tabs/takwim.html' },
 	{ id: 'masa-sistem', label: 'Masa Sistem', file: 'config-tabs/masa-sistem.html' },
-	{ id: 'wifi', label: 'WiFi', file: 'config-tabs/wifi.html' },
-	{ id: 'hotspot', label: 'Hotspot', file: 'config-tabs/hotspot.html' },
+	{ id: 'rangkaian', label: 'Rangkaian', file: 'config-tabs/rangkaian.html' },
 	{ id: 'system', label: 'System', file: 'config-tabs/system.html' }
 ];
 
@@ -68,12 +67,9 @@ export async function showConfigSubTab(tabId) {
 				window.loadTodayTakwim();
 			}
 		}
-		// Re-run WiFi/Hotspot init if those tabs
-		if (tabId === 'wifi' && typeof window.refreshWiFiStatus === 'function') {
-			window.refreshWiFiStatus();
-		}
-		if (tabId === 'hotspot' && typeof window.refreshHotspotStatus === 'function') {
-			window.refreshHotspotStatus();
+		// Re-run Rangkaian init if that tab (status banner + senarai profil)
+		if (tabId === 'rangkaian' && typeof window.refreshNetworkStatus === 'function') {
+			window.refreshNetworkStatus();
 		}
 		if (tabId === 'masa-sistem' && document.getElementById('system-datetime')) {
 			const now = new Date();

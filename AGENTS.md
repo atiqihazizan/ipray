@@ -98,6 +98,71 @@ Wajib `pkill -x chromium` jika perlu kill manual.
 - `~/start-kiosk.sh` — dikekalkan sebagai rujukan/fallback manual sahaja (tidak dipakai autostart).
 - `~/start-kiosk-chromium.sh` — wrapper Chromium yang dipakai oleh `ipray-chromium.service`.
 
+## Rangkaian kiosk (WiFi ↔ Hotspot)
+
+**Satu mod pada satu masa**, bertukar automatik:
+
+- **Mod WiFi:** kiosk sambung ke WiFi tersimpan + ada internet.
+- **Mod Hotspot:** jika WiFi putus **atau** internet tiada ~3 minit berturut, kiosk naikkan
+  `iPray-Hotspot` (AP 10.42.0.1). Cuba kembali ke WiFi tiap ~5 minit **hanya jika tiada klien**
+  pada hotspot (`iw station dump`).
+- Profil WiFi: `autoconnect yes`, `autoconnect-priority 100`. Hotspot `ipray-hotspot`:
+  `priority -999`, `band bg`, `channel 6`. Negara WiFi `MY` kekal.
+
+### Akses dalam mod hotspot
+Sambung telefon/laptop ke `iPray-Hotspot`, buka **`http://10.42.0.1:3001`** (panel tetapan;
+port 3000 = paparan awam). Kata laluan hotspot dalam `HOTSPOT_DEFAULTS` di
+`nodejs/services/apiServerService.js` — **jangan cetak dalam log/laporan**.
+
+### Komponen
+- `~/network-monitor/network-monitor.js` — skrip pemantau (disalin oleh `scripts/kiosk-install.sh`
+  dari `scripts/network-monitor.js`). Subarahan: `tick`, `connect-now <profil>`, `scan`,
+  `status`, `enable-hotspot --hold <min>`, `disable-hotspot`.
+- `ipray-network-monitor.timer` + `.service` — systemd **user** units, tick ~30s
+  (`OnUnitActiveSec=30s`, `OnBootSec=45s`).
+- Keadaan: `~/network-monitor/state.json`; cache imbasan: `~/network-monitor/scan-cache.json`;
+  lock: `~/network-monitor/netmon.lock`.
+- Log: `~/kiosk/logs/network-monitor.log` (~500 baris, putaran dalaman).
+
+### Tunables (via `~/kiosk/data/config.txt`)
+`NETMON_FAIL_MS` (lalai 180000), `NETMON_RETRY_MS` (300000), `NETMON_HOLD_MS` (1800000),
+`NETMON_CONNECT_TIMEOUT_MS` (45000), `NETMON_SCAN_INTERVAL_MS` (300000),
+`NETMON_INTERNET_CHECK` (`1`; set `0` jika kiosk di rangkaian tanpa internet),
+`NETMON_NONE_GRACE_MS` (90000).
+
+### API (local sahaja, port 3001)
+- `GET /api/wifi/scan` — imbasan hidup `iw` (fallback: cache dengan `cached:true`)
+- `GET /api/wifi/status` — mod, SSID, IP, isyarat, klien hotspot, sebab, hasil connect-now
+- `GET /api/wifi/profiles` — senarai profil WiFi tersimpan (tanpa kata laluan)
+- `POST /api/wifi/configure` — **simpan sahaja** (tidak menyentuh wlan0)
+- `POST /api/wifi/connect-now` `{name}` — cuba WiFi sekarang (~45s, async → 202)
+- `POST /api/wifi/profile/delete` `{name}` — padam profil (bukan aktif/hotspot)
+- `POST /api/wifi/hotspot/enable` `{holdMinutes?}` / `disable` — up/down profil (tak padam)
+
+### Pulih manual (jika tersangkut)
+```bash
+# Semak status pemantau
+systemctl --user status ipray-network-monitor.timer
+tail -50 ~/kiosk/logs/network-monitor.log
+# Paksa ke WiFi secara manual
+sudo nmcli connection up "<nama-profil-wifi>"
+# Paksa hotspot semula
+sudo nmcli connection up ipray-hotspot
+# Henti pemantau sementara
+systemctl --user stop ipray-network-monitor.timer
+```
+
+**Amaran:** SSH melalui Tailscale mati dalam mod hotspot (tiada internet). Perubahan rangkaian
+mesti ada mekanisme pulih (`systemd-run --on-active=...` watchdog) dan akses fizikal/hotspot.
+Kata laluan WiFi/hotspot **jangan** dicetak dalam log, laporan atau komit.
+
+### Deployment ciri rangkaian
+**Tidak automatik.** `.github/workflows/sync-to-kiosk.yml` hanya sync `public/`,
+`timeService.js`, `images.txt`, `countdowns.txt` — ia TIDAK sync `apiServerService.js`,
+`nodejs/setting/**` atau `scripts/**`. Deploy memerlukan langkah manual di kiosk
+(jalankan semula `scripts/kiosk-install.sh` dari repo yang telah di-pull, atau salin fail
++ pasang unit secara manual). Jangan push/merge ke `main` atau deploy tanpa arahan eksplisit.
+
 ## Nota semasa terkini (Aug 2026)
 
 - `react/src/contexts/DataContext.jsx` sudah di-refactor ke **backend-first**: fetch `/data/app`

@@ -10,6 +10,8 @@ let timeService = null;
 let imagesPath = null;
 let cloudSocket = null;
 
+const fs = require('fs');
+const path = require('path');
 const modbusRemoteSwitchService = require('./modbusRemoteSwitchService');
 
 function overlayConfigFromBits(bits) {
@@ -434,12 +436,30 @@ function registerHandlers(socket) {
 
   socket.on('cloud:wifi:status', async payload => {
     const { requestId } = payload || {};
-    respond(requestId, false, null, 'WiFi status hanya tersedia dari setting panel local');
+    // Status baca-sahaja dibenarkan — cloud panel papar status sahaja (kawalan tetap local)
+    try {
+      const netmon = path.join(process.env.HOME || '/home/ipray', 'network-monitor', 'network-monitor.js');
+      if (fs.existsSync(netmon)) {
+        const { execFile } = require('child_process');
+        const { promisify } = require('util');
+        const { stdout } = await promisify(execFile)('/usr/bin/node', [netmon, 'status'], { timeout: 20000 });
+        respond(requestId, true, JSON.parse(stdout.trim().split('\n').pop()));
+        return;
+      }
+      respond(requestId, false, null, 'Network monitor belum dipasang');
+    } catch (e) {
+      respond(requestId, false, null, e.message || 'Gagal status rangkaian');
+    }
   });
 
   socket.on('cloud:wifi:configure', async payload => {
     const { requestId } = payload || {};
     respond(requestId, false, null, 'WiFi configure hanya tersedia dari setting panel local');
+  });
+
+  socket.on('cloud:wifi:connect-now', async payload => {
+    const { requestId } = payload || {};
+    respond(requestId, false, null, 'Sambung WiFi sekarang hanya tersedia dari setting panel local');
   });
 
   socket.on('cloud:wifi:hotspot:enable', async payload => {
