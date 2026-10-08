@@ -438,8 +438,12 @@ function registerHandlers(socket) {
     const { requestId } = payload || {};
     // Status baca-sahaja dibenarkan — cloud panel papar status sahaja (kawalan tetap local)
     try {
-      const netmon = path.join(process.env.HOME || '/home/ipray', 'network-monitor', 'network-monitor.js');
-      if (fs.existsSync(netmon)) {
+      const home = process.env.HOME || '/home/ipray';
+      const netmon = [
+        path.join(home, 'kiosk', 'scripts', 'network-monitor.js'),
+        path.join(home, 'network-monitor', 'network-monitor.js')
+      ].find((p) => fs.existsSync(p));
+      if (netmon) {
         const { execFile } = require('child_process');
         const { promisify } = require('util');
         const { stdout } = await promisify(execFile)('/usr/bin/node', [netmon, 'status'], { timeout: 20000 });

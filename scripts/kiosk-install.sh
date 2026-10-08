@@ -254,15 +254,19 @@ info "health-check.sh siap"
 # -------------------------------------------------------
 step "8/11 — Setup network monitor (WiFi ↔ Hotspot)"
 # -------------------------------------------------------
-# Skrip pemantau rangkaian — disalin dari repo ke ~/network-monitor/
+# Skrip pemantau rangkaian — salin ke $KIOSK_DIR/scripts/ (dikemas kini
+# oleh git melalui repo cermin) dan ~/network-monitor/ sebagai fallback.
+# Keadaan, cache dan lock kekal di ~/network-monitor/.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NETMON_DIR="$HOME/network-monitor"
-mkdir -p "$NETMON_DIR"
+mkdir -p "$NETMON_DIR" "$KIOSK_DIR/scripts"
 
 if [ -f "$SCRIPT_DIR/network-monitor.js" ]; then
+  cp "$SCRIPT_DIR/network-monitor.js" "$KIOSK_DIR/scripts/network-monitor.js"
+  chmod +x "$KIOSK_DIR/scripts/network-monitor.js"
   cp "$SCRIPT_DIR/network-monitor.js" "$NETMON_DIR/network-monitor.js"
   chmod +x "$NETMON_DIR/network-monitor.js"
-  info "network-monitor.js disalin ke $NETMON_DIR"
+  info "network-monitor.js disalin ke $KIOSK_DIR/scripts + $NETMON_DIR (fallback)"
 else
   warn "scripts/network-monitor.js tidak dijumpai dalam repo — skip monitor"
 fi
@@ -276,13 +280,15 @@ if ! sudo -n /usr/sbin/iw --version >/dev/null 2>&1; then
 fi
 
 # systemd user service + timer (~30s tick)
+# Skrip utama: ~/kiosk/scripts/network-monitor.js (dikemas kini oleh git);
+# fallback ~/network-monitor/network-monitor.js jika fail utama tiada.
 cat > "$HOME/.config/systemd/user/ipray-network-monitor.service" << EOF
 [Unit]
 Description=iPray Network Monitor (WiFi <-> Hotspot)
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/node $NETMON_DIR/network-monitor.js tick
+ExecStart=/bin/bash -c 'S=%h/kiosk/scripts/network-monitor.js; [ -f "\$S" ] || S=%h/network-monitor/network-monitor.js; exec /usr/bin/node "\$S" tick'
 # Gagal tick tidak restart — timer pacu semula.
 # Nota: user manager tidak nampak unit sistem (NetworkManager.service) —
 # tiada After/Wants padanya di sini.
@@ -363,11 +369,13 @@ DBUS="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$USER_ID/bus"
 SYSTEMCTL="/usr/bin/systemctl"
 THERMAL_LOG="$LOG_DIR/cron-thermal.log"
 
-# Buang entri lama (jika reinstall) dan tambah semula
-(crontab -l 2>/dev/null | grep -v 'ipray-kiosk\|health-check'; cat << CRON_EOF
+# Buang entri lama (jika reinstall / baris `git pull` lapuk) dan tambah semula.
+# kiosk-update.sh mengurus env systemctl sendiri — tiada XDG/DBUS diperlukan di sini.
+(crontab -l 2>/dev/null | grep -v 'ipray-kiosk\|health-check\|kiosk-update\|cron-sync\|git pull'; cat << CRON_EOF
 0 23 * * * $XDG $SYSTEMCTL --user stop ipray-kiosk.service >> $THERMAL_LOG 2>&1
 0 5 * * * $XDG $SYSTEMCTL --user start ipray-kiosk.service >> $THERMAL_LOG 2>&1
 */15 5-22 * * * $XDG $DBUS $HOME/health-check.sh
+*/10 * * * * $KIOSK_DIR/scripts/kiosk-update.sh >> $KIOSK_DIR/logs/kiosk-update.log 2>&1
 CRON_EOF
 ) | crontab -
 info "Crontab siap"

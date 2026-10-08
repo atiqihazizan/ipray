@@ -29,7 +29,13 @@ const HOTSPOT_DEFAULTS = {
 // Skrip pemantau rangkaian di kiosk (dipasang oleh scripts/kiosk-install.sh).
 // Semua tindakan yang menukar wlan0 disalurkan melaluinya supaya selaras dengan
 // lock, fail keadaan dan "tahan" — elak perebutan dengan pemantau.
-const NETMON_SCRIPT = path.join(process.env.HOME || '/home/ipray', 'network-monitor', 'network-monitor.js');
+// Utama: ~/kiosk/scripts/network-monitor.js (dikemas kini oleh git);
+// fallback: ~/network-monitor/network-monitor.js (pemasangan lama).
+const NETMON_CANDIDATES = [
+  path.join(process.env.HOME || '/home/ipray', 'kiosk', 'scripts', 'network-monitor.js'),
+  path.join(process.env.HOME || '/home/ipray', 'network-monitor', 'network-monitor.js')
+];
+const NETMON_SCRIPT = NETMON_CANDIDATES.find((p) => fs.existsSync(p)) || NETMON_CANDIDATES[0];
 const HOTSPOT_PROFILE = 'ipray-hotspot';
 const WIFI_PROFILE_PREFIX = 'netplan-wlan0-';
 

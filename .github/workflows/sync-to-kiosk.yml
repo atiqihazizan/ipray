@@ -1,5 +1,6 @@
 name: Sync to ipray-kiosk
-# Test workflow untuk auto-sync dari ipray ke ipray-kiosk
+# Auto-sync dari ipray (main) ke repo cermin ipray-kiosk.
+# Kiosk pull melalui scripts/kiosk-update.sh (cron 10 minit) — restart hanya jika perlu.
 
 on:
   push:
@@ -8,9 +9,27 @@ on:
     paths:
       - 'react/**'
       - 'nodejs/services/**'
+      - 'nodejs/setting/**'
+      - 'nodejs/main.js'
+      - 'nodejs/utils/**'
+      - 'nodejs/package.json'
+      - 'nodejs/package-lock.json'
       - 'nodejs/data/**'
       - 'nodejs/public/**'
+      - 'scripts/network-monitor.js'
+      - 'scripts/kiosk-update.sh'
       - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — sync sahaja, tiada commit/push'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: sync-kiosk
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -28,7 +47,7 @@ jobs:
         with:
           node-version: '20'
 
-      # Build React
+      # Build React (output terus ke ipray/nodejs/public)
       - name: Install dependencies
         run: |
           cd ipray/react
@@ -38,7 +57,7 @@ jobs:
           cd ipray/react
           npm run build
 
-      # Checkout ipray-kiosk repo ( menggunakan PAT untuk write access)
+      # Checkout ipray-kiosk repo (menggunakan PAT untuk write access)
       - name: Checkout ipray-kiosk
         uses: actions/checkout@v4
         with:
@@ -46,38 +65,72 @@ jobs:
           path: ipray-kiosk
           token: ${{ secrets.KIOSK_SYNC_TOKEN }}
 
-      # Sync React build ke ipray-kiosk
-      - name: Sync React build
+      # Sync kod ke repo cermin.
+      # --delete untuk folder kod supaya fail lapuk di cermin turut dibuang;
+      # public/ TANPA --delete supaya fail kiosk yang tidak dijejak (public/img
+      # dsb.) kekal. data/ dihantar sebahagian sahaja — config.txt TIDAK.
+      - name: Sync files (rsync)
         run: |
-          cp -r ipray/nodejs/public/assets/* ipray-kiosk/public/assets/ || true
-          cp ipray/nodejs/public/index.html ipray-kiosk/public/ || true
+          set -e
+          SRC=ipray/nodejs
+          DST=ipray-kiosk
 
-      # Sync services ke ipray-kiosk
-      - name: Sync services
+          # Kod — --delete
+          rsync -a --delete "$SRC/services/" "$DST/services/"
+          rsync -a --delete "$SRC/setting/"  "$DST/setting/"
+          rsync -a --delete "$SRC/utils/"    "$DST/utils/"
+
+          # public — tanpa --delete
+          rsync -a "$SRC/public/" "$DST/public/"
+
+          # Fail root
+          for f in main.js package.json package-lock.json nodemon.json electron-builder.yml env.example; do
+            [ -f "$SRC/$f" ] && cp "$SRC/$f" "$DST/$f"
+          done
+
+          # scripts/ — hanya dua fail ini, jangan timpa fail sedia ada lain
+          mkdir -p "$DST/scripts"
+          cp ipray/scripts/network-monitor.js "$DST/scripts/network-monitor.js"
+          cp ipray/scripts/kiosk-update.sh    "$DST/scripts/kiosk-update.sh"
+          chmod +x "$DST/scripts/kiosk-update.sh"
+
+          # data — hanya fail yang dihantar ke kiosk (config.txt TIDAK disalin)
+          cp "$SRC/data/images.txt"     "$DST/data/images.txt"
+          cp "$SRC/data/countdowns.txt" "$DST/data/countdowns.txt"
+
+      # Buang aset bundle lama dalam public/assets/ yang tidak dirujuk lagi
+      # oleh index.html baharu (supaya tidak terkumpul)
+      - name: Prune stale public/assets
         run: |
-          cp ipray/nodejs/services/timeService.js ipray-kiosk/services/ || true
-          # Add other services jika perlu:
-          # cp ipray/nodejs/services/dataService.js ipray-kiosk/services/ || true
-          # cp ipray/nodejs/services/apiServerService.js ipray-kiosk/services/ || true
+          cd ipray-kiosk/public
+          [ -f index.html ] || exit 0
+          grep -oE 'assets/[A-Za-z0-9._-]+' index.html | sort -u > /tmp/keep-assets.txt
+          for f in assets/*; do
+            [ -e "$f" ] || continue
+            grep -qxF "$f" /tmp/keep-assets.txt || rm -v "$f"
+          done
 
-      # Sync data files ke ipray-kiosk
-      - name: Sync data files
+      # Dry run: papar perubahan repo cermin, jangan commit/push
+      - name: Dry run — status repo cermin
+        if: ${{ inputs.dry_run == true }}
         run: |
-          cp ipray/nodejs/data/images.txt ipray-kiosk/data/ || true
-          cp ipray/nodejs/data/countdowns.txt ipray-kiosk/data/ || true
-          # Add other data files jika perlu:
-          # cp ipray/nodejs/data/kuliah.txt ipray-kiosk/data/ || true
-          # cp ipray/nodejs/data/penceramah.txt ipray-kiosk/data/ || true
+          cd ipray-kiosk
+          echo "=== git status ==="
+          git status --short
+          echo "=== git diff --stat (tracked) ==="
+          git diff --stat HEAD || true
 
-      # Commit dan push ke ipray-kiosk
+      # Commit dan push ke ipray-kiosk (skip bila dry_run)
       - name: Commit changes
+        if: ${{ inputs.dry_run != true }}
         run: |
           cd ipray-kiosk
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add .
-          git diff --staged --quiet || git commit -m "Auto-sync from ipray [skip ci]"
+          git add -A
+          git diff --staged --quiet || git commit -m "Auto-sync from ipray ${{ github.sha }} [skip ci]"
       - name: Push to ipray-kiosk
+        if: ${{ inputs.dry_run != true }}
         run: |
           cd ipray-kiosk
           git push origin main
