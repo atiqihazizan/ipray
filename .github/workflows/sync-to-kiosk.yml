@@ -80,8 +80,11 @@ jobs:
           rsync -a --delete "$SRC/setting/"  "$DST/setting/"
           rsync -a --delete "$SRC/utils/"    "$DST/utils/"
 
-          # public — tanpa --delete
+          # public — tanpa --delete (kekalkan fail kiosk tidak dijejak)
           rsync -a "$SRC/public/" "$DST/public/"
+          # assets/ dengan --delete: aset bundle lama yang tidak lagi
+          # dijana oleh build dibuang supaya tidak terkumpul
+          rsync -a --delete "$SRC/public/assets/" "$DST/public/assets/"
 
           # Fail root
           for f in main.js package.json package-lock.json nodemon.json electron-builder.yml env.example; do
@@ -97,18 +100,6 @@ jobs:
           # data — hanya fail yang dihantar ke kiosk (config.txt TIDAK disalin)
           cp "$SRC/data/images.txt"     "$DST/data/images.txt"
           cp "$SRC/data/countdowns.txt" "$DST/data/countdowns.txt"
-
-      # Buang aset bundle lama dalam public/assets/ yang tidak dirujuk lagi
-      # oleh index.html baharu (supaya tidak terkumpul)
-      - name: Prune stale public/assets
-        run: |
-          cd ipray-kiosk/public
-          [ -f index.html ] || exit 0
-          grep -oE 'assets/[A-Za-z0-9._-]+' index.html | sort -u > /tmp/keep-assets.txt
-          for f in assets/*; do
-            [ -e "$f" ] || continue
-            grep -qxF "$f" /tmp/keep-assets.txt || rm -v "$f"
-          done
 
       # Dry run: papar perubahan repo cermin, jangan commit/push
       - name: Dry run — status repo cermin

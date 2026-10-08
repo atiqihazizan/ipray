@@ -252,7 +252,8 @@ function ensureHotspotProfile() {
     // PSK mesti kekal sama dengan HOTSPOT_DEFAULTS di apiServerService.js
     'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', 'ipray2026',
     'ipv4.method', 'shared'], 20000);
-  if (!add.ok) { log(`ensureHotspotProfile: cipta gagal — ${add.err || add.out}`); return false; }
+  // Log stderr/stdout sahaja — e.message membawa arahan penuh (termasuk PSK).
+  if (!add.ok) { log(`ensureHotspotProfile: cipta gagal — ${String(add.out || '').trim().slice(0, 200) || 'ralat nmcli'}`); return false; }
   log('ensureHotspotProfile: profil ipray-hotspot dicipta');
   return true;
 }

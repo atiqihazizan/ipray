@@ -35,14 +35,23 @@ const NETMON_CANDIDATES = [
   path.join(process.env.HOME || '/home/ipray', 'kiosk', 'scripts', 'network-monitor.js'),
   path.join(process.env.HOME || '/home/ipray', 'network-monitor', 'network-monitor.js')
 ];
-const NETMON_SCRIPT = NETMON_CANDIDATES.find((p) => fs.existsSync(p)) || NETMON_CANDIDATES[0];
+// Selesaikan pada setiap panggilan — skrip utama (~/kiosk/scripts) boleh
+// muncul kemudian melalui kemas kini git tanpa restart backend.
+function netmonScript() {
+  return NETMON_CANDIDATES.find((p) => fs.existsSync(p)) || null;
+}
 const HOTSPOT_PROFILE = 'ipray-hotspot';
 const WIFI_PROFILE_PREFIX = 'netplan-wlan0-';
 
 function runNetmon(args, timeoutMs = 30000) {
   const { execFile } = require('child_process');
   return new Promise((resolve) => {
-    execFile('/usr/bin/node', [NETMON_SCRIPT, ...args], { timeout: timeoutMs }, (err, stdout, stderr) => {
+    const script = netmonScript();
+    if (!script) {
+      resolve({ ok: false, out: '', err: 'network-monitor.js tidak dijumpai', parsed: null });
+      return;
+    }
+    execFile('/usr/bin/node', [script, ...args], { timeout: timeoutMs }, (err, stdout, stderr) => {
       let parsed = null;
       try { parsed = JSON.parse((stdout || '').trim().split('\n').pop()); } catch (_) { /* ignore */ }
       resolve({ ok: !err && (!parsed || parsed.ok !== false), out: stdout || '', err: stderr || (err && err.message) || '', parsed });
@@ -51,7 +60,7 @@ function runNetmon(args, timeoutMs = 30000) {
 }
 
 function netmonAvailable() {
-  return fs.existsSync(NETMON_SCRIPT);
+  return netmonScript() !== null;
 }
 
 // Ralat exec/execFile membawa `.cmd`/`.message` yang mengandungi arahan penuh —
@@ -1266,7 +1275,9 @@ class ApiServerService {
         if (!found) return res.status(404).json({ error: `Profil "${name}" tidak dijumpai` });
 
         const { spawn } = require('child_process');
-        const child = spawn('/usr/bin/node', [NETMON_SCRIPT, 'connect-now', name], {
+        const script = netmonScript();
+        if (!script) return res.status(503).json({ error: 'Network monitor belum dipasang' });
+        const child = spawn('/usr/bin/node', [script, 'connect-now', name], {
           detached: true, stdio: 'ignore',
         });
         child.unref();

@@ -52,8 +52,9 @@ git init --bare -q "$TMP/upstream.git"
 git init -q "$TMP/seed"
 cd "$TMP/seed"
 git config user.email t@t; git config user.name t
-mkdir -p services public setting utils data scripts
+mkdir -p services public setting utils data scripts images
 echo "v1" > services/apiServerService.js
+echo "photo-v1" > images/photo1.png
 echo "<html>v1</html>" > public/index.html
 echo "<tab>v1</tab>" > setting/tab.html
 echo "u1" > utils/logger.js
@@ -209,6 +210,23 @@ echo "local-untracked" > "$TMP/kiosk/public/newfile.txt"
 push_change public/newfile.txt "upstream-version"
 run_update
 check "9. untracked bertembung: versi hulu menang" "upstream-version" "$(cat "$TMP/kiosk/public/newfile.txt")"
+
+# -----------------------------------------------------------
+# 10. images/: fail dijejak diubah tempatan kekal; fail tidak
+#     dijejak kekal; fail berubah di hulu → hulu menang
+# -----------------------------------------------------------
+echo "local-mod" > "$TMP/kiosk/images/photo1.png"
+echo "local-new" > "$TMP/kiosk/images/local-only.png"
+push_change services/apiServerService.js "v5"
+run_update
+check "10. image dijejak suntingan tempatan kekal" "local-mod" "$(cat "$TMP/kiosk/images/photo1.png")"
+check "10. image tidak dijejak kekal" "local-new" "$(cat "$TMP/kiosk/images/local-only.png")"
+
+push_change images/photo1.png "upstream-img-v2"
+run_update
+check "10b. image berubah di hulu → hulu menang" "upstream-img-v2" "$(cat "$TMP/kiosk/images/photo1.png")"
+check "10b. image tidak dijejak masih kekal" "local-new" "$(cat "$TMP/kiosk/images/local-only.png")"
+check "10b. tiada sisa dir sandaran" "" "$(ls -d "$TMP/kiosk/.kiosk-update-backup" 2>/dev/null)"
 
 # -----------------------------------------------------------
 echo ""

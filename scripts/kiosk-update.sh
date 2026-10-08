@@ -43,7 +43,14 @@ if [ -z "${KIOSK_UPDATE_REEXEC:-}" ]; then
   # mktemp gagal — teruskan dengan fail asal (risiko kecil diterima)
   export KIOSK_UPDATE_REEXEC=1
 fi
-trap 'rm -f "${KIOSK_UPDATE_SELF_TMP:-}"' EXIT
+BACKUP_DIR=""
+LOCK_DIR=""
+cleanup() {
+  rm -f "${KIOSK_UPDATE_SELF_TMP:-}"
+  [ -n "$BACKUP_DIR" ] && rm -rf "$BACKUP_DIR"
+  [ -n "$LOCK_DIR" ] && rmdir "$LOCK_DIR" 2>/dev/null
+}
+trap cleanup EXIT
 
 # Env untuk systemctl --user dari cron (tanpa sesi logind penuh)
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
@@ -61,7 +68,6 @@ fi
 # -----------------------------------------------------------
 # Lock — elak dua larian bertindih (flock; fallback mkdir lock)
 # -----------------------------------------------------------
-LOCK_DIR=""
 if command -v flock >/dev/null 2>&1; then
   exec 9>"$LOCK_FILE"
   if ! flock -n 9; then
@@ -74,7 +80,6 @@ else
     log "kemas kini lain sedang berjalan — keluar"
     exit 0
   fi
-  trap 'rm -f "${KIOSK_UPDATE_SELF_TMP:-}"; rmdir "$LOCK_DIR" 2>/dev/null' EXIT
 fi
 
 cd "$KIOSK_DIR" || { log "ERROR: $KIOSK_DIR tidak wujud"; exit 1; }
@@ -192,35 +197,42 @@ fi
 SHORT_CHANGED="$(git diff --name-only "$OLD" "$NEW" | head -20 | tr '\n' ' ')"
 log "kemas kini $OLD -> $NEW | fail: $SHORT_CHANGED"
 
-BACKUP="$(mktemp -d "${TMPDIR:-/tmp}/kiosk-data.XXXXXX")" || { log "ERROR: mktemp gagal"; exit 1; }
-if [ -d "$KIOSK_DIR/data" ]; then
-  cp -a "$KIOSK_DIR/data/." "$BACKUP/" 2>/dev/null || true
-fi
+# Sandaran di bawah $KIOSK_DIR (bukan /tmp — sama filesystem, pantas
+# dengan hardlink `cp -al`; fallback `cp -a`). Dibersihkan oleh trap EXIT.
+# Dirangkumi: data/ (tetapan kiosk) dan images/ (boleh diubah tempatan).
+BACKUP_DIR="$KIOSK_DIR/.kiosk-update-backup"
+rm -rf "$BACKUP_DIR"; mkdir -p "$BACKUP_DIR"
+for d in data images; do
+  [ -d "$KIOSK_DIR/$d" ] || continue
+  cp -al "$KIOSK_DIR/$d" "$BACKUP_DIR/$d" 2>/dev/null || \
+    cp -a "$KIOSK_DIR/$d" "$BACKUP_DIR/$d" 2>/dev/null || \
+    log "WARN: sandaran $d/ gagal"
+done
 
 if ! git reset --hard "$NEW" >> "$LOG_FILE" 2>&1; then
-  log "ERROR: git reset --hard $NEW gagal — pulih data dari sandaran, tiada restart"
-  if [ -d "$KIOSK_DIR/data" ]; then
-    cp -a "$BACKUP/." "$KIOSK_DIR/data/" 2>/dev/null || true
-  fi
-  rm -rf "$BACKUP"
+  log "ERROR: git reset --hard $NEW gagal — pulih data/images dari sandaran, tiada restart"
+  for d in data images; do
+    [ -d "$BACKUP_DIR/$d" ] && cp -a "$BACKUP_DIR/$d/." "$KIOSK_DIR/$d/" 2>/dev/null || true
+  done
   exit 1
 fi
 
-# Pulih data kiosk: semua fail sandaran KECUALI yang berubah di
+# Pulih fail kiosk: semua fail sandaran KECUALI yang berubah di
 # hulu dalam kemas kini ini (versi hulu menang untuk fail itu).
-UPSTREAM_DATA="$(git diff --name-only "$OLD" "$NEW" -- data/ || true)"
-if [ -d "$BACKUP" ]; then
-  (cd "$BACKUP" && find . -type f -print) | while read -r rel; do
+for d in data images; do
+  [ -d "$BACKUP_DIR/$d" ] || continue
+  UPSTREAM_LIST="$(git diff --name-only "$OLD" "$NEW" -- "$d/" || true)"
+  (cd "$BACKUP_DIR/$d" && find . -type f -print) | while read -r rel; do
     rel="${rel#./}"
-    if ! echo "$UPSTREAM_DATA" | grep -qxF "data/$rel"; then
-      mkdir -p "$KIOSK_DIR/data/$(dirname "$rel")" 2>/dev/null || true
-      cp -a "$BACKUP/$rel" "$KIOSK_DIR/data/$rel" 2>/dev/null || true
+    if ! echo "$UPSTREAM_LIST" | grep -qxF "$d/$rel"; then
+      mkdir -p "$KIOSK_DIR/$d/$(dirname "$rel")" 2>/dev/null || true
+      cp -a "$BACKUP_DIR/$d/$rel" "$KIOSK_DIR/$d/$rel" 2>/dev/null || true
     else
-      log "data/$rel: versi hulu menang (tempatan tidak dipulih)"
+      log "$d/$rel: versi hulu menang (tempatan tidak dipulih)"
     fi
   done
-fi
-rm -rf "$BACKUP"
+done
+rm -rf "$BACKUP_DIR"; BACKUP_DIR=""
 
 [ -f "$KIOSK_DIR/data/config.txt" ] || log "WARN: data/config.txt tidak dijumpai selepas kemas kini"
 
