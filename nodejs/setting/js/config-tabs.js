@@ -6,6 +6,7 @@ const CONFIG_SUB_TABS = [
 	{ id: 'slides', label: 'Slides', file: 'config-tabs/slides.html' },
 	{ id: 'hebahan', label: 'Hebahan', file: 'config-tabs/hebahan.html' },
 	{ id: 'waktu-solat', label: 'Waktu Solat', file: 'config-tabs/waktu-solat.html' },
+	{ id: 'beep', label: 'Bunyi Beep', file: 'config-tabs/beep.html' },
 	{ id: 'takwim', label: 'Takwim', file: 'config-tabs/takwim.html' },
 	{ id: 'masa-sistem', label: 'Masa Sistem', file: 'config-tabs/masa-sistem.html' },
 	{ id: 'wifi', label: 'WiFi', file: 'config-tabs/wifi.html' },

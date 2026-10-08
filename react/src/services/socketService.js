@@ -124,9 +124,9 @@ class SocketService {
       this.notifyListeners('reboot', data);
     });
 
-    // Listen for test sound from setting panel
+    // Listen for test sound from setting panel - main pattern "prayer" (BEEP_CONFIG semasa), cukup 2 set
     this.socket.on('test-sound', () => {
-      beepService.playPattern('b1');
+      beepService.playPrayer(null, 2);
     });
 
     // Listen for home title config update (tanpa reload)
@@ -142,6 +142,11 @@ class SocketService {
     // Listen for color config update (tanpa reload)
     this.socket.on('color-config:updated', (data) => {
       this.notifyListeners('color-config:updated', data);
+    });
+
+    // Listen for beep config update (tanpa reload, berkuat kuasa pada beep seterusnya)
+    this.socket.on('beep-config:updated', (data) => {
+      this.notifyListeners('beep-config:updated', data);
     });
 
     // Listen for hebahan update (tanpa reload)

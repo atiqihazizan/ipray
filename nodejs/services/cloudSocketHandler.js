@@ -88,6 +88,10 @@ async function broadcastAfterCrud(filename, action, extra = {}) {
       const configContent = await dataService.readFile('config');
       const parsed = dataService.parseConfig(configContent);
       socketServerService.broadcastColorConfigUpdate(parsed.COLOR_CONFIG);
+    } else if (key?.startsWith('BEEP_')) {
+      const configContent = await dataService.readFile('config');
+      const parsed = dataService.parseConfig(configContent);
+      socketServerService.broadcastBeepConfigUpdate(parsed.BEEP_CONFIG);
     } else if (key === 'KEMATIAN_SHOW' || key === 'LIVESTREAM_SHOW') {
       const bits = typeof row === 'string' ? row.split('|')[1] : (row && row.value);
       const overlayConfig = overlayConfigFromBits(bits);

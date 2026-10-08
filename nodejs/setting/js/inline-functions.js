@@ -52,6 +52,14 @@
 			if (configData.WARNING_START_MINUTES === undefined) configData.WARNING_START_MINUTES = '5';
 			if (configData.IQAMAH_DURATION_MIN === undefined) configData.IQAMAH_DURATION_MIN = '10';
 			if (configData.SOLAT_DURATION_MIN === undefined) configData.SOLAT_DURATION_MIN = '10';
+			if (configData.BEEP_FREQ === undefined) configData.BEEP_FREQ = '2800';
+			if (configData.BEEP_MS === undefined) configData.BEEP_MS = '120';
+			if (configData.BEEP_GAP_MS === undefined) configData.BEEP_GAP_MS = '100';
+			if (configData.BEEP_SETS === undefined) configData.BEEP_SETS = '6';
+			if (configData.BEEP_SET_GAP_MS === undefined) configData.BEEP_SET_GAP_MS = '1000';
+			if (configData.BEEP_WAVE === undefined) configData.BEEP_WAVE = 'piezo';
+			if (configData.BEEP_Q === undefined) configData.BEEP_Q = '3';
+			if (configData.BEEP_LEADIN_MS === undefined) configData.BEEP_LEADIN_MS = '200';
 			const sepBtn = document.getElementById('MARQUEE_SEPARATOR_btn');
 			if (sepBtn) sepBtn.textContent = configData.MARQUEE_SEPARATOR;
 			Object.keys(configData).forEach(key => {
@@ -114,6 +122,18 @@
 					const n = parseFloat(value);
 					const iqamah = parseFloat(document.getElementById('IQAMAH_DURATION_MIN')?.value) || 1;
 					if (!isNaN(n)) saveValue = String(Math.max(iqamah, n));
+				}
+				const BEEP_RANGES = {
+					BEEP_FREQ: [500, 4000], BEEP_MS: [30, 300], BEEP_GAP_MS: [30, 300],
+					BEEP_SETS: [1, 12], BEEP_SET_GAP_MS: [300, 3000], BEEP_Q: [1, 10], BEEP_LEADIN_MS: [0, 500]
+				};
+				if (BEEP_RANGES[key]) {
+					const n = parseFloat(value);
+					const [min, max] = BEEP_RANGES[key];
+					saveValue = String(isNaN(n) ? min : Math.max(min, Math.min(max, n)));
+				}
+				if (key === 'BEEP_WAVE' && !['piezo', 'sine'].includes(value)) {
+					saveValue = 'piezo';
 				}
 			}
 			const response = await fetch(`${getApiUrl()}/data/config`);

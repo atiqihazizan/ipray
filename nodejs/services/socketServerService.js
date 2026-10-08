@@ -363,6 +363,23 @@ class SocketServerService {
   }
 
   /**
+   * Broadcast beep config update - React update BEEP_CONFIG state tanpa reload
+   */
+  broadcastBeepConfigUpdate(beepConfig) {
+    if (!this.io) {
+      console.warn('⚠️ Socket.IO not initialized');
+      return;
+    }
+
+    this.io.emit('beep-config:updated', {
+      beepConfig,
+      timestamp: Date.now()
+    });
+
+    console.log('[BROADCAST] beep-config:updated');
+  }
+
+  /**
    * Broadcast hebahan update - React update hebahanData state tanpa reload
    */
   broadcastHebahanUpdate(hebahanArray) {

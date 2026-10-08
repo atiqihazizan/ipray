@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getApiBase, withAssetBase } from '../services/apiBase';
 import socketService from '../services/socketService';
+import beepService from '../services/beepService';
 import timeServiceStub from '../services/timeServiceStub';
 import { runAfterPrayerSequence } from '../utils/prayerSequenceState';
 import { TIME_EVENTS } from '../utils/timeEvents';
@@ -50,6 +51,20 @@ const DEFAULT_HOME_TITLE_CONFIG = {
 
 const DEFAULT_SLIDES_CONFIG = {
   ORDER: 'A'
+};
+
+/**
+ * Default constants untuk bunyi beep (fallback jika file config.txt tidak wujud)
+ */
+const DEFAULT_BEEP_CONFIG = {
+  BEEP_FREQ: 2800,
+  BEEP_MS: 120,
+  BEEP_GAP_MS: 100,
+  BEEP_SETS: 6,
+  BEEP_SET_GAP_MS: 1000,
+  BEEP_WAVE: 'piezo',
+  BEEP_Q: 3,
+  BEEP_LEADIN_MS: 200,
 };
 
 const DATA_LOAD_DATE_KEY = 'dataLoadDate';
@@ -136,6 +151,7 @@ const applyDataToState = (data, setters) => {
     COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
     MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
     HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
+    BEEP_CONFIG: DEFAULT_BEEP_CONFIG,
   });
 };
 
@@ -172,6 +188,7 @@ export const DataProvider = ({ children }) => {
     COLOR_CONFIG: DEFAULT_COLOR_CONFIG,
     MARQUEE_CONFIG: DEFAULT_MARQUEE_CONFIG,
     HOME_TITLE_CONFIG: DEFAULT_HOME_TITLE_CONFIG,
+    BEEP_CONFIG: DEFAULT_BEEP_CONFIG,
   });
   const [loading, setLoading] = useState(true);
   const [hasData, setHasData] = useState(false);
@@ -404,6 +421,13 @@ export const DataProvider = ({ children }) => {
       }
     });
 
+    // Beep config - update state terus tanpa reload (berkuat kuasa pada beep seterusnya)
+    const unsubscribeBeepConfigUpdated = socketService.on('beep-config:updated', (data) => {
+      if (isMounted && data?.beepConfig) {
+        setConfigData(prev => ({ ...prev, BEEP_CONFIG: data.beepConfig }));
+      }
+    });
+
     // Hebahan - update state terus tanpa reload
     const unsubscribeHebahanUpdated = socketService.on('hebahan:updated', (data) => {
       if (isMounted && Array.isArray(data?.hebahan)) {
@@ -513,6 +537,7 @@ export const DataProvider = ({ children }) => {
       unsubscribeHomeTitleUpdated();
       unsubscribeMarqueeConfigUpdated();
       unsubscribeColorConfigUpdated();
+      unsubscribeBeepConfigUpdated();
       unsubscribeHebahanUpdated();
       unsubscribeScreenFlagsUpdated();
       unsubscribeDataUpdated();
@@ -533,6 +558,13 @@ export const DataProvider = ({ children }) => {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sync parameter beep ke beepService bila BEEP_CONFIG berubah (tanpa reload, tanpa memotong beep semasa)
+  useEffect(() => {
+    if (configData.BEEP_CONFIG) {
+      beepService.setParams(configData.BEEP_CONFIG);
+    }
+  }, [configData.BEEP_CONFIG]);
 
   const value = {
     takwimArray,
@@ -561,6 +593,7 @@ export const DataProvider = ({ children }) => {
     refresh: fetchFromBackend,
     PRAYER_TIME_CONFIG: configData.PRAYER_TIME_CONFIG,
     COLOR_CONFIG: configData.COLOR_CONFIG,
+    BEEP_CONFIG: configData.BEEP_CONFIG ?? DEFAULT_BEEP_CONFIG,
     MARQUEE_CONFIG: configData.MARQUEE_CONFIG ?? DEFAULT_MARQUEE_CONFIG,
     HOME_TITLE_CONFIG: configData.HOME_TITLE_CONFIG ?? DEFAULT_HOME_TITLE_CONFIG,
     SLIDES_CONFIG: configData.SLIDES_CONFIG ?? DEFAULT_SLIDES_CONFIG,

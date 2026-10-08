@@ -641,6 +641,10 @@ class ApiServerService {
             const configContent = await this.dataService.readFile('config');
             const parsed = this.dataService.parseConfig(configContent);
             this.socketServerService.broadcastColorConfigUpdate(parsed.COLOR_CONFIG);
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('BEEP_')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastBeepConfigUpdate(parsed.BEEP_CONFIG);
           } else if (filename === 'config' && row && (row.startsWith('KEMATIAN_SHOW|') || row.startsWith('LIVESTREAM_SHOW|'))) {
             const key = row.split('|')[0];
             const bits = row.split('|')[1];
@@ -725,6 +729,10 @@ class ApiServerService {
             const configContent = await this.dataService.readFile('config');
             const parsed = this.dataService.parseConfig(configContent);
             this.socketServerService.broadcastColorConfigUpdate(parsed.COLOR_CONFIG);
+          } else if (filename === 'config' && row && row.split('|')[0]?.startsWith('BEEP_')) {
+            const configContent = await this.dataService.readFile('config');
+            const parsed = this.dataService.parseConfig(configContent);
+            this.socketServerService.broadcastBeepConfigUpdate(parsed.BEEP_CONFIG);
           } else if (filename === 'config' && row && (row.startsWith('KEMATIAN_SHOW|') || row.startsWith('LIVESTREAM_SHOW|'))) {
             const key = row.split('|')[0];
             const bits = row.split('|')[1];

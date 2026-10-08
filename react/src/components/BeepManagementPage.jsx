@@ -82,8 +82,8 @@ export default function BeepManagementPage() {
           Parameter disimpan dalam service dan digunakan oleh seluruh app.<br /><br />
           <strong style={{ color: '#ccc' }}>Konsep beep(n):</strong><br />
           Satu "beep" = satu set double-beep (bunyi dua kali: pip•pip).<br />
-          <code style={{ color: '#8f8' }}>beep(2)</code> = 2 set → pip•pip ··· pip•pip<br />
-          <code style={{ color: '#8f8' }}>beep(n)</code> = n set dengan jeda 800ms antara tiap set.<br /><br />
+          <code style={{ color: '#8f8' }}>beep(1)</code> = chime notify lama (sine, tidak berubah).<br />
+          <code style={{ color: '#8f8' }}>beep(n)</code>, n&gt;1, = n set pattern "prayer" (beep masuk waktu) ikut <code style={{ color: '#8f8' }}>BEEP_CONFIG</code> dari tetapan (jeda antara set default 1000ms).<br /><br />
           Akses page ini via <code style={{ color: '#fa8' }}>/?beep</code> dalam URL. Tanpa query itu, app berjalan seperti biasa.
         </p>
       </div>
@@ -174,13 +174,13 @@ export default function BeepManagementPage() {
         <pre style={{ fontSize: 12, color: '#888', margin: 0, lineHeight: 1.7 }}>{`import { beep } from '../services/beepService'
 import beepService from '../services/beepService'
 
-beep()      // 2 set (default) — pip•pip ··· pip•pip
-beep(1)     // 1 set           — pip•pip
-beep(n)     // n set
+beep(1)     // chime notify lama (sine, tidak berubah)
+beep(n)     // n>1: n set pattern "prayer" (BEEP_CONFIG dari tetapan)
 
-beepService.playPattern('b3')   // 5 set amaran solat
-beepService.playPattern('ba')   // 8 set azan/prayer
-beepService.stop()              // henti semua`}</pre>
+beepService.playPrayer(onComplete)   // pattern prayer, BEEP_SETS dari tetapan
+beepService.playPattern('b3')        // 5 set amaran solat (legacy)
+beepService.playPattern('ba')        // 8 set azan/prayer (legacy)
+beepService.stop()                   // henti semua`}</pre>
       </div>
     </div>
   )

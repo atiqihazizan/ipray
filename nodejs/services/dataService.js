@@ -84,6 +84,44 @@ const DEFAULT_COLOR_CONFIG = {
   OVERLAY_BG: 'rgba(16, 16, 16, 0.1)',
 };
 
+/** Default config bunyi beep (emulasi buzzer piezo 2800 Hz, double 120/100ms, 6 set). */
+const DEFAULT_BEEP_CONFIG = {
+  BEEP_FREQ: 2800,
+  BEEP_MS: 120,
+  BEEP_GAP_MS: 100,
+  BEEP_SETS: 6,
+  BEEP_SET_GAP_MS: 1000,
+  BEEP_WAVE: 'piezo',
+  BEEP_Q: 3,
+  BEEP_LEADIN_MS: 200,
+};
+
+function clamp(value, min, max, fallback) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+/**
+ * Had masa maksimum beep masuk waktu mesti kurang daripada fallback 30s
+ * (lihat useTimeDriver.js). Jika kombinasi BEEP_* melebihi had, kurangkan
+ * BEEP_SETS (minimum 1) supaya urutan ke iqamah tidak terjejas.
+ */
+const BEEP_FALLBACK_MS = 30000;
+const BEEP_SAFETY_MARGIN_MS = 2000;
+function clampBeepConfigDuration(beepConfig) {
+  const { BEEP_LEADIN_MS, BEEP_MS, BEEP_GAP_MS, BEEP_SET_GAP_MS } = beepConfig;
+  const maxTotalMs = BEEP_FALLBACK_MS - BEEP_SAFETY_MARGIN_MS;
+  let sets = beepConfig.BEEP_SETS;
+  while (sets > 1) {
+    const total = BEEP_LEADIN_MS + sets * (2 * BEEP_MS + BEEP_GAP_MS) + (sets - 1) * BEEP_SET_GAP_MS;
+    if (total <= maxTotalMs) break;
+    sets -= 1;
+  }
+  beepConfig.BEEP_SETS = sets;
+  return beepConfig;
+}
+
 /** Hari dalam bulan (index 0 unused, 1=Jan..12=Dec) untuk getYearDays */
 function isLeapYear(year) {
   return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
@@ -1976,7 +2014,8 @@ class DataService {
       SLIDES_CONFIG: {
         ORDER: 'A',
         VISIBLE: null
-      }
+      },
+      BEEP_CONFIG: { ...DEFAULT_BEEP_CONFIG }
     };
     if (!content || typeof content !== 'string' || !content.trim()) return parsed;
     content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0).forEach(line => {
@@ -2023,7 +2062,16 @@ class DataService {
           parsed.SLIDES_CONFIG.VISIBLE = null;
         }
       }
+      else if (key === 'BEEP_FREQ') parsed.BEEP_CONFIG.BEEP_FREQ = clamp(value, 500, 4000, DEFAULT_BEEP_CONFIG.BEEP_FREQ);
+      else if (key === 'BEEP_MS') parsed.BEEP_CONFIG.BEEP_MS = clamp(value, 30, 300, DEFAULT_BEEP_CONFIG.BEEP_MS);
+      else if (key === 'BEEP_GAP_MS') parsed.BEEP_CONFIG.BEEP_GAP_MS = clamp(value, 30, 300, DEFAULT_BEEP_CONFIG.BEEP_GAP_MS);
+      else if (key === 'BEEP_SETS') parsed.BEEP_CONFIG.BEEP_SETS = clamp(value, 1, 12, DEFAULT_BEEP_CONFIG.BEEP_SETS);
+      else if (key === 'BEEP_SET_GAP_MS') parsed.BEEP_CONFIG.BEEP_SET_GAP_MS = clamp(value, 300, 3000, DEFAULT_BEEP_CONFIG.BEEP_SET_GAP_MS);
+      else if (key === 'BEEP_WAVE') parsed.BEEP_CONFIG.BEEP_WAVE = ['piezo', 'sine'].includes(value) ? value : DEFAULT_BEEP_CONFIG.BEEP_WAVE;
+      else if (key === 'BEEP_Q') parsed.BEEP_CONFIG.BEEP_Q = clamp(value, 1, 10, DEFAULT_BEEP_CONFIG.BEEP_Q);
+      else if (key === 'BEEP_LEADIN_MS') parsed.BEEP_CONFIG.BEEP_LEADIN_MS = clamp(value, 0, 500, DEFAULT_BEEP_CONFIG.BEEP_LEADIN_MS);
     });
+    clampBeepConfigDuration(parsed.BEEP_CONFIG);
     return parsed;
   }
 
